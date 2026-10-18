@@ -1917,6 +1917,657 @@
         ]
       }
     },
+    "/projects/{id}/anki-connect": {
+      "put": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Turns AnkiConnect on or off for the project. Exports and sends never change it.",
+        "operationId": "setAnkiConnect",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiConnectSetting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The project with AnkiConnect turned on or off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/exported": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Records that a package held the flashcards, and marks them exported when the request asks for that.\nA flashcard of another project, or one deleted since the package was staged, is passed over.",
+        "operationId": "recordAnkiExported",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiExportedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The export was recorded"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/notes": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.\nA named flashcard that is not in the project, as one deleted since the send was queued, is passed over.",
+        "operationId": "renderAnkiNotes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiNotesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The deck, the note type and the notes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiNotes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No flashcards named",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/package": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nand they are marked exported when the request asks for that. A staged package is not recorded.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "operationId": "exportAnkiPackage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiPackageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count` and of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8"
+              },
+              "X-EasyImmerse-Flashcard-Count": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project"
+              },
+              "X-EasyImmerse-Skipped-Media": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "Without a save path: the count of audio clips and screenshots left out of the package"
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiPackageSaved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No flashcards named, a staged export without a save path, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A save path, from a token that may not name local paths (code `local_paths_not_allowed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or none of the named flashcards in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The package could not be built (code `package_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/pending-deletions": {
+      "get": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Lists the project's deleted flashcards whose notes may still be in Anki.\nDeleting a flashcard that reached Anki, marked as exported or sent, adds it here while the project uses AnkiConnect or lists such deletions,\nas does recording a send of a flashcard deleted since the send began.",
+        "operationId": "listAnkiPendingDeletions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pending deletions, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiPendingDeletions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/pending-deletions/cleared": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Forgets the named deletions, as when the user has deleted their notes in Anki and marks them done.\nOnly the named deletions go, so that one recorded since the project screen listed them stays.",
+        "operationId": "clearAnkiPendingDeletions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiDeletionsCleared"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The named deletions are gone"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/pending-deletions/{flashcard_id}": {
+      "delete": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Forgets a pending deletion once the client has deleted the note from Anki, or found none to delete.\nA flashcard without a pending deletion is passed over.",
+        "operationId": "clearAnkiPendingDeletion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The id of the deleted flashcard",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The pending deletion is gone"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/sent": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Records that AnkiConnect put the flashcards into Anki as they were when their notes were rendered.\nA flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.",
+        "operationId": "recordAnkiNotesSent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiSentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The send was recorded"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/flashcards": {
       "get": {
         "tags": [
@@ -2774,6 +3425,404 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/alignments": {
+      "get": {
+        "tags": [
+          "alignments"
+        ],
+        "operationId": "listAlignments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document's alignments, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlignmentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "alignments"
+        ],
+        "summary": "Adds an alignment to a document. The audio file or translation it names must be another\nmedia file of the same project. Spans are not checked against the documents.",
+        "operationId": "addAlignment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddAlignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The added alignment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Alignment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project of the kind the alignment needs: a video or an audio file for an audio alignment, a document for a translation alignment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/alignments/{alignment_id}": {
+      "delete": {
+        "tags": [
+          "alignments"
+        ],
+        "operationId": "removeAlignment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "alignment_id",
+            "in": "path",
+            "description": "The alignment id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The alignment was removed"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project, or no such alignment of it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/clip": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file.",
+        "operationId": "getMediaClip",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_ms",
+            "in": "query",
+            "description": "The clip start in player time, in milliseconds.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "end_ms",
+            "in": "query",
+            "description": "The clip end in player time, in milliseconds; after the start.\nAn end past the end of the media is moved back to it.\nThe clip may not be longer than 120000 milliseconds.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "The bearer token, for audio elements, which cannot send headers.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip",
+            "content": {
+              "audio/mp4": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The end is not after the start (or the start is past the media), the clip is longer than 120000 milliseconds, or the file could not be probed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without audio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg failed (code `clip_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no ffmpeg (code `conversion_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/embedded-subtitles": {
       "get": {
         "tags": [
@@ -3020,13 +4069,13 @@
         ]
       }
     },
-    "/projects/{id}/media/{media_id}/playback": {
+    "/projects/{id}/media/{media_id}/playback-method": {
       "post": {
         "tags": [
           "media"
         ],
-        "summary": "Plans playback for the client's environment. A converting plan registers the conversion\nand names its playlist. Without a conversion service, anything that would need conversion\ncomes back unsupported with the reason `conversion_unavailable`.",
-        "operationId": "planMediaPlayback",
+        "summary": "Chooses how the client's environment plays the file. A converting method registers the conversion and names its playlist.\nWithout a conversion service, anything that would need conversion comes back unsupported with the reason `conversion_unavailable`.",
+        "operationId": "chooseMediaPlaybackMethod",
         "parameters": [
           {
             "name": "id",
@@ -3051,7 +4100,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PlaybackRequest"
+                "$ref": "#/components/schemas/PlaybackMethodRequest"
               }
             }
           },
@@ -3059,11 +4108,11 @@
         },
         "responses": {
           "200": {
-            "description": "The plan and, when converting, the playlist path",
+            "description": "The playback method and, when converting, the playlist path",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlaybackResponse"
+                  "$ref": "#/components/schemas/PlaybackMethodResponse"
                 }
               }
             }
@@ -4164,6 +5213,102 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/translation-document": {
+      "put": {
+        "tags": [
+          "alignments"
+        ],
+        "summary": "Pairs a document with the translation it is read beside, before the two are aligned,\nor clears the pairing.",
+        "operationId": "setTranslationDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationDocumentSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The document's media file with the pairing saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The translation is not another document of the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/waveform": {
       "get": {
         "tags": [
@@ -4450,6 +5595,24 @@
   },
   "components": {
     "schemas": {
+      "AddAlignmentRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/AlignmentContent"
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What produced the alignment: a plugin name, or `cloud`. Null for an alignment added\nfrom a file."
+          }
+        }
+      },
       "AddMediaFileRequest": {
         "type": "object",
         "required": [
@@ -4501,6 +5664,511 @@
           },
           "source": {
             "$ref": "#/components/schemas/TextSource"
+          }
+        }
+      },
+      "Alignment": {
+        "type": "object",
+        "description": "A saved alignment of a document.",
+        "required": [
+          "id",
+          "media_file_id",
+          "created_at_ms",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/AlignmentContent"
+          },
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "id": {
+            "$ref": "#/components/schemas/AlignmentId"
+          },
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId",
+            "description": "The document the alignment belongs to. Its counterpart is named inside `content`."
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What produced the alignment: a plugin name, or `cloud`. Null for an alignment added\nfrom a file."
+          }
+        }
+      },
+      "AlignmentContent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The document lined up with an audio file that reads it aloud.",
+            "required": [
+              "audio_media_file_id",
+              "segments",
+              "kind"
+            ],
+            "properties": {
+              "audio_media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The media file of the audio."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "audio"
+                ]
+              },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TimedSpan"
+                },
+                "description": "Sorted by their span's position in the document and by time, usually one per\nsentence. Text with no segment is never highlighted."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The document lined up with another document of the project that translates it.",
+            "required": [
+              "translation_media_file_id",
+              "links",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "translation"
+                ]
+              },
+              "links": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TranslationLink"
+                },
+                "description": "Sorted by the position of their first document span; links with no document span\nare sorted by their first translation span."
+              },
+              "translation_media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The media file of the translation document."
+              }
+            }
+          }
+        ],
+        "description": "What a document is aligned with, and how."
+      },
+      "AlignmentId": {
+        "type": "string"
+      },
+      "AlignmentsResponse": {
+        "type": "object",
+        "required": [
+          "alignments"
+        ],
+        "properties": {
+          "alignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alignment"
+            },
+            "description": "The document's alignments, newest first."
+          }
+        }
+      },
+      "AnkiConnectSetting": {
+        "type": "object",
+        "required": [
+          "uses_anki_connect"
+        ],
+        "properties": {
+          "uses_anki_connect": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AnkiDeletionsCleared": {
+        "type": "object",
+        "description": "The deletions the user marked done, as the project screen listed them.",
+        "required": [
+          "flashcard_ids"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          }
+        }
+      },
+      "AnkiExportedRequest": {
+        "type": "object",
+        "description": "The flashcards a staged package held, once the user has kept a copy of it.",
+        "required": [
+          "flashcard_ids",
+          "marks_exported",
+          "read_at_ms"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          },
+          "marks_exported": {
+            "type": "boolean",
+            "description": "Whether the export marks the flashcards as exported, which takes them out of the Anki updates queue."
+          },
+          "read_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `read_at_ms` the server answered when it staged the package, so that an edit saved since counts as changed.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiMediaRef": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A clip of the media file's audio, referred to as `[sound:<file_name>]`. `file_name` is `<flashcard id>.m4a`.",
+            "required": [
+              "file_name",
+              "media_file_id",
+              "start_ms",
+              "end_ms",
+              "kind"
+            ],
+            "properties": {
+              "end_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "audio"
+                ]
+              },
+              "media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId"
+              },
+              "start_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A frame of the media file's video, referred to as `<img src=\"<file_name>\">`. `file_name` is `<flashcard id>.jpg`.",
+            "required": [
+              "file_name",
+              "media_file_id",
+              "at_ms",
+              "kind"
+            ],
+            "properties": {
+              "at_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "screenshot"
+                ]
+              },
+              "media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId"
+              }
+            }
+          }
+        ],
+        "description": "A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies."
+      },
+      "AnkiNote": {
+        "type": "object",
+        "description": "One flashcard rendered as an Anki note.",
+        "required": [
+          "flashcard_id",
+          "guid",
+          "note_id",
+          "fields",
+          "tags",
+          "media"
+        ],
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Field values as HTML, in the order of `AnkiNoteType.fields`."
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "guid": {
+            "type": "string",
+            "description": "Derived from the flashcard id, and so the same across exports. Anki recognizes a note it already has by this value."
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiMediaRef"
+            },
+            "description": "The media files the fields refer to, which the caller renders and supplies."
+          },
+          "note_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The flashcard's `created_at_ms`, which Anki shows as the note's creation date.",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AnkiNoteType": {
+        "type": "object",
+        "description": "The note type (Anki \"model\") of a project's deck, as both the package and AnkiConnect create it.",
+        "required": [
+          "id",
+          "name",
+          "fields",
+          "templates",
+          "css"
+        ],
+        "properties": {
+          "css": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Field names in order. The first is the sort field and the field Anki checks for duplicates."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A 31-bit number derived from the project id, stable across exports.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiTemplate"
+            }
+          }
+        }
+      },
+      "AnkiNotes": {
+        "type": "object",
+        "description": "What the AnkiConnect client needs to create the deck, the note type and the notes.",
+        "required": [
+          "deck_name",
+          "note_type",
+          "notes",
+          "rendered_at_ms"
+        ],
+        "properties": {
+          "deck_name": {
+            "type": "string"
+          },
+          "note_type": {
+            "$ref": "#/components/schemas/AnkiNoteType"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiNote"
+            }
+          },
+          "rendered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the flashcards were read, which the client hands back once it has sent the notes.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiNotesRequest": {
+        "type": "object",
+        "required": [
+          "flashcard_ids"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          }
+        }
+      },
+      "AnkiPackageRequest": {
+        "type": "object",
+        "required": [
+          "flashcard_ids",
+          "marks_exported"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            },
+            "description": "The flashcards to export, in the order Anki shows them as new cards."
+          },
+          "marks_exported": {
+            "type": "boolean",
+            "description": "Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue."
+          },
+          "save_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The absolute path to write the package to, on the server's machine. Null to receive the package in the response."
+          },
+          "staged": {
+            "type": "boolean",
+            "description": "Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.\nA staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.\nRequires a save path."
+          }
+        }
+      },
+      "AnkiPackageSaved": {
+        "type": "object",
+        "description": "What the server wrote to the save path.",
+        "required": [
+          "flashcard_count",
+          "skipped_media_count",
+          "read_at_ms"
+        ],
+        "properties": {
+          "flashcard_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "read_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time the flashcards were read for the package, to pass back when recording the export.",
+            "minimum": 0
+          },
+          "skipped_media_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The audio clips and screenshots that could not be rendered and are missing from the package.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiPendingDeletion": {
+        "type": "object",
+        "description": "A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.\nIt lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.",
+        "required": [
+          "flashcard_id",
+          "word",
+          "requested_at_ms"
+        ],
+        "properties": {
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "requested_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch when the flashcard was deleted.",
+            "minimum": 0
+          },
+          "word": {
+            "type": "string",
+            "description": "The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded."
+          }
+        }
+      },
+      "AnkiPendingDeletions": {
+        "type": "object",
+        "required": [
+          "deletions"
+        ],
+        "properties": {
+          "deletions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiPendingDeletion"
+            },
+            "description": "Oldest first."
+          }
+        }
+      },
+      "AnkiSentRequest": {
+        "type": "object",
+        "description": "The flashcards AnkiConnect created or updated notes for, and when the notes it sent were rendered.",
+        "required": [
+          "flashcard_ids",
+          "rendered_at_ms"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          },
+          "rendered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `rendered_at_ms` of the notes the server rendered for the send, so that an edit saved since counts as changed.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiTemplate": {
+        "type": "object",
+        "description": "A card template: the HTML of each side of the card, with `{{Field}}` placeholders.",
+        "required": [
+          "name",
+          "front",
+          "back"
+        ],
+        "properties": {
+          "back": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
           }
         }
       },
@@ -4681,6 +6349,27 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ChapterProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of one chapter came from.",
+        "required": [
+          "href",
+          "paragraphs"
+        ],
+        "properties": {
+          "href": {
+            "type": "string",
+            "description": "The path of the chapter's content document inside the EPUB archive: the manifest\nitem's href resolved against the package document's directory and percent-decoded,\nas in `OEBPS/chapter1.xhtml`."
+          },
+          "paragraphs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParagraphProvenance"
+            },
+            "description": "One per entry of the chapter's `paragraphs`, in the same order."
           }
         }
       },
@@ -5208,6 +6897,17 @@
               "null"
             ]
           },
+          "provenance": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DocumentProvenance",
+                "description": "Where each paragraph came from in the source file, for formats that address their text\nby element ids (EPUB). Absent for plain text."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "title": {
             "type": "string"
           }
@@ -5219,6 +6919,22 @@
           "epub",
           "plain_text"
         ]
+      },
+      "DocumentProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of a parsed EPUB came from, so that text addressed by element id\n(as media overlays address it) can be turned into positions in the parsed document.",
+        "required": [
+          "chapters"
+        ],
+        "properties": {
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterProvenance"
+            },
+            "description": "One per entry of `Document.chapters`, in the same order."
+          }
+        }
       },
       "EmbeddedSubtitleTracksResponse": {
         "type": "object",
@@ -5243,7 +6959,8 @@
           "content",
           "included_fields",
           "created_at_ms",
-          "updated_at_ms"
+          "updated_at_ms",
+          "was_packaged"
         ],
         "properties": {
           "content": {
@@ -5262,6 +6979,15 @@
             ],
             "format": "int32",
             "description": "The index of the subtitle cue the card was made from, when it was made from one.",
+            "minimum": 0
+          },
+          "exported_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.\nThe flashcard has changed since then when `updated_at_ms` is later.",
             "minimum": 0
           },
           "id": {
@@ -5288,11 +7014,24 @@
           "project_id": {
             "$ref": "#/components/schemas/ProjectId"
           },
+          "sent_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.\nThe flashcard has changed since then when `updated_at_ms` is later.",
+            "minimum": 0
+          },
           "updated_at_ms": {
             "type": "integer",
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
+          },
+          "was_packaged": {
+            "type": "boolean",
+            "description": "Whether any Anki package has held the flashcard, whether or not that export marked it as exported."
           },
           "word_start": {
             "type": [
@@ -5912,6 +7651,32 @@
         ],
         "description": "The plugin's answer to an action in its import interface: the next form to show, or the\njob that runs the import."
       },
+      "InlineElementId": {
+        "type": "object",
+        "description": "An element with an `id` inside a paragraph's block, and the range its text occupies in the\nparagraph after whitespace is collapsed.",
+        "required": [
+          "id",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The UTF-16 code unit just after the element's text.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The first UTF-16 code unit of the element's text within the paragraph. An element whose\ntext is empty after collapsing whitespace has an empty range at its position.",
+            "minimum": 0
+          }
+        }
+      },
       "InstalledPlugin": {
         "type": "object",
         "description": "A plugin the server found in its plugin directory.",
@@ -6240,7 +8005,7 @@
       },
       "MediaFile": {
         "type": "object",
-        "description": "A video or audio file added to a project.",
+        "description": "A video, audio, or document file added to a project.",
         "required": [
           "id",
           "project_id",
@@ -6285,6 +8050,17 @@
               "null"
             ],
             "description": "The user's saved choice of video and audio tracks, as the JSON the media crate\ndefines. Null until the user has chosen."
+          },
+          "translation_media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The document that translates this one, when this is a document paired with its\ntranslation before the two are aligned. Null otherwise."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -6529,6 +8305,29 @@
           }
         }
       },
+      "ParagraphProvenance": {
+        "type": "object",
+        "description": "Where one paragraph came from in its content document.",
+        "required": [
+          "inline_ids"
+        ],
+        "properties": {
+          "element_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The `id` attribute of the block element the paragraph was extracted from."
+          },
+          "inline_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InlineElementId"
+            },
+            "description": "Every element with an `id` inside the block, in document order."
+          }
+        }
+      },
       "ParseLocalDocumentRequest": {
         "type": "object",
         "required": [
@@ -6688,7 +8487,7 @@
           }
         }
       },
-      "PlaybackPlan": {
+      "PlaybackMethod": {
         "oneOf": [
           {
             "type": "object",
@@ -6748,7 +8547,7 @@
           }
         ]
       },
-      "PlaybackRequest": {
+      "PlaybackMethodRequest": {
         "type": "object",
         "required": [
           "environment"
@@ -6781,21 +8580,21 @@
           }
         }
       },
-      "PlaybackResponse": {
+      "PlaybackMethodResponse": {
         "type": "object",
         "required": [
-          "plan"
+          "method"
         ],
         "properties": {
-          "plan": {
-            "$ref": "#/components/schemas/PlaybackPlan"
+          "method": {
+            "$ref": "#/components/schemas/PlaybackMethod"
           },
           "playlist_path": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The path of the HLS playlist, present only when the plan converts."
+            "description": "The path of the HLS playlist, present only when the method converts."
           }
         }
       },
@@ -6917,7 +8716,8 @@
           "created_at_ms",
           "last_opened_at_ms",
           "media_count",
-          "flashcard_count"
+          "flashcard_count",
+          "uses_anki_connect"
         ],
         "properties": {
           "created_at_ms": {
@@ -6947,6 +8747,10 @@
           },
           "settings": {
             "$ref": "#/components/schemas/ProjectSettings"
+          },
+          "uses_anki_connect": {
+            "type": "boolean",
+            "description": "Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off."
           }
         }
       },
@@ -6963,7 +8767,9 @@
           "flashcard_fields",
           "default_tags",
           "tags_media_name",
-          "fills_audio_with_tts"
+          "fills_audio_with_tts",
+          "flashcard_front_fields",
+          "lists_anki_deletions"
         ],
         "properties": {
           "default_tags": {
@@ -6983,6 +8789,17 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields a new flashcard starts with."
+          },
+          "flashcard_front_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardFieldKey"
+            },
+            "description": "The included fields shown on the front of a card. The other included fields go on the back."
+          },
+          "lists_anki_deletions": {
+            "type": "boolean",
+            "description": "Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.\nWhile AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes."
           },
           "name": {
             "type": "string"
@@ -7515,6 +9332,73 @@
         ],
         "description": "Where the text of a request comes from.\n\nThe `path` variant names a file on the machine running the server. The server resolves\nit, and only for requests authenticated with the per-launch token. The WebAssembly build\nsupports only the `inline` variant."
       },
+      "TextSpan": {
+        "type": "object",
+        "description": "A range of one paragraph of a parsed document.\n\n`chapter_index` and `paragraph_index` count from zero within the parsed document.\n`start` and `end` are offsets into the paragraph string counted in UTF-16 code units,\nexactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats\nthe offsets as opaque numbers and never slices paragraphs by them. A span never crosses\na paragraph; text that covers several paragraphs is a list of spans.\n\nThe position is only valid for the document as the current parser produces it; `quote`\nis what identifies the passage once the parser changes.",
+        "required": [
+          "chapter_index",
+          "paragraph_index",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "chapter_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The UTF-16 code unit just after the span.",
+            "minimum": 0
+          },
+          "paragraph_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "quote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text the span covers, as the parser produced it. Optional in the type so that\ntests can write spans tersely, but every provider and importer sets it. The reader\nignores a span whose quote no longer matches the text at its position."
+          },
+          "start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The first UTF-16 code unit of the span within the paragraph.",
+            "minimum": 0
+          }
+        }
+      },
+      "TimedSpan": {
+        "type": "object",
+        "description": "Text of a document heard between two times of an audio file.",
+        "required": [
+          "span",
+          "start_ms",
+          "end_ms"
+        ],
+        "properties": {
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds from the start of the audio file; exclusive.",
+            "minimum": 0
+          },
+          "span": {
+            "$ref": "#/components/schemas/TextSpan"
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds from the start of the audio file.",
+            "minimum": 0
+          }
+        }
+      },
       "TimedTextFormat": {
         "type": "string",
         "enum": [
@@ -7722,6 +9606,47 @@
               "null"
             ],
             "description": "The MIME type with codecs to pass to `canPlayType`, or `None` when the file's own bytes\ncannot play in a media element at all."
+          }
+        }
+      },
+      "TranslationDocumentSelection": {
+        "type": "object",
+        "description": "The translation a document is paired with before the two are aligned, so that either\ncan be read on its own.",
+        "properties": {
+          "translation_media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "Null clears the pairing."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "TranslationLink": {
+        "type": "object",
+        "description": "Text of a document paired with the text of its translation that says the same thing.\n\nEither side may hold several spans, for a sentence the translation splits in two or joins\nwith the next, and either side may be empty, for text the translation leaves out or adds,\nbut not both. The spans on each side are sorted and do not overlap.",
+        "required": [
+          "spans",
+          "translation_spans"
+        ],
+        "properties": {
+          "spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextSpan"
+            },
+            "description": "Spans of the aligned document."
+          },
+          "translation_spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextSpan"
+            },
+            "description": "Spans of the translation document."
           }
         }
       },

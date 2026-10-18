@@ -8,6 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+dunce = { workspace = true }
 easyimmerse-core = { workspace = true }
 flate2 = { workspace = true }
 hex = { workspace = true }

@@ -41,25 +41,21 @@ export type WordGestures = {
   /**
    * A mouse pointer that has stayed on the word, or on a character of a run, for the brief moment
    * that tells pointing at it from sweeping across the text; or the keyboard moving there, at once.
-   * This is the one handler that answers: with the length of the text, in UTF-16 code units from the hit,
-   * that a lookup from the hit matched, or null when nothing matched.
-   * It is also called for the characters of a run that the keyboard steps back over, to find where the run's words begin.
    */
-  // A handler with nothing to look up returns nothing, as the other handlers do.
-  // biome-ignore lint/suspicious/noConfusingVoidType: see above
-  onWordHover?: (hit: WordHit) => void | Promise<number | null>;
+  onWordHover?: (hit: WordHit) => void;
   /**
-   * The answer of `onWordHover`, reported only while the mouse or the keyboard still points at the word or character it was for,
-   * so that the text can highlight the match and an open pop-up can follow it together.
-   * Without an answer to wait for, it follows the hover at once, with null.
+   * Looks up from a hit without pointing at it, for the characters of a run that the keyboard steps back over,
+   * to find where the run's words begin. It resolves to the length of the text, in UTF-16 code units from the hit,
+   * that the lookup matched, or null when nothing matched; or returns null at once when nothing is looked up.
    */
-  onWordHoverAnswered?: (hit: WordHit, matchedLength: number | null) => void;
+  lookUpMatchedLength?: (hit: WordHit) => Promise<number | null> | null;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
 };
 
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
+ * A text that unmounts while the mouse or the keyboard points at one of its words reports that it no longer points there.
  * Returns a function that builds the event handlers for one word's button,
  * functions through which the keyboard points at a word, or stops pointing, as the mouse does,
  * and one through which the keyboard looks up from a word without pointing at it.
@@ -76,7 +72,15 @@ export function useWordGestures(
   latest.current = gestures;
   const hoverTimer = useTimer();
   const [press] = useState(createPressTracker);
-  useEffect(() => press.cancelHold, [press]);
+  const hovered = useRef<WordHit | null>(null);
+  useEffect(
+    () => () => {
+      press.cancelHold();
+      const input = hovered.current?.input;
+      if (input) latest.current.onWordPointed?.(null, input);
+    },
+    [press],
+  );
   const memory = useWordClickMemory();
   const pointerHit = (
     part: WordPart,
@@ -101,17 +105,8 @@ export function useWordGestures(
     });
     onWordClick?.(hit);
   };
-  const hovered = useRef<WordHit | null>(null);
-  const reportAnswer = (hit: WordHit, matchedLength: number | null) => {
-    if (hovered.current === hit && hit.element.isConnected)
-      latest.current.onWordHoverAnswered?.(hit, matchedLength);
-  };
   const hover = (hit: WordHit) => {
-    if (!hit.element.isConnected) return;
-    const answer = latest.current.onWordHover?.(hit);
-    if (answer instanceof Promise)
-      answer.then((length) => reportAnswer(hit, length));
-    else reportAnswer(hit, null);
+    if (hit.element.isConnected) latest.current.onWordHover?.(hit);
   };
   /** Starts, or restarts for another character, the wait before a mouse on a word counts as hovering. */
   const restartHover = (hit: WordHit) => {
@@ -131,11 +126,8 @@ export function useWordGestures(
     latest.current.onWordPointed?.(hit, "keyboard");
     hover(hit);
   };
-  /** Looks up from a hit without pointing at it, as `MatchedLengthAt` describes. */
-  const lookUpMatchedLength = (hit: WordHit) => {
-    const answer = latest.current.onWordHover?.(hit);
-    return answer instanceof Promise ? answer : null;
-  };
+  const lookUpMatchedLength = (hit: WordHit) =>
+    latest.current.lookUpMatchedLength?.(hit) ?? null;
   const endKeyboardPointing = () => {
     if (hovered.current?.input === "keyboard") cancelHover();
     latest.current.onWordPointed?.(null, "keyboard");

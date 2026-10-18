@@ -1,7 +1,8 @@
 import type { FormInput } from "@easyimmerse/types";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleLookedUpForm } from "../plugins/examplePluginForms.ts";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   exampleFailedJob,
   exampleRunningJob,
@@ -14,7 +15,7 @@ function renderDialog(
   props: Partial<Parameters<typeof ImportMediaDialog>[0]> = {},
 ) {
   const actions: [string, FormInput[]][] = [];
-  render(
+  renderWithAppStore(
     <ImportMediaDialog
       label="Add from a video site"
       form={exampleLookedUpForm}

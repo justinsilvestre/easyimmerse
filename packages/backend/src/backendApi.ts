@@ -1,19 +1,36 @@
+import {
+  type LicenseNoticeGroup,
+  loadLicenseNoticeGroups,
+} from "@easyimmerse/licenses";
 import type {
+  AnkiConnection,
+  AnkiDeletionOutcome,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+  PickedDictionaryFile,
+} from "@easyimmerse/state";
+import { cacheKey, serverCachePath } from "@easyimmerse/state";
+import type {
+  AddAlignmentRequest,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  Alignment,
+  AlignmentsResponse,
+  AnkiConnectSetting,
+  AnkiDeletionsCleared,
+  AnkiExportedRequest,
+  AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
   Document,
-  DocumentFormat,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
-  ImportLocalDictionaryRequest,
   ImportStepRequest,
   ImportStepResponse,
   ListDictionariesResponse,
@@ -27,12 +44,10 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
-  ParseLocalDocumentRequest,
   ParseTimedTextRequest,
-  PlaybackRequest,
-  PlaybackResponse,
+  PlaybackMethodRequest,
+  PlaybackMethodResponse,
   PluginForm,
-  PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
   SourceStepRequest,
@@ -40,37 +55,51 @@ import type {
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
-  TableLayout,
   TablePreview,
   TimedTextTrack,
   TrackSelection,
   TracksResponse,
+  TranslationDocumentSelection,
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import type { BackendError } from "./backendClient.ts";
+import { checkAnkiConnection } from "./ankiConnection.ts";
+import { createMediaFetch } from "./ankiMedia.ts";
+import { type AnkiExportArgs, exportAnkiPackage } from "./ankiPackageExport.ts";
+import type {
+  BackendError,
+  BackendRequest,
+  BackendResult,
+} from "./backendClient.ts";
+import {
+  type CapturedFrame,
+  captureFrame,
+  type FrameArgs,
+  probePictures,
+} from "./browserFrames.ts";
+import { deleteAnkiNotes } from "./deleteAnkiNotes.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import {
+  isQuerySubscribed,
+  type SubscriptionActions,
+} from "./isQuerySubscribed.ts";
+import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
-
-type ParseDocumentArgs = {
-  bytes: Uint8Array | Blob;
-  format: DocumentFormat | null;
-  contentType: string;
-};
-
-type ImportDictionaryArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-  /** Replaces the detected layout of a CSV, TSV or Tabfile table. */
-  tableLayout?: TableLayout | null;
-};
-
-type PreviewDictionaryTableArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-};
+import { type BookArgs, parseBook } from "./parseBook.ts";
+import {
+  type ImportPickedDictionaryArgs,
+  importPickedDictionary,
+  previewPickedDictionaryTable,
+} from "./pickedDictionary.ts";
+import type { PickedFile } from "./readPickedFile.ts";
+import {
+  type AnkiSendArgs,
+  type ServerQuery,
+  sendFlashcardsToAnki,
+} from "./sendToAnki.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -88,7 +117,9 @@ type SourceStepArgs = MediaFileArgs & { request: SourceStepRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
-type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
+type ChoosePlaybackMethodArgs = MediaFileArgs & {
+  request: PlaybackMethodRequest;
+};
 
 type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
@@ -102,16 +133,27 @@ type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
 
-/** Encodes a table layout as the `columns` and `hasHeader` query parameters of an import. */
-const tableLayoutQuery = (
-  layout: TableLayout | null,
-): Record<string, string> =>
-  layout === null
-    ? {}
-    : {
-        columns: layout.columns.join(","),
-        hasHeader: String(layout.hasHeader),
-      };
+type AddAlignmentArgs = MediaFileArgs & { body: AddAlignmentRequest };
+
+type AlignmentArgs = MediaFileArgs & { alignmentId: string };
+
+type TranslationDocumentArgs = MediaFileArgs & {
+  body: TranslationDocumentSelection;
+};
+
+type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
+
+type AnkiDeletionsClearArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+};
+
+type AnkiExportedArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+  marksExported: boolean;
+  readAtMs: number;
+};
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
@@ -134,6 +176,9 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
 
+const alignmentsTag = ({ mediaFileId }: MediaFileArgs) =>
+  [{ type: "Alignments", id: mediaFileId }] as const;
+
 /**
  * Puts a media file the server added into the project's list.
  * The new file's entry decides which screen opens it, so it joins the list at once.
@@ -152,6 +197,71 @@ function listMediaFileAtOnce(
   );
 }
 
+/**
+ * Puts the flashcard a save returned into the project's cached list, in place of an older version of it.
+ * The list shows the saved flashcard at once, while the refetch that the invalidation starts may come later.
+ */
+async function listSavedFlashcard(
+  dispatch: (action: unknown) => unknown,
+  projectId: string,
+  queryFulfilled: Promise<{ data: Flashcard }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  const saved = result.data;
+  dispatch(
+    backendApi.util.updateQueryData("listFlashcards", projectId, (list) => {
+      const index = list.flashcards.findIndex(({ id }) => id === saved.id);
+      const listed = list.flashcards[index];
+      if (listed === undefined) list.flashcards.push(saved);
+      else if (listed.updated_at_ms <= saved.updated_at_ms)
+        list.flashcards[index] = saved;
+    }),
+  );
+}
+
+/** Sends JSON requests to the server through an endpoint's base query, for query functions that send several. */
+function serverQueryOf(
+  baseQuery: (
+    request: BackendRequest,
+  ) =>
+    | QueryReturnValue<unknown, BackendError, unknown>
+    | PromiseLike<QueryReturnValue<unknown, BackendError, unknown>>,
+): ServerQuery {
+  return async (request) =>
+    (await baseQuery(request)) as BackendResult<unknown>;
+}
+
+/**
+ * Keeps the last check of the connection to Anki in step with what a send or a deletion found,
+ * and tells whether Anki answered although the last check or report had not found it running.
+ */
+function reportAnkiConnection(
+  api: Pick<BaseQueryApi, "dispatch" | "getState">,
+  connection: AnkiConnection,
+): boolean {
+  const last = backendApi.endpoints.checkAnkiConnection.select()(
+    api.getState() as BackendState,
+  ).data;
+  api.dispatch(
+    backendApi.util.upsertQueryData(
+      "checkAnkiConnection",
+      undefined,
+      connection,
+    ),
+  );
+  return connection.connected && last?.connected !== true;
+}
+
+/** The data an export or a send to Anki changes: which flashcards went where, the deletions it records or clears, and the project's counts. */
+const flashcardsSentTags = (projectId: string) =>
+  [
+    { type: "Flashcards", id: projectId },
+    { type: "AnkiPendingDeletions", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
+
 const mediaFileAddedTags = (projectId: string) =>
   [
     { type: "MediaFiles", id: projectId },
@@ -161,13 +271,18 @@ const mediaFileAddedTags = (projectId: string) =>
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
-  reducerPath: "backend",
+  reducerPath: serverCachePath,
+  // The state package reads entries from the cache, so it decides the keys they are stored under.
+  serializeQueryArgs: ({ endpointName, queryArgs }) =>
+    cacheKey(endpointName, queryArgs),
   baseQuery: injectedBaseQuery,
   tagTypes: [
     "Projects",
     "MediaFiles",
     "Flashcards",
+    "AnkiPendingDeletions",
     "SubtitleTracks",
+    "Alignments",
     "Dictionaries",
     "ConversionCache",
   ],
@@ -176,11 +291,13 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
     }),
+    /** A project is kept for the session: the automatic send to Anki after a save reads from the cache whether it uses AnkiConnect, and tag invalidation still refreshes it. */
     getProject: build.query<Project, string>({
       query: (projectId) => ({
         method: "GET",
         path: `/projects/${projectId}`,
       }),
+      keepUnusedDataFor: Infinity,
       providesTags: (_result, _error, projectId) => [
         { type: "Projects", id: projectId },
       ],
@@ -229,8 +346,13 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards`,
         body: { kind: "json", value: flashcard },
       }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
+      },
+      // Saving a flashcard deleted earlier, as an Undo does, forgets its deletion from Anki.
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -244,24 +366,8 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards/${flashcardId}`,
         body: { kind: "json", value: draft },
       }),
-      // The list shows the change at once, so that a dragged clip does not jump back while the request runs.
-      async onQueryStarted(
-        { projectId, flashcardId, draft },
-        { dispatch, queryFulfilled },
-      ) {
-        const patch = dispatch(
-          backendApi.util.updateQueryData(
-            "listFlashcards",
-            projectId,
-            (list) => {
-              const flashcard = list.flashcards.find(
-                ({ id }) => id === flashcardId,
-              );
-              if (flashcard) Object.assign(flashcard, draft);
-            },
-          ),
-        );
-        await queryFulfilled.catch(patch.undo);
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
       },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
@@ -274,6 +380,7 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -354,11 +461,13 @@ export const backendApi = createApi({
         method: "DELETE",
         path: `/projects/${projectId}/media/${mediaFileId}`,
       }),
+      // Removing a file also removes the alignments of other documents that name it.
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
         { type: "Flashcards", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
+        "Alignments",
       ],
     }),
     getMediaTracks: build.query<TracksResponse, MediaFileArgs>({
@@ -367,10 +476,13 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/tracks`,
       }),
     }),
-    planPlayback: build.query<PlaybackResponse, PlanPlaybackArgs>({
+    choosePlaybackMethod: build.query<
+      PlaybackMethodResponse,
+      ChoosePlaybackMethodArgs
+    >({
       query: ({ request, ...args }) => ({
         method: "POST",
-        path: `${mediaFilePath(args)}/playback`,
+        path: `${mediaFilePath(args)}/playback-method`,
         body: { kind: "json", value: request },
       }),
     }),
@@ -384,7 +496,12 @@ export const backendApi = createApi({
         { type: "MediaFiles", id: projectId },
       ],
     }),
+    /**
+     * One window of a media file's waveform peaks. The media screen's update requests the windows,
+     * and the waveform reads their peaks from the cache, which keeps every window for the rest of the session.
+     */
     getWaveformWindow: build.query<WaveformResponse, WaveformWindowArgs>({
+      keepUnusedDataFor: Infinity,
       query: ({ startMs, endMs, ...args }) => ({
         method: "GET",
         path: `${mediaFilePath(args)}/waveform`,
@@ -487,6 +604,40 @@ export const backendApi = createApi({
       },
       invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
+    /** A document's alignments with its audio and its translation, newest first. */
+    listAlignments: build.query<AlignmentsResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/alignments`,
+      }),
+      providesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    addAlignment: build.mutation<Alignment, AddAlignmentArgs>({
+      query: ({ body, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/alignments`,
+        body: { kind: "json", value: body },
+      }),
+      invalidatesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    removeAlignment: build.mutation<void, AlignmentArgs>({
+      query: ({ alignmentId, ...args }) => ({
+        method: "DELETE",
+        path: `${mediaFilePath(args)}/alignments/${encodeURIComponent(alignmentId)}`,
+      }),
+      invalidatesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    /** Pairs a document with the translation it is read beside, before the two are aligned, or clears the pairing. */
+    setTranslationDocument: build.mutation<MediaFile, TranslationDocumentArgs>({
+      query: ({ body, ...args }) => ({
+        method: "PUT",
+        path: `${mediaFilePath(args)}/translation-document`,
+        body: { kind: "json", value: body },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
     getConversionCacheStatus: build.query<ConversionCacheStatus, void>({
       query: () => ({ method: "GET", path: "/conversion-cache" }),
       providesTags: ["ConversionCache"],
@@ -514,79 +665,175 @@ export const backendApi = createApi({
         offlineOperation: { kind: "parseTimedText", request },
       }),
     }),
-    parseDocument: build.mutation<Document, ParseDocumentArgs>({
-      query: ({ bytes, format, contentType }) => ({
-        method: "POST",
-        path: "/documents/parse",
-        query: format === null ? undefined : { format },
-        body: { kind: "bytes", value: bytes, contentType },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "parseDocument", bytes, format }
-            : undefined,
-      }),
+    /** Parses a book once while it is read. The entry goes as soon as no reader shows the book, since a document can be large. */
+    openBook: build.query<Document, BookArgs>({
+      queryFn: (book, api, _extraOptions, baseQuery) =>
+        parseBook(book, api.extra as BackendThunkExtra, baseQuery),
+      keepUnusedDataFor: 0,
     }),
-    parseLocalDocument: build.mutation<Document, ParseLocalDocumentRequest>({
-      query: (request) => ({
-        method: "POST",
-        path: "/documents/parse-local",
-        body: { kind: "json", value: request },
-      }),
+    /** Whether a file the browser holds shows pictures. The answer is kept for the session, since it is small and the flashcard rules will read it. */
+    probePictures: build.query<boolean, PickedFile>({
+      queryFn: (file, api) =>
+        probePictures(file, api.extra as BackendThunkExtra),
+      keepUnusedDataFor: Infinity,
     }),
-    importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
-      query: ({ fileName, bytes, tableLayout = null }) => ({
+    /**
+     * A frame of a file the browser holds, with the file it comes from, since a query hook's last data outlives a change of its arguments.
+     * A frame is a large data URL, so an unused one goes after RTK Query's default minute.
+     */
+    captureFrame: build.query<CapturedFrame, FrameArgs>({
+      queryFn: (args, api) =>
+        captureFrame(
+          args,
+          api.extra as BackendThunkExtra,
+          () => !isQuerySubscribed(api, subscriptionActions()),
+        ),
+    }),
+    /**
+     * Whether Anki answers through AnkiConnect. The last answer is kept for the session, and a send to Anki or a deletion from it updates it,
+     * so that the project overview shows the connection as last seen.
+     */
+    checkAnkiConnection: build.query<AnkiConnection, void>({
+      queryFn: (_arg, api) =>
+        checkAnkiConnection((api.extra as BackendThunkExtra).ankiConnect),
+      keepUnusedDataFor: Infinity,
+    }),
+    /** Sends flashcards to Anki through AnkiConnect, from the page, since Anki runs on the user's machine. */
+    sendFlashcardsToAnki: build.mutation<AnkiSendOutcome, AnkiSendArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) => {
+        const extra = api.extra as BackendThunkExtra;
+        return sendFlashcardsToAnki(args, {
+          anki: extra.ankiConnect,
+          server: serverQueryOf(baseQuery),
+          fetchMedia: createMediaFetch(extra.serverFetch),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api, connection),
+        });
+      },
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** The project's deleted flashcards whose notes may still be in Anki. */
+    listAnkiPendingDeletions: build.query<AnkiPendingDeletions, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/anki/pending-deletions`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Deletes from Anki the notes of the project's deleted flashcards, through AnkiConnect from the page. */
+    deleteAnkiNotes: build.mutation<AnkiDeletionOutcome, string>({
+      queryFn: (projectId, api, _extraOptions, baseQuery) =>
+        deleteAnkiNotes(projectId, {
+          anki: (api.extra as BackendThunkExtra).ankiConnect,
+          server: serverQueryOf(baseQuery),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api, connection),
+        }),
+      invalidatesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Forgets the named deletions from Anki, which the user marked done. */
+    clearAnkiPendingDeletions: build.mutation<void, AnkiDeletionsClearArgs>({
+      query: ({ projectId, flashcardIds }) => ({
         method: "POST",
-        path: "/dictionaries",
-        query: { fileName, ...tableLayoutQuery(tableLayout) },
+        path: `/projects/${projectId}/anki/pending-deletions/cleared`,
         body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+          } satisfies AnkiDeletionsCleared,
         },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "importDictionary", fileName, bytes, tableLayout }
-            : undefined,
       }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
     }),
+    /** Exports flashcards as an Anki package, written by the server at a path or handed back for download. */
+    exportAnkiPackage: build.mutation<AnkiPackageExport, AnkiExportArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        exportAnkiPackage(args, {
+          server: serverQueryOf(baseQuery),
+          serverFetch: (api.extra as BackendThunkExtra).serverFetch,
+          signal: api.signal,
+        }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** Records the delivery of a package the server wrote at a staging path, once the user has kept a copy of it. */
+    recordAnkiExported: build.mutation<void, AnkiExportedArgs>({
+      query: ({ projectId, flashcardIds, marksExported, readAtMs }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/anki/exported`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+            marks_exported: marksExported,
+            read_at_ms: readAtMs,
+          } satisfies AnkiExportedRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /**
+     * Turns AnkiConnect on or off for a project. The project it answers replaces the cached one at once,
+     * so that what follows the change, such as a send to Anki, sees it before the refetch lands.
+     */
+    setAnkiConnect: build.mutation<Project, AnkiConnectArgs>({
+      query: ({ projectId, usesAnkiConnect }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}/anki-connect`,
+        body: {
+          kind: "json",
+          value: {
+            uses_anki_connect: usesAnkiConnect,
+          } satisfies AnkiConnectSetting,
+        },
+      }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result !== null)
+          dispatch(
+            backendApi.util.upsertQueryEntries([
+              {
+                endpointName: "getProject",
+                arg: projectId,
+                value: result.data,
+              },
+            ]),
+          );
+      },
+      invalidatesTags: ["Projects"],
+    }),
+    /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
+    licenseNotices: build.query<LicenseNoticeGroup[], void>({
+      queryFn: () => loadLicenseNotices(loadLicenseNoticeGroups),
+      keepUnusedDataFor: 0,
+    }),
+    /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
+    importDictionary: build.mutation<
+      ImportJobStarted,
+      ImportPickedDictionaryArgs
+    >({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        importPickedDictionary(args, api.extra as BackendThunkExtra, baseQuery),
+    }),
+    /** Reads the first rows of a picked table and the columns detected in it. */
     previewDictionaryTable: build.mutation<
       TablePreview,
-      PreviewDictionaryTableArgs
+      { file: PickedDictionaryFile }
     >({
-      query: ({ fileName, bytes }) => ({
-        method: "POST",
-        path: "/dictionaries/preview",
-        query: { fileName },
-        body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
-        },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "previewDictionaryTable", fileName, bytes }
-            : undefined,
-      }),
-    }),
-    previewLocalDictionaryTable: build.mutation<
-      TablePreview,
-      PreviewLocalDictionaryTableRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/preview-local",
-        body: { kind: "json", value: request },
-      }),
-    }),
-    importLocalDictionary: build.mutation<
-      ImportJobStarted,
-      ImportLocalDictionaryRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/import-local",
-        body: { kind: "json", value: request },
-      }),
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        previewPickedDictionaryTable(
+          args,
+          api.extra as BackendThunkExtra,
+          baseQuery,
+        ),
     }),
     getImportJob: build.query<ImportJobStatus, string>({
       query: (id) => ({
@@ -610,6 +857,25 @@ export const backendApi = createApi({
         method: "DELETE",
         path: `/dictionaries/${encodeURIComponent(id)}`,
       }),
+      /** The removed dictionary leaves the list at once, rather than when the list is fetched again. */
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const isRemoved = await queryFulfilled.then(
+          () => true,
+          () => false,
+        );
+        if (isRemoved)
+          dispatch(
+            backendApi.util.updateQueryData(
+              "listDictionaries",
+              undefined,
+              (list) => {
+                list.dictionaries = list.dictionaries.filter(
+                  (dictionary) => dictionary.id !== id,
+                );
+              },
+            ),
+          );
+      },
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
@@ -645,47 +911,31 @@ export const backendApi = createApi({
 export const {
   useListProjectsQuery,
   useGetProjectQuery,
-  useCreateProjectMutation,
-  useUpdateProjectMutation,
-  useMarkProjectOpenedMutation,
   useListFlashcardsQuery,
   useCreateFlashcardMutation,
   useUpdateFlashcardMutation,
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
   useGetMediaAvailabilityQuery,
-  useAddMediaFileMutation,
-  useGetImportFormMutation,
-  useSubmitImportStepMutation,
-  useGetMediaSourceJobQuery,
   useListPluginsQuery,
-  useRemoveMediaFileMutation,
   useGetMediaTracksQuery,
-  usePlanPlaybackQuery,
-  useSaveTrackSelectionMutation,
-  useLazyGetWaveformWindowQuery,
+  useChoosePlaybackMethodQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
-  useGetSourceFormMutation,
-  useSubmitSourceStepMutation,
-  useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
-  useSetSubtitleSelectionMutation,
+  useListAlignmentsQuery,
+  useAddAlignmentMutation,
+  useRemoveAlignmentMutation,
+  useSetTranslationDocumentMutation,
   useGetConversionCacheStatusQuery,
-  useClearConversionCacheMutation,
-  useSetConversionCacheBudgetMutation,
-  useParseTimedTextMutation,
-  useParseDocumentMutation,
-  useParseLocalDocumentMutation,
-  useImportDictionaryMutation,
-  usePreviewDictionaryTableMutation,
-  usePreviewLocalDictionaryTableMutation,
-  useImportLocalDictionaryMutation,
-  useGetImportJobQuery,
+  useOpenBookQuery,
+  useLicenseNoticesQuery,
+  useProbePicturesQuery,
+  useCaptureFrameQuery,
   useListDictionariesQuery,
-  useDeleteDictionaryMutation,
   useLookupTextQuery,
   useLazyLookupTextQuery,
+  useListAnkiPendingDeletionsQuery,
 } = backendApi;
 
 type BackendState = Parameters<
@@ -701,6 +951,28 @@ export function selectCachedLookup(
     state as BackendState,
   );
   return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The cached peaks window of a media file from one time to another, or undefined when none is cached. */
+export function selectCachedWaveformWindow(
+  state: unknown,
+  window: WaveformWindowArgs,
+): WaveformResponse | undefined {
+  const entry = backendApi.endpoints.getWaveformWindow.select(window)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The API's internal subscription actions, typed apart so that the endpoints that read them do not make `backendApi`'s type refer to itself. */
+function subscriptionActions(): SubscriptionActions {
+  return backendApi.internalActions;
+}
+
+/** Whether the cache holds the answer of the pictures probe of a file the browser holds. */
+export function hasProbedPictures(state: unknown, file: PickedFile): boolean {
+  return backendApi.endpoints.probePictures.select(file)(state as BackendState)
+    .isSuccess;
 }
 
 /** The batch lookups being fetched now. */

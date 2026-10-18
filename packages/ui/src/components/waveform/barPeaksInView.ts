@@ -1,9 +1,7 @@
+import { waveformPeaksPerSecond, waveformWindowMs } from "@easyimmerse/state";
 import { peaksPerBar } from "./layOutBars.ts";
+import type { WaveformWindows } from "./selectWaveformWindows.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
-import {
-  waveformPeaksPerSecond,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
 
 const peakMs = 1000 / waveformPeaksPerSecond;
 const peaksPerWindow = waveformWindowMs / peakMs;
@@ -14,7 +12,7 @@ const peaksPerWindow = waveformWindowMs / peakMs;
  * The bars start at fixed times, so they keep their peaks as the view follows the current time.
  */
 export function barPeaksInView(
-  windows: ReadonlyMap<number, Uint8Array>,
+  windows: WaveformWindows,
   view: WaveformView,
 ): { peaks: (number | null)[]; from: number; to: number } {
   const perBar = peaksPerBar((view.widthPx * peakMs) / view.spanMs);
@@ -30,7 +28,7 @@ export function barPeaksInView(
 
 /** The loudest of the file's peaks from one index up to another, or null when no loaded window holds any of them. */
 function loudestPeak(
-  windows: ReadonlyMap<number, Uint8Array>,
+  windows: WaveformWindows,
   from: number,
   to: number,
 ): number | null {

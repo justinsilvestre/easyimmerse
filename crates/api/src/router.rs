@@ -14,9 +14,10 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
-    dictionary_lookup, dictionary_media, documents, flashcards, health, local_dictionaries, media,
-    media_availability, media_frame, media_import, media_playback, media_stream, media_tracks,
+    alignments, anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache,
+    conversions, dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup,
+    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_availability,
+    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
     media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
@@ -81,6 +82,16 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::update_flashcard,
             flashcards::delete_flashcard
         ))
+        .routes(routes!(anki_package::export_anki_package))
+        .routes(routes!(anki_exported::record_anki_exported))
+        .routes(routes!(anki::render_anki_notes))
+        .routes(routes!(anki::record_anki_notes_sent))
+        .routes(routes!(anki::set_anki_connect))
+        .routes(routes!(anki_pending_deletions::list_anki_pending_deletions))
+        .routes(routes!(anki_pending_deletions::clear_anki_pending_deletion))
+        .routes(routes!(
+            anki_pending_deletions::clear_anki_pending_deletions
+        ))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_availability::get_media_availability))
@@ -92,6 +103,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(source_form::submit_source_step))
         .routes(routes!(media_stream::stream_media_file))
         .routes(routes!(media_frame::get_media_frame))
+        .routes(routes!(media_clip::get_media_clip))
         .routes(routes!(media_tracks::get_media_tracks))
         .routes(routes!(media_tracks::list_embedded_subtitle_tracks))
         .routes(routes!(
@@ -102,10 +114,16 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(subtitles::get_subtitle_cues))
         .routes(routes!(subtitles::set_subtitle_selection))
         .routes(routes!(
+            alignments::list_alignments,
+            alignments::add_alignment
+        ))
+        .routes(routes!(alignments::remove_alignment))
+        .routes(routes!(alignments::set_translation_document))
+        .routes(routes!(
             media_tracks::set_media_track_selection,
             media_tracks::clear_media_track_selection
         ))
-        .routes(routes!(media_playback::plan_media_playback))
+        .routes(routes!(media_playback_method::choose_media_playback_method))
         .routes(routes!(media_waveform::get_media_waveform))
         .routes(routes!(conversions::get_conversion_playlist))
         .routes(routes!(conversions::get_conversion_init_segment))

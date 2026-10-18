@@ -1,3 +1,4 @@
+import type { LookupSource } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { ActiveWord } from "../components/ClickableText.tsx";
 import type { WordGestures, WordHit } from "../components/useWordGestures.ts";
@@ -16,14 +17,11 @@ export type CueWordGestures = {
     input: WordHit["input"],
     cue: Cue,
   ) => void;
-  // A handler with nothing to answer returns nothing, as the other handlers do.
-  // biome-ignore lint/suspicious/noConfusingVoidType: see above
-  onWordHover?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
-  onWordHoverAnswered?: (
+  onWordHover?: CueWordHandler;
+  lookUpMatchedLength?: (
     hit: WordHit,
-    matchedLength: number | null,
     cue: Cue,
-  ) => void;
+  ) => Promise<number | null> | null;
   onWordHold?: CueWordHandler;
 };
 
@@ -34,16 +32,14 @@ export function gesturesForCue(
 ): WordGestures {
   const bind = <H, R>(handler: ((hit: H, cue: Cue) => R) | undefined) =>
     handler && ((hit: H) => handler(hit, cue));
-  const { onWordPointed, onWordHoverAnswered } = gestures;
+  const { onWordPointed } = gestures;
   return {
     onWordClick: bind(gestures.onWordClick),
     onWordDoubleClick: bind(gestures.onWordDoubleClick),
     onWordPointed:
       onWordPointed && ((hit, input) => onWordPointed(hit, input, cue)),
     onWordHover: bind(gestures.onWordHover),
-    onWordHoverAnswered:
-      onWordHoverAnswered &&
-      ((hit, matchedLength) => onWordHoverAnswered(hit, matchedLength, cue)),
+    lookUpMatchedLength: bind(gestures.lookUpMatchedLength),
     onWordHold: bind(gestures.onWordHold),
   };
 }
@@ -60,4 +56,26 @@ export function activeWordIn(
   cue: Cue,
 ): ActiveWord | undefined {
   return activeWord?.cueIndex === cue.index ? activeWord : undefined;
+}
+
+/** The occurrence the pop-up shows, with the pop-up's id and the length its lookup matched, as `useWordLookup` gives it. */
+type ShownOccurrence = {
+  source: LookupSource | null;
+  start: number;
+  length: number | null | undefined;
+  popupId: string;
+};
+
+/**
+ * The word of a cue the pop-up shows, highlighted only while the subtitles have no lookup cursor,
+ * so that only one word is ever highlighted; undefined while the pop-up shows no word of a cue.
+ */
+export function activeCueWordOf(
+  occurrence: ShownOccurrence | null | undefined,
+  hasCursor: boolean,
+): ActiveCueWord | undefined {
+  if (occurrence?.source?.kind !== "cue") return undefined;
+  const { start, length, popupId } = occurrence;
+  const cueIndex = occurrence.source.cue.index;
+  return { cueIndex, start, length, popupId, isHighlighted: !hasCursor };
 }

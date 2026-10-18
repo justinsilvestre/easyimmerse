@@ -1,45 +1,104 @@
-import { resetBackend } from "@easyimmerse/backend";
-import { cleanup, fireEvent, within } from "@testing-library/react";
-import type { ComponentProps } from "react";
+import { actions } from "@easyimmerse/state";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   findSubtitles,
+  openFlashcardFor,
   renderMediaScreen,
 } from "../testSupport/renderMediaScreen.tsx";
 
-/** How often each text has rendered, by the text. */
-const renderCounts = vi.hoisted(() => new Map<string, number>());
+afterEach(cleanup);
 
-vi.mock("../components/ClickableText.tsx", async (importOriginal) => {
+const viewRenders = vi.hoisted(() => ({ count: 0 }));
+
+// The view renders whenever the screen does, so counting its renders counts the screen's, apart from those of the components inside it.
+vi.mock("../media/MediaView.tsx", async (importOriginal) => {
   const original =
-    await importOriginal<typeof import("../components/ClickableText.tsx")>();
+    await importOriginal<typeof import("../media/MediaView.tsx")>();
   return {
     ...original,
-    ClickableText: (props: ComponentProps<typeof original.ClickableText>) => {
-      renderCounts.set(props.text, (renderCounts.get(props.text) ?? 0) + 1);
-      return <original.ClickableText {...props} />;
+    MediaView: (props: Parameters<typeof original.MediaView>[0]) => {
+      viewRenders.count++;
+      return original.MediaView(props);
     },
   };
 });
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-  renderCounts.clear();
-});
+/** Moves the player's time to each of the given seconds in turn. */
+function tick(
+  store: ReturnType<typeof renderMediaScreen>["store"],
+  seconds: readonly number[],
+) {
+  for (const second of seconds)
+    act(() => store.dispatch(actions.playerTimeChanged(second)));
+}
 
+/** Waits until no request of the backend is pending, such as the lookups of the cues ahead. */
+async function settleRequests(
+  store: ReturnType<typeof renderMediaScreen>["store"],
+) {
+  await vi.waitFor(() => {
+    const { queries } = store.getState().backend as {
+      queries: Record<string, { status: string } | undefined>;
+    };
+    if (Object.values(queries).some((query) => query?.status === "pending"))
+      throw new Error("A request is still pending.");
+  });
+}
+
+// The cards other than the one under the mouse keep their props, as the tests of `cursorIn` and `activeWordIn` check,
+// so each commit renders only that card. The bound counts the commits a hover makes:
+// the cursor pointed at the word, the cached match length once the hover lookup is fulfilled, and the cursor answered.
 describe("MediaScreen renders", () => {
-  it("render only the card under the mouse while the mouse moves onto a word and its lookup answers", async () => {
+  it("commits the screen at most three times while the mouse moves onto a word and its lookup answers", async () => {
+    const commits = { count: 0 };
+    renderMediaScreen({ onCommit: () => commits.count++ });
+    const list = await findSubtitles();
+    const dog = within(list).getByRole("button", { name: "dog" });
+    commits.count = 0;
+    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
+    await vi.waitFor(() =>
+      expect(dog.classList.contains("bg-accent-soft")).toBe(true),
+    );
+    expect(commits.count).toBeLessThanOrEqual(3);
+  });
+
+  it("does not render the screen again while the player's time moves within a cue", async () => {
+    const { store } = renderMediaScreen();
+    await findSubtitles();
+    tick(store, [0.6]);
+    await settleRequests(store);
+    viewRenders.count = 0;
+    tick(store, [0.7, 0.8, 0.9, 1.0, 1.1]);
+    expect(viewRenders.count).toBe(0);
+  });
+
+  it("renders the screen once when the time moves into the next cue, and not again when the lookups ahead answer", async () => {
+    const { store } = renderMediaScreen();
+    await findSubtitles();
+    tick(store, [0.6]);
+    await settleRequests(store);
+    viewRenders.count = 0;
+    tick(store, [1.4, 1.6, 1.8, 1.9]);
+    await settleRequests(store);
+    expect(viewRenders.count).toBe(1);
+  });
+
+  it("does not render the screen again while a field of the open flashcard is typed in", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    const card = within(list).getAllByRole("listitem")[1] as HTMLElement;
-    renderCounts.clear();
-    fireEvent.pointerEnter(within(card).getByRole("button", { name: "dog" }), {
-      pointerType: "mouse",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    expect([...renderCounts.keys()]).toEqual([
-      "The dog wants to eat.\nIt is hungry.",
-    ]);
+    await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
+    const form = screen.getByRole("form", { name: "Flashcard" });
+    const field = within(form).getAllByRole("textbox")[0] as HTMLElement;
+    viewRenders.count = 0;
+    for (const value of ["c", "ca", "cat"])
+      fireEvent.change(field, { target: { value } });
+    expect(viewRenders.count).toBe(0);
   });
 });

@@ -1,18 +1,26 @@
-import { type EditedFlashcard, segmentIdOf } from "./editedFlashcard.ts";
-import { type EditorAction, moveClipEndpoint } from "./editFlashcard.ts";
+import {
+  type EditorAction,
+  type FlashcardForm,
+  moveClipEndpoint,
+  segmentIdOf,
+} from "@easyimmerse/state";
 
 /**
- * Moves the open card's clip edges and screenshot time from the waveform, in the editor only, to be saved with the rest of it.
- * The waveform lets only the open card's handles be dragged, so a move reported for any other card is ignored.
+ * Moves the open card's clip edges and screenshot time from the waveform's handles, with the same effect as editing them in the form.
+ * `formNow` gives the form as it is when a handle moves.
+ * The waveform offers only the open card's handles, so a move reported for any other card is ignored.
  */
 export function flashcardRetiming(
-  edited: EditedFlashcard | null,
+  formNow: () => FlashcardForm | null,
   edit: (action: EditorAction) => void,
 ) {
-  const isOpen = (id: string) => edited !== null && segmentIdOf(edited) === id;
+  const openForm = (id: string) => {
+    const form = formNow();
+    return form !== null && segmentIdOf(form.card) === id ? form : null;
+  };
   return {
     moveClipEndpoint: (id: string, endpoint: "start" | "end", ms: number) => {
-      const openClip = isOpen(id) && edited?.editor.content.audio_context;
+      const openClip = openForm(id)?.card.editor.content.audio_context;
       if (openClip)
         edit({
           type: "clipChanged",
@@ -20,7 +28,8 @@ export function flashcardRetiming(
         });
     },
     moveScreenshot: (id: string, ms: number) => {
-      if (isOpen(id)) edit({ type: "screenshotMsChanged", ms: Math.round(ms) });
+      if (openForm(id))
+        edit({ type: "screenshotMsChanged", ms: Math.round(ms) });
     },
   };
 }

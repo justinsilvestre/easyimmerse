@@ -1,12 +1,17 @@
+import type {
+  AnkiFateOfDeletion,
+  EditorAction,
+  EditorState,
+} from "@easyimmerse/state";
+import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
-import { ModalDialog } from "../components/ModalDialog.tsx";
 import { TagsField } from "../components/TagsField.tsx";
-import type { EditorAction, EditorState } from "./editFlashcard.ts";
+import { FlashcardDeleteDialog } from "./FlashcardDeleteDialog.tsx";
 import {
   MediaFields,
   type MediaWaveform,
@@ -21,7 +26,8 @@ import {
  * The form for a flashcard that was just created or reopened.
  * Fields outside the project's flashcard settings stay hidden until checked in the "More fields" menu; the screenshot has its own checkbox.
  * The caller holds the flashcard being edited, so that other views can show and change it too.
- * Delete asks first, in a dialog naming the word; a new card that was never saved has no Delete, since Close without saving offers Undo.
+ * Delete asks first, in a dialog naming the word and telling what becomes of the card in Anki;
+ * a new card that was never saved has no Delete, since Close without saving offers Undo.
  */
 export function FlashcardEditor({
   state,
@@ -29,13 +35,16 @@ export function FlashcardEditor({
   languages,
   waveform,
   screenshotUrl = null,
+  mediaDurationMs = 0,
   saveStatus = "idle",
   isNew = false,
   hasSaveFailed = false,
   isAwaitingLookup = false,
+  ankiFate = null,
   onSave,
   onDelete,
   onClose,
+  onPlayClip,
 }: {
   state: EditorState;
   dispatch: (action: EditorAction) => void;
@@ -44,6 +53,8 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
+  /** The media file's length, which the clip's end stays within; zero, the default, while it is unknown. */
+  mediaDurationMs?: number;
   /**
    * Whether a save the user asked for waits for definitions still on their way, or is under way.
    * Meanwhile Save, Close and Delete do nothing and the fields are read-only, so that what is saved is what is shown.
@@ -55,9 +66,13 @@ export function FlashcardEditor({
   hasSaveFailed?: boolean;
   /** Whether the word's lookup has yet to answer, which the fields it fills say while they are empty. */
   isAwaitingLookup?: boolean;
+  /** What deleting the flashcard does to its note in Anki, which Delete's confirmation tells, or null when that is not known. */
+  ankiFate?: AnkiFateOfDeletion | null;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
+  /** Plays the clip on the media player. */
+  onPlayClip: (clip: AudioClip) => void;
 }) {
   const { content, includedFields } = state;
   const saveStatusId = useId();
@@ -98,7 +113,9 @@ export function FlashcardEditor({
             state={state}
             waveform={waveform}
             screenshotUrl={screenshotUrl}
+            mediaDurationMs={mediaDurationMs}
             dispatch={dispatch}
+            onPlayClip={onPlayClip}
             isReadOnly={isSaveInert}
           />
           {includedFields.includes("tags") && (
@@ -166,26 +183,14 @@ export function FlashcardEditor({
         </div>
       </form>
       {isConfirmingDelete && (
-        <ModalDialog
-          title="Delete this flashcard?"
-          description={`The flashcard for “${content.word}” is deleted from the project. The deletion cannot be undone.`}
+        <FlashcardDeleteDialog
+          word={content.word}
+          ankiFate={ankiFate}
           onCancel={() => setConfirmingDelete(false)}
-          footer={
-            <>
-              <Button autoFocus onClick={() => setConfirmingDelete(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  setConfirmingDelete(false);
-                  onDelete();
-                }}
-              >
-                Delete
-              </Button>
-            </>
-          }
+          onDelete={() => {
+            setConfirmingDelete(false);
+            onDelete();
+          }}
         />
       )}
     </>

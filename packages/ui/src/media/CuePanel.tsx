@@ -1,3 +1,4 @@
+import type { ItemSpan, TextCursor } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
@@ -12,12 +13,8 @@ import { lineStepOfKey } from "../components/cursorKeys.ts";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { clickableWordAttribute } from "../components/lookupTrigger.ts";
 import type { Range } from "../components/RunText.tsx";
-import type { TextCursor } from "../components/textCursor.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import {
-  type ItemSpan,
-  useVisibleItemSpan,
-} from "../hooks/useVisibleItemSpan.ts";
+import { useVisibleItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,

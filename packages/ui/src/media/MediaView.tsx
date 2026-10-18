@@ -1,7 +1,8 @@
+import type { SubtitleDisplay } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
-import { type PointerEvent, type ReactNode, type Ref, useRef } from "react";
+import { type PointerEvent, type ReactNode, useRef } from "react";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
@@ -12,18 +13,12 @@ import type { CueTextCursor } from "./cueCursor.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
-import {
-  type PlayerCallbacks,
-  PlayerControls,
-  type PlayerPanelsState,
-} from "./PlayerControls.tsx";
-import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import type { PlayerCallbacks, PlayerPanelsState } from "./PlayerControls.tsx";
 import { SourceChip } from "./SourceChip.tsx";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import { SubtitleBand } from "./SubtitleBand.tsx";
 import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
-import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
-import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
+import { SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
 import {
   pictureHeightAt,
@@ -33,8 +28,6 @@ import { usePictureAspectRatio } from "./usePictureAspectRatio.ts";
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
-  /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
-  ref?: Ref<HTMLDivElement>;
   /**
    * The file's name, the name of the project it belongs to, which the way back is named after,
    * and the plugin the file was imported through, if any, which is unavailable when it is no longer installed.
@@ -46,8 +39,9 @@ type MediaViewProps = {
   };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
-  playback: PlayerControlsState;
-  tracks: SubtitleTrackChoices;
+  isPlaying: boolean;
+  /** The bar of player controls over the bottom of the stage, such as `PlayerControls`. */
+  controls: ReactNode;
   cues: readonly Cue[];
   translationCues: readonly Cue[];
   /** The cue the subtitles over the stage show. */
@@ -109,16 +103,16 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The toggles for the panels around the stage and for fullscreen sit in the app footer.
  * In fullscreen, the footer moves under the controls at the bottom of the stage and shows and hides with them.
  * On a phone with a notch or a home indicator, the screen keeps clear of them.
- * The panels around the stage come in as children, so that each can be wired to the store on its own.
+ * The panels around the stage and the controls come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
-  const { playback, cues, translationCues, shownCue, panels } = props;
+  const { cues, translationCues, shownCue, panels } = props;
   const pointer = usePointerActivity();
   const onStageClick = useStageClicks(
     props.playerCallbacks.onTogglePlay,
     props.playerCallbacks.onToggleFullscreen,
   );
-  const isPausedByUser = !playback.isPlaying && props.lookup == null;
+  const isPausedByUser = !props.isPlaying && props.lookup == null;
   const showsChrome = isPausedByUser || pointer.isActive;
   const showsSubtitles =
     !panels.areSubtitlesHidden &&
@@ -133,10 +127,7 @@ export function MediaView(props: MediaViewProps) {
     </AppFooter>
   );
   return (
-    <div
-      ref={props.ref}
-      className="flex h-dvh flex-col overflow-hidden bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg"
-    >
+    <div className="flex h-dvh flex-col overflow-hidden bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg">
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main
           className={clsx(
@@ -238,12 +229,7 @@ export function MediaView(props: MediaViewProps) {
                 className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
               >
                 <Fading isShown={showsChrome}>
-                  <PlayerControls
-                    playback={playback}
-                    tracks={props.tracks}
-                    panels={panels}
-                    callbacks={props.playerCallbacks}
-                  />
+                  {props.controls}
                   {panels.isFullscreen && footer}
                 </Fading>
               </div>

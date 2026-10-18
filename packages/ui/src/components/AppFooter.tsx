@@ -1,9 +1,8 @@
+import { actions, selectIsSettingsOpen } from "@easyimmerse/state";
 import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
-import {
-  useIsSettingsOpen,
-  useNavigationActions,
-} from "../navigationContext.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { IconButton } from "./IconButton.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 
@@ -13,8 +12,10 @@ import { ThemeMenu } from "./ThemeMenu.tsx";
  * While Settings is open, its control stands for the page already open and does nothing.
  */
 export function AppFooter({ children }: { children?: ReactNode }) {
-  const { openSettings } = useNavigationActions();
-  const isSettingsOpen = useIsSettingsOpen();
+  const dispatch = useAppDispatch();
+  const isSettingsOpen = useAppSelector(selectIsSettingsOpen);
+  const openSettings = () =>
+    dispatch(actions.navigated({ type: "openSettings" }));
   return (
     <footer className="sticky bottom-0 border-t border-line bg-surface">
       <div className="flex items-center justify-between gap-2 px-2 py-0.5">

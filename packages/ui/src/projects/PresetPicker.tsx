@@ -15,23 +15,25 @@ const roomyScreenQuery = "(min-width: 40rem)";
 const customOption = { value: "custom", label: "Custom" } as const;
 
 /**
- * The flashcard presets, with the field checkboxes under them.
+ * The flashcard presets, with the field checkboxes under them. A preset sets both the fields and which of them are on the front.
  * On a roomy screen the checkboxes are always shown and "Custom" appears only once the selection matches no preset.
  * On a narrow screen the checkboxes stay hidden until "Custom" is chosen, which then shows as the preset.
  */
 export function PresetPicker({
   fields,
+  frontFields,
   onPresetChosen,
   children,
 }: {
   fields: readonly FlashcardFieldKey[];
+  frontFields: readonly FlashcardFieldKey[];
   onPresetChosen: (preset: FlashcardPreset) => void;
-  /** The field checkboxes. */
+  /** The field checkboxes and the controls that put fields on the front or the back. */
   children: ReactNode;
 }) {
   const isRoomy = useMediaQuery(roomyScreenQuery);
   const [isCustomOpen, setCustomOpen] = useState(false);
-  const matching = presetMatching(fields);
+  const matching = presetMatching(fields, frontFields);
   const showsCustomOption = !isRoomy || matching === "custom";
   const value = !isRoomy && isCustomOpen ? "custom" : matching;
   return (

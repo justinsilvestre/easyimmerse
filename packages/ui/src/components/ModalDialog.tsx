@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef } from "react";
+import { NoticeRegion } from "../notices/NoticeRegion.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { focusInitialControl, keepFocusInside } from "./modalFocus.ts";
 
@@ -11,6 +12,7 @@ import { focusInitialControl, keepFocusInside } from "./modalFocus.ts";
  * and returns to where it was when the dialog closes.
  * Escape and the close button cancel; a click outside does nothing, so that a stray click cannot cancel.
  * The caller decides what cancelling means and puts the dialog's buttons in the footer.
+ * Notices raised while it is open show inside it, since the page beneath cannot be reached.
  */
 export function ModalDialog({
   title,
@@ -87,6 +89,7 @@ export function ModalDialog({
         </div>
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
       </div>
+      <NoticeRegion />
     </dialog>
   );
 }

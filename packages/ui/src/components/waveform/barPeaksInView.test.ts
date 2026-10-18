@@ -3,7 +3,7 @@ import { barPeaksInView } from "./barPeaksInView.ts";
 
 /** One loaded window, the file's first thirty seconds, whose peaks rise by one every 10 ms peak. */
 const windows = new Map([
-  [0, Uint8Array.from({ length: 3000 }, (_, index) => index % 256)],
+  [0, Array.from({ length: 3000 }, (_, index) => index % 256)],
 ]);
 
 /** 600 px over a minute: 0.1 px per 10 ms peak, so forty peaks to each 4 px bar. */

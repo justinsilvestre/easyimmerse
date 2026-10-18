@@ -3,6 +3,9 @@
 //! `Storage` can be shared between threads. Writes run one at a time,
 //! while reads on a database file run beside them and see only what has been committed.
 
+mod alignments;
+mod anki_pending_deletions;
+mod anki_sync;
 mod connections;
 mod dictionaries;
 mod error;
@@ -17,6 +20,7 @@ mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
 
+pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
 pub use sample_content::SampleContentError;
@@ -24,10 +28,11 @@ pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
 
+use easyimmerse_core::alignment::{AddAlignmentRequest, Alignment, AlignmentId};
 use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
 };
-use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
@@ -98,6 +103,15 @@ impl Storage {
         self.write(|conn| projects::mark_project_opened(conn, id))
     }
 
+    /// Turns AnkiConnect on or off for the project.
+    pub fn set_uses_anki_connect(
+        &self,
+        id: &ProjectId,
+        uses_anki_connect: bool,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| projects::set_uses_anki_connect(conn, id, uses_anki_connect))
+    }
+
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
         self.write(|conn| projects::seed_placeholder_projects(conn))
     }
@@ -153,6 +167,45 @@ impl Storage {
         self.write(|conn| media_files::set_track_selection_json(conn, id, track_selection_json))
     }
 
+    /// Pairs a document with the translation it is read beside; `None` clears the pairing.
+    /// The translation must be another media file of the same project.
+    pub fn set_translation_document(
+        &self,
+        id: &MediaFileId,
+        translation_media_file_id: Option<&MediaFileId>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            media_files::set_translation_document(conn, id, translation_media_file_id)
+        })
+    }
+
+    /// Lists a document's alignments, newest first.
+    pub fn list_alignments(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Vec<Alignment>, StorageError> {
+        self.read(|conn| alignments::list_alignments(conn, media_file_id))
+    }
+
+    /// Adds an alignment to a document. Its counterpart must be another media file of the
+    /// same project.
+    pub fn add_alignment(
+        &self,
+        media_file_id: &MediaFileId,
+        request: &AddAlignmentRequest,
+    ) -> Result<Alignment, StorageError> {
+        self.write(|conn| alignments::add_alignment(conn, media_file_id, request))
+    }
+
+    /// Removes one of a document's alignments.
+    pub fn remove_alignment(
+        &self,
+        media_file_id: &MediaFileId,
+        alignment_id: &AlignmentId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| alignments::remove_alignment(conn, media_file_id, alignment_id))
+    }
+
     /// Lists every distinct local path that some media file still points at.
     pub fn list_referenced_source_paths(&self) -> Result<Vec<String>, StorageError> {
         self.read(media_files::list_referenced_source_paths)
@@ -183,8 +236,58 @@ impl Storage {
         self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
+    /// Deletes a flashcard. When its note may be in Anki and its project uses AnkiConnect or lists such deletions,
+    /// the deletion of its note from Anki is recorded in the same transaction.
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
+    }
+
+    /// Lists the project's deleted flashcards whose notes may still be in Anki, oldest first.
+    pub fn list_anki_pending_deletions(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<Vec<AnkiPendingDeletion>, StorageError> {
+        self.read(|conn| anki_pending_deletions::list_anki_pending_deletions(conn, project_id))
+    }
+
+    /// Removes the named deletions from the project in one transaction, as when the user marks them done.
+    pub fn clear_anki_pending_deletions(
+        &self,
+        project_id: &ProjectId,
+        flashcard_ids: &[FlashcardId],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            anki_pending_deletions::clear_anki_pending_deletions(conn, project_id, flashcard_ids)
+        })
+    }
+
+    /// Forgets that a flashcard's note is to be deleted from Anki, once the client has deleted it.
+    pub fn clear_anki_pending_deletion(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            anki_pending_deletions::clear_anki_pending_deletion(conn, project_id, flashcard_id)
+        })
+    }
+
+    /// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so.
+    /// A flashcard of another project, or one that is gone, is passed over.
+    pub fn record_anki_export(&self, package: &DeliveredPackage) -> Result<(), StorageError> {
+        self.write(|conn| anki_sync::record_anki_export(conn, package))
+    }
+
+    /// Records that AnkiConnect put the project's flashcards into Anki as they were read at `sent_at_ms`, in one transaction.
+    /// A flashcard of another project is passed over,
+    /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
+    pub fn record_anki_send(
+        &self,
+        project_id: &ProjectId,
+        ids: &[FlashcardId],
+        sent_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| anki_sync::record_anki_send(conn, project_id, ids, sent_at_ms))
     }
 
     pub fn list_subtitle_tracks(

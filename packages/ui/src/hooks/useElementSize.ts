@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useLayoutEffect, useState } from "react";
 
-export type ElementSize = { width: number; height: number };
+type ElementSize = { width: number; height: number };
 
 /** The element's current size in CSS pixels, borders included, followed as it resizes. */
 export function useElementSize(

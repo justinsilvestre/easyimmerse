@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { exampleSourceMediaForm } from "../plugins/examplePluginForms.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { SourceMediaDialog } from "./SourceMediaDialog.tsx";
 
 const meta = {
   title: "Subtitles/SourceMediaDialog",
   component: SourceMediaDialog,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     title: "Video site",

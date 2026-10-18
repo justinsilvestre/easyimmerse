@@ -1,15 +1,13 @@
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { actions, selectRoute } from "@easyimmerse/state";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  NavigationActionsContext,
-  SettingsOpenContext,
-} from "../navigationContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { AppFooter } from "./AppFooter.tsx";
 
 afterEach(cleanup);
 
+/** Renders the footer, with Settings open when `isSettingsOpen`, and counts the actions dispatched from then on. */
 function renderFooter({
   isSettingsOpen = false,
   children,
@@ -17,21 +15,14 @@ function renderFooter({
   isSettingsOpen?: boolean;
   children?: ReactNode;
 } = {}) {
-  const openSettings = vi.fn();
-  renderWithAppStore(
-    <NavigationActionsContext
-      value={{
-        openSettings,
-        openDictionaries: () => undefined,
-        openMediaFile: () => undefined,
-      }}
-    >
-      <SettingsOpenContext value={isSettingsOpen}>
-        <AppFooter>{children}</AppFooter>
-      </SettingsOpenContext>
-    </NavigationActionsContext>,
-  );
-  return { openSettings };
+  const { store } = renderWithAppStore(<AppFooter>{children}</AppFooter>);
+  if (isSettingsOpen)
+    act(() => {
+      store.dispatch(actions.navigated({ type: "openSettings" }));
+    });
+  const dispatched = vi.fn();
+  store.subscribe(dispatched);
+  return { store, dispatched };
 }
 
 describe("AppFooter", () => {
@@ -41,9 +32,9 @@ describe("AppFooter", () => {
   });
 
   it("opens Settings from the gear button", () => {
-    const { openSettings } = renderFooter();
+    const { store } = renderFooter();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(openSettings).toHaveBeenCalledOnce();
+    expect(selectRoute(store.getState()).screen).toBe("settings");
   });
 
   it("shows the theme menu", () => {
@@ -86,9 +77,9 @@ describe("AppFooter", () => {
     });
 
     it("does nothing when the gear button is clicked", () => {
-      const { openSettings } = renderFooter({ isSettingsOpen: true });
+      const { dispatched } = renderFooter({ isSettingsOpen: true });
       fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-      expect(openSettings).not.toHaveBeenCalled();
+      expect(dispatched).not.toHaveBeenCalled();
     });
   });
 });

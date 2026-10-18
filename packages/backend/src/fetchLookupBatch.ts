@@ -8,25 +8,27 @@ import type { ThunkDispatch } from "redux-thunk";
 import { backendApi, type selectRunningBatches } from "./backendApi.ts";
 import type { BackendError } from "./backendClient.ts";
 import { rememberFailure } from "./failedPassages.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import type { Passage } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
 
 type BackendState = Parameters<typeof selectRunningBatches>[0];
 export type BackendThunkDispatch = ThunkDispatch<
   BackendState,
-  unknown,
+  BackendThunkExtra,
   UnknownAction
 >;
 
 /**
  * Fetches one batch of passages of one language, then caches the lookups given for positions in them.
  * When the server rejects the batch, its halves are fetched apart, so that one text it cannot take does not cost the others;
- * passages whose batch fails otherwise, or that are rejected on their own, are remembered as failed.
+ * passages whose batch fails otherwise, or that are rejected on their own, are remembered as failed at `now`.
  */
 export async function fetchLookupBatch(
   dispatch: BackendThunkDispatch,
   passages: readonly Passage[],
   lookups: readonly LookupQuery[],
+  now: number,
 ): Promise<void> {
   const request = requestOf(passages);
   const outcome = await dispatch(
@@ -40,9 +42,11 @@ export async function fetchLookupBatch(
   if ("answer" in outcome)
     return cacheAnswer(dispatch, request, outcome.answer, lookups);
   if (outcome.error.status !== 400 || passages.length === 1)
-    return rememberFailure(dispatch, passages);
+    return rememberFailure(dispatch, passages, now);
   await Promise.all(
-    halvesOf(passages).map((half) => fetchLookupBatch(dispatch, half, lookups)),
+    halvesOf(passages).map((half) =>
+      fetchLookupBatch(dispatch, half, lookups, now),
+    ),
   );
 }
 

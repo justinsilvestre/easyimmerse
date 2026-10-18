@@ -1,13 +1,18 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { SpeedMenu } from "./SpeedMenu.tsx";
 
 afterEach(cleanup);
 
 function renderSpeedMenu(speed = 1) {
-  const onSpeedChange = vi.fn();
-  render(<SpeedMenu speed={speed} onSpeedChange={onSpeedChange} />);
-  return onSpeedChange;
+  const speedChanges: number[] = [];
+  render(
+    <SpeedMenu
+      speed={speed}
+      onSpeedChange={(changed) => speedChanges.push(changed)}
+    />,
+  );
+  return speedChanges;
 }
 
 const speedButton = () =>
@@ -61,10 +66,10 @@ describe("SpeedMenu", () => {
   });
 
   it("changes the speed to the one chosen", () => {
-    const onSpeedChange = renderSpeedMenu();
+    const speedChanges = renderSpeedMenu();
     fireEvent.click(speedButton());
     fireEvent.click(screen.getByRole("menuitemradio", { name: "2×" }));
-    expect(onSpeedChange).toHaveBeenCalledWith(2);
+    expect(speedChanges).toEqual([2]);
   });
 
   it("closes once a speed is chosen", () => {

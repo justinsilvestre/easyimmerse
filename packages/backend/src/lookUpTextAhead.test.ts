@@ -1,9 +1,8 @@
 import { createAppStore, createRecordingEffects } from "@easyimmerse/state";
 import type { LookupResponse } from "@easyimmerse/types";
-import { afterEach, describe, expect, it } from "vitest";
-import type { BackendRequest } from "./backendClient.ts";
-import { backendStoreParts } from "./backendStoreParts.ts";
-import { configureBackend, resetBackend } from "./configureBackend.ts";
+import { describe, expect, it } from "vitest";
+import type { BackendClient, BackendRequest } from "./backendClient.ts";
+import { createBackendStoreParts } from "./backendStoreParts.ts";
 import { lookUpTextAhead } from "./lookUpTextAhead.ts";
 
 const response: LookupResponse = { results: [], kanji: [], stylesheets: [] };
@@ -12,17 +11,18 @@ const query = { text: "猫が", language: "ja" };
 
 function createConfiguredStore() {
   const requests: BackendRequest[] = [];
-  configureBackend({
+  const client: BackendClient = {
     send: async <T>(request: BackendRequest) => {
       requests.push(request);
       return { data: response as T };
     },
-  });
-  const store = createAppStore(createRecordingEffects(), backendStoreParts);
+  };
+  const store = createAppStore(
+    createRecordingEffects(),
+    createBackendStoreParts(client, null),
+  );
   return { store, requests };
 }
-
-afterEach(resetBackend);
 
 describe("lookUpTextAhead", () => {
   it("resolves the lookup's response", async () => {

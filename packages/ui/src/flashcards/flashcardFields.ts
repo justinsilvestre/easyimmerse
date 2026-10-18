@@ -1,12 +1,5 @@
-import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
+import type { FlashcardFieldKey } from "@easyimmerse/types";
 import { languageName } from "../projects/languages.ts";
-
-/** The keys of a flashcard's fields that hold text the user can type. */
-export type FlashcardTextFieldKey = {
-  [Key in FlashcardFieldKey]: FlashcardContent[Key] extends string
-    ? Key
-    : never;
-}[FlashcardFieldKey];
 
 /** The project's languages as BCP 47 codes: the one being learned and the one translations are in. */
 export type FlashcardLanguages = { target: string; translation: string };
@@ -103,13 +96,4 @@ export function findFlashcardField(
   );
   if (!field) throw new Error(`Unknown flashcard field: ${key}`);
   return field;
-}
-
-/** Adds the field to the selection, or removes it when it is already there. */
-export function toggleField(
-  fields: readonly FlashcardFieldKey[],
-  key: FlashcardFieldKey,
-): FlashcardFieldKey[] {
-  if (!fields.includes(key)) return [...fields, key];
-  return fields.filter((field) => field !== key);
 }

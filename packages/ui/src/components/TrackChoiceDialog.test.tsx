@@ -1,6 +1,7 @@
 import type { TrackSelection } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { TrackChoiceDialog } from "./TrackChoiceDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
 
@@ -40,21 +41,24 @@ const audio: TrackChoice[] = [
   },
 ];
 
-function renderDialog(initialSelection?: TrackSelection) {
+function renderDialog(selection: TrackSelection | null = null) {
   const chosen: TrackSelection[] = [];
+  const selected: TrackSelection[] = [];
   let cancelled = 0;
   render(
     <TrackChoiceDialog
       videoTracks={video}
       audioTracks={audio}
-      initialSelection={initialSelection}
-      onChoose={(selection) => chosen.push(selection)}
+      selection={selection}
+      onSelect={(changed) => selected.push(changed)}
+      onChoose={(chosenSelection) => chosen.push(chosenSelection)}
       onCancel={() => {
         cancelled += 1;
       }}
     />,
+    { wrapper: TestStoreProvider },
   );
-  return { chosen, wasCancelled: () => cancelled > 0 };
+  return { chosen, selected, wasCancelled: () => cancelled > 0 };
 }
 
 const clickChoose = () =>
@@ -113,17 +117,22 @@ describe("TrackChoiceDialog", () => {
     ).toHaveProperty("checked", true);
   });
 
-  it("returns the initial selection when nothing is changed", () => {
+  it("returns the shown selection when nothing is changed", () => {
     const { chosen } = renderDialog();
     clickChoose();
     expect(chosen).toEqual([{ video: 0, audio: 3 }]);
   });
 
-  it("returns a changed selection", () => {
-    const { chosen } = renderDialog();
+  it("reports a changed selection", () => {
+    const { selected } = renderDialog();
     fireEvent.click(
       screen.getByRole("radio", { name: "Japanese · Commentary" }),
     );
+    expect(selected).toEqual([{ video: 0, audio: 2 }]);
+  });
+
+  it("returns the given selection when Choose is clicked", () => {
+    const { chosen } = renderDialog({ video: 0, audio: 2 });
     clickChoose();
     expect(chosen).toEqual([{ video: 0, audio: 2 }]);
   });

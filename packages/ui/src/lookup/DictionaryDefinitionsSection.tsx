@@ -15,11 +15,13 @@ export function DictionaryDefinitionsSection({
   dictionaryDefinitions: { dictionaryId, dictionaryTitle, entry, tags },
   resolveMediaUrl,
   onWordLookup,
+  onWordHold,
   onLookup,
 }: {
   dictionaryDefinitions: DictionaryDefinitions;
   resolveMediaUrl: ResolveMediaUrl;
   onWordLookup: (word: string) => void;
+  onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
 }) {
   return (
@@ -54,6 +56,7 @@ export function DictionaryDefinitionsSection({
                     dictionaryId={dictionaryId}
                     resolveMediaUrl={resolveMediaUrl}
                     onWordLookup={onWordLookup}
+                    onWordHold={onWordHold}
                     onLookup={onLookup}
                   />
                 </div>

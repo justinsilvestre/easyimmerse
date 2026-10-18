@@ -21,8 +21,8 @@ use crate::manifest::{Manifest, read_manifest, write_manifest};
 use crate::source_identity::SourceIdentity;
 use crate::waveform::WaveformDecoder;
 
-/// How long a playback request waits for encoder discovery before planning without video
-/// transcoding. Discovery takes well under a second on most machines.
+/// How long a playback request waits for encoder discovery before choosing a playback method without video transcoding.
+/// Discovery takes well under a second on most machines.
 const ENCODER_PATIENCE: Duration = Duration::from_secs(5);
 
 #[derive(Clone)]
@@ -88,7 +88,7 @@ impl ConversionService {
         self.inner.encoders.start(self.inner.paths.clone());
     }
 
-    /// The settings the playback planner uses: the preferred audio target, else AAC, and the
+    /// The settings the playback method choice uses: the preferred audio target, else AAC, and the
     /// discovered video encoder when there is one.
     pub async fn settings(
         &self,

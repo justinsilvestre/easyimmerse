@@ -43,6 +43,14 @@ pub struct Flashcard {
     pub created_at_ms: u64,
     /// Milliseconds since the Unix epoch.
     pub updated_at_ms: u64,
+    /// Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
+    /// The flashcard has changed since then when `updated_at_ms` is later.
+    pub exported_at_ms: Option<u64>,
+    /// Whether any Anki package has held the flashcard, whether or not that export marked it as exported.
+    pub was_packaged: bool,
+    /// Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
+    /// The flashcard has changed since then when `updated_at_ms` is later.
+    pub sent_at_ms: Option<u64>,
 }
 
 /// What the editor sends to create or replace a flashcard.
@@ -114,6 +122,18 @@ pub enum FlashcardFieldKey {
     AudioContext,
     Screenshot,
     Tags,
+}
+
+/// A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.
+/// It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct AnkiPendingDeletion {
+    pub flashcard_id: FlashcardId,
+    /// The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded.
+    pub word: String,
+    /// Milliseconds since the Unix epoch when the flashcard was deleted.
+    pub requested_at_ms: u64,
 }
 
 #[cfg(test)]

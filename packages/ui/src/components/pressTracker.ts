@@ -11,18 +11,25 @@ export function createPressTracker() {
   const holdTimer = createTimer();
   let press = { x: 0, y: 0, isTouch: false, isHeld: false };
   return {
-    /** Starts a press; a touch that stays put for `holdMs` calls `onHold`. */
-    start(point: PointerPoint, onHold: () => void) {
+    /**
+     * Starts a press; a touch that stays put for `holdMs` calls `onHold`, and so does a mouse press when `timesMouse` is set.
+     * When `onHold` returns false it did nothing, and the click that ends the press is reported as usual.
+     */
+    start(
+      point: PointerPoint,
+      // biome-ignore lint/suspicious/noConfusingVoidType: most callers return nothing, which counts as handling the hold.
+      onHold: () => boolean | void,
+      timesMouse = false,
+    ) {
       press = {
         x: point.clientX,
         y: point.clientY,
         isTouch: point.pointerType !== "mouse",
         isHeld: false,
       };
-      if (!press.isTouch) return;
+      if (!press.isTouch && !timesMouse) return;
       holdTimer.restart(holdMs, () => {
-        press.isHeld = true;
-        onHold();
+        press.isHeld = onHold() !== false;
       });
     },
     move(point: PointerPoint) {
@@ -37,7 +44,7 @@ export function createPressTracker() {
     origin: () => ({ x: press.x, y: press.y }),
     /** Whether the last press came from a touch or a pen rather than a mouse. */
     isTouch: () => press.isTouch,
-    /** Tells, once, whether the last press was a held tap, whose closing click is then dropped. */
+    /** Tells, once, whether the last press was held, whose closing click is then dropped. */
     takeHeld(): boolean {
       const isHeld = press.isHeld;
       press.isHeld = false;

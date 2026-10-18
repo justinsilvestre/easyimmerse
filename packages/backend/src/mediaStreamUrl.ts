@@ -1,4 +1,4 @@
-import type { ServerConfig } from "./resolveServerConfig.ts";
+import type { ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL a media element loads a media file from.

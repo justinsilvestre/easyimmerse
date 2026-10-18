@@ -1,14 +1,10 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { PreferenceToggle } from "./PreferenceToggle.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const hint =
   "Converted audio keeps its full quality but takes more disk space.";

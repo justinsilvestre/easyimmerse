@@ -1,23 +1,28 @@
+import { isAudioFileName } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useEffect, useMemo } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { browserFileNotices } from "../media/browserFileNotices.ts";
-import { isAudioFileName } from "./isAudioFileName.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 import type { PlayerStatus } from "./PlayerStatus.ts";
 import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
 
 /** Plays a file the browser holds from a blob URL. Such a file is never converted and has no waveform. */
 export function BrowserFilePlayer({ mediaFile }: { mediaFile: MediaFile }) {
-  const registry = useBrowserFileRegistry();
-  const file = registry?.find(mediaFile.name, mediaFile.source) ?? null;
-  const url = useObjectUrl(file);
   return (
     <PlayerPanel
       name={mediaFile.name}
-      playback={browserPlayback(registry !== null, file, url, mediaFile.name)}
+      playback={useBrowserFilePlayback(mediaFile)}
     />
   );
+}
+
+/** What the player shows for a file the browser holds: its blob URL once the file is found in the browser's registry. */
+export function useBrowserFilePlayback(mediaFile: MediaFile): PlayerStatus {
+  const registry = useBrowserFileRegistry();
+  const file = registry?.find(mediaFile.name, mediaFile.source) ?? null;
+  const url = useObjectUrl(file);
+  return browserPlayback(registry !== null, file, url, mediaFile.name);
 }
 
 function browserPlayback(

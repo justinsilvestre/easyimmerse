@@ -21,6 +21,7 @@ Each bug report is to be logged in this format:
 - Transcoding test drops frames once 2026-10-04
   - Run the `rust` workflow's macOS job; in run 37219960258 `accuracy::transcoded_frames_present_at_their_source_times` in `crates/conversion` produced 236 frames instead of 250 with the VideoToolbox encoder, after passing in the six runs before and the run after it.
   - A converted file should hold every source frame on every run. Until the cause is known (the encoder on a virtual Mac, or a run stopped before its last segment), a repeat failure should be investigated rather than rerun.
+  - In run 39031140114 (2026-10-17) the same test failed differently: after the encoder check passed, ffmpeg's VideoToolbox encoder refused the third segment's frames with "IOServiceMatching failed for: AppleM2ScalerParavirtDriver", an error of the runner's paravirtualized graphics driver, while the other platforms passed. This points to the virtual Mac's encoder as the cause of both symptoms.
 - Cache clearing test drops connection 2026-10-05
   - Run the `rust` workflow's `windows-11-arm` job; in runs 37225462574, 37241200447, and 37310370925, `media_conversion::clearing_the_cache_answers_with_the_status` in `crates/api` panicked because the connection was aborted (Windows error 10053) before the response arrived. Other runs of the same job pass, and it has not been reproduced on macOS. The test posts a `{}` body to a route that never reads a body, which may be related.
   - The request should get its response on every run, so the test passes on every platform.
@@ -33,15 +34,9 @@ Each bug report is to be logged in this format:
 
 ## Flashcards
 
-- Retry drops a pending Open 2026-10-06
-  - Press Open on a flashcard listed as not saved, then Retry before its screen has loaded, or the reverse. When the Retry fails, or succeeds after a retiming, the flashcard stays listed but no longer waits to open, so the screen appears without it and with no notice.
-  - A flashcard the user asked to open should still open once its screen shows, unless the Retry saved it and took it off the list.
 - Unsaved cards lack cue marks 2026-10-06
   - List a flashcard as not saved, including one never saved, and look at the subtitle list: only cues of saved flashcards are marked.
   - A flashcard listed as not saved should get the same mark on its cue, since the waveform already draws it.
-- Listed card also open in form 2026-10-06
-  - Reopen a saved flashcard from the waveform while its background save is still under way, and let that save fail. The same flashcard is then both listed with older edits and open in the form; Open on the listed entry then saves the form's newer edits in the background and loads the older ones. Undo of a Discard can create the same state.
-  - A flashcard should be either listed or open in the form, not both, and the form's newer copy should win.
 - Headword cards lose their underline 2026-10-07
   - Double-click an inflected word in the subtitles, such as "frisst", when the dictionary answers with its headword, "fressen". The flashcard takes the headword as its word.
   - The subtitle shows no dotted underline for that flashcard, because the headword does not appear in the cue. The word the flashcard was made from should be marked even when the flashcard's word is its dictionary form.

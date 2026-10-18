@@ -404,6 +404,167 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/anki-connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turns AnkiConnect on or off for the project. Exports and sends never change it. */
+        put: operations["setAnkiConnect"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/exported": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Records that a package held the flashcards, and marks them exported when the request asks for that.
+         *     A flashcard of another project, or one deleted since the package was staged, is passed over.
+         */
+        post: operations["recordAnkiExported"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.
+         *     A named flashcard that is not in the project, as one deleted since the send was queued, is passed over.
+         */
+        post: operations["renderAnkiNotes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
+         *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
+         *     Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
+         *     and they are marked exported when the request asks for that. A staged package is not recorded.
+         *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
+         */
+        post: operations["exportAnkiPackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/pending-deletions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the project's deleted flashcards whose notes may still be in Anki.
+         *     Deleting a flashcard that reached Anki, marked as exported or sent, adds it here while the project uses AnkiConnect or lists such deletions,
+         *     as does recording a send of a flashcard deleted since the send began.
+         */
+        get: operations["listAnkiPendingDeletions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/pending-deletions/cleared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgets the named deletions, as when the user has deleted their notes in Anki and marks them done.
+         *     Only the named deletions go, so that one recorded since the project screen listed them stays.
+         */
+        post: operations["clearAnkiPendingDeletions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/pending-deletions/{flashcard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forgets a pending deletion once the client has deleted the note from Anki, or found none to delete.
+         *     A flashcard without a pending deletion is passed over.
+         */
+        delete: operations["clearAnkiPendingDeletion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Records that AnkiConnect put the flashcards into Anki as they were when their notes were rendered.
+         *     A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
+         */
+        post: operations["recordAnkiNotesSent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/flashcards": {
         parameters: {
             query?: never;
@@ -558,6 +719,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/alignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAlignments"];
+        put?: never;
+        /**
+         * Adds an alignment to a document. The audio file or translation it names must be another
+         *     media file of the same project. Spans are not checked against the documents.
+         */
+        post: operations["addAlignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/alignments/{alignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeAlignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/clip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the window of the chosen audio track, else of the default audio track,
+         *     encoded as AAC in an MP4 file.
+         */
+        get: operations["getMediaClip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/embedded-subtitles": {
         parameters: {
             query?: never;
@@ -594,7 +811,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/media/{media_id}/playback": {
+    "/projects/{id}/media/{media_id}/playback-method": {
         parameters: {
             query?: never;
             header?: never;
@@ -604,11 +821,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Plans playback for the client's environment. A converting plan registers the conversion
-         *     and names its playlist. Without a conversion service, anything that would need conversion
-         *     comes back unsupported with the reason `conversion_unavailable`.
+         * Chooses how the client's environment plays the file. A converting method registers the conversion and names its playlist.
+         *     Without a conversion service, anything that would need conversion comes back unsupported with the reason `conversion_unavailable`.
          */
-        post: operations["planMediaPlayback"];
+        post: operations["chooseMediaPlaybackMethod"];
         delete?: never;
         options?: never;
         head?: never;
@@ -782,6 +998,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/translation-document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Pairs a document with the translation it is read beside, before the two are aligned,
+         *     or clears the pairing.
+         */
+        put: operations["setTranslationDocument"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/waveform": {
         parameters: {
             query?: never;
@@ -839,6 +1075,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddAlignmentRequest: {
+            content: components["schemas"]["AlignmentContent"];
+            /**
+             * @description What produced the alignment: a plugin name, or `cloud`. Null for an alignment added
+             *     from a file.
+             */
+            provider?: string | null;
+        };
         AddMediaFileRequest: {
             /** @description The name shown in the project's media list, usually the file name. */
             name: string;
@@ -850,6 +1094,191 @@ export interface components {
             name: string;
             role?: components["schemas"]["SubtitleRole"] | null;
             source: components["schemas"]["TextSource"];
+        };
+        /** @description A saved alignment of a document. */
+        Alignment: {
+            content: components["schemas"]["AlignmentContent"];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            created_at_ms: number;
+            id: components["schemas"]["AlignmentId"];
+            /** @description The document the alignment belongs to. Its counterpart is named inside `content`. */
+            media_file_id: components["schemas"]["MediaFileId"];
+            /**
+             * @description What produced the alignment: a plugin name, or `cloud`. Null for an alignment added
+             *     from a file.
+             */
+            provider?: string | null;
+        };
+        /** @description What a document is aligned with, and how. */
+        AlignmentContent: {
+            /** @description The media file of the audio. */
+            audio_media_file_id: components["schemas"]["MediaFileId"];
+            /** @enum {string} */
+            kind: "audio";
+            /**
+             * @description Sorted by their span's position in the document and by time, usually one per
+             *     sentence. Text with no segment is never highlighted.
+             */
+            segments: components["schemas"]["TimedSpan"][];
+        } | {
+            /** @enum {string} */
+            kind: "translation";
+            /**
+             * @description Sorted by the position of their first document span; links with no document span
+             *     are sorted by their first translation span.
+             */
+            links: components["schemas"]["TranslationLink"][];
+            /** @description The media file of the translation document. */
+            translation_media_file_id: components["schemas"]["MediaFileId"];
+        };
+        AlignmentId: string;
+        AlignmentsResponse: {
+            /** @description The document's alignments, newest first. */
+            alignments: components["schemas"]["Alignment"][];
+        };
+        AnkiConnectSetting: {
+            uses_anki_connect: boolean;
+        };
+        /** @description The deletions the user marked done, as the project screen listed them. */
+        AnkiDeletionsCleared: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+        };
+        /** @description The flashcards a staged package held, once the user has kept a copy of it. */
+        AnkiExportedRequest: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+            /** @description Whether the export marks the flashcards as exported, which takes them out of the Anki updates queue. */
+            marks_exported: boolean;
+            /**
+             * Format: int64
+             * @description The `read_at_ms` the server answered when it staged the package, so that an edit saved since counts as changed.
+             */
+            read_at_ms: number;
+        };
+        /** @description A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies. */
+        AnkiMediaRef: {
+            /** Format: int64 */
+            end_ms: number;
+            file_name: string;
+            /** @enum {string} */
+            kind: "audio";
+            media_file_id: components["schemas"]["MediaFileId"];
+            /** Format: int64 */
+            start_ms: number;
+        } | {
+            /** Format: int64 */
+            at_ms: number;
+            file_name: string;
+            /** @enum {string} */
+            kind: "screenshot";
+            media_file_id: components["schemas"]["MediaFileId"];
+        };
+        /** @description One flashcard rendered as an Anki note. */
+        AnkiNote: {
+            /** @description Field values as HTML, in the order of `AnkiNoteType.fields`. */
+            fields: string[];
+            flashcard_id: components["schemas"]["FlashcardId"];
+            /** @description Derived from the flashcard id, and so the same across exports. Anki recognizes a note it already has by this value. */
+            guid: string;
+            /** @description The media files the fields refer to, which the caller renders and supplies. */
+            media: components["schemas"]["AnkiMediaRef"][];
+            /**
+             * Format: int64
+             * @description The flashcard's `created_at_ms`, which Anki shows as the note's creation date.
+             */
+            note_id: number;
+            tags: string[];
+        };
+        /** @description The note type (Anki "model") of a project's deck, as both the package and AnkiConnect create it. */
+        AnkiNoteType: {
+            css: string;
+            /** @description Field names in order. The first is the sort field and the field Anki checks for duplicates. */
+            fields: string[];
+            /**
+             * Format: int64
+             * @description A 31-bit number derived from the project id, stable across exports.
+             */
+            id: number;
+            name: string;
+            templates: components["schemas"]["AnkiTemplate"][];
+        };
+        /** @description What the AnkiConnect client needs to create the deck, the note type and the notes. */
+        AnkiNotes: {
+            deck_name: string;
+            note_type: components["schemas"]["AnkiNoteType"];
+            notes: components["schemas"]["AnkiNote"][];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch at which the flashcards were read, which the client hands back once it has sent the notes.
+             */
+            rendered_at_ms: number;
+        };
+        AnkiNotesRequest: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+        };
+        AnkiPackageRequest: {
+            /** @description The flashcards to export, in the order Anki shows them as new cards. */
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+            /** @description Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue. */
+            marks_exported: boolean;
+            /** @description The absolute path to write the package to, on the server's machine. Null to receive the package in the response. */
+            save_path?: string | null;
+            /**
+             * @description Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.
+             *     A staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.
+             *     Requires a save path.
+             */
+            staged?: boolean;
+        };
+        /** @description What the server wrote to the save path. */
+        AnkiPackageSaved: {
+            /** Format: int64 */
+            flashcard_count: number;
+            /**
+             * Format: int64
+             * @description The time the flashcards were read for the package, to pass back when recording the export.
+             */
+            read_at_ms: number;
+            /**
+             * Format: int64
+             * @description The audio clips and screenshots that could not be rendered and are missing from the package.
+             */
+            skipped_media_count: number;
+        };
+        /**
+         * @description A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.
+         *     It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
+         */
+        AnkiPendingDeletion: {
+            flashcard_id: components["schemas"]["FlashcardId"];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch when the flashcard was deleted.
+             */
+            requested_at_ms: number;
+            /** @description The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded. */
+            word: string;
+        };
+        AnkiPendingDeletions: {
+            /** @description Oldest first. */
+            deletions: components["schemas"]["AnkiPendingDeletion"][];
+        };
+        /** @description The flashcards AnkiConnect created or updated notes for, and when the notes it sent were rendered. */
+        AnkiSentRequest: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+            /**
+             * Format: int64
+             * @description The `rendered_at_ms` of the notes the server rendered for the send, so that an edit saved since counts as changed.
+             */
+            rendered_at_ms: number;
+        };
+        /** @description A card template: the HTML of each side of the card, with `{{Field}}` placeholders. */
+        AnkiTemplate: {
+            back: string;
+            front: string;
+            name: string;
         };
         /** @description The body of every error response. */
         ApiError: {
@@ -905,6 +1334,17 @@ export interface components {
         Chapter: {
             paragraphs: string[];
             title?: string | null;
+        };
+        /** @description Where the paragraphs of one chapter came from. */
+        ChapterProvenance: {
+            /**
+             * @description The path of the chapter's content document inside the EPUB archive: the manifest
+             *     item's href resolved against the package document's directory and percent-decoded,
+             *     as in `OEBPS/chapter1.xhtml`.
+             */
+            href: string;
+            /** @description One per entry of the chapter's `paragraphs`, in the same order. */
+            paragraphs: components["schemas"]["ParagraphProvenance"][];
         };
         /**
          * @description What a column of a table holds, as a person choosing the columns of a table sees it.
@@ -1064,10 +1504,19 @@ export interface components {
         Document: {
             chapters: components["schemas"]["Chapter"][];
             language?: string | null;
+            provenance?: components["schemas"]["DocumentProvenance"] | null;
             title: string;
         };
         /** @enum {string} */
         DocumentFormat: "epub" | "plain_text";
+        /**
+         * @description Where the paragraphs of a parsed EPUB came from, so that text addressed by element id
+         *     (as media overlays address it) can be turned into positions in the parsed document.
+         */
+        DocumentProvenance: {
+            /** @description One per entry of `Document.chapters`, in the same order. */
+            chapters: components["schemas"]["ChapterProvenance"][];
+        };
         EmbeddedSubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
         };
@@ -1084,6 +1533,12 @@ export interface components {
              * @description The index of the subtitle cue the card was made from, when it was made from one.
              */
             cue_index?: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
+             *     The flashcard has changed since then when `updated_at_ms` is later.
+             */
+            exported_at_ms?: number | null;
             id: components["schemas"]["FlashcardId"];
             /** @description The fields the card shows, in no particular order. */
             included_fields: components["schemas"]["FlashcardFieldKey"][];
@@ -1091,9 +1546,17 @@ export interface components {
             project_id: components["schemas"]["ProjectId"];
             /**
              * Format: int64
+             * @description Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
+             *     The flashcard has changed since then when `updated_at_ms` is later.
+             */
+            sent_at_ms?: number | null;
+            /**
+             * Format: int64
              * @description Milliseconds since the Unix epoch.
              */
             updated_at_ms: number;
+            /** @description Whether any Anki package has held the flashcard, whether or not that export marked it as exported. */
+            was_packaged: boolean;
             /**
              * Format: int32
              * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
@@ -1275,6 +1738,24 @@ export interface components {
             /** @enum {string} */
             kind: "job";
         };
+        /**
+         * @description An element with an `id` inside a paragraph's block, and the range its text occupies in the
+         *     paragraph after whitespace is collapsed.
+         */
+        InlineElementId: {
+            /**
+             * Format: int32
+             * @description The UTF-16 code unit just after the element's text.
+             */
+            end: number;
+            id: string;
+            /**
+             * Format: int32
+             * @description The first UTF-16 code unit of the element's text within the paragraph. An element whose
+             *     text is empty after collapsing whitespace has an empty range at its position.
+             */
+            start: number;
+        };
         /** @description A plugin the server found in its plugin directory. */
         InstalledPlugin: {
             /** @description The text of the plugin's import button. Set for media-source plugins only. */
@@ -1356,7 +1837,7 @@ export interface components {
         MediaAvailabilityResponse: {
             media_files: components["schemas"]["MediaFileAvailability"][];
         };
-        /** @description A video or audio file added to a project. */
+        /** @description A video, audio, or document file added to a project. */
         MediaFile: {
             /**
              * Format: int64
@@ -1374,6 +1855,7 @@ export interface components {
              *     defines. Null until the user has chosen.
              */
             track_selection_json?: string | null;
+            translation_media_file_id?: components["schemas"]["MediaFileId"] | null;
         };
         MediaFileAvailability: {
             availability: components["schemas"]["PathAvailability"];
@@ -1465,6 +1947,13 @@ export interface components {
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
         };
+        /** @description Where one paragraph came from in its content document. */
+        ParagraphProvenance: {
+            /** @description The `id` attribute of the block element the paragraph was extracted from. */
+            element_id?: string | null;
+            /** @description Every element with an `id` inside the block, in document order. */
+            inline_ids: components["schemas"]["InlineElementId"][];
+        };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
             path: string;
@@ -1507,7 +1996,7 @@ export interface components {
             /** @description The RFC 6381 codec strings that `MediaSource.isTypeSupported` accepts in fragmented MP4. */
             mse_codec_strings: string[];
         };
-        PlaybackPlan: {
+        PlaybackMethod: {
             /** @enum {string} */
             kind: "direct";
         } | (components["schemas"]["ConversionPlan"] & {
@@ -1518,14 +2007,14 @@ export interface components {
             kind: "unsupported";
             reason: components["schemas"]["UnsupportedReason"];
         };
-        PlaybackRequest: {
+        PlaybackMethodRequest: {
             environment: components["schemas"]["PlaybackEnvironment"];
             preferred_audio_target?: components["schemas"]["AudioTarget"] | null;
             selection?: components["schemas"]["TrackSelection"] | null;
         };
-        PlaybackResponse: {
-            plan: components["schemas"]["PlaybackPlan"];
-            /** @description The path of the HLS playlist, present only when the plan converts. */
+        PlaybackMethodResponse: {
+            method: components["schemas"]["PlaybackMethod"];
+            /** @description The path of the HLS playlist, present only when the method converts. */
             playlist_path?: string | null;
         };
         /** @description A form a plugin asks the app to show. The app adds a way to close it. */
@@ -1583,6 +2072,8 @@ export interface components {
             /** Format: int64 */
             media_count: number;
             settings: components["schemas"]["ProjectSettings"];
+            /** @description Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off. */
+            uses_anki_connect: boolean;
         };
         ProjectId: string;
         /** @description Everything a user sets about a project, as the project form edits it. */
@@ -1593,6 +2084,13 @@ export interface components {
             fills_audio_with_tts: boolean;
             /** @description The fields a new flashcard starts with. */
             flashcard_fields: components["schemas"]["FlashcardFieldKey"][];
+            /** @description The included fields shown on the front of a card. The other included fields go on the back. */
+            flashcard_front_fields: components["schemas"]["FlashcardFieldKey"][];
+            /**
+             * @description Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.
+             *     While AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes.
+             */
+            lists_anki_deletions: boolean;
             name: string;
             /** @description Whether each new flashcard is also tagged with the name of the media file it was made from. */
             tags_media_name: boolean;
@@ -1763,6 +2261,54 @@ export interface components {
             kind: "path";
             path: string;
         };
+        /**
+         * @description A range of one paragraph of a parsed document.
+         *
+         *     `chapter_index` and `paragraph_index` count from zero within the parsed document.
+         *     `start` and `end` are offsets into the paragraph string counted in UTF-16 code units,
+         *     exactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats
+         *     the offsets as opaque numbers and never slices paragraphs by them. A span never crosses
+         *     a paragraph; text that covers several paragraphs is a list of spans.
+         *
+         *     The position is only valid for the document as the current parser produces it; `quote`
+         *     is what identifies the passage once the parser changes.
+         */
+        TextSpan: {
+            /** Format: int32 */
+            chapter_index: number;
+            /**
+             * Format: int32
+             * @description The UTF-16 code unit just after the span.
+             */
+            end: number;
+            /** Format: int32 */
+            paragraph_index: number;
+            /**
+             * @description The text the span covers, as the parser produced it. Optional in the type so that
+             *     tests can write spans tersely, but every provider and importer sets it. The reader
+             *     ignores a span whose quote no longer matches the text at its position.
+             */
+            quote?: string | null;
+            /**
+             * Format: int32
+             * @description The first UTF-16 code unit of the span within the paragraph.
+             */
+            start: number;
+        };
+        /** @description Text of a document heard between two times of an audio file. */
+        TimedSpan: {
+            /**
+             * Format: int64
+             * @description Milliseconds from the start of the audio file; exclusive.
+             */
+            end_ms: number;
+            span: components["schemas"]["TextSpan"];
+            /**
+             * Format: int64
+             * @description Milliseconds from the start of the audio file.
+             */
+            start_ms: number;
+        };
         /** @enum {string} */
         TimedTextFormat: "srt" | "vtt";
         TimedTextTrack: {
@@ -1829,6 +2375,26 @@ export interface components {
              *     cannot play in a media element at all.
              */
             direct_mime_type?: string | null;
+        };
+        /**
+         * @description The translation a document is paired with before the two are aligned, so that either
+         *     can be read on its own.
+         */
+        TranslationDocumentSelection: {
+            translation_media_file_id?: components["schemas"]["MediaFileId"] | null;
+        };
+        /**
+         * @description Text of a document paired with the text of its translation that says the same thing.
+         *
+         *     Either side may hold several spans, for a sentence the translation splits in two or joins
+         *     with the next, and either side may be empty, for text the translation leaves out or adds,
+         *     but not both. The spans on each side are sorted and do not overlap.
+         */
+        TranslationLink: {
+            /** @description Spans of the aligned document. */
+            spans: components["schemas"]["TextSpan"][];
+            /** @description Spans of the translation document. */
+            translation_spans: components["schemas"]["TextSpan"][];
         };
         /** @enum {string} */
         UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
@@ -3329,6 +3895,467 @@ export interface operations {
             };
         };
     };
+    setAnkiConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiConnectSetting"];
+            };
+        };
+        responses: {
+            /** @description The project with AnkiConnect turned on or off */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordAnkiExported: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiExportedRequest"];
+            };
+        };
+        responses: {
+            /** @description The export was recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    renderAnkiNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiNotesRequest"];
+            };
+        };
+        responses: {
+            /** @description The deck, the note type and the notes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnkiNotes"];
+                };
+            };
+            /** @description No flashcards named */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportAnkiPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiPackageRequest"];
+            };
+        };
+        responses: {
+            /** @description Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count` and of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved. */
+            200: {
+                headers: {
+                    /** @description Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8 */
+                    "Content-Disposition"?: string;
+                    /** @description Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project */
+                    "X-EasyImmerse-Flashcard-Count"?: number;
+                    /** @description Without a save path: the count of audio clips and screenshots left out of the package */
+                    "X-EasyImmerse-Skipped-Media"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                    "application/json": components["schemas"]["AnkiPackageSaved"];
+                };
+            };
+            /** @description No flashcards named, a staged export without a save path, a save path that is not absolute, or a save path that could not be written (code `save_failed`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A save path, from a token that may not name local paths (code `local_paths_not_allowed`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or none of the named flashcards in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The package could not be built (code `package_failed`) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listAnkiPendingDeletions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pending deletions, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnkiPendingDeletions"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    clearAnkiPendingDeletions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiDeletionsCleared"];
+            };
+        };
+        responses: {
+            /** @description The named deletions are gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    clearAnkiPendingDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The id of the deleted flashcard */
+                flashcard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pending deletion is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordAnkiNotesSent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiSentRequest"];
+            };
+        };
+        responses: {
+            /** @description The send was recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listFlashcards: {
         parameters: {
             query?: never;
@@ -3957,6 +4984,274 @@ export interface operations {
             };
         };
     };
+    listAlignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The document's alignments, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlignmentsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addAlignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAlignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description The added alignment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Alignment"];
+                };
+            };
+            /** @description A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project of the kind the alignment needs: a video or an audio file for an audio alignment, a document for a translation alignment */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeAlignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+                /** @description The alignment id */
+                alignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The alignment was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project, or no such alignment of it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaClip: {
+        parameters: {
+            query: {
+                /** @description The clip start in player time, in milliseconds. */
+                start_ms: number;
+                /**
+                 * @description The clip end in player time, in milliseconds; after the start.
+                 *     An end past the end of the media is moved back to it.
+                 *     The clip may not be longer than 120000 milliseconds.
+                 */
+                end_ms: number;
+                /** @description The bearer token, for audio elements, which cannot send headers. */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The clip */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mp4": number[];
+                };
+            };
+            /** @description The end is not after the start (or the start is past the media), the clip is longer than 120000 milliseconds, or the file could not be probed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without audio */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description ffmpeg failed (code `clip_failed`) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server has no ffmpeg (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listEmbeddedSubtitleTracks: {
         parameters: {
             query?: never;
@@ -4129,7 +5424,7 @@ export interface operations {
             };
         };
     };
-    planMediaPlayback: {
+    chooseMediaPlaybackMethod: {
         parameters: {
             query?: never;
             header?: never;
@@ -4143,17 +5438,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PlaybackRequest"];
+                "application/json": components["schemas"]["PlaybackMethodRequest"];
             };
         };
         responses: {
-            /** @description The plan and, when converting, the playlist path */
+            /** @description The playback method and, when converting, the playlist path */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlaybackResponse"];
+                    "application/json": components["schemas"]["PlaybackMethodResponse"];
                 };
             };
             /** @description The file could not be probed */
@@ -4932,6 +6227,71 @@ export interface operations {
             };
             /** @description This server cannot probe media (code `conversion_unavailable`) */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setTranslationDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslationDocumentSelection"];
+            };
+        };
+        responses: {
+            /** @description The document's media file with the pairing saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description The translation is not another document of the project */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
                 headers: {
                     [name: string]: unknown;
                 };

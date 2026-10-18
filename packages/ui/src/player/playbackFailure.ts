@@ -15,7 +15,7 @@ const unsupportedReasonSentences: Record<UnsupportedReason, string> = {
   picture_too_tall: "This video's picture is too tall to convert.",
 };
 
-/** A plain sentence for a plan the server could not make. */
+/** A plain sentence for a file the server cannot play. */
 export function describeUnsupportedReason(reason: UnsupportedReason): string {
   return unsupportedReasonSentences[reason];
 }

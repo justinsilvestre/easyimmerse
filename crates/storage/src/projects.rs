@@ -9,7 +9,8 @@ use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 /// The project columns followed by the two counts, as every project query selects them.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
-     p.created_at_ms, p.last_opened_at_ms, \
+     p.flashcard_front_fields_json, p.lists_anki_deletions, p.created_at_ms, p.last_opened_at_ms, \
+     p.uses_anki_connect, \
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id)";
 
@@ -54,7 +55,8 @@ pub fn update_project(
     let updated = conn.execute(
         "UPDATE projects SET name = ?2, target_language = ?3, translation_language = ?4, \
          flashcard_fields_json = ?5, default_tags_json = ?6, tags_media_name = ?7, \
-         fills_audio_with_tts = ?8 WHERE id = ?1",
+         fills_audio_with_tts = ?8, flashcard_front_fields_json = ?9, lists_anki_deletions = ?10 \
+         WHERE id = ?1",
         rusqlite::params_from_iter(settings_params(id, settings)?),
     )?;
     if updated == 0 {
@@ -68,6 +70,22 @@ pub fn mark_project_opened(conn: &Connection, id: &ProjectId) -> Result<(), Stor
     let updated = conn.execute(
         "UPDATE projects SET last_opened_at_ms = ?2 WHERE id = ?1",
         params![id.0, to_stored_integer(now_ms())],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::ProjectNotFound(id.0.clone()));
+    }
+    Ok(())
+}
+
+/// Turns AnkiConnect on or off for the project.
+pub fn set_uses_anki_connect(
+    conn: &Connection,
+    id: &ProjectId,
+    uses_anki_connect: bool,
+) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE projects SET uses_anki_connect = ?2 WHERE id = ?1",
+        params![id.0, uses_anki_connect],
     )?;
     if updated == 0 {
         return Err(StorageError::ProjectNotFound(id.0.clone()));
@@ -142,6 +160,11 @@ fn placeholder_settings(name: &str, target_language: &str) -> ProjectSettings {
         default_tags: vec![],
         tags_media_name: true,
         fills_audio_with_tts: false,
+        flashcard_front_fields: vec![
+            FlashcardFieldKey::AudioContext,
+            FlashcardFieldKey::Screenshot,
+        ],
+        lists_anki_deletions: true,
     }
 }
 
@@ -156,7 +179,8 @@ fn insert_project(
     conn.execute(
         "INSERT INTO projects (id, name, target_language, translation_language, \
          flashcard_fields_json, default_tags_json, tags_media_name, fills_audio_with_tts, \
-         created_at_ms, last_opened_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+         flashcard_front_fields_json, lists_anki_deletions, created_at_ms, last_opened_at_ms) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
         rusqlite::params_from_iter(values),
     )?;
     Ok(())
@@ -176,6 +200,8 @@ fn settings_params(
         Box::new(serde_json::to_string(&settings.default_tags)?),
         Box::new(settings.tags_media_name),
         Box::new(settings.fills_audio_with_tts),
+        Box::new(serde_json::to_string(&settings.flashcard_front_fields)?),
+        Box::new(settings.lists_anki_deletions),
     ])
 }
 
@@ -194,11 +220,14 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
             default_tags: read_json(row, 5)?,
             tags_media_name: row.get(6)?,
             fills_audio_with_tts: row.get(7)?,
+            flashcard_front_fields: read_json(row, 8)?,
+            lists_anki_deletions: row.get(9)?,
         },
-        created_at_ms: read_unsigned(row, 8)?,
-        last_opened_at_ms: read_unsigned(row, 9)?,
-        media_count: read_unsigned(row, 10)?,
-        flashcard_count: read_unsigned(row, 11)?,
+        created_at_ms: read_unsigned(row, 10)?,
+        last_opened_at_ms: read_unsigned(row, 11)?,
+        uses_anki_connect: row.get(12)?,
+        media_count: read_unsigned(row, 13)?,
+        flashcard_count: read_unsigned(row, 14)?,
     })
 }
 
@@ -317,6 +346,60 @@ mod tests {
     #[test]
     fn getting_an_unknown_project_fails() {
         let result = seeded_storage().get_project(&ProjectId("missing".to_string()));
+        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    }
+
+    #[test]
+    fn seeds_placeholder_projects_with_the_audio_and_the_screenshot_on_the_front() {
+        let project = seeded_storage()
+            .get_project(&ProjectId("placeholder-1".to_string()))
+            .unwrap();
+        assert_eq!(
+            project.settings.flashcard_front_fields,
+            vec![
+                FlashcardFieldKey::AudioContext,
+                FlashcardFieldKey::Screenshot
+            ]
+        );
+    }
+
+    #[test]
+    fn a_created_project_does_not_use_anki_connect() {
+        let storage = Storage::open_in_memory().unwrap();
+        let created = storage.create_project(&settings("German")).unwrap();
+        assert!(!created.uses_anki_connect);
+    }
+
+    #[test]
+    fn keeps_anki_connect_turned_on() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage.set_uses_anki_connect(&id, true).unwrap();
+        assert!(storage.get_project(&id).unwrap().uses_anki_connect);
+    }
+
+    #[test]
+    fn turns_anki_connect_off() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage.set_uses_anki_connect(&id, true).unwrap();
+        storage.set_uses_anki_connect(&id, false).unwrap();
+        assert!(!storage.get_project(&id).unwrap().uses_anki_connect);
+    }
+
+    #[test]
+    fn updating_the_settings_keeps_anki_connect_turned_on() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage.set_uses_anki_connect(&id, true).unwrap();
+        let updated = storage.update_project(&id, &settings("Deutsch")).unwrap();
+        assert!(updated.uses_anki_connect);
+    }
+
+    #[test]
+    fn turning_anki_connect_on_for_an_unknown_project_fails() {
+        let result =
+            seeded_storage().set_uses_anki_connect(&ProjectId("missing".to_string()), true);
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 

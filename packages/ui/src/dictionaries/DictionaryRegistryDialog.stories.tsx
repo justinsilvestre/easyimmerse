@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { DictionaryRegistryDialog } from "./DictionaryRegistryDialog.tsx";
 import { exampleRegistry } from "./exampleDictionaries.ts";
 
 const meta = {
   title: "Dictionaries/DictionaryRegistryDialog",
   component: DictionaryRegistryDialog,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     entries: exampleRegistry,

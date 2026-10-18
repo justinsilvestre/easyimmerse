@@ -1,5 +1,5 @@
 import type { TrackSelection } from "@easyimmerse/types";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { Button } from "./Button.tsx";
 import { ModalDialog } from "./ModalDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
@@ -9,24 +9,23 @@ import { trackLabels } from "./trackChoiceLabels.ts";
 export function TrackChoiceDialog({
   videoTracks,
   audioTracks,
-  initialSelection,
+  selection: shownSelection,
+  onSelect,
   onChoose,
   onCancel,
 }: {
   videoTracks: readonly TrackChoice[];
   audioTracks: readonly TrackChoice[];
-  /** The saved choice to start from. Without one, the default-flagged track of each kind is selected, else the first. */
-  initialSelection?: TrackSelection;
+  /** The tracks selected. Without a selection, the default-flagged track of each kind is selected, else the first. */
+  selection: TrackSelection | null;
+  onSelect: (selection: TrackSelection) => void;
   onChoose: (selection: TrackSelection) => void;
   onCancel: () => void;
 }) {
-  const [selection, setSelection] = useState<TrackSelection>(
-    () =>
-      initialSelection ?? {
-        video: preferredTrack(videoTracks),
-        audio: preferredTrack(audioTracks),
-      },
-  );
+  const selection = shownSelection ?? {
+    video: preferredTrack(videoTracks),
+    audio: preferredTrack(audioTracks),
+  };
   return (
     <ModalDialog
       title="Choose tracks"
@@ -49,7 +48,7 @@ export function TrackChoiceDialog({
           legend="Video"
           tracks={videoTracks}
           selected={selection.video}
-          onSelect={(video) => setSelection({ ...selection, video })}
+          onSelect={(video) => onSelect({ ...selection, video })}
         />
       )}
       {audioTracks.length > 0 && (
@@ -57,7 +56,7 @@ export function TrackChoiceDialog({
           legend="Audio"
           tracks={audioTracks}
           selected={selection.audio}
-          onSelect={(audio) => setSelection({ ...selection, audio })}
+          onSelect={(audio) => onSelect({ ...selection, audio })}
         />
       )}
     </ModalDialog>

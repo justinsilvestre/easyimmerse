@@ -137,28 +137,25 @@ describe("ClickableText", () => {
     ).toBe("dictionary");
   });
 
-  it("does not highlight a word written with spaces before its lookup answers", () => {
+  it("does not highlight a cursor it is given on a word written with spaces before its lookup answers", () => {
     render(
       <ClickableText
         text="Ich rufe an."
-        gestures={{ onWordHover: () => new Promise(() => undefined) }}
+        cursor={{ start: 4, input: "mouse" }}
       />,
     );
     const word = screen.getByRole("button", { name: "rufe" });
-    fireEvent.pointerEnter(word, { pointerType: "mouse" });
     expect(word.classList.contains("bg-accent-soft")).toBe(false);
   });
 
-  it("highlights a word written with spaces once its lookup answers", async () => {
+  it("highlights a cursor it is given on a word written with spaces once its lookup has answered", () => {
     render(
       <ClickableText
         text="Ich rufe an."
-        gestures={{ onWordHover: () => Promise.resolve(4) }}
+        cursor={{ start: 4, input: "mouse", matchedLength: 4 }}
       />,
     );
     const word = screen.getByRole("button", { name: "rufe" });
-    fireEvent.pointerEnter(word, { pointerType: "mouse" });
-    await vi.waitUntil(() => word.classList.contains("bg-accent-soft"));
     expect(word.classList.contains("bg-accent-soft")).toBe(true);
   });
 
@@ -351,14 +348,9 @@ describe("ClickableText", () => {
       expect(matchedText(container)).toBe("2026");
     });
 
-    /** Rests the mouse, for a hover whose lookup matches nothing, on the character of the text at the index, until the answer. */
+    /** Rests the mouse on the character of the text at the index, in a text that looks nothing up. */
     async function hoverCharacter(text: string, index: number) {
-      const rendered = render(
-        <ClickableText
-          text={text}
-          gestures={{ onWordHover: () => Promise.resolve(null) }}
-        />,
-      );
+      const rendered = render(<ClickableText text={text} />);
       layOutCharacters();
       fireEvent.pointerEnter(screen.getByRole("button"), {
         pointerType: "mouse",
@@ -379,50 +371,6 @@ describe("ClickableText", () => {
       expect(hoveredText(container)).toBe("2026");
     });
 
-    /** Renders a run whose hover lookups answer with the given length, and rests the mouse on 見 until the answer. */
-    async function hoverAnswering(length: number | null) {
-      const rendered = render(
-        <ClickableText
-          text="映画を見る"
-          gestures={{ onWordHover: () => Promise.resolve(length) }}
-        />,
-      );
-      layOutCharacters();
-      fireEvent.pointerEnter(screen.getByRole("button"), {
-        pointerType: "mouse",
-        clientX: 50,
-        clientY: 10,
-      });
-      await act(() => vi.advanceTimersByTimeAsync(40));
-      return rendered;
-    }
-
-    it("highlights nothing before the hover's lookup answers", () => {
-      const { container } = render(
-        <ClickableText
-          text="映画を見る"
-          gestures={{ onWordHover: () => new Promise(() => undefined) }}
-        />,
-      );
-      layOutCharacters();
-      fireEvent.pointerEnter(screen.getByRole("button"), {
-        pointerType: "mouse",
-        clientX: 50,
-        clientY: 10,
-      });
-      expect(hoveredText(container)).toBeUndefined();
-    });
-
-    it("highlights the text that the hover's lookup matched, within 40 ms", async () => {
-      const { container } = await hoverAnswering(2);
-      expect(hoveredText(container)).toBe("見る");
-    });
-
-    it("highlights the character under the mouse when the lookup matched nothing", async () => {
-      const { container } = await hoverAnswering(null);
-      expect(hoveredText(container)).toBe("見");
-    });
-
     it("highlights the character under the mouse once it rests there, when nothing is looked up", () => {
       const { container } = render(<ClickableText text="映画を見る" />);
       layOutCharacters();
@@ -435,41 +383,8 @@ describe("ClickableText", () => {
       expect(hoveredText(container)).toBe("見");
     });
 
-    it("keeps the highlight while the mouse moves within the matched text", async () => {
-      const { container } = await hoverAnswering(2);
-      fireEvent.pointerMove(screen.getByRole("button"), {
-        pointerType: "mouse",
-        clientX: 70,
-        clientY: 10,
-      });
-      expect(hoveredText(container)).toBe("見る");
-    });
-
-    it("drops the highlight at once when the mouse moves beyond the matched text", async () => {
-      const { container } = await hoverAnswering(2);
-      fireEvent.pointerMove(screen.getByRole("button"), {
-        pointerType: "mouse",
-        clientX: 5,
-        clientY: 10,
-      });
-      expect(hoveredText(container)).toBeUndefined();
-    });
-
-    it("ignores a lookup's answer for a character the mouse has left", async () => {
-      let answer: (length: number) => void = () => undefined;
-      const { container } = render(
-        <ClickableText
-          text="映画を見る"
-          gestures={{
-            onWordHover: (hit) =>
-              hit.start === 3
-                ? new Promise((resolve) => {
-                    answer = resolve;
-                  })
-                : Promise.resolve(null),
-          }}
-        />,
-      );
+    it("drops the highlight once the mouse leaves", () => {
+      render(<ClickableText text="映画を見る" />);
       layOutCharacters();
       const run = screen.getByRole("button");
       fireEvent.pointerEnter(run, {
@@ -477,22 +392,7 @@ describe("ClickableText", () => {
         clientX: 50,
         clientY: 10,
       });
-      await act(() => vi.advanceTimersByTimeAsync(40));
-      fireEvent.pointerMove(run, {
-        pointerType: "mouse",
-        clientX: 5,
-        clientY: 10,
-      });
-      await act(() => vi.advanceTimersByTimeAsync(40));
-      await act(async () => answer(2));
-      expect(hoveredText(container)).toBe("映");
-    });
-
-    it("drops the highlight once the mouse leaves", async () => {
-      await hoverAnswering(2);
-      fireEvent.pointerLeave(screen.getByRole("button"), {
-        pointerType: "mouse",
-      });
+      fireEvent.pointerLeave(run, { pointerType: "mouse" });
       expect(hoveredText(document.body)).toBeUndefined();
     });
 
@@ -560,53 +460,40 @@ describe("ClickableText", () => {
       const settle = () =>
         act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
-      /** Focuses the run of 映画を見るよ, whose lookups answer at once, and presses keys, letting the lookups answer after each. */
-      async function focusAndPress(
-        ...keys: { key: string; shiftKey?: boolean }[]
-      ) {
-        const { container } = render(
+      /**
+       * Gives the run of 映画を見るよ the cursor at `start`, whose lookup matched as `lengths` says, focuses it and presses a key, with Shift when `shiftKey` says,
+       * letting the lookups answer. Returns the offsets the keyboard then points at.
+       */
+      async function pressFrom(start: number, key: string, shiftKey = false) {
+        const pointed: number[] = [];
+        render(
           <ClickableText
             text="映画を見るよ"
+            cursor={{ start, input: "keyboard", matchedLength: lengths[start] }}
             gestures={{
-              onWordHover: (hit) => Promise.resolve(lengths[hit.start] ?? null),
+              onWordPointed: (hit) => hit && pointed.push(hit.start),
+              lookUpMatchedLength: (hit) =>
+                Promise.resolve(lengths[hit.start] ?? null),
             }}
           />,
         );
         const run = screen.getByRole("button", { name: "映画を見るよ" });
         fireEvent.focus(run);
+        fireEvent.keyDown(run, { key, shiftKey });
         await settle();
-        for (const key of keys) {
-          fireEvent.keyDown(run, key);
-          await settle();
-        }
-        return container;
+        return pointed;
       }
 
-      const right = { key: "ArrowRight" };
-      const left = { key: "ArrowLeft" };
-
       it("moves past the text the lookup matched with Right", async () => {
-        const container = await focusAndPress(right);
-        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
-          "を",
-        );
+        expect(await pressFrom(0, "ArrowRight")).toEqual([2]);
       });
 
       it("moves back over the word before the cursor with Left", async () => {
-        const container = await focusAndPress(right, right, right, left);
-        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
-          "見る",
-        );
+        expect(await pressFrom(5, "ArrowLeft")).toEqual([3]);
       });
 
       it("moves one character with Shift and Right", async () => {
-        const container = await focusAndPress({
-          key: "ArrowRight",
-          shiftKey: true,
-        });
-        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
-          "画",
-        );
+        expect(await pressFrom(0, "ArrowRight", true)).toEqual([1]);
       });
     });
 

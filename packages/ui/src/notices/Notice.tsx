@@ -6,8 +6,8 @@ import { IconButton } from "../components/IconButton.tsx";
 /** How a notice looks: what kind of news it brings. */
 export type NoticeTone = "info" | "success" | "waiting" | "danger";
 
-/** Something the user can do about a notice, such as Undo or Retry. Choosing it dismisses the notice. */
-export type NoticeAction = { label: string; onSelect: () => void };
+/** Something the user can do about a notice, such as Undo or Retry. */
+type NoticeAction = { label: string; onSelect: () => void };
 
 /**
  * A short message with the actions that answer it and a Dismiss button.

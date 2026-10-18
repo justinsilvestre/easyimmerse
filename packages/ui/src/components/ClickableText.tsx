@@ -1,15 +1,16 @@
+import type { TextCursor } from "@easyimmerse/state";
 import {
   chineseAndJapaneseCharacterRanges,
   southEastAsianCharacterRanges,
 } from "@easyimmerse/types";
 import clsx from "clsx";
+import { useId } from "react";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
 } from "./lookupTrigger.ts";
 import { type Range, RunText } from "./RunText.tsx";
 import { runLookupEnd } from "./runLookupStarts.ts";
-import type { TextCursor } from "./textCursor.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
@@ -128,6 +129,7 @@ export function ClickableText({
   markedRanges?: readonly Range[];
   gestures?: WordGestures;
 }) {
+  const textId = useId();
   const textCursor = useTextCursor(text, givenCursor, gestures);
   const { cursor } = textCursor;
   const cursorStart = cursor?.start ?? null;
@@ -156,6 +158,8 @@ export function ClickableText({
           // biome-ignore lint/a11y/useSemanticElements: a <button> cannot wrap across lines, as the doc comment above tells.
           <span
             key={part.start}
+            // Lets the dictionary pop-up find the word it stands at.
+            id={`${textId}-${part.start}`}
             role="button"
             tabIndex={0}
             // The highlight splits a run into pieces, which must not split its name.

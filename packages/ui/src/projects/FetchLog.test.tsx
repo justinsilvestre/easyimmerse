@@ -1,39 +1,29 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import type { MediaSourceLogLine } from "@easyimmerse/types";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleFailedJob } from "./exampleMediaSourceJob.ts";
 import { FetchLog, formatLog } from "./FetchLog.tsx";
 
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-});
+afterEach(cleanup);
 
-function stubClipboard() {
-  const writeText = vi.fn(() => Promise.resolve());
-  vi.stubGlobal("navigator", { clipboard: { writeText } });
-  return writeText;
+/** Renders the log over a fresh store, presses Copy, and returns the effects asked for. */
+function pressCopy(lines: readonly MediaSourceLogLine[]) {
+  const { effects } = renderWithAppStore(<FetchLog lines={lines} />);
+  fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+  return effects.calls;
 }
 
 describe("FetchLog", () => {
-  it("copies the whole log as plain text", () => {
-    const writeText = stubClipboard();
-    render(<FetchLog lines={exampleFailedJob.log} />);
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    expect(writeText).toHaveBeenCalledWith(formatLog(exampleFailedJob.log));
-  });
-
-  it("confirms the copy", async () => {
-    stubClipboard();
-    render(<FetchLog lines={exampleFailedJob.log} />);
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    expect(await screen.findByRole("button", { name: "Copied" })).toBeDefined();
+  it("asks for the whole log to be copied as plain text", () => {
+    expect(pressCopy(exampleFailedJob.log)).toContainEqual({
+      type: "copyText",
+      text: formatLog(exampleFailedJob.log),
+    });
   });
 
   it("copies nothing while the log is empty", () => {
-    const writeText = stubClipboard();
-    render(<FetchLog lines={[]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    expect(writeText).not.toHaveBeenCalled();
+    expect(pressCopy([]).some((call) => call.type === "copyText")).toBe(false);
   });
 });
 

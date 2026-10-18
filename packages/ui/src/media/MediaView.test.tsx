@@ -6,7 +6,7 @@ import { stagePictureAttribute } from "../player/stagePicture.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleCues, exampleTranslationCues } from "./exampleCues.ts";
 import { MediaView } from "./MediaView.tsx";
-import type { PlayerCallbacks } from "./PlayerControls.tsx";
+import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
 
 beforeEach(() => vi.useFakeTimers());
@@ -51,18 +51,25 @@ function renderView(overrides: Partial<ViewProps> = {}) {
           {...{ [stagePictureAttribute]: "" }}
         />
       }
-      playback={{
-        isPlaying: true,
-        currentMs: 6_200,
-        durationMs: 24_000,
-        volume: 1,
-        speed: 1,
-      }}
-      tracks={{
-        subtitles: [],
-        targetSubtitlesId: null,
-        translationSubtitlesId: null,
-      }}
+      isPlaying
+      controls={
+        <PlayerControls
+          playback={{
+            isPlaying: true,
+            currentMs: 6_200,
+            durationMs: 24_000,
+            volume: 1,
+            speed: 1,
+          }}
+          tracks={{
+            subtitles: [],
+            targetSubtitlesId: null,
+            translationSubtitlesId: null,
+          }}
+          panels={{ cues: false, waveform: false }}
+          callbacks={playerCallbacks()}
+        />
+      }
       cues={exampleCues}
       translationCues={exampleTranslationCues}
       shownCue={dogCue}
@@ -164,13 +171,7 @@ describe("MediaView", () => {
 
   it("keeps the controls shown while playback is paused", () => {
     renderView({
-      playback: {
-        isPlaying: false,
-        currentMs: 6_200,
-        durationMs: 24_000,
-        volume: 1,
-        speed: 1,
-      },
+      isPlaying: false,
     });
     letPointerRest();
     expect(areControlsFolded()).toBe(false);
@@ -178,13 +179,7 @@ describe("MediaView", () => {
 
   it("folds the controls away while the open pop-up keeps playback paused", () => {
     renderView({
-      playback: {
-        isPlaying: false,
-        currentMs: 6_200,
-        durationMs: 24_000,
-        volume: 1,
-        speed: 1,
-      },
+      isPlaying: false,
       lookup: <div role="dialog" aria-label="Dictionary" />,
     });
     letPointerRest();

@@ -1,13 +1,6 @@
-import { resetBackend } from "@easyimmerse/backend";
 import type { BatchLookupRequest } from "@easyimmerse/types";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  screen,
-  within,
-} from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
   bodyOf,
@@ -32,13 +25,12 @@ const panelWord = (word: string) =>
     name: word,
   });
 
-/** Advances the faked timers, letting the screen update in between. */
-const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
-
-/** Rests the mouse on an element for longer than it takes to look its word up. */
-async function restMouseOn(element: HTMLElement) {
-  fireEvent.pointerEnter(element, { pointerType: "mouse" });
-  await advance(150);
+/** Rests the mouse on a word of the subtitles panel until the word is highlighted, which its hover lookup's answer does. */
+async function restMouseOn(word: string) {
+  fireEvent.pointerEnter(panelWord(word), { pointerType: "mouse" });
+  await vi.waitFor(() =>
+    expect(panelWord(word).classList.contains("bg-accent-soft")).toBe(true),
+  );
 }
 
 /** Opens the pop-up on a word of the subtitles panel and waits for its entries. */
@@ -63,24 +55,11 @@ function watchForText(text: string) {
   return seen;
 }
 
+afterEach(cleanup);
+
 describe("MediaScreen lookup prefetch", () => {
-  // Only timeouts are faked, as in the other lookup tests, so that the queries' polling keeps real time.
-  let flushDue: ReturnType<typeof setInterval>;
-
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    flushDue = setInterval(() => vi.advanceTimersByTime(0), 5);
-  });
-
-  afterEach(() => {
-    cleanup();
-    clearInterval(flushDue);
-    vi.useRealTimers();
-    resetBackend();
-  });
-
   it("looks up the cues of the next minute in one batch, without their markup", async () => {
-    const { client } = renderMediaScreen({ batchLookupMs: 0 });
+    const { client } = renderMediaScreen({ batchLookups: "immediate" });
     await findSubtitles();
     await vi.waitUntil(() => batches(client).length > 0);
     expect(batches(client)[0]?.texts).toEqual([
@@ -92,30 +71,30 @@ describe("MediaScreen lookup prefetch", () => {
   });
 
   it("sends no lookup of its own for a word hovered in a prefetched cue", async () => {
-    const { client } = renderMediaScreen({ batchLookupMs: 0 });
+    const { client } = renderMediaScreen({ batchLookups: "immediate" });
     await findSubtitles();
     await vi.waitUntil(() => batches(client).length > 0);
-    await advance(10);
-    await restMouseOn(panelWord("dog"));
+    await restMouseOn("dog");
     expect(singleLookups(client)).toEqual([]);
   });
 
   it("waits for the batch being fetched rather than looking a hovered word up on its own", async () => {
-    const { client } = renderMediaScreen({ batchLookupMs: 500 });
+    const { client } = renderMediaScreen({ batchLookups: "held" });
     await findSubtitles();
     await vi.waitUntil(() => batches(client).length > 0);
-    await restMouseOn(panelWord("dog"));
-    await advance(600);
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await client.releaseBatches();
+    await restMouseOn("dog");
     expect(singleLookups(client)).toEqual([]);
   });
 
   it("follows the mouse to a prefetched word without showing that it is looking it up", async () => {
-    const { client } = renderMediaScreen({ batchLookupMs: 0 });
+    const { client } = renderMediaScreen({ batchLookups: "immediate" });
     await findSubtitles();
     await vi.waitUntil(() => batches(client).length > 0);
     const popup = await lookUpInPanel("cat");
     const sawLoading = watchForText("Looking up dog");
-    await restMouseOn(panelWord("dog"));
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
     await vi.waitUntil(
       () =>
         within(popup).getByRole<HTMLInputElement>("textbox", {
@@ -127,12 +106,13 @@ describe("MediaScreen lookup prefetch", () => {
 
   it("looks nothing up ahead when no dictionary covers the project's language", async () => {
     const { client } = renderMediaScreen({
-      batchLookupMs: 0,
+      batchLookups: "immediate",
       dictionaries: [dictionarySummary("jmdict", "ja", "en")],
     });
     await findSubtitles();
-    await screen.findByRole("button", { name: "night" });
-    await advance(50);
+    fireEvent.click(panelWord("cat"), { detail: 1 });
+    // The pop-up asks for a dictionary once the list of dictionaries is known, which is when the prefetch would start.
+    await screen.findByRole("button", { name: "Add a dictionary" });
     expect(batches(client)).toEqual([]);
   });
 });

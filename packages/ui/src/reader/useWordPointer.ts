@@ -27,13 +27,8 @@ export type ReaderWordGestures = {
   onWordDoubleClick: (word: ReaderWord) => void;
   /** The word the mouse pointer is over, reported at once each time it changes, and as null when it leaves the words. */
   onWordPointed?: (word: ReaderWord | null) => void;
-  /**
-   * A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text.
-   * It may answer with a promise, such as that of the word's lookup, for `onWordHoverAnswered` to wait for.
-   */
-  onWordHover: (word: ReaderWord) => unknown;
-  /** The answer of `onWordHover` settling while the mouse is still on the word; at once when there is none to wait for. */
-  onWordHoverAnswered?: (word: ReaderWord) => void;
+  /** A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text. */
+  onWordHover: (word: ReaderWord) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
 };
@@ -41,6 +36,13 @@ export type ReaderWordGestures = {
 type WordPointerCallbacks = ReaderWordGestures & {
   /** A click or tap that landed on no word. */
   onBlankClick: (event: MouseEvent<HTMLElement>) => void;
+  /** A mouse click on a word with Ctrl or Cmd held. Without it, such a click counts as a plain click. */
+  onWordCommandClick?: (word: ReaderWord) => void;
+  /**
+   * A mouse button held down on the word for as long as a held tap. Mouse presses are timed only while it is given.
+   * It returns false when it does nothing with the press, which then ends in a click as usual; otherwise that click is not reported.
+   */
+  onWordMouseHold?: (word: ReaderWord) => boolean;
 };
 
 /** How far the pointer may travel between press and release for the press to count as a click rather than a drag. */
@@ -65,15 +67,21 @@ export function useWordPointer(
   const hovered = useRef<ReaderWord | null>(null);
   const findWord = (point: ViewportPoint) =>
     wordAtPoint(point, chapterIndex, language);
-  const reportAnswer = (word: ReaderWord) => {
-    if (hovered.current === word) latest.current.onWordHoverAnswered?.(word);
-  };
   const reportClick = (
     event: MouseEvent<HTMLElement>,
     word: ReaderWord,
     point: ViewportPoint,
   ) => {
     const input = press.isTouch() ? "touch" : "mouse";
+    const { onWordCommandClick } = latest.current;
+    if (
+      input === "mouse" &&
+      onWordCommandClick &&
+      (event.ctrlKey || event.metaKey)
+    ) {
+      memory.forget();
+      return onWordCommandClick(word);
+    }
     const first =
       input === "touch"
         ? memory.takeDoubleTap(point)
@@ -99,8 +107,23 @@ export function useWordPointer(
     [lookupTriggerAttribute]: "",
     [clickableWordAttribute]: "",
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      const word =
-        event.pointerType === "mouse" ? null : findWord(pointOf(event));
+      if (event.pointerType === "mouse") {
+        // The word is found only once the press has lasted, since most mouse presses are quick clicks.
+        const timesMouse =
+          latest.current.onWordMouseHold !== undefined && event.button === 0;
+        press.start(
+          event,
+          () => {
+            const word = findWord(press.origin());
+            return (
+              word !== null && latest.current.onWordMouseHold?.(word) === true
+            );
+          },
+          timesMouse,
+        );
+        return;
+      }
+      const word = findWord(pointOf(event));
       press.start(event, () => {
         if (word) latest.current.onWordHold(word);
       });
@@ -113,15 +136,7 @@ export function useWordPointer(
       hovered.current = word;
       latest.current.onWordPointed?.(word);
       if (!word) return hoverTimer.cancel();
-      hoverTimer.restart(hoverMs, () => {
-        const answer = latest.current.onWordHover(word);
-        if (answer instanceof Promise)
-          answer.then(
-            () => reportAnswer(word),
-            () => reportAnswer(word),
-          );
-        else reportAnswer(word);
-      });
+      hoverTimer.restart(hoverMs, () => latest.current.onWordHover(word));
     },
     onPointerLeave: () => {
       if (hovered.current !== null) latest.current.onWordPointed?.(null);

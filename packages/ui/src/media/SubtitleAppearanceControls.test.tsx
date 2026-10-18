@@ -5,7 +5,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { SubtitleAppearanceControls } from "./SubtitleAppearanceControls.tsx";
 import {
   defaultSubtitleAppearance,
@@ -17,11 +17,14 @@ afterEach(cleanup);
 function renderControls(
   appearance: SubtitleAppearance = defaultSubtitleAppearance,
 ) {
-  const onChange = vi.fn();
+  const changes: SubtitleAppearance[] = [];
   render(
-    <SubtitleAppearanceControls appearance={appearance} onChange={onChange} />,
+    <SubtitleAppearanceControls
+      appearance={appearance}
+      onChange={(changed) => changes.push(changed)}
+    />,
   );
-  return onChange;
+  return changes;
 }
 
 const preview = () => screen.getByTestId("subtitle-preview");
@@ -41,44 +44,52 @@ describe("SubtitleAppearanceControls", () => {
   });
 
   it("changes the background opacity", () => {
-    const onChange = renderControls();
+    const changes = renderControls();
     fireEvent.change(
       screen.getByRole("slider", { name: "Background opacity" }),
       { target: { value: "70" } },
     );
-    expect(onChange).toHaveBeenCalledWith({
-      ...defaultSubtitleAppearance,
-      backgroundOpacity: 70,
-    });
+    expect(changes).toEqual([
+      {
+        ...defaultSubtitleAppearance,
+        backgroundOpacity: 70,
+      },
+    ]);
   });
 
   it("changes the text shadow", () => {
-    const onChange = renderControls();
+    const changes = renderControls();
     fireEvent.click(screen.getByRole("radio", { name: "Heavy" }));
-    expect(onChange).toHaveBeenCalledWith({
-      ...defaultSubtitleAppearance,
-      textShadow: "heavy",
-    });
+    expect(changes).toEqual([
+      {
+        ...defaultSubtitleAppearance,
+        textShadow: "heavy",
+      },
+    ]);
   });
 
   it("changes the text size", () => {
-    const onChange = renderControls();
+    const changes = renderControls();
     fireEvent.click(screen.getByRole("radio", { name: "150%" }));
-    expect(onChange).toHaveBeenCalledWith({
-      ...defaultSubtitleAppearance,
-      textSizeStep: 4,
-    });
+    expect(changes).toEqual([
+      {
+        ...defaultSubtitleAppearance,
+        textSizeStep: 4,
+      },
+    ]);
   });
 
   it("changes the text color", () => {
-    const onChange = renderControls();
+    const changes = renderControls();
     fireEvent.click(
       within(group("Text color")).getByRole("radio", { name: "Yellow" }),
     );
-    expect(onChange).toHaveBeenCalledWith({
-      ...defaultSubtitleAppearance,
-      textColor: "yellow",
-    });
+    expect(changes).toEqual([
+      {
+        ...defaultSubtitleAppearance,
+        textColor: "yellow",
+      },
+    ]);
   });
 
   it("checks the current text color", () => {

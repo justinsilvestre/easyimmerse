@@ -1,9 +1,16 @@
+import type { ReaderPanel } from "@easyimmerse/state";
 import clsx from "clsx";
-import { ALargeSmall, ArrowLeft, BookA, List, Search } from "lucide-react";
+import {
+  ALargeSmall,
+  ArrowLeft,
+  BookA,
+  Languages,
+  List,
+  Search,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
-import type { ReaderPanel } from "./readerState.ts";
 
 /**
  * The bar over the top of the page, which fades away while the reader reads.
@@ -16,6 +23,7 @@ export function ReaderToolbar({
   isVisible,
   panel,
   hasContents,
+  hasTranslation = false,
   headerContent,
   onBack,
   onLookup,
@@ -30,6 +38,8 @@ export function ReaderToolbar({
   panel: ReaderPanel | null;
   /** Whether the book has more than one chapter to list. */
   hasContents: boolean;
+  /** Whether the reader offers the translation panel, where the book is paired with its translation. */
+  hasTranslation?: boolean;
   headerContent?: ReactNode;
   onBack: () => void;
   onLookup: () => void;
@@ -84,6 +94,15 @@ export function ReaderToolbar({
         >
           <Search className="size-4" />
         </IconButton>
+        {hasTranslation && (
+          <IconButton
+            label="Translation"
+            pressed={panel === "translation"}
+            onClick={() => onTogglePanel("translation")}
+          >
+            <Languages className="size-4" />
+          </IconButton>
+        )}
         <IconButton
           label="Appearance"
           pressed={panel === "appearance"}

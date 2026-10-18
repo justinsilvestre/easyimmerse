@@ -15,8 +15,12 @@ export interface DesktopStorage {
 
 /** Reads the file, returning null when it does not exist or names no server. */
 export function readDesktopServerFile(path: string): DesktopServerFile | null {
-  if (!existsSync(path)) return null;
-  return parseDesktopServerFile(readFileSync(path, "utf-8"));
+  const text = readTextOrNull(path);
+  return text === null ? null : parseDesktopServerFile(text);
+}
+
+export function readTextOrNull(path: string): string | null {
+  return existsSync(path) ? readFileSync(path, "utf-8") : null;
 }
 
 export function parseDesktopServerFile(text: string): DesktopServerFile | null {

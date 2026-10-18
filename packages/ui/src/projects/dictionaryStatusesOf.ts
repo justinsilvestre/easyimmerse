@@ -1,8 +1,8 @@
+import { isSameLanguage } from "@easyimmerse/state";
 import type { DictionarySummary, ProjectSettings } from "@easyimmerse/types";
 import {
   coversLanguage,
   definesInLanguage,
-  isSameLanguage,
 } from "../dictionaries/dictionaryLanguages.ts";
 import type { LanguageDictionaryStatus } from "./DictionaryStatus.tsx";
 

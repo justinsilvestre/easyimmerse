@@ -1,12 +1,7 @@
+import type { AnchorRect } from "@easyimmerse/state";
 import type { PopupSize } from "./popupSize.ts";
 
-/** Where a word lies in the viewport, in CSS pixels, as `getBoundingClientRect` reports it. */
-export type AnchorRect = {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-};
+export type { AnchorRect } from "@easyimmerse/state";
 
 /** The size of the viewport, in CSS pixels. */
 export type ViewportSize = { width: number; height: number };

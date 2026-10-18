@@ -1,6 +1,6 @@
+import type { TextCursor } from "@easyimmerse/state";
 import type { TextDirection, TextStep } from "./cursorKeys.ts";
 import { runLookupEnd, runLookupStarts } from "./runLookupStarts.ts";
-import type { TextCursor } from "./textCursor.ts";
 
 /** A part of a text, as `splitIntoWords` finds it. */
 type TextPart = {

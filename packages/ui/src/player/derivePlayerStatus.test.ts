@@ -20,7 +20,7 @@ const inputs: PlayerStatusInputs = {
 };
 
 describe("derivePlayerStatus", () => {
-  it("builds the HLS source with the bearer header for a converting plan", () => {
+  it("builds the HLS source with the bearer header for a converting method", () => {
     expect(derivePlayerStatus(inputs)).toMatchObject({
       status: "ready",
       source: {
@@ -37,7 +37,7 @@ describe("derivePlayerStatus", () => {
     });
   });
 
-  it("fails when a converting plan names no playlist", () => {
+  it("fails when a converting method names no playlist", () => {
     const state = derivePlayerStatus({
       ...inputs,
       playback: { ...fixtureCopyPlayback, playlist_path: null },
@@ -45,7 +45,7 @@ describe("derivePlayerStatus", () => {
     expect(state).toMatchObject({ status: "error" });
   });
 
-  it("reports a tracks error before waiting for the plan", () => {
+  it("reports a tracks error before waiting for the playback method", () => {
     const state = derivePlayerStatus({
       ...inputs,
       tracks: undefined,

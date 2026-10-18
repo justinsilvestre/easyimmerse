@@ -1,27 +1,18 @@
-import { actions } from "@easyimmerse/state";
-import { useState } from "react";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { Button } from "./Button.tsx";
 import { ModalDialog } from "./ModalDialog.tsx";
 
-/**
- * Tells the user, once, that a file is about to be converted as it plays.
- * "Don't show this again" starts ticked, so that playing stores the `conversionNoticeDismissed` preference unless the box is cleared.
- */
+/** Tells the user that a file is about to be converted as it plays, with a "Don't show this again" box. */
 export function ConversionNoticeDialog({
+  dismissForGood,
+  onDismissForGoodToggle,
   onPlay,
   onCancel,
 }: {
+  dismissForGood: boolean;
+  onDismissForGoodToggle: () => void;
   onPlay: () => void;
   onCancel: () => void;
 }) {
-  const dispatch = useAppDispatch();
-  const [dismissForGood, setDismissForGood] = useState(true);
-  const play = () => {
-    if (dismissForGood)
-      dispatch(actions.preferenceSet("conversionNoticeDismissed", "true"));
-    onPlay();
-  };
   return (
     <ModalDialog
       title="This file will be converted as it plays"
@@ -29,7 +20,7 @@ export function ConversionNoticeDialog({
       footer={
         <>
           <Button onClick={onCancel}>Cancel</Button>
-          <Button variant="primary" autoFocus onClick={play}>
+          <Button variant="primary" autoFocus onClick={onPlay}>
             Play
           </Button>
         </>
@@ -43,7 +34,7 @@ export function ConversionNoticeDialog({
         <input
           type="checkbox"
           checked={dismissForGood}
-          onChange={(event) => setDismissForGood(event.target.checked)}
+          onChange={onDismissForGoodToggle}
         />
         Don't show this again
       </label>

@@ -1,4 +1,5 @@
-import { waveformPeaksPerSecond } from "../components/waveform/waveformWindowPolicy.ts";
+import { waveformPeaksPerSecond } from "@easyimmerse/state";
+import type { WaveformWindows } from "../components/waveform/selectWaveformWindows.ts";
 
 /** How many peaks per second the clip editor draws, fewer than the windows hold so a long file stays light. */
 const clipPeaksPerSecond = 20;
@@ -8,7 +9,7 @@ const clipPeaksPerSecond = 20;
  * Parts of the file with no loaded window stay silent.
  */
 export function peaksFromWindows(
-  windows: ReadonlyMap<number, Uint8Array>,
+  windows: WaveformWindows,
   durationMs: number,
 ): number[] {
   const peakMs = 1000 / clipPeaksPerSecond;

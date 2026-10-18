@@ -40,7 +40,7 @@ export function chapterStartProgresses(document: Document): number[] {
 }
 
 /**
- * The nearest location within the document.
+ * The nearest location within the document: the location itself when it lies within it.
  * A saved place can lie past the end of the book, for example when the file has changed since.
  */
 export function clampToBook(
@@ -52,11 +52,8 @@ export function clampToBook(
   if (paragraphs === undefined) return endOfBook(document);
   const paragraph = paragraphs[paragraphIndex];
   if (paragraph === undefined) return endOfChapter(chapterIndex, paragraphs);
-  return {
-    chapterIndex,
-    paragraphIndex,
-    offset: Math.min(offset, paragraph.length),
-  };
+  if (offset <= paragraph.length) return location;
+  return { chapterIndex, paragraphIndex, offset: paragraph.length };
 }
 
 function endOfBook(document: Document): ReaderLocation {

@@ -1,14 +1,10 @@
+import { isSameLanguage } from "@easyimmerse/state";
 import type { DictionarySummary } from "@easyimmerse/types";
 
 type DictionaryLanguages = Pick<
   DictionarySummary,
   "source_language" | "target_language"
 >;
-
-/** Tells whether two BCP 47 tags name the same language, ignoring script and region, so that `zh-Hans` matches `zh`. */
-export function isSameLanguage(first: string, second: string): boolean {
-  return primarySubtag(first) === primarySubtag(second);
-}
 
 /**
  * Tells whether a dictionary may hold the words of a language.
@@ -33,9 +29,4 @@ export function definesInLanguage(
     dictionary.target_language === null ||
     isSameLanguage(dictionary.target_language, language)
   );
-}
-
-/** Returns the language of a BCP 47 tag without its script or region, in lowercase, as `zh` for `zh-Hans`. */
-export function primarySubtag(tag: string): string {
-  return tag.split(/[-_]/)[0]?.toLowerCase() ?? "";
 }

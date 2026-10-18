@@ -1,5 +1,5 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
-import { useNavigationActions } from "../navigationContext.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
 import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 import { isOfflineError } from "./isOfflineError.ts";
 
@@ -13,7 +13,8 @@ export function HomeScreen({
   onCreateProject: () => void;
   onContinueOffline: () => void;
 }) {
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { data, isLoading, error } = useListProjectsQuery();
   return (
     <HomeView

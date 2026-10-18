@@ -1,7 +1,6 @@
 import type { KanjiResult } from "@easyimmerse/types";
 import { ClickableText } from "../components/ClickableText.tsx";
 import { FrequencyList } from "./FrequencyList.tsx";
-import { usePopupWordActions } from "./popupWordContext.ts";
 import { popupWordGestures } from "./popupWordGestures.ts";
 import { resolveTags } from "./resolveTags.ts";
 import { TagList } from "./TagList.tsx";
@@ -10,12 +9,14 @@ import { TagList } from "./TagList.tsx";
 export function KanjiCard({
   result,
   onWordLookup,
+  onWordHold,
 }: {
   result: KanjiResult;
   onWordLookup: (word: string) => void;
+  /** Makes a flashcard of a word held on a touch screen; without it, a held word does nothing. */
+  onWordHold?: (word: string) => void;
 }) {
   const { entry, tags } = result;
-  const popupWordActions = usePopupWordActions();
   return (
     <article
       aria-label={`Kanji ${entry.character}`}
@@ -31,7 +32,7 @@ export function KanjiCard({
         <p>
           <ClickableText
             text={entry.meanings.join(", ")}
-            gestures={popupWordGestures(onWordLookup, popupWordActions)}
+            gestures={popupWordGestures(onWordLookup, onWordHold)}
           />
         </p>
         <FrequencyList frequencies={result.frequencies} />

@@ -1,17 +1,19 @@
 import type {
-  Flashcard,
-  FlashcardDraft,
+  AddAlignmentRequest,
   LookupResponse,
   MediaFile,
-  PlaybackRequest,
+  PlaybackMethodRequest,
+  Project,
   SourceStepResponse,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { AnkiConnect } from "./ankiConnect.ts";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
-import { configureBackend, resetBackend } from "./configureBackend.ts";
+import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
 function createRecordingClient(): BackendClient & {
   requests: BackendRequest[];
@@ -88,8 +90,7 @@ function createApplyingSourceStepClient(): BackendClient & {
 async function storeAfterApplyingSourceStep(
   client: BackendClient = createApplyingSourceStepClient(),
 ) {
-  configureBackend(client);
-  const store = createStore();
+  const store = createStore(client);
   await store.dispatch(
     backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
   );
@@ -103,16 +104,35 @@ async function storeAfterApplyingSourceStep(
   return store;
 }
 
-function createStore() {
+function createStore(
+  client: BackendClient,
+  ankiConnect: AnkiConnect = createFakeAnkiConnect(),
+) {
+  const extra: BackendThunkExtra = {
+    client,
+    browserFileRegistry: null,
+    frameCapturer: null,
+    failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect,
+  };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
-    middleware: (getDefault) => getDefault().concat(backendApi.middleware),
+    middleware: (getDefault) =>
+      getDefault({ thunk: { extraArgument: extra } }).concat(
+        backendApi.middleware,
+      ),
   });
 }
 
 const mediaArgs = { projectId: "p1", mediaFileId: "m1" };
 
-const playbackRequest: PlaybackRequest = {
+const audioAlignmentRequest: AddAlignmentRequest = {
+  provider: null,
+  content: { kind: "audio", audio_media_file_id: "a1", segments: [] },
+};
+
+const playbackRequest: PlaybackMethodRequest = {
   environment: {
     engine: "webkit",
     can_play_type: "probably",
@@ -126,40 +146,6 @@ const srtRequest = {
   source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHi" },
   format: null,
 } as const;
-
-const savedFlashcard: Flashcard = {
-  id: "f1",
-  project_id: "p1",
-  media_file_id: "m1",
-  cue_index: null,
-  word_start: null,
-  content: {
-    word: "Hund",
-    word_pronunciation: "",
-    l1_definition: "",
-    l2_definition: "",
-    text_context: "",
-    text_context_translation: "",
-    text_context_pronunciation: "",
-    audio_context: { start_ms: 1000, end_ms: 2000 },
-    screenshot: null,
-    tags: [],
-  },
-  included_fields: ["word"],
-  created_at_ms: 0,
-  updated_at_ms: 0,
-};
-
-const movedClipDraft: FlashcardDraft = {
-  media_file_id: "m1",
-  cue_index: null,
-  word_start: null,
-  content: {
-    ...savedFlashcard.content,
-    audio_context: { start_ms: 500, end_ms: 2000 },
-  },
-  included_fields: ["word"],
-};
 
 const subtitleTracks: SubtitleTracksResponse = {
   tracks: [],
@@ -186,26 +172,12 @@ function createStubbedClient(
   };
 }
 
-async function storeWithFlashcards(failsWrites = false) {
-  configureBackend(
-    createStubbedClient(
-      { "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] } },
-      failsWrites,
-    ),
-  );
-  const store = createStore();
-  await store.dispatch(backendApi.endpoints.listFlashcards.initiate("p1"));
-  return store;
-}
-
 async function storeWithSubtitleTracks(failsWrites = false) {
-  configureBackend(
-    createStubbedClient(
-      { "GET /projects/p1/media/m1/subtitles": subtitleTracks },
-      failsWrites,
-    ),
+  const client = createStubbedClient(
+    { "GET /projects/p1/media/m1/subtitles": subtitleTracks },
+    failsWrites,
   );
-  const store = createStore();
+  const store = createStore(client);
   await store.dispatch(
     backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
   );
@@ -220,12 +192,13 @@ const addedBook: MediaFile = {
   created_at_ms: 0,
   track_selection_json: null,
   origin: null,
+  translation_media_file_id: null,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
 async function storeAfterAddingBook() {
   let listCount = 0;
-  configureBackend({
+  const client: BackendClient = {
     send: <T>(request: BackendRequest) => {
       if (request.method === "POST")
         return Promise.resolve({ data: addedBook as T });
@@ -234,8 +207,8 @@ async function storeAfterAddingBook() {
         ? Promise.resolve({ data: { media_files: [] } as T })
         : new Promise<never>(() => undefined);
     },
-  });
-  const store = createStore();
+  };
+  const store = createStore(client);
   await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
   await store.dispatch(
     backendApi.endpoints.addMediaFile.initiate({
@@ -246,12 +219,35 @@ async function storeAfterAddingBook() {
   return store;
 }
 
-const updateMovedClip = () =>
-  backendApi.endpoints.updateFlashcard.initiate({
-    projectId: "p1",
-    flashcardId: "f1",
-    draft: movedClipDraft,
-  });
+/** Lists two dictionaries, answers the removal of d1 with success or a failure, and leaves the list's refetch pending. */
+async function storeAfterRemovingD1(fails = false) {
+  let listCount = 0;
+  const client: BackendClient = {
+    send: <T>(request: BackendRequest) => {
+      if (request.method === "DELETE")
+        return Promise.resolve(
+          fails
+            ? { error: { status: 500, message: "failed" } }
+            : { data: undefined as T },
+        );
+      listCount += 1;
+      return listCount === 1
+        ? Promise.resolve({
+            data: { dictionaries: [{ id: "d1" }, { id: "d2" }] } as T,
+          })
+        : new Promise<never>(() => undefined);
+    },
+  };
+  const store = createStore(client);
+  await store.dispatch(backendApi.endpoints.listDictionaries.initiate());
+  await store.dispatch(backendApi.endpoints.deleteDictionary.initiate("d1"));
+  return store;
+}
+
+const listedDictionaryIds = (store: ReturnType<typeof createStore>) =>
+  backendApi.endpoints.listDictionaries
+    .select()(store.getState())
+    .data?.dictionaries.map(({ id }) => id);
 
 const chooseTranslation = () =>
   backendApi.endpoints.setSubtitleSelection.initiate({
@@ -259,37 +255,21 @@ const chooseTranslation = () =>
     selection: { target_track_id: "s1", translation_track_id: "s2" },
   });
 
-const listedClip = (store: ReturnType<typeof createStore>) =>
-  backendApi.endpoints.listFlashcards.select("p1")(store.getState()).data
-    ?.flashcards[0]?.content.audio_context;
-
 const listedSelection = (store: ReturnType<typeof createStore>) =>
   backendApi.endpoints.listSubtitleTracks.select(mediaArgs)(store.getState())
     .data?.selection;
 
-afterEach(resetBackend);
-
 describe("backendApi", () => {
-  it("throws a clear error when no client is configured", async () => {
-    const store = createStore();
-    const result = await store.dispatch(
-      backendApi.endpoints.listProjects.initiate(),
-    );
-    expect(result.error).toMatchObject({
-      message: expect.stringContaining("No backend client is configured"),
-    });
-  });
-
   it("sends GET /projects for listProjects", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(backendApi.endpoints.listProjects.initiate());
+    await createStore(client).dispatch(
+      backendApi.endpoints.listProjects.initiate(),
+    );
     expect(client.requests).toEqual([{ method: "GET", path: "/projects" }]);
   });
 
   it("returns the client's data for listProjects", async () => {
-    configureBackend(createRecordingClient());
-    const result = await createStore().dispatch(
+    const result = await createStore(createRecordingClient()).dispatch(
       backendApi.endpoints.listProjects.initiate(),
     );
     expect(result.data).toEqual({ projects: [] });
@@ -297,8 +277,7 @@ describe("backendApi", () => {
 
   it("carries the offline operation for parseTimedText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.parseTimedText.initiate(srtRequest),
     );
     expect(client.requests[0]?.offlineOperation).toEqual({
@@ -309,8 +288,7 @@ describe("backendApi", () => {
 
   it("sends GET /projects/{id}/media for listMediaFiles", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listMediaFiles.initiate("p1"),
     );
     expect(client.requests).toEqual([
@@ -320,8 +298,7 @@ describe("backendApi", () => {
 
   it("sends GET /projects/{id}/media/availability for getMediaAvailability", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getMediaAvailability.initiate("p1"),
     );
     expect(client.requests).toEqual([
@@ -331,12 +308,11 @@ describe("backendApi", () => {
 
   it("posts the name and source for addMediaFile", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
     const request = {
       name: "a.mp4",
       source: { kind: "path", path: "/a.mp4" },
     } as const;
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.addMediaFile.initiate({ projectId: "p1", request }),
     );
     expect(client.requests[0]).toEqual({
@@ -348,8 +324,7 @@ describe("backendApi", () => {
 
   it("sends DELETE /projects/{id}/media/{media_id} for removeMediaFile", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.removeMediaFile.initiate({
         projectId: "p1",
         mediaFileId: "m1",
@@ -360,95 +335,17 @@ describe("backendApi", () => {
     ]);
   });
 
-  it("sends the file as a raw body for importDictionary", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    const bytes = new Uint8Array([80, 75]);
-    await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "jmdict.zip",
-        bytes,
-      }),
-    );
-    expect(client.requests[0]?.body).toEqual({
-      kind: "bytes",
-      value: bytes,
-      contentType: "application/octet-stream",
-    });
-  });
-
-  it("puts the file name in the query string for importDictionary", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "oxford.mdx",
-        bytes: new Uint8Array(),
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({ fileName: "oxford.mdx" });
-  });
-
-  it("carries the file name in the offline operation for importDictionary", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    const bytes = new Uint8Array();
-    await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "words.csv",
-        bytes,
-      }),
-    );
-    expect(client.requests[0]?.offlineOperation).toEqual({
-      kind: "importDictionary",
-      fileName: "words.csv",
-      bytes,
-      tableLayout: null,
-    });
-  });
-
-  it("puts a chosen table layout in the query string for importDictionary", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "words.csv",
-        bytes: new Uint8Array(),
-        tableLayout: { columns: ["term", "ignored"], hasHeader: true },
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({
-      fileName: "words.csv",
-      columns: "term,ignored",
-      hasHeader: "true",
-    });
-  });
-
   it("sends GET /dictionaries/imports/{id} for getImportJob", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getImportJob.initiate("job 1"),
     );
     expect(client.requests[0]?.path).toBe("/dictionaries/imports/job%201");
   });
 
-  it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.previewDictionaryTable.initiate({
-        fileName: "words.csv",
-        bytes: new Uint8Array(),
-      }),
-    );
-    expect(client.requests[0]?.path).toBe("/dictionaries/preview");
-  });
-
   it("sends DELETE /dictionaries/{id} for deleteDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.deleteDictionary.initiate("d1"),
     );
     expect(client.requests).toEqual([
@@ -458,8 +355,7 @@ describe("backendApi", () => {
 
   it("puts the text and language in the query string for lookupText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({
         text: "猫が",
         language: "ja",
@@ -476,8 +372,7 @@ describe("backendApi", () => {
 
   it("puts the context and offset in the query string for lookupText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({
         text: "rufe dich an.",
         language: "de",
@@ -499,32 +394,18 @@ describe("backendApi", () => {
       kanji: [],
       stylesheets: [{ dictionaryId: "d1", css: "b { color: red }" }],
     };
-    configureBackend({
+    const client = {
       send: async <T>() => ({ data: response as T }),
-    });
-    const result = await createStore().dispatch(
+    };
+    const result = await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({ text: "猫", language: "ja" }),
     );
     expect(result.data?.stylesheets).toEqual(response.stylesheets);
   });
 
-  it("puts the format in the query string for parseDocument", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.parseDocument.initiate({
-        bytes: new Uint8Array(),
-        format: "epub",
-        contentType: "application/epub+zip",
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({ format: "epub" });
-  });
-
   it("sends GET .../tracks for getMediaTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getMediaTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -532,26 +413,24 @@ describe("backendApi", () => {
     ]);
   });
 
-  it("posts the playback request for planPlayback", async () => {
+  it("posts the playback request for choosePlaybackMethod", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.planPlayback.initiate({
+    await createStore(client).dispatch(
+      backendApi.endpoints.choosePlaybackMethod.initiate({
         ...mediaArgs,
         request: playbackRequest,
       }),
     );
     expect(client.requests[0]).toEqual({
       method: "POST",
-      path: "/projects/p1/media/m1/playback",
+      path: "/projects/p1/media/m1/playback-method",
       body: { kind: "json", value: playbackRequest },
     });
   });
 
   it("puts the selection for saveTrackSelection", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.saveTrackSelection.initiate({
         ...mediaArgs,
         selection: { video: 0, audio: 2 },
@@ -566,8 +445,7 @@ describe("backendApi", () => {
 
   it("puts the window bounds in the query string for getWaveformWindow", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getWaveformWindow.initiate({
         ...mediaArgs,
         startMs: 30_000,
@@ -583,8 +461,7 @@ describe("backendApi", () => {
 
   it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listEmbeddedSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -594,8 +471,7 @@ describe("backendApi", () => {
 
   it("sends GET .../subtitles for listSubtitleTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -603,10 +479,62 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("sends GET .../alignments for listAlignments", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listAlignments.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/alignments" },
+    ]);
+  });
+
+  it("posts the request body for addAlignment", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.addAlignment.initiate({
+        ...mediaArgs,
+        body: audioAlignmentRequest,
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "POST",
+      path: "/projects/p1/media/m1/alignments",
+      body: { kind: "json", value: audioAlignmentRequest },
+    });
+  });
+
+  it("sends DELETE .../alignments/{alignment_id} for removeAlignment", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.removeAlignment.initiate({
+        ...mediaArgs,
+        alignmentId: "al1",
+      }),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/projects/p1/media/m1/alignments/al1" },
+    ]);
+  });
+
+  it("puts the selection for setTranslationDocument", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setTranslationDocument.initiate({
+        ...mediaArgs,
+        body: { translation_media_file_id: "t1" },
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "PUT",
+      path: "/projects/p1/media/m1/translation-document",
+      body: { kind: "json", value: { translation_media_file_id: "t1" } },
+    });
+  });
+
   it("sends GET /conversion-cache for getConversionCacheStatus", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getConversionCacheStatus.initiate(),
     );
     expect(client.requests).toEqual([
@@ -616,8 +544,7 @@ describe("backendApi", () => {
 
   it("sends POST /conversion-cache/clear for clearConversionCache", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.clearConversionCache.initiate(),
     );
     expect(client.requests).toEqual([
@@ -625,10 +552,35 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("posts the flashcards, marking, and read time for recordAnkiExported", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.recordAnkiExported.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1", "f2"],
+        marksExported: true,
+        readAtMs: 1234,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "POST",
+        path: "/projects/p1/anki/exported",
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: ["f1", "f2"],
+            marks_exported: true,
+            read_at_ms: 1234,
+          },
+        },
+      },
+    ]);
+  });
+
   it("fetches the subtitle tracks again after a source step fails", async () => {
     const client = createFailingSourceStepClient();
-    configureBackend(client);
-    const store = createStore();
+    const store = createStore(client);
     store.dispatch(backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs));
     await store.dispatch(
       backendApi.endpoints.submitSourceStep.initiate({
@@ -663,6 +615,16 @@ describe("backendApi", () => {
     ).toHaveLength(1);
   });
 
+  it("drops a removed dictionary from the list before it is fetched again", async () => {
+    const store = await storeAfterRemovingD1();
+    expect(listedDictionaryIds(store)).toEqual(["d2"]);
+  });
+
+  it("keeps a dictionary whose removal failed in the list", async () => {
+    const store = await storeAfterRemovingD1(true);
+    expect(listedDictionaryIds(store)).toEqual(["d1", "d2"]);
+  });
+
   it("lists an added media file before the list is fetched again", async () => {
     const store = await storeAfterAddingBook();
     expect(
@@ -672,18 +634,6 @@ describe("backendApi", () => {
   });
 
   describe("while a change is being saved", () => {
-    it("shows an updated flashcard in the cached list at once", async () => {
-      const store = await storeWithFlashcards();
-      store.dispatch(updateMovedClip());
-      expect(listedClip(store)).toEqual({ start_ms: 500, end_ms: 2000 });
-    });
-
-    it("restores the cached flashcard when the update fails", async () => {
-      const store = await storeWithFlashcards(true);
-      await store.dispatch(updateMovedClip());
-      expect(listedClip(store)).toEqual({ start_ms: 1000, end_ms: 2000 });
-    });
-
     it("shows a chosen subtitle selection in the cached list at once", async () => {
       const store = await storeWithSubtitleTracks();
       store.dispatch(chooseTranslation());
@@ -695,5 +645,107 @@ describe("backendApi", () => {
       await store.dispatch(chooseTranslation());
       expect(listedSelection(store)?.translation_track_id).toBeNull();
     });
+  });
+});
+
+describe("checkAnkiConnection", () => {
+  it("is kept as the last send to Anki found it", async () => {
+    const store = createStore(createRecordingClient());
+    await store.dispatch(
+      backendApi.endpoints.sendFlashcardsToAnki.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1"],
+      }),
+    );
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: false, isDenied: false });
+  });
+});
+
+/** A server listing one pending deletion from Anki, of f1, and answering every other request with nothing. */
+function createPendingDeletionClient(): BackendClient {
+  const listed = {
+    deletions: [
+      {
+        flashcard_id: "f1",
+        word: "고양이",
+        requested_at_ms: 1,
+      },
+    ],
+  };
+  return {
+    send: async <T>(request: BackendRequest) =>
+      ({ data: request.method === "GET" ? listed : undefined }) as {
+        data: T;
+      },
+  };
+}
+
+/** Anki running, holding no note of any flashcard. */
+const runningAnki = () =>
+  createFakeAnkiConnect({ version: () => 6, findNotes: () => [] });
+
+describe("deleteAnkiNotes", () => {
+  it("keeps the connection to Anki as found once it answers", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.deleteAnkiNotes.initiate("p1"));
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: true, version: 6 });
+  });
+
+  it("tells that it found Anki when no check had found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(true);
+  });
+
+  it("does not tell that it found Anki once a check has found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.checkAnkiConnection.initiate());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(false);
+  });
+});
+
+describe("setAnkiConnect", () => {
+  it("puts the project it answers into the cache at once", async () => {
+    const project: Project = {
+      id: "p1",
+      settings: {
+        name: "Korean",
+        target_language: "ko",
+        translation_language: "en",
+        flashcard_fields: ["word"],
+        default_tags: [],
+        tags_media_name: false,
+        fills_audio_with_tts: false,
+        flashcard_front_fields: [],
+        lists_anki_deletions: true,
+      },
+      created_at_ms: 0,
+      last_opened_at_ms: 0,
+      media_count: 0,
+      flashcard_count: 0,
+      uses_anki_connect: true,
+    };
+    const store = createStore({
+      send: async <T>() => ({ data: project as T }),
+    });
+    await store.dispatch(
+      backendApi.endpoints.setAnkiConnect.initiate({
+        projectId: "p1",
+        usesAnkiConnect: true,
+      }),
+    );
+    expect(
+      backendApi.endpoints.getProject.select("p1")(store.getState()).data
+        ?.uses_anki_connect,
+    ).toBe(true);
   });
 });

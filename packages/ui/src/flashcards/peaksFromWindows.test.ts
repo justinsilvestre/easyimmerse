@@ -7,12 +7,12 @@ describe("peaksFromWindows", () => {
   });
 
   it("keeps the loudest of the source peaks that fall into one peak", () => {
-    const windows = new Map([[0, Uint8Array.from([0, 51, 255, 0, 0])]]);
+    const windows = new Map([[0, [0, 51, 255, 0, 0]]]);
     expect(peaksFromWindows(windows, 1_000)[0]).toBe(1);
   });
 
   it("places a window at its start time", () => {
-    const windows = new Map([[500, Uint8Array.from([255])]]);
+    const windows = new Map([[500, [255]]]);
     expect(peaksFromWindows(windows, 1_000).indexOf(1)).toBe(10);
   });
 });

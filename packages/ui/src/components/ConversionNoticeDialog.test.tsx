@@ -1,23 +1,22 @@
-import { resetBackend } from "@easyimmerse/backend";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { ConversionNoticeDialog } from "./ConversionNoticeDialog.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
-function renderDialog() {
+function renderDialog(dismissForGood = true) {
   const calls: string[] = [];
-  const rendered = renderWithAppStore(
+  render(
     <ConversionNoticeDialog
+      dismissForGood={dismissForGood}
+      onDismissForGoodToggle={() => calls.push("toggle")}
       onPlay={() => calls.push("play")}
       onCancel={() => calls.push("cancel")}
     />,
+    { wrapper: TestStoreProvider },
   );
-  return { ...rendered, calls };
+  return { calls };
 }
 
 const findDialog = () => screen.getByRole("dialog");
@@ -61,30 +60,24 @@ describe("ConversionNoticeDialog", () => {
     expect(calls).toEqual(["cancel"]);
   });
 
-  it("starts with the box ticked", () => {
-    renderDialog();
+  it("shows the box ticked when the dismissal is wanted", () => {
+    renderDialog(true);
     expect(
       screen.getByRole("checkbox", { name: "Don't show this again" }),
     ).toHaveProperty("checked", true);
   });
 
-  it("stores the dismissal when Play is clicked with the box ticked", () => {
-    const { effects } = renderDialog();
-    clickPlay();
-    expect(effects.preferences.get("conversionNoticeDismissed")).toBe("true");
+  it("shows the box cleared when the dismissal is not wanted", () => {
+    renderDialog(false);
+    expect(
+      screen.getByRole("checkbox", { name: "Don't show this again" }),
+    ).toHaveProperty("checked", false);
   });
 
-  it("stores nothing when Play is clicked with the box cleared", () => {
-    const { effects } = renderDialog();
+  it("calls onDismissForGoodToggle when the box is clicked", () => {
+    const { calls } = renderDialog();
     toggleDontShowAgain();
-    clickPlay();
-    expect(effects.preferences.has("conversionNoticeDismissed")).toBe(false);
-  });
-
-  it("stores nothing when the box is ticked but the dialog is cancelled", () => {
-    const { effects } = renderDialog();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(effects.preferences.has("conversionNoticeDismissed")).toBe(false);
+    expect(calls).toEqual(["toggle"]);
   });
 
   it("cancels when the close button is clicked", () => {

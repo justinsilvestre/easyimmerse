@@ -28,17 +28,69 @@ mise run check           # lint, typecheck, and test every layer
 ```sh
 mise run web-dev        # web app with hot reloading, against a local server
 mise run desktop        # desktop app with its embedded server
-mise run web:desktop    # web app with hot reloading, against the desktop app's server or a standalone server on its data
+mise run web:desktop    # web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data
+mise run dev            # desktop app, with the web app served to this machine and the local network against its server
 mise run storybook      # UI component stories at http://localhost:6006
 ```
 
-`web-dev` starts the server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Once per database, it gives the Spanish and the Japanese project a sample video with subtitles in their language and in English, and imports small dictionaries for both languages, all from the checkout's `fixtures/`. The video is stored by its path, which this server does not let the browser read, so it does not play here. Delete `.dev/` to start over. The server takes `--cache-dir` (or `EASYIMMERSE_CACHE_DIR`) for the directory where converted media is cached; without it, and without ffmpeg and ffprobe in `EASYIMMERSE_FFMPEG_DIR`, next to the executable, or on `PATH`, it plays only files the browser plays directly. `web-dev` does not set it yet. It takes `--plugins-dir` (or `EASYIMMERSE_PLUGINS_DIR`) for the directory holding installed plugins, one package per subdirectory, and `--media-dir` (or `EASYIMMERSE_MEDIA_DIR`) for where media-source plugins put the media they fetch; `web-dev` points them at `.dev/plugins` and `.dev/media`. Files in the media directory play in the browser even here, since the server fetched them itself.
+#### Web app against a local server (`web-dev`)
 
-`desktop` first fetches the ffmpeg sidecars when they are missing or come from an older release than the one pinned (`mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)), then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS, with installed plugins in `plugins/` and the media they fetch in `media/` beside it, and converted media in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`. Each time it starts, it writes its server's address, a new token, and those two paths to `.dev/desktop-server.env`. A debug build seeds two placeholder projects into a new database, as `web-dev` does, and once per database gives them the same sample video, subtitles, and dictionaries; a release build starts empty. A database that already has the placeholder projects receives the sample content on the next start, as long as a project has no media of its own. It refuses to start while the standalone server of `web:desktop` is running, because both would convert into the same cache.
+- The **server** listens at `http://127.0.0.1:8788` and accepts the token `dev`. The web app is configured to use it.
+- The **development database** is the file `.dev/server.sqlite`. To start with a fresh database, stop the task, delete `.dev/`, and start the task again.
+- A new database is **seeded with two placeholder projects**: "Spanish practice", with Spanish as the target language, and "Japanese drama", with Japanese. Both translate into English.
+- Once per database, the server also **adds sample content** from the checkout's `fixtures/` directory. Each placeholder project that has no media yet receives a short sample video with subtitles in its target language and in English, the Japanese project also receives a Japanese novel, and small dictionaries for both languages are imported.
+- The **sample video and novel do not open under this task.** They are stored as paths into `fixtures/`, and this server runs without `--allow-local-paths`, so it refuses to read files outside its own directories. The desktop app and `web:desktop` allow local paths, so the same sample content opens there.
+- The server's **directories** are set with a flag or an environment variable each.
 
-`web:desktop` reads `.dev/desktop-server.env`, so run `mise run desktop` once before using it. While the desktop app is running, the web app talks to its embedded server. Otherwise the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with `EASYIMMERSE_FFMPEG_DIR` pointing at the sidecars in `apps/native/src-tauri/binaries/`, and points the web app at it. Quit the task before starting the desktop app again. Vite reads the server address only at start-up, so restart the task after starting or quitting the desktop app.
+  | Directory | Flag | Environment variable | Under `web-dev` |
+  | --- | --- | --- | --- |
+  | converted-media cache | `--cache-dir` | `EASYIMMERSE_CACHE_DIR` | not set yet |
+  | installed plugins, one package per subdirectory | `--plugins-dir` | `EASYIMMERSE_PLUGINS_DIR` | `.dev/plugins` |
+  | media fetched by media-source plugins | `--media-dir` | `EASYIMMERSE_MEDIA_DIR` | `.dev/media` |
 
-`storybook` serves the stories of `packages/ui`, where screens are designed before they are wired to the store. The `storybook` workflow also publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request; it can be run by hand from the Actions tab to preview a branch without one, at `storybook/<branch>/`. The repository's Pages setting must serve the `gh-pages` branch.
+- A media file **plays only if the browser plays its format directly, or if the server can convert it**. Conversion needs a cache directory, and ffmpeg and ffprobe in `EASYIMMERSE_FFMPEG_DIR`, next to the executable, or on `PATH`. Since `web-dev` sets no cache directory, it plays only files the browser plays directly.
+- Files in the **media directory** are readable even without `--allow-local-paths`, since the server fetched them itself.
+- An **exported Anki package** includes the flashcards' sentence audio and screenshots only when the server has ffmpeg and may read the media file. A package exported under `web-dev` without `EASYIMMERSE_FFMPEG_DIR`, or from a file the browser holds, includes no media. The export still succeeds, and the app says how many media files it left out.
+
+#### Desktop app (`desktop`)
+
+- On **start-up**, the task fetches the ffmpeg sidecars when they are missing or come from an older release than the one pinned (through `mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)). It then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The first build can take several minutes.
+- The **database** is stored in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS. Installed plugins go in `plugins/` and the media they fetch in `media/`, both next to the database.
+- **Converted media** is cached in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`.
+- Each start **writes `.dev/desktop-server.env`** with the server's address, a new token, and the database and cache paths. The `web:desktop` and `dev` tasks read this file.
+- A debug build **seeds the same placeholder projects and sample content** as `web-dev`: the projects into an empty database, and the sample content once per database. A placeholder project that still has no media receives the sample content on the next start, even in an older database. A release build starts empty.
+- The app **refuses to start while the standalone server of `web:desktop` is running**, because both would convert media into the same cache.
+
+#### Web app on the desktop app's data (`web:desktop`)
+
+- The task **reads `.dev/desktop-server.env`**, so run `mise run desktop` once before the first use.
+- While the **desktop app is running**, the web app sends its requests to the desktop app's embedded server.
+- While the **desktop app is not running**, the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with `EASYIMMERSE_FFMPEG_DIR` pointing at the sidecars in `apps/native/src-tauri/binaries/`, and the web app uses that server instead. Quit the task before starting the desktop app again.
+- **Restart the task after starting or quitting the desktop app**, because Vite reads the server address only when it starts.
+
+#### Web app on the local network (`web:desktop`)
+
+- The task serves the web app to **this machine and to other devices on the local network**, such as a phone, and prints the address to open, for example `http://192.168.1.5:5173`.
+- The web app reaches the server through a **forwarder on port 8790**. The server accepts a request only when its Host header names the server's loopback address, so the forwarder listens on every network interface and passes each request on with the Host header rewritten.
+- **Use the task only on a network you trust.** The page includes the server's token and is served to the whole network, so anyone on the network can use both the page and the API.
+- macOS may ask whether **node may accept incoming connections**.
+- When the machine has **several network addresses**, for example because of a VPN interface, set `EASYIMMERSE_LAN_ADDRESS` to the one to use.
+- When the machine's **address changes**, restart the task. When the machine has no network address, the task serves the web app to this machine only.
+
+#### Desktop app and web app together (`dev`)
+
+- The task **starts the desktop app** as `desktop` does, waits until the app has written a new token to `.dev/desktop-server.env` and its server accepts that token, and then **serves the web app** as `web:desktop` does, against the desktop app's server.
+- **Restart the task after a change to Rust sources.** `tauri dev` rebuilds and restarts the desktop app, which writes a new token and possibly a new port, while Vite keeps the values it started with.
+- **Quitting the desktop app or stopping Vite** stops the whole task.
+
+#### Storybook (`storybook`)
+
+- The task **serves the stories** of `packages/ui`, where screens are designed before they are wired to the store.
+- The `storybook` **GitHub Actions workflow** publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request.
+- To **preview a branch without a pull request**, run the workflow by hand from the Actions tab. The stories appear at `storybook/<branch>/`.
+- The repository's **Pages setting** must serve the `gh-pages` branch.
+
+#### Browser extension
 
 The browser extension has no dev task. Build it, then load it unpacked:
 
@@ -138,9 +190,10 @@ The core logic and shared code for the Rust layer lives in `crates/`.
 crates/               the Rust workspace
 ├── core/             domain logic and shared types
 ├── media/            pure media handling: container probing, codec strings, playback and segment planning, HLS playlists, fMP4 reading, waveform peaks
-├── media-ffmpeg/     ffprobe probing, keyframe listing, encoder discovery, and ffmpeg command lines
+├── media-ffmpeg/     ffprobe probing, keyframe listing, encoder discovery, and ffmpeg command lines, including frame grabs and audio clips for flashcards
 ├── conversion/ *     converting media into HLS segments as it plays, with the on-disk cache and its budget
 ├── storage/          persistence
+├── anki/             Anki notes, note types and deck packages (.apkg) made from flashcards
 ├── api/              the HTTP API; routes in src/routes/, generated document in openapi.json
 ├── plugin-api/       the plugin interfaces, written in WIT under wit/ (MIT licensed)
 ├── plugins/ *        the plugin host, which loads and runs plugins
@@ -152,7 +205,7 @@ The core logic and shared code for the TypeScript layer lives in `packages/`.
 ```
 packages/             the TypeScript workspace
 ├── types/            types generated from Rust (src/generated/) and from the OpenAPI document (src/openapi/)
-├── state/            the Redux store, actions, update functions, and the Effects interface
+├── state/ *          the Redux store, actions, update functions, and the Effects interface
 ├── backend/          the RTK Query endpoints
 ├── ui/               screens and components, with their Storybook stories beside them
 ├── effects-web/      each platform's implementation of the Effects interface
@@ -181,10 +234,11 @@ Notes on the internals of individual parts live beside them:
 - [apps/native/README.md](apps/native/README.md): the Tauri shell, the ffmpeg sidecars, and the Android and iOS builds and end-to-end tests.
 - [crates/conversion/README.md](crates/conversion/README.md): the conversion service's measured behaviour that is left as it is.
 - [crates/plugins/README.md](crates/plugins/README.md): the plugin host's execution modes, its iOS and Android constraints, and the `plugin-check` feature.
+- [packages/state/README.md](packages/state/README.md): the state package's pipeline, folders, and test helpers.
 - [packages/wasm/README.md](packages/wasm/README.md): the offline WebAssembly package and its build.
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
-- [docs/](docs/): the product documentation: overview, user stories, UX refinements, and bug reports.
+- [docs/](docs/): the product documentation: overview, user stories, UX refinements, bug reports, and the [alignment data](docs/alignment-data.md) format.
 
 ## License
 

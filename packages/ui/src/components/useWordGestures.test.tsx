@@ -16,7 +16,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type Gesture = "click" | "doubleClick" | "hover" | "hoverAnswered" | "hold";
+type Gesture = "click" | "doubleClick" | "hover" | "hold";
 
 /** Renders a sentence whose word gestures are recorded as `gesture word`. */
 function renderSentence(text = "Ich rufe an.") {
@@ -31,7 +31,6 @@ function renderSentence(text = "Ich rufe an.") {
         onWordClick: record("click"),
         onWordDoubleClick: record("doubleClick"),
         onWordHover: record("hover"),
-        onWordHoverAnswered: record("hoverAnswered"),
         onWordHold: record("hold"),
       }}
     />,
@@ -195,59 +194,6 @@ describe("useWordGestures", () => {
     expect(gestures).toContain("hover rufe");
   });
 
-  it("reports the answer of a hover with nothing to wait for at once", () => {
-    const gestures = renderSentence();
-    fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
-    act(() => vi.advanceTimersByTime(40));
-    expect(gestures).toEqual(["hover rufe", "hoverAnswered rufe"]);
-  });
-
-  describe("when a hover answers later", () => {
-    /** Renders a sentence whose hovers answer only when the test resolves them, recording each answer reported. */
-    function renderAnswering() {
-      const answers: string[] = [];
-      let resolve: (length: number | null) => void = () => undefined;
-      render(
-        <ClickableText
-          text="Ich rufe an."
-          gestures={{
-            onWordHover: () =>
-              new Promise<number | null>((settle) => {
-                resolve = settle;
-              }),
-            onWordHoverAnswered: (hit, matchedLength) =>
-              answers.push(`${hit.word} ${matchedLength}`),
-          }}
-        />,
-      );
-      return { answers, answer: (length: number | null) => resolve(length) };
-    }
-
-    it("reports nothing until the hover answers", () => {
-      const { answers } = renderAnswering();
-      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
-      act(() => vi.advanceTimersByTime(200));
-      expect(answers).toEqual([]);
-    });
-
-    it("reports the answer with the length matched", async () => {
-      const { answers, answer } = renderAnswering();
-      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
-      act(() => vi.advanceTimersByTime(40));
-      await act(async () => answer(4));
-      expect(answers).toEqual(["rufe 4"]);
-    });
-
-    it("drops the answer once the mouse has left the word", async () => {
-      const { answers, answer } = renderAnswering();
-      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
-      act(() => vi.advanceTimersByTime(40));
-      fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
-      await act(async () => answer(4));
-      expect(answers).toEqual([]);
-    });
-  });
-
   it("reports no hover for a mouse that sweeps over a word", () => {
     const gestures = renderSentence();
     fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
@@ -278,6 +224,21 @@ describe("useWordGestures", () => {
       const pointed = renderPointed("Ich rufe an.");
       fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
       expect(pointed).toEqual(["rufe"]);
+    });
+
+    it("reports the mouse leaving when the text unmounts beneath it", () => {
+      const pointed: string[] = [];
+      const { unmount } = render(
+        <ClickableText
+          text="Ich rufe an."
+          gestures={{
+            onWordPointed: (hit) => pointed.push(hit?.word ?? "none"),
+          }}
+        />,
+      );
+      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+      unmount();
+      expect(pointed).toEqual(["rufe", "none"]);
     });
 
     it("reports nothing for a finger", () => {
@@ -372,10 +333,7 @@ describe("useWordGestures", () => {
         clientY: 10,
       });
       act(() => vi.advanceTimersByTime(30));
-      expect(gestures).toEqual([
-        "hover 映画を見る",
-        "hoverAnswered 映画を見る",
-      ]);
+      expect(gestures).toEqual(["hover 映画を見る"]);
     });
 
     it("looks up only the character the mouse comes to rest on, not those it sweeps over", () => {
@@ -396,7 +354,7 @@ describe("useWordGestures", () => {
         });
       }
       act(() => vi.advanceTimersByTime(40));
-      expect(gestures).toEqual(["hover 見る", "hoverAnswered 見る"]);
+      expect(gestures).toEqual(["hover 見る"]);
     });
 
     it("reports a held tap from the character under the finger", () => {

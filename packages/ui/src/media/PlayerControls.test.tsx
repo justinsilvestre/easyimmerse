@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 
@@ -16,16 +16,17 @@ const playback: PlayerControlsState = {
 
 const ignore = () => undefined;
 
-function callbacks(): PlayerCallbacks {
+/** Callbacks that record the subtitle menu's choices in `chosen`. */
+function callbacks(chosen: string[]): PlayerCallbacks {
   return {
     onTogglePlay: ignore,
     onSeek: ignore,
     onSkip: ignore,
     onVolumeChange: ignore,
-    onSpeedChange: vi.fn(),
+    onSpeedChange: ignore,
     onToggleSubtitleDisplay: ignore,
-    onToggleSubtitles: vi.fn(),
-    onOpenSubtitleAppearance: vi.fn(),
+    onToggleSubtitles: () => chosen.push("toggleSubtitles"),
+    onOpenSubtitleAppearance: () => chosen.push("openSubtitleAppearance"),
     onToggleCuePanel: ignore,
     onToggleWaveform: ignore,
     onToggleMute: ignore,
@@ -36,6 +37,7 @@ function callbacks(): PlayerCallbacks {
 function renderControls(
   overrides: Partial<Parameters<typeof PlayerControls>[0]> = {},
 ) {
+  const chosen: string[] = [];
   const props = {
     playback,
     tracks: {
@@ -44,11 +46,11 @@ function renderControls(
       translationSubtitlesId: null,
     },
     panels: { cues: true, waveform: false },
-    callbacks: callbacks(),
+    callbacks: callbacks(chosen),
     ...overrides,
   };
   render(<PlayerControls {...props} />);
-  return props.callbacks;
+  return chosen;
 }
 
 const openOptions = () =>
@@ -141,20 +143,20 @@ describe("PlayerControls playback options", () => {
   });
 
   it("hides or shows the subtitles from Show subtitles", () => {
-    const { onToggleSubtitles } = renderControls();
+    const chosen = renderControls();
     openOptions();
     fireEvent.click(
       screen.getByRole("menuitemcheckbox", { name: "Show subtitles" }),
     );
-    expect(onToggleSubtitles).toHaveBeenCalledOnce();
+    expect(chosen).toEqual(["toggleSubtitles"]);
   });
 
   it("opens the subtitle appearance dialog from Subtitle appearance…", () => {
-    const { onOpenSubtitleAppearance } = renderControls();
+    const chosen = renderControls();
     openOptions();
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Subtitle appearance…" }),
     );
-    expect(onOpenSubtitleAppearance).toHaveBeenCalledOnce();
+    expect(chosen).toEqual(["openSubtitleAppearance"]);
   });
 });

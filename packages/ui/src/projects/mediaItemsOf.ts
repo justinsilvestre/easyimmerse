@@ -1,9 +1,9 @@
 import {
   type BrowserFileRegistry,
+  isAudioFileName,
   isDocumentFileName,
 } from "@easyimmerse/state";
 import type { Flashcard, MediaFile } from "@easyimmerse/types";
-import { isAudioFileName } from "../player/isAudioFileName.ts";
 import type { MediaItem } from "./MediaList.tsx";
 import { mediaIssueOf, type PathAvailabilities } from "./mediaIssueOf.ts";
 

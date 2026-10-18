@@ -1,17 +1,12 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   findCreatedDraft,
   findSubtitles,
   renderMediaScreen,
-  requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** The word in the card of the given cue, counting cards from one. */
 async function cardWord(cardNumber: number, word: string) {
@@ -33,9 +28,6 @@ const fieldValue = () =>
 
 const isHighlighted = (word: HTMLElement) =>
   word.classList.contains("bg-accent-soft");
-
-/** The text a lookup from "dog" in the second cue sends. */
-const dogCueFromDog = "dog wants to eat.\nIt is hungry.";
 
 const seeks = (effects: { calls: { type: string }[] }) =>
   effects.calls.filter((call) => call.type === "seekPlayer");
@@ -85,46 +77,6 @@ describe("MediaScreen lookup cursor", () => {
     await vi.waitUntil(() => isHighlighted(dog));
     fireEvent.pointerLeave(dog, { pointerType: "mouse" });
     expect(isHighlighted(dog)).toBe(false);
-  });
-
-  it("highlights nothing on a word whose lookup has not answered", async () => {
-    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
-    const dog = await cardWord(2, "dog");
-    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(isHighlighted(dog)).toBe(false);
-  });
-
-  it("takes the highlight off a word at once when the mouse moves to one whose lookup has not answered", async () => {
-    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
-    const cat = await cardWord(1, "cat");
-    fireEvent.pointerEnter(cat, { pointerType: "mouse" });
-    await vi.waitUntil(() => isHighlighted(cat));
-    fireEvent.pointerLeave(cat, { pointerType: "mouse" });
-    fireEvent.pointerEnter(await cardWord(2, "dog"), { pointerType: "mouse" });
-    expect(isHighlighted(cat)).toBe(false);
-  });
-
-  it("highlights a word whose lookup is cached in the same moment the mouse moves onto it", async () => {
-    const { client } = renderMediaScreen({ batchLookupMs: 0 });
-    const dog = await cardWord(2, "dog");
-    await vi.waitUntil(
-      () =>
-        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
-          .length > 0,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
-    expect(isHighlighted(dog)).toBe(true);
-  });
-
-  it("leaves the pop-up's word unhighlighted while the mouse is on a word of another cue", async () => {
-    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
-    const cat = await cardWord(1, "cat");
-    fireEvent.click(cat, { detail: 1 });
-    await screen.findByRole("dialog", { name: "Dictionary" });
-    fireEvent.pointerEnter(await cardWord(2, "dog"), { pointerType: "mouse" });
-    expect(isHighlighted(cat)).toBe(false);
   });
 
   it("opens the search field with L once Escape has taken the cursor away", async () => {

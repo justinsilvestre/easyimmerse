@@ -1,4 +1,8 @@
-import { paragraphAttribute, rangeOfSpan } from "./textOffsets.ts";
+import {
+  paragraphAttribute,
+  paragraphTextOf,
+  rangeOfSpan,
+} from "./textOffsets.ts";
 import { zeroWidthSpace } from "./unwrapHardLineBreaks.ts";
 
 const highlightName = "reader-word";
@@ -14,7 +18,7 @@ export function highlightWord(
   );
   const end =
     paragraph &&
-    matchedSpanEnd(paragraph.textContent ?? "", location.offset, length);
+    matchedSpanEnd(paragraphTextOf(paragraph), location.offset, length);
   const range = paragraph && rangeOfSpan(paragraph, location.offset, end ?? 0);
   if (range) CSS.highlights.set(highlightName, new Highlight(range));
   else clearWordHighlight();

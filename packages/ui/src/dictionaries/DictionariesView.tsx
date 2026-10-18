@@ -1,4 +1,5 @@
 import type {
+  ColumnRole,
   ImportProgress,
   TableLayout,
   TablePreview,
@@ -16,16 +17,17 @@ import { DictionaryList } from "./DictionaryList.tsx";
 import type { DictionaryItem } from "./dictionaryItem.ts";
 import { RemoveDictionaryDialog } from "./RemoveDictionaryDialog.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
-import { useRemovalConfirmation } from "./useRemovalConfirmation.ts";
+import { useHeadingFocusAfterRemoval } from "./useHeadingFocusAfterRemoval.ts";
 
 /**
  * The dictionaries settings: every dictionary the user has added, and the ways to add one.
  * The registry button, the checkboxes and the order arrows show only when their handlers are given.
- * Removing a dictionary asks for confirmation before `onRemove` is called.
+ * Remove asks through `onRemove`; the question shows while `confirmingRemovalOf` is set.
  */
 export function DictionariesView({
   dictionaries,
   removingIds = [],
+  confirmingRemovalOf = null,
   isLoading = false,
   loadFailed = false,
   addingFile = null,
@@ -39,14 +41,20 @@ export function DictionariesView({
   onToggle,
   onMove,
   onRemove,
+  onConfirmRemoval,
+  onCancelRemoval,
   onDismissUnsupportedFile,
   onDismissImportFailure,
+  onTableColumnRoleChosen,
+  onTableHeaderRowToggled,
   onImportTable,
   onCancelTable,
 }: {
   dictionaries: readonly DictionaryItem[];
   /** The dictionaries whose removal has been confirmed but is not yet done. */
   removingIds?: readonly string[];
+  /** The dictionary the user is asked whether to remove, or null. */
+  confirmingRemovalOf?: DictionaryItem | null;
   /** Whether the list has yet to arrive. */
   isLoading?: boolean;
   /** Whether the list could not be loaded, as when no server is connected. */
@@ -59,25 +67,34 @@ export function DictionariesView({
   unsupportedFile: string | null;
   /** Why the last file could not be added for another reason, until dismissed. */
   importFailure?: string | null;
-  /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
-  pendingTable: { fileName: string; preview: TablePreview } | null;
+  /** The table file the user is adding, with its first rows, its columns as set so far and why it cannot be imported yet, until imported or cancelled. */
+  pendingTable: {
+    fileName: string;
+    preview: TablePreview;
+    layout: TableLayout;
+    hint: string | null;
+  } | null;
   /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up, so its button says only Back. */
   onBack: () => void;
   onAddFromRegistry?: () => void;
   onAddFromFile: () => void;
   onToggle?: (dictionaryId: string) => void;
   onMove?: (dictionaryId: string, direction: "up" | "down") => void;
+  /** Asks whether to remove a dictionary. */
   onRemove: (dictionaryId: string) => void;
+  onConfirmRemoval: () => void;
+  onCancelRemoval: () => void;
   onDismissUnsupportedFile: () => void;
   onDismissImportFailure: () => void;
-  onImportTable: (layout: TableLayout) => void;
+  onTableColumnRoleChosen: (index: number, role: ColumnRole) => void;
+  onTableHeaderRowToggled: () => void;
+  onImportTable: () => void;
   onCancelTable: () => void;
 }) {
-  const removal = useRemovalConfirmation(
+  const headingRef = useHeadingFocusAfterRemoval(
     dictionaries.map(({ id }) => id),
-    onRemove,
+    removingIds,
   );
-  const removing = dictionaries.find(({ id }) => id === removal.askingId);
   const isAdding = addingFile !== null;
   const addButtons = (
     <>
@@ -105,7 +122,7 @@ export function DictionariesView({
     <ScreenLayout onBack={onBack}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1
-          ref={removal.headingRef}
+          ref={headingRef}
           tabIndex={-1}
           className="text-xl font-semibold focus:outline-none"
         >
@@ -155,7 +172,7 @@ export function DictionariesView({
           removingIds={removingIds}
           onToggle={onToggle}
           onMove={onMove}
-          onRemove={removal.ask}
+          onRemove={onRemove}
         />
       )}
       {onMove && (
@@ -164,17 +181,21 @@ export function DictionariesView({
           shows their entries in the order listed.
         </p>
       )}
-      {removing && (
+      {confirmingRemovalOf && (
         <RemoveDictionaryDialog
-          title={removing.title}
-          onRemove={removal.confirm}
-          onCancel={removal.cancel}
+          title={confirmingRemovalOf.title}
+          onRemove={onConfirmRemoval}
+          onCancel={onCancelRemoval}
         />
       )}
       {pendingTable && (
         <TableColumnsDialog
           fileName={pendingTable.fileName}
           preview={pendingTable.preview}
+          layout={pendingTable.layout}
+          hint={pendingTable.hint}
+          onColumnRoleChosen={onTableColumnRoleChosen}
+          onHeaderRowToggled={onTableHeaderRowToggled}
           onImport={onImportTable}
           onCancel={onCancelTable}
         />

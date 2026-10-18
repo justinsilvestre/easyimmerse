@@ -1,10 +1,10 @@
-import type { AppStore, BufferedRange } from "@easyimmerse/state";
-import { actions, selectPlayer } from "@easyimmerse/state";
+import type { BufferedRange } from "@easyimmerse/state";
+import { actions, selectPlayerControls } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import type { RefObject, SyntheticEvent } from "react";
 import { useEffect } from "react";
-import { useStore } from "react-redux";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppStore } from "../hooks/useAppStore.ts";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { seekTarget } from "./seekTarget.ts";
 
@@ -13,7 +13,7 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 /**
  * Makes the media element the app's current player.
  * Seeks from the store land on it half a frame after the wanted moment, play, volume, mute, and speed requests reach it,
- * and its time, duration, loaded stretches, and playing state flow back into the store.
+ * and its time, duration, loaded stretches, playing state, and the times its seeks go to flow back into the store.
  * The element starts at the volume, mute state, and speed the store holds.
  * Returns the event handlers to put on the element.
  */
@@ -23,11 +23,11 @@ export function useRegisteredPlayer(
 ) {
   const registry = usePlayerRegistry();
   const dispatch = useAppDispatch();
-  const store = useStore() as AppStore;
+  const store = useAppStore();
   useEffect(() => {
     const element = elementRef.current;
     if (element !== null)
-      applySettings(element, selectPlayer(store.getState()));
+      applySettings(element, selectPlayerControls(store.getState()));
     const withElement = (act: (element: HTMLMediaElement) => void) => () => {
       if (elementRef.current !== null) act(elementRef.current);
     };
@@ -50,6 +50,9 @@ export function useRegisteredPlayer(
   return {
     onTimeUpdate: (event: MediaEvent) =>
       dispatch(actions.playerTimeChanged(event.currentTarget.currentTime)),
+    // Reported as the seek starts, since the browser queues the time update of the new position before `seeked`.
+    onSeeking: (event: MediaEvent) =>
+      dispatch(actions.playerSeeking(event.currentTarget.currentTime)),
     onDurationChange: (event: MediaEvent) => {
       const duration = event.currentTarget.duration;
       if (Number.isFinite(duration))

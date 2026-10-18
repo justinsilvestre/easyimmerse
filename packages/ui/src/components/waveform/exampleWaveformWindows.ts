@@ -1,12 +1,10 @@
-import {
-  waveformPeaksPerSecond,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
+import { waveformPeaksPerSecond, waveformWindowMs } from "@easyimmerse/state";
+import type { WaveformWindows } from "./selectWaveformWindows.ts";
 
 /** Makes peaks windows that look like speech, keyed by their start, for stories. */
 export function exampleWaveformWindows(
   startsMs: readonly number[],
-): ReadonlyMap<number, Uint8Array> {
+): WaveformWindows {
   return new Map(startsMs.map((start) => [start, syntheticWindow(start)]));
 }
 
@@ -19,8 +17,8 @@ export function windowStartsUpTo(durationMs: number): number[] {
 }
 
 /** A speech-like signal: bursts of varying loudness with pauses between them. */
-function syntheticWindow(startMs: number): Uint8Array {
-  const peaks = new Uint8Array(
+function syntheticWindow(startMs: number): number[] {
+  const peaks = new Array<number>(
     (waveformWindowMs / 1000) * waveformPeaksPerSecond,
   );
   for (let i = 0; i < peaks.length; i += 1) {

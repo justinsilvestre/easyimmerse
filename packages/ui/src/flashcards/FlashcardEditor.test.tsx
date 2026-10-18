@@ -1,9 +1,10 @@
+import type { AnkiFateOfDeletion } from "@easyimmerse/state";
+import { reduceEditor } from "@easyimmerse/state";
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { useReducer } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
-import { reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
   exampleLanguages,
@@ -35,6 +36,7 @@ function EditorWithState({ onSave }: { onSave: OnSave }) {
       onSave={() => onSave(state.content, state.includedFields)}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />
   );
 }
@@ -172,6 +174,7 @@ function renderWithSaveStatus(
       onSave={onSave}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />,
   );
 }
@@ -193,6 +196,7 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
       onSave={() => undefined}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />,
   );
   return actions;
@@ -201,7 +205,11 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
 /** Renders the editor, recording presses of Close and Delete. */
 function renderWithLeavingButtons(
   saveStatus: "idle" | "waitingForDefinitions" | "saving",
-  { isNew = false, hasSaveFailed = false } = {},
+  {
+    isNew = false,
+    hasSaveFailed = false,
+    ankiFate = null as AnkiFateOfDeletion | null,
+  } = {},
 ) {
   const presses: string[] = [];
   renderWithAppStore(
@@ -216,9 +224,11 @@ function renderWithLeavingButtons(
       saveStatus={saveStatus}
       isNew={isNew}
       hasSaveFailed={hasSaveFailed}
+      ankiFate={ankiFate}
       onSave={() => undefined}
       onDelete={() => presses.push("delete")}
       onClose={() => presses.push("close")}
+      onPlayClip={() => undefined}
     />,
   );
   return presses;
@@ -278,6 +288,16 @@ describe("FlashcardEditor's Delete", () => {
     renderWithLeavingButtons("idle");
     pressDelete();
     expect(confirmDialog().textContent).toContain(`“${exampleFlashcard.word}”`);
+  });
+
+  it("tells what becomes of the flashcard in Anki", () => {
+    renderWithLeavingButtons("idle", {
+      ankiFate: { note: "stays", wasPackaged: false },
+    });
+    pressDelete();
+    expect(confirmDialog().textContent).toContain(
+      "Its corresponding Anki note stays in Anki until you delete it there.",
+    );
   });
 
   it("deletes once the deletion is confirmed", () => {
@@ -432,6 +452,7 @@ describe("FlashcardEditor while its save waits for definitions", () => {
         onSave={onSave}
         onDelete={() => undefined}
         onClose={() => undefined}
+        onPlayClip={() => undefined}
       />,
     );
   }

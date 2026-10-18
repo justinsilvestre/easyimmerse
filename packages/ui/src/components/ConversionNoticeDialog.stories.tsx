@@ -8,7 +8,12 @@ const meta = {
   component: ConversionNoticeDialog,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onPlay: fn(), onCancel: fn() },
+  args: {
+    dismissForGood: true,
+    onDismissForGoodToggle: fn(),
+    onPlay: fn(),
+    onCancel: fn(),
+  },
 } satisfies Meta<typeof ConversionNoticeDialog>;
 
 export default meta;

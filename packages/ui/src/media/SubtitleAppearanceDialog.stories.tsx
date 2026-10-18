@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
 
 const meta = {
   title: "Media/SubtitleAppearanceDialog",
   component: SubtitleAppearanceDialog,
+  decorators: [withAppStore],
   args: {
     appearance: defaultSubtitleAppearance,
     onChange: fn(),

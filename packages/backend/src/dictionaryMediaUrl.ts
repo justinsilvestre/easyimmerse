@@ -1,4 +1,4 @@
-import type { ServerConfig } from "./resolveServerConfig.ts";
+import type { ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL an image element loads a file stored with a dictionary from.

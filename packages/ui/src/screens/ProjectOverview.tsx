@@ -1,30 +1,40 @@
 import {
   useGetMediaAvailabilityQuery,
+  useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
   useListPluginsQuery,
-  useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import {
+  actions,
+  type MediaImportSource,
+  selectAnkiExport,
+  selectFlashcardSync,
+  selectIsAnkiConnectSetupOpen,
+  selectMediaImport,
+  transientNotice,
+} from "@easyimmerse/state";
 import type { MediaAvailabilityResponse, Project } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useNavigationActions } from "../navigationContext.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
+import { AnkiConnectSetupDialog } from "../projects/AnkiConnectSetupDialog.tsx";
+import { AnkiExportDialog } from "../projects/AnkiExportDialog.tsx";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
-import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
-import { type ImportSource, MediaSection } from "../projects/MediaSection.tsx";
+import { MediaSection } from "../projects/MediaSection.tsx";
 import type { PathAvailabilities } from "../projects/mediaIssueOf.ts";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
+import { ProjectFlashcardsPanel } from "../projects/ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "../projects/ProjectView.tsx";
-import { useImportMedia } from "../projects/useImportMedia.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
  * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
- * The ways to review or export flashcards are not built yet, so each is marked as coming soon and explains so when chosen.
+ * The review is not built yet, so it is marked as coming soon and explains so when chosen.
  */
 export function ProjectOverview({
   project,
@@ -36,16 +46,25 @@ export function ProjectOverview({
   onEditSettings: () => void;
 }) {
   const dispatch = useAppDispatch();
-  const notify = (message: string) =>
-    dispatch(actions.notificationRequested(message));
   const notYet = () =>
-    notify("Reviewing and exporting flashcards is not available yet.");
+    dispatch(
+      actions.noticeRequested(
+        transientNotice("info", "Reviewing flashcards is not available yet."),
+      ),
+    );
   const media = useMediaItems(project.id);
-  const [removeMediaFile] = useRemoveMediaFileMutation();
   const importSources = useImportSources();
-  const importMedia = useImportMedia(project.id);
+  const importMedia = useAppSelector(selectMediaImport);
+  const ankiExport = useAppSelector(selectAnkiExport);
+  const isAnkiConnectSetupOpen = useAppSelector(selectIsAnkiConnectSetupOpen);
+  const flashcardSync = useAppSelector((state) =>
+    selectFlashcardSync(state, project.id),
+  );
+  // The panel lists or counts the deleted flashcards still to be deleted from Anki from this query's cached answer.
+  useListAnkiPendingDeletionsQuery(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { settings } = project;
   return (
     <ProjectView
@@ -66,41 +85,84 @@ export function ProjectOverview({
           media={media.items}
           importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
-          onImportMedia={importMedia.open}
+          onImportMedia={(source) =>
+            dispatch(actions.mediaImportOpened(source))
+          }
           onOpenMedia={(mediaFileId) =>
-            dispatch(actions.openMedia(mediaFileId))
+            dispatch(actions.openMediaFileRequested(project.id, mediaFileId))
           }
           onDeleteMedia={(mediaFileId) =>
-            removeMediaFile({ projectId: project.id, mediaFileId })
-              .unwrap()
-              .then(() => dispatch(actions.mediaFileRemoved(mediaFileId)))
-              .catch(() => notify("The media file could not be removed"))
+            dispatch(actions.mediaFileRemovalRequested(mediaFileId))
           }
         />
       )}
-      {importMedia.source && (
+      {importMedia && (
         <ImportMediaDialog
           label={importMedia.source.label}
           form={importMedia.form}
           isBusy={importMedia.isBusy}
           job={importMedia.job}
           error={importMedia.error}
-          onAction={importMedia.act}
-          onClose={importMedia.close}
+          onAction={(actionId, input) =>
+            dispatch(actions.mediaImportStepTaken(actionId, input))
+          }
+          onClose={() => dispatch(actions.mediaImportClosed())}
         />
       )}
-      <FlashcardSyncPanel
-        state={{ kind: "notStarted" }}
-        comingSoon={["review", "ankiPackage", "ankiConnect"]}
+      {ankiExport && (
+        <AnkiExportDialog
+          mediaFiles={media.items}
+          chosenMediaFileIds={ankiExport.mediaFileIds}
+          scope={ankiExport.scope}
+          newAndChangedCount={ankiExport.newAndChangedCount}
+          allCount={ankiExport.allCount}
+          marksExported={ankiExport.marksExported}
+          duplicateCount={ankiExport.duplicateCount}
+          isBusy={ankiExport.isBusy}
+          onScopeChange={(scope) =>
+            dispatch(actions.ankiExportScopeChosen(scope))
+          }
+          onMarkingChange={(marksExported) =>
+            dispatch(actions.ankiExportMarkingChosen(marksExported))
+          }
+          onMediaToggle={(mediaFileId) =>
+            dispatch(actions.ankiExportMediaToggled(mediaFileId))
+          }
+          onExport={() => dispatch(actions.ankiExportConfirmed())}
+          onClose={() => dispatch(actions.ankiExportClosed())}
+        />
+      )}
+      {isAnkiConnectSetupOpen && (
+        <AnkiConnectSetupDialog
+          onConnect={() => dispatch(actions.ankiConnectSetupRequested())}
+          onClose={() => dispatch(actions.ankiConnectSetupClosed())}
+        />
+      )}
+      <ProjectFlashcardsPanel
+        sync={flashcardSync}
         includedFields={settings.flashcard_fields}
+        frontFields={settings.flashcard_front_fields}
         languages={{
           target: settings.target_language,
           translation: settings.translation_language,
         }}
-        onExportPackage={notYet}
-        onSetUpAnkiConnect={notYet}
+        onExportPackage={() => dispatch(actions.ankiExportOpened())}
+        onSetUpAnkiConnect={() => dispatch(actions.ankiConnectSetupOpened())}
         onStartReview={notYet}
-        onSendToAnki={notYet}
+        onCheckConnection={() =>
+          dispatch(actions.ankiConnectionCheckRequested())
+        }
+        onTryAnkiSyncAgain={() => dispatch(actions.ankiSendRequested())}
+        onTurnOffAnkiConnect={() => dispatch(actions.ankiConnectTurnedOff())}
+        onCopyAnkiSearch={() =>
+          dispatch(
+            actions.textCopyRequested(
+              flashcardSync.package.ankiSearch,
+              "Anki search",
+            ),
+          )
+        }
+        onMarkDeletionsDone={() => dispatch(actions.ankiDeletionsMarkedDone())}
       />
     </ProjectView>
   );
@@ -110,7 +172,7 @@ export function ProjectOverview({
  * The installed media-source plugins, with the labels of their import buttons.
  * The server gives every media-source plugin a label, so the title only stands in for a missing one.
  */
-function useImportSources(): ImportSource[] {
+function useImportSources(): MediaImportSource[] {
   const plugins = useListPluginsQuery().data?.plugins ?? [];
   return plugins
     .filter((plugin) => plugin.kind === "media-source")

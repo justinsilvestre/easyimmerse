@@ -20,8 +20,12 @@ const meta = {
     onToggle: fn(),
     onMove: fn(),
     onRemove: fn(),
+    onConfirmRemoval: fn(),
+    onCancelRemoval: fn(),
     onDismissUnsupportedFile: fn(),
     onDismissImportFailure: fn(),
+    onTableColumnRoleChosen: fn(),
+    onTableHeaderRowToggled: fn(),
     onImportTable: fn(),
     onCancelTable: fn(),
   },
@@ -44,6 +48,11 @@ export const WithoutRegistryOrOrdering: Story = {
 /** After the removal of the first dictionary was confirmed, while the server deletes it. */
 export const RemovingOne: Story = {
   args: { removingIds: ["d1"] },
+};
+
+/** Asking whether to remove the first dictionary. */
+export const AskingToRemove: Story = {
+  args: { confirmingRemovalOf: exampleDictionaries[0] },
 };
 
 /** Before the server has reported any progress. */
@@ -101,6 +110,8 @@ export const AddingTable: Story = {
           ["鳥", "とり", "bird"],
         ],
       },
+      layout: { columns: ["term", "reading", "definition"], hasHeader: false },
+      hint: null,
     },
   },
 };
