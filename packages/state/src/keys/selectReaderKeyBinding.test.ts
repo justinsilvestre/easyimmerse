@@ -341,4 +341,107 @@ describe("selectReaderKeyBinding", () => {
       },
     );
   });
+  describe("while the keyboard has placed the lookup cursor in the text", () => {
+    const keyboardCursor = actions.lookupCursorMoved(
+      chosenTextWord(wordPlace),
+      "keyboard",
+    );
+    const withCursor = (...done: AppAction[]) =>
+      reading(keyboardCursor, ...done);
+    const stepCursor = (
+      direction: "forward" | "backward",
+      unit: "word" | "character" | "sentence",
+    ) => bindCommand({ type: "stepCursor", step: { direction, unit } });
+
+    it("moves the cursor forward by a word on Right", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("ArrowRight")),
+      ).toEqual(stepCursor("forward", "word"));
+    });
+
+    it("moves the cursor backward by a word on Left", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("ArrowLeft")),
+      ).toEqual(stepCursor("backward", "word"));
+    });
+
+    it("moves the cursor by a character on Shift+Right", () => {
+      const press = exampleKeyPress("ArrowRight", { isShifted: true });
+      expect(selectReaderKeyBinding(withCursor(), press)).toEqual(
+        stepCursor("forward", "character"),
+      );
+    });
+
+    it("moves the cursor to the next sentence on Down", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("ArrowDown")),
+      ).toEqual(stepCursor("forward", "sentence"));
+    });
+
+    it("moves the cursor to the previous sentence on Up", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("ArrowUp")),
+      ).toEqual(stepCursor("backward", "sentence"));
+    });
+
+    it("moves the cursor rather than turning the page in the paged layout", () => {
+      const app = reading(keyboardCursor);
+      expect(
+        selectReaderKeyBinding(app, exampleKeyPress("ArrowRight")),
+      ).not.toEqual(nextPage);
+    });
+
+    it("looks up the cursor's word on Enter", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("Enter")),
+      ).toEqual(lookedUp);
+    });
+
+    it("looks up the cursor's word on Space", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress(" ")),
+      ).toEqual(lookedUp);
+    });
+
+    it("saves a flashcard from the cursor's word on Shift+Enter", () => {
+      const press = exampleKeyPress("Enter", { isShifted: true });
+      expect(selectReaderKeyBinding(withCursor(), press)).toEqual(
+        bindCommand({ type: "startFlashcardAtCursor", destination: "save" }),
+      );
+    });
+
+    it("takes the cursor away on Escape", () => {
+      expect(
+        selectReaderKeyBinding(withCursor(), exampleKeyPress("Escape")),
+      ).toEqual(bindAction(actions.lookupCursorLeft("keyboard")));
+    });
+
+    it("closes the pop-up on Escape before taking the cursor away", () => {
+      const app = withCursor(actions.lookupCursorLookedUp());
+      expect(selectReaderKeyBinding(app, exampleKeyPress("Escape"))).toEqual(
+        lookupClosed,
+      );
+    });
+
+    it("turns pages with the arrows again once Escape has taken the cursor away", () => {
+      const app = withCursor(actions.lookupCursorLeft("keyboard"));
+      expect(
+        selectReaderKeyBinding(app, exampleKeyPress("ArrowRight")),
+      ).toEqual(nextPage);
+    });
+
+    it("turns pages with the arrows while the mouse placed the cursor", () => {
+      const app = reading(wordPointed);
+      expect(
+        selectReaderKeyBinding(app, exampleKeyPress("ArrowRight")),
+      ).toEqual(nextPage);
+    });
+
+    it("leaves the arrows alone while a panel is open", () => {
+      const app = withCursor(actions.readerPanelOpened("contents"));
+      expect(
+        selectReaderKeyBinding(app, exampleKeyPress("ArrowRight")),
+      ).toBeNull();
+    });
+  });
 });

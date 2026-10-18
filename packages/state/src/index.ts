@@ -156,6 +156,12 @@ export {
   reduceTextCursor,
   type TextCursor,
 } from "./screen/lookup/textCursor.ts";
+export type {
+  ReaderCursorStep,
+  TextDirection,
+  TextStep,
+  TextUnit,
+} from "./screen/lookup/textStep.ts";
 export {
   documentFormatOf,
   isAudioFileName,
@@ -220,6 +226,7 @@ export {
 } from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {
   PageInfo,
+  PendingReaderCursor,
   ReaderPanel,
   ReaderScreenState,
   ReaderTranslationStatus,

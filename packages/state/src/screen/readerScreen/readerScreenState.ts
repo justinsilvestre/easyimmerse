@@ -22,6 +22,18 @@ export type ReaderTranslationStatus = "absent" | "unaligned" | "aligned";
 /** The page of the chapter in view, counted from zero, and how many pages the chapter fills. */
 export type PageInfo = { page: number; pageCount: number };
 
+/**
+ * Where the keyboard is to place the lookup cursor once the text it lands in is laid out, as `updateReaderScreen` decides:
+ * at the first word of the page in view, at the last word of the chapter or section shown,
+ * at the start of the sentence being spoken, or at a place in the text the cursor stepped to.
+ * The reader view finds the word and places the cursor there, which settles the placement.
+ */
+export type PendingReaderCursor =
+  | { kind: "pageStart" }
+  | { kind: "pageEnd" }
+  | { kind: "spoken" }
+  | { kind: "at"; location: ReaderLocation };
+
 /** The reader's own state. Its place in the book is the stored reading location. */
 export type ReaderScreenState = {
   /** The view the user chose. The view shown can differ, as `shownReaderViewMode` describes. */
@@ -38,6 +50,8 @@ export type ReaderScreenState = {
   nearSpan: ItemSpan | null;
   /** The page in view in the paged layout, as last measured; null until measured. */
   pageInfo: PageInfo | null;
+  /** Where the keyboard is to place the lookup cursor, or null while no placement waits. */
+  pendingCursor: PendingReaderCursor | null;
 };
 
 export const initialReaderScreen: ReaderScreenState = {
@@ -49,4 +63,5 @@ export const initialReaderScreen: ReaderScreenState = {
   search: { query: "", activeMatchIndex: null },
   nearSpan: null,
   pageInfo: null,
+  pendingCursor: null,
 };

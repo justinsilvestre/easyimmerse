@@ -7,6 +7,7 @@ import {
   mediaScreenAfter,
 } from "../mediaScreen/mediaScreenTestSupport.ts";
 import type { MediaScreenState } from "../screenState.ts";
+import { chosenTextWord } from "./readerTestSupport.ts";
 
 const later = { chapterIndex: 1, paragraphIndex: 4, offset: 12 };
 const translationPlace = { chapterIndex: 0, paragraphIndex: 2, offset: 0 };
@@ -185,6 +186,84 @@ describe("updateMediaScreen", () => {
       const measured = actions.readerPageMeasured({ page: 3, pageCount: 9 });
       const before = mediaScreenAfter(measured);
       const [screen] = applyToMediaScreenIn(before, measured);
+      expect(screen.reader).toBe(before.screen.reader);
+    });
+  });
+});
+
+describe("updateMediaScreen", () => {
+  describe("for the keyboard's lookup cursor in the reader", () => {
+    const place = { chapterIndex: 0, paragraphIndex: 1, offset: 4 };
+    const keyboardAt = (location = place) =>
+      actions.lookupCursorMoved(chosenTextWord(location), "keyboard");
+
+    it("places the cursor at the first word of the page when the text gains focus", () => {
+      const [screen] = apply(actions.readerTextFocused());
+      expect(screen.reader.pendingCursor).toEqual({ kind: "pageStart" });
+    });
+
+    it("places the cursor on the sentence being spoken when the text gains focus while the audio plays", () => {
+      const [screen] = apply(
+        actions.readerTextFocused(),
+        actions.playerPlayingChanged(true),
+      );
+      expect(screen.reader.pendingCursor).toEqual({ kind: "spoken" });
+    });
+
+    it("places the cursor where a step landed", () => {
+      const [screen] = apply(
+        actions.readerCursorStepped(later, "forward"),
+        keyboardAt(),
+      );
+      expect(screen.reader.pendingCursor).toEqual({
+        kind: "at",
+        location: later,
+      });
+    });
+
+    it("places the cursor at the start of the next page when a step forward runs past the end", () => {
+      const [screen] = apply(
+        actions.readerCursorStepped(null, "forward"),
+        keyboardAt(),
+      );
+      expect(screen.reader.pendingCursor).toEqual({ kind: "pageStart" });
+    });
+
+    it("places the cursor at the end of the previous page when a step backward runs past the start", () => {
+      const [screen] = apply(
+        actions.readerCursorStepped(null, "backward"),
+        keyboardAt(),
+      );
+      expect(screen.reader.pendingCursor).toEqual({ kind: "pageEnd" });
+    });
+
+    it("settles the placement once the keyboard places the cursor", () => {
+      const [screen] = apply(keyboardAt(), actions.readerTextFocused());
+      expect(screen.reader.pendingCursor).toBeNull();
+    });
+
+    it("keeps the placement when the mouse moves the cursor", () => {
+      const [screen] = apply(
+        actions.lookupCursorMoved(chosenTextWord(place), "mouse"),
+        actions.readerTextFocused(),
+      );
+      expect(screen.reader.pendingCursor).toEqual({ kind: "pageStart" });
+    });
+
+    it("drops the placement when the keyboard's cursor leaves the text", () => {
+      const [screen] = apply(
+        actions.lookupCursorLeft("keyboard"),
+        actions.readerTextFocused(),
+      );
+      expect(screen.reader.pendingCursor).toBeNull();
+    });
+
+    it("keeps the reader's state when an action changes nothing", () => {
+      const before = mediaScreenAfter();
+      const [screen] = applyToMediaScreenIn(
+        before,
+        actions.lookupCursorLeft("mouse"),
+      );
       expect(screen.reader).toBe(before.screen.reader);
     });
   });

@@ -1,5 +1,6 @@
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 import type { ItemSpan } from "../itemSpan.ts";
+import type { TextDirection } from "../lookup/textStep.ts";
 import type {
   PageInfo,
   ReaderPanel,
@@ -68,6 +69,16 @@ export const readerScreenActions = {
   /** The page in view in the paged layout, as the reader measured it. */
   readerPageMeasured: (pageInfo: PageInfo) =>
     ({ type: "readerPageMeasured", pageInfo }) as const,
+  /** The book's text gained keyboard focus, as one region, so that the keyboard places the lookup cursor in it. */
+  readerTextFocused: () => ({ type: "readerTextFocused" }) as const,
+  /**
+   * The keyboard stepped the lookup cursor through the text, landing at `landing`,
+   * or past the end of the chapter or section shown when it is null, with another to move on to in that direction.
+   */
+  readerCursorStepped: (
+    landing: ReaderLocation | null,
+    direction: TextDirection,
+  ) => ({ type: "readerCursorStepped", landing, direction }) as const,
 };
 
 /** An action of the reader. */
