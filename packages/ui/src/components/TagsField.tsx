@@ -1,7 +1,8 @@
+import { addTags } from "@easyimmerse/state";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
-import { addTags, splitTypedTags } from "../flashcards/parseTags.ts";
+import { splitTypedTags } from "../flashcards/parseTags.ts";
 
 /**
  * A field that holds a list of tags. A comma or Enter turns the typed text into a tag;

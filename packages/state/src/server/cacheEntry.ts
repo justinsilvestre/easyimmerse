@@ -1,9 +1,12 @@
 import type {
   AnkiPendingDeletions,
   Document,
+  ListDictionariesResponse,
   MediaFile,
   PlaybackMethodRequest,
+  TimedTextTrack,
 } from "@easyimmerse/types";
+import type { PickedMediaFile } from "../platform/effects.ts";
 import { cacheKey } from "./cacheKey.ts";
 import type { ServerResponses } from "./serverRequest.ts";
 
@@ -25,6 +28,9 @@ export type CachedQueries = {
     mediaFileId: string;
     request: PlaybackMethodRequest;
   };
+  listSubtitleTracks: { projectId: string; mediaFileId: string };
+  getSubtitleCues: { projectId: string; mediaFileId: string; trackId: string };
+  probePictures: PickedMediaFile;
   getProject: string;
   listMediaFiles: string;
   listAlignments: { projectId: string; mediaFileId: string };
@@ -32,6 +38,7 @@ export type CachedQueries = {
   openBook: Pick<MediaFile, "name" | "source">;
   listFlashcards: string;
   listAnkiPendingDeletions: string;
+  listDictionaries: undefined;
   checkAnkiConnection: undefined;
 };
 
@@ -39,6 +46,8 @@ export type CachedQueries = {
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
   openBook: Document;
+  listDictionaries: ListDictionariesResponse;
+  getSubtitleCues: TimedTextTrack;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

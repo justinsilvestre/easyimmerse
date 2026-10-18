@@ -73,7 +73,7 @@ export const update: UpdateFunction<
     effects.push(...sliceEffects);
   }
   effects.push(...platformCommands(action));
-  effects.push(...screenCommands(action, state));
+  effects.push(...screenCommands(action, readable));
   effects.push(...flashcardCommands(action, state));
   effects.push(...ankiCommands(action, readable));
   const [operations, performed] = trackOperations(next.operations, effects);

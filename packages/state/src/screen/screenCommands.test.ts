@@ -5,6 +5,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleProjectSettings } from "../server/exampleProject.ts";
+import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import {
   applied,
   sourceStepSettled,
@@ -13,7 +14,7 @@ import { screenCommands } from "./screenCommands.ts";
 
 /** Returns the screen commands for an action after the given earlier actions. */
 const apply = (action: AppAction, ...before: AppAction[]) =>
-  screenCommands(action, stateAfter(...before));
+  screenCommands(action, withEmptyServerCache(stateAfter(...before)));
 
 const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",

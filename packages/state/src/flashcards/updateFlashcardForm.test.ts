@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { actions } from "../app/appAction.ts";
+import { type AppAction, actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import {
-  cat,
-  requestCursorFlashcard,
-  requestFlashcard,
-} from "../screen/lookup/lookupTestSupport.ts";
+import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
@@ -374,19 +370,6 @@ describe("updateFlashcardForm", () => {
     ).toBe("Kater");
   });
 
-  it("opens a flashcard for no word when the E key is pressed with no cursor", () => {
-    expect(
-      formUpdate(appAfter(), requestCursorFlashcard(null, "editor")).form?.card,
-    ).toMatchObject({ flashcardId: "f-wordless" });
-  });
-
-  it("opens no flashcard for no word when the E key is pressed at a cursor", () => {
-    const app = appAfter(actions.lookupCursorMoved(cat, "mouse"));
-    expect(
-      formUpdate(app, requestCursorFlashcard(cat, "editor")).form,
-    ).toBeNull();
-  });
-
   it("gives a new card a screenshot once the file is found to show pictures", () => {
     const app = appAfter(startNew("f1", "Katze"));
     expect(
@@ -448,5 +431,53 @@ describe("updateFlashcardForm", () => {
       formUpdate(app, settle(app, "flashcard/h/2", landed(saved))).form
         ?.rollbackIfDiscarded,
     ).toBeNull();
+  });
+
+  describe("when a waveform handle is dragged", () => {
+    const hundWithScreenshot = {
+      ...hund,
+      content: { ...hund.content, screenshot: { at_ms: 1500 } },
+    };
+    const openHundWithScreenshot = actions.flashcardOpened(
+      "h",
+      hundWithScreenshot,
+    );
+    const contentAfter = (app: AppState, drag: AppAction) =>
+      formUpdate(app, drag).form?.card.editor.content;
+
+    it("moves the open card's clip end to the dragged time", () => {
+      const app = appAfter(startNew("f1"));
+      const drag = actions.clipEndpointDragged("new", "end", 2499.6);
+      expect(contentAfter(app, drag)?.audio_context).toEqual({
+        start_ms: 1000,
+        end_ms: 2500,
+      });
+    });
+
+    it("moves the open card's screenshot to the dragged time", () => {
+      const app = appAfter(openHundWithScreenshot);
+      const drag = actions.screenshotMarkerDragged("h", 1700.4);
+      expect(contentAfter(app, drag)?.screenshot).toEqual({ at_ms: 1700 });
+    });
+
+    it("ignores a clip drag on a card that is not open", () => {
+      const app = appAfter(startNew("f1"));
+      const drag = actions.clipEndpointDragged("h", "end", 2500);
+      expect(contentAfter(app, drag)?.audio_context).toEqual({
+        start_ms: 1000,
+        end_ms: 2000,
+      });
+    });
+
+    it("ignores a screenshot drag on a card that is not open", () => {
+      const app = appAfter(openHundWithScreenshot);
+      const drag = actions.screenshotMarkerDragged("new", 1700);
+      expect(contentAfter(app, drag)?.screenshot).toEqual({ at_ms: 1500 });
+    });
+
+    it("leaves the form empty when no card is open", () => {
+      const drag = actions.clipEndpointDragged("new", "end", 2500);
+      expect(formUpdate(appAfter(), drag).form).toBeNull();
+    });
   });
 });

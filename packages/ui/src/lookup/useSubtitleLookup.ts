@@ -1,14 +1,9 @@
-import {
-  actions,
-  type FlashcardDestination,
-  selectLookupCursor,
-} from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { type ComponentProps, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useAppStore } from "../hooks/useAppStore.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import {
@@ -39,15 +34,9 @@ export function useSubtitleLookup(
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, flashcards);
-  const store = useAppStore();
   const cursor = useAppSelector(selectCuePosition);
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
-  const startFlashcardAtCursor = (destination: FlashcardDestination) =>
-    lookup.startFlashcardAtCursor(
-      selectLookupCursor(store.getState().app)?.chosen ?? null,
-      destination,
-    );
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -81,11 +70,6 @@ export function useSubtitleLookup(
     cursor,
     popup,
     openSearch: lookup.openSearch,
-    /**
-     * Starts a flashcard for the word at the cursor once its lookup answers, as a double-click there would,
-     * or, when there is no cursor, for no word; saved at once, or opened in the editor, as `destination` says.
-     */
-    startFlashcardAtCursor,
     /** Saves a flashcard for no word, from the cue shown now, as the New flashcard button does. */
     startWordlessFlashcard: lookup.startWordlessFlashcard,
     wordGestures,
