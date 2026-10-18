@@ -15,11 +15,13 @@ import {
 } from "./exampleJapaneseLookup.ts";
 import { exampleResults } from "./exampleLookup.ts";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
+import type { SentenceRowProps } from "./SentenceRow.tsx";
 
 afterEach(cleanup);
 
 type PopupHandlers = {
   state?: LookupDisplayState;
+  sentence?: SentenceRowProps;
   onSearch?: (term: string) => void;
   onCreateFlashcard?: (entryIndex: number | null) => void;
   onClose?: () => void;
@@ -33,6 +35,7 @@ const foundState: LookupDisplayState = {
 
 function renderPopup({
   state = foundState,
+  sentence,
   onSearch = () => undefined,
   onCreateFlashcard = () => undefined,
   onClose = () => undefined,
@@ -46,6 +49,7 @@ function renderPopup({
         state={state}
         resolveMediaUrl={() => null}
         mode="word"
+        sentence={sentence}
         onSearch={onSearch}
         onCreateFlashcard={onCreateFlashcard}
         onClose={onClose}
@@ -515,5 +519,76 @@ describe("DictionaryPopup links", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "食う" }));
     expect(searched).toEqual(["食う"]);
+  });
+});
+
+describe("DictionaryPopup sentence row", () => {
+  const translation = "El perro quiere comer. Tiene hambre.";
+  const translationOf = (
+    isShown: boolean,
+    onToggle: () => void = () => undefined,
+  ) => ({
+    text: translation,
+    language: "es",
+    isShown,
+    onToggle,
+  });
+
+  it("is left out when the sentence has neither audio nor a translation to show", () => {
+    renderPopup({});
+    expect(screen.queryByText("Sentence")).toBeNull();
+  });
+
+  it("plays the sentence from its play button", () => {
+    let playCount = 0;
+    renderPopup({
+      sentence: {
+        play: {
+          label: "Play the sentence (R)",
+          onPlay: () => (playCount += 1),
+        },
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Play the sentence (R)" }),
+    );
+    expect(playCount).toBe(1);
+  });
+
+  it("offers no translation button when the sentence has only audio", () => {
+    renderPopup({
+      sentence: {
+        play: { label: "Play the sentence (R)", onPlay: () => undefined },
+      },
+    });
+    expect(screen.queryByRole("button", { name: /translation/ })).toBeNull();
+  });
+
+  it("keeps the translation hidden until it is shown", () => {
+    renderPopup({ sentence: { translation: translationOf(false) } });
+    expect(screen.queryByText(translation)).toBeNull();
+  });
+
+  it("shows the translation once it is shown", () => {
+    renderPopup({ sentence: { translation: translationOf(true) } });
+    expect(screen.getByText(translation)).toBeDefined();
+  });
+
+  it("asks to show the translation from its button, which names the T key", () => {
+    let toggleCount = 0;
+    renderPopup({
+      sentence: { translation: translationOf(false, () => (toggleCount += 1)) },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show the translation (T)" }),
+    );
+    expect(toggleCount).toBe(1);
+  });
+
+  it("offers to hide the translation while it is shown", () => {
+    renderPopup({ sentence: { translation: translationOf(true) } });
+    expect(
+      screen.getByRole("button", { name: "Hide the translation (T)" }),
+    ).toBeDefined();
   });
 });

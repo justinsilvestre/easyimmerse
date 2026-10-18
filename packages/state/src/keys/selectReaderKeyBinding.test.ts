@@ -36,19 +36,16 @@ const nextPage = bindCommand({ type: "turnPage", direction: "next" });
 const previousPage = bindCommand({ type: "turnPage", direction: "previous" });
 const lookupClosed = bindAction(actions.lookupClosed());
 const lookedUp = bindAction(actions.lookupCursorLookedUp());
-const translationClosed = bindAction(actions.readerTranslationPopupClosed());
 
 const wordPlace = { chapterIndex: 0, paragraphIndex: 0, offset: 4 };
-const rect = { top: 10, bottom: 30, left: 40, right: 80 };
 /** The mouse pointing at a word of the book's first sentence. */
 const wordPointed = actions.lookupCursorMoved(
-  chosenTextWord(wordPlace, rect),
+  chosenTextWord(wordPlace),
   "mouse",
 );
 const spokenPlace = { chapterIndex: 0, paragraphIndex: 1, offset: 0 };
 /** The audio playing in its one segment. */
 const speaking = actions.playerTimeChanged(spokenSegment.start_ms / 1000);
-const translationShown = actions.readerTranslationPopupOpened(wordPlace, rect);
 
 describe("selectReaderKeyBinding", () => {
   describe("on Ctrl+F or Cmd+F", () => {
@@ -85,19 +82,6 @@ describe("selectReaderKeyBinding", () => {
   });
 
   describe("on Escape", () => {
-    it("closes the translation of a sentence", () => {
-      const root = readingWith(alignedReaderCache, translationShown);
-      expect(selectReaderKeyBinding(root, exampleKeyPress("Escape"))).toEqual(
-        translationClosed,
-      );
-    });
-
-    it("closes the translation of a sentence from a field", () => {
-      const root = readingWith(alignedReaderCache, translationShown);
-      const press = exampleKeyPress("Escape", { focus: "formField" });
-      expect(selectReaderKeyBinding(root, press)).toEqual(translationClosed);
-    });
-
     it("closes the dictionary pop-up", () => {
       const press = exampleKeyPress("Escape");
       expect(selectReaderKeyBinding(withPopup(), press)).toEqual(lookupClosed);
@@ -213,32 +197,26 @@ describe("selectReaderKeyBinding", () => {
 
   describe("on T", () => {
     const pressT = exampleKeyPress("t");
+    const toggleTranslation = bindCommand({
+      type: "toggleSentenceTranslation",
+    });
 
-    it("shows the translation of the pointed word's sentence beside the word", () => {
+    it("shows or hides the translation of the pointed word's sentence", () => {
       const root = readingWith(alignedReaderCache, wordPointed);
-      expect(selectReaderKeyBinding(root, pressT)).toEqual(
-        bindCommand({
-          type: "showSentenceTranslation",
-          location: wordPlace,
-          anchor: rect,
-        }),
-      );
+      expect(selectReaderKeyBinding(root, pressT)).toEqual(toggleTranslation);
     });
 
-    it("shows the translation of the spoken sentence at the foot of the window", () => {
+    it("shows or hides the translation of the spoken sentence", () => {
       const root = readingWith(alignedReaderCache, speaking);
-      expect(selectReaderKeyBinding(root, pressT)).toEqual(
-        bindCommand({
-          type: "showSentenceTranslation",
-          location: spokenPlace,
-          anchor: null,
-        }),
-      );
+      expect(selectReaderKeyBinding(root, pressT)).toEqual(toggleTranslation);
     });
 
-    it("hides the translation shown", () => {
-      const root = readingWith(alignedReaderCache, translationShown);
-      expect(selectReaderKeyBinding(root, pressT)).toEqual(translationClosed);
+    it("shows or hides the translation of the sentence of the word the pop-up shows", () => {
+      const root = readingWith(
+        alignedReaderCache,
+        actions.lookupWordClicked(chosenTextWord(wordPlace), "touch"),
+      );
+      expect(selectReaderKeyBinding(root, pressT)).toEqual(toggleTranslation);
     });
 
     it("does nothing without a current sentence", () => {
@@ -262,6 +240,36 @@ describe("selectReaderKeyBinding", () => {
         wordPointed,
       );
       expect(selectReaderKeyBinding(root, pressT)).toBeNull();
+    });
+  });
+
+  describe("on C and E", () => {
+    it("saves a flashcard from the lookup cursor on C", () => {
+      expect(selectReaderKeyBinding(reading(), exampleKeyPress("c"))).toEqual(
+        bindCommand({ type: "startFlashcardAtCursor", destination: "save" }),
+      );
+    });
+
+    it("opens a flashcard from the lookup cursor in the editor on E", () => {
+      expect(selectReaderKeyBinding(reading(), exampleKeyPress("e"))).toEqual(
+        bindCommand({ type: "startFlashcardAtCursor", destination: "editor" }),
+      );
+    });
+
+    it("leaves C alone while the flashcard editor is open", () => {
+      const app = reading(startNew("f1"));
+      expect(selectReaderKeyBinding(app, exampleKeyPress("c"))).toBeNull();
+    });
+
+    it("leaves E alone while the flashcard editor is open", () => {
+      const app = reading(startNew("f1"));
+      expect(selectReaderKeyBinding(app, exampleKeyPress("e"))).toBeNull();
+    });
+
+    it("leaves C alone while a panel is open", () => {
+      expect(
+        selectReaderKeyBinding(withPanel(), exampleKeyPress("c")),
+      ).toBeNull();
     });
   });
 

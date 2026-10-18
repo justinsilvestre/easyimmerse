@@ -2,7 +2,6 @@ import {
   actions,
   type ReaderLocation,
   type ReaderScreenState,
-  type ReaderTranslationPopup,
   type ReaderViewMode,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
@@ -12,7 +11,6 @@ import {
   parallelRowsOf,
 } from "./alignment/bilingualLayout.ts";
 import type { ParagraphAddress } from "./alignment/textSpans.ts";
-import { linkAt, translationOfLink } from "./alignment/translationAlignment.ts";
 import type { ChapterTranslation } from "./ChapterText.tsx";
 import type { ReaderViewAction } from "./ReaderView.tsx";
 import {
@@ -21,7 +19,6 @@ import {
   viewModesOf,
 } from "./readerTranslation.ts";
 import { clampToBook } from "./readingProgress.ts";
-import type { ReaderWord } from "./useWordPointer.ts";
 
 /**
  * Works out the text the reader shows in the view chosen: the book, or in the translation-only view the translation,
@@ -159,59 +156,5 @@ export function useTranslationView({
             : undefined,
         ),
       ),
-  };
-}
-
-/**
- * Shows the translation of the passage a word belongs to when the word is held, by touch or by mouse,
- * where the book is aligned with its translation and shown alone. Elsewhere a held touch does what `onWordHold` does.
- * The pop-up itself is the reader's state, which the store opens and closes, as `updateReaderScreen` describes;
- * here its text is found among the alignment's links, and the pop-up is left out when the text has none.
- */
-export function useTranslationPopup({
-  viewMode,
-  document,
-  translation,
-  popup,
-  onWordHold,
-  dispatch,
-}: {
-  viewMode: ReaderViewMode;
-  /** The book's text, in which the held words lie. */
-  document: Document;
-  translation: ReaderTranslation | undefined;
-  /** The pop-up open in the reader's state, if any. */
-  popup: ReaderTranslationPopup | null;
-  onWordHold: (word: ReaderWord) => void;
-  dispatch: (action: ReaderViewAction) => void;
-}) {
-  const links = viewMode === "target" ? translation?.links : null;
-  const translationDocument = translation?.document;
-  const translationAt = (location: ReaderLocation): string => {
-    const link = links && linkAt(links, document, location);
-    return link && translationDocument
-      ? translationOfLink(translationDocument, link)
-      : "";
-  };
-  const show = (word: ReaderWord): boolean => {
-    if (translationAt(word.location) === "") return false;
-    const { top, bottom, left, right } = word.rect;
-    dispatch(
-      actions.readerTranslationPopupOpened(word.location, {
-        top,
-        bottom,
-        left,
-        right,
-      }),
-    );
-    return true;
-  };
-  const text = popup === null ? "" : translationAt(popup.location);
-  return {
-    popup: popup !== null && text !== "" ? { text, rect: popup.anchor } : null,
-    onWordHold: (word: ReaderWord) => {
-      if (!show(word)) onWordHold(word);
-    },
-    onWordMouseHold: links && translationDocument ? show : undefined,
   };
 }

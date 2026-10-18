@@ -1,14 +1,9 @@
-import {
-  actions,
-  type FlashcardDestination,
-  selectLookupCursor,
-} from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { type ComponentProps, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useAppStore } from "../hooks/useAppStore.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import {
@@ -20,6 +15,7 @@ import { selectCuePosition } from "../media/selectCuePosition.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
+import type { SentenceRowSource } from "./sentenceRowSource.ts";
 import { useWordLookup } from "./useWordLookup.ts";
 import type { WordFlashcards } from "./wordFlashcards.ts";
 
@@ -27,6 +23,7 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
  * Moves the screen's one lookup cursor, which the mouse and the keyboard move alike, wherever the subtitles are shown.
+ * A held tap or held mouse button on a word opens the pop-up with the cue's translation in its sentence row, which `sentence` fills.
  * Returns the gestures for the subtitles' words, which keep their identity across renders,
  * the word the pop-up shows, which keeps its identity while it shows the same word and is highlighted only while there is no cursor,
  * the cursor's place, highlighted at once when its word's lookup is cached,
@@ -35,19 +32,14 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
   flashcards: WordFlashcards,
+  sentence: SentenceRowSource,
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const lookup = useWordLookup(languages, flashcards);
-  const store = useAppStore();
+  const lookup = useWordLookup(languages, flashcards, sentence);
   const cursor = useAppSelector(selectCuePosition);
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
-  const startFlashcardAtCursor = (destination: FlashcardDestination) =>
-    lookup.startFlashcardAtCursor(
-      selectLookupCursor(store.getState().app)?.chosen ?? null,
-      destination,
-    );
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -74,7 +66,8 @@ export function useSubtitleLookup(
       matchedLengthAhead(dispatch, chosenAt(hit, cue).word.query),
     onWordDoubleClick: (hit, cue) =>
       lookup.startFlashcardFor(chosenAt(hit, cue)),
-    onWordHold: (hit, cue) => lookup.startFlashcardFor(chosenAt(hit, cue)),
+    onWordHold: (hit, cue) => lookup.holdWord(chosenAt(hit, cue)),
+    onWordMouseHold: (hit, cue) => lookup.holdWord(chosenAt(hit, cue)),
   });
   return {
     activeWord: useActiveCueWord(lookup.activeOccurrence, cursor !== null),
@@ -85,7 +78,9 @@ export function useSubtitleLookup(
      * Starts a flashcard for the word at the cursor once its lookup answers, as a double-click there would,
      * or, when there is no cursor, for no word; saved at once, or opened in the editor, as `destination` says.
      */
-    startFlashcardAtCursor,
+    startFlashcardAtCursor: lookup.startFlashcardAtCursor,
+    /** The T key: shows or hides the current cue's translation in the pop-up's sentence row. */
+    toggleSentenceTranslation: lookup.toggleSentenceTranslation,
     /** Saves a flashcard for no word, from the cue shown now, as the New flashcard button does. */
     startWordlessFlashcard: lookup.startWordlessFlashcard,
     wordGestures,

@@ -88,6 +88,11 @@ export type LookupState = {
   pausedPlayback: boolean;
   /** Kept through closing and reopening while the screen is open. */
   size: "compact" | "expanded";
+  /**
+   * Whether the pop-up's sentence row shows the translation of the word's sentence or cue, when it has one to show.
+   * The user's choice, kept while the screen is open, as `size` is.
+   */
+  isSentenceTranslationShown: boolean;
 };
 
 /** The lookup of a screen as it opens. */
@@ -98,6 +103,7 @@ export const initialLookup: LookupState = {
   isPointerInside: false,
   pausedPlayback: false,
   size: "compact",
+  isSentenceTranslationShown: false,
 };
 
 /** Tells whether two occurrences are the same place in the same passage. */

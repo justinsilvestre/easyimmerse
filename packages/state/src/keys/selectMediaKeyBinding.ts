@@ -14,18 +14,21 @@ import {
   selectLookupEscapeBinding,
 } from "./keyBinding.ts";
 
-/** What the media screen completes with data only it holds: the cues, the drafts of flashcards, and the fullscreen state. */
+/** What the media screen completes with data only it holds: the cues and their translations, the drafts of flashcards, and the fullscreen state. */
 type MediaKeyCommand =
   | { type: "skipCue"; direction: "back" | "forward" }
   | { type: "replayCue" }
   | { type: "toggleFullscreen" }
-  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination };
+  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination }
+  /** Shows the translation of the current cue in the dictionary pop-up's sentence row, or hides it again. */
+  | { type: "toggleSentenceTranslation" };
 
 /**
  * Returns what a key does on the media screen, or null to leave it to the browser.
  * Space or K plays and pauses, Left and Right skip to the previous and next cue, R replays the cue shown now, M mutes,
  * and F fills the screen. L looks up from the lookup cursor, C saves a flashcard from it,
  * and E opens that flashcard in the editor instead, unless a card is open there already.
+ * T shows the translation of the cursor's cue, or of the cue shown now, in the dictionary pop-up's sentence row, or hides it again.
  * Escape makes the dictionary pop-up compact, or closes it.
  * Space is left to a focused control, and every key to Settings or a modal dialog over the screen.
  */
@@ -74,6 +77,10 @@ export function selectMediaKeyBinding(
             destination: "editor",
           })
         : null;
+    case "t":
+      return bindCommand<MediaKeyCommand>({
+        type: "toggleSentenceTranslation",
+      });
     default:
       return null;
   }

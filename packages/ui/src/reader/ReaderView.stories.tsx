@@ -153,8 +153,8 @@ function popupFor(word: string, onClose: () => void) {
  * the keys and the dictionary pop-up work in every story.
  * A click opens the pop-up on a word, and resting the mouse on another moves it there.
  * "Ungeziefer" and "fressen" have entries.
- * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself;
- * the translation of a held word, and R and T on the word under the mouse, go through the store.
+ * Escape, L and T act on the store's lookup, so they leave alone a pop-up that the story opened itself;
+ * R on the word under the mouse goes through the store.
  * The book's translation comes from the fake backend the story's store talks to.
  */
 function StatefulReader(args: ReaderStoryArgs) {
@@ -171,10 +171,7 @@ function StatefulReader(args: ReaderStoryArgs) {
     mediaFiles,
     args.document,
   );
-  const controls = useReaderKeyBindings({
-    playAt: args.audio?.playAt,
-    showTranslationAt: bilingual.showTranslationAt,
-  });
+  const controls = useReaderKeyBindings({ playAt: args.audio?.playAt });
   const [word, setWord] = useState<ReaderWord | null>(null);
   const [isInitialLookupOpen, setInitialLookupOpen] = useState(true);
   const close = () => {
@@ -404,6 +401,7 @@ const pausedAudio = {
   spokenSpan: audioSegments[1]?.span ?? null,
   isPlaying: false,
   playAt: fn(),
+  hasSegmentAt: () => true,
 } satisfies ReaderStoryArgs["audio"];
 
 /** The short book aligned with its audio, paused in the second sentence. */
@@ -491,27 +489,44 @@ export const InterlinearWithAudio: Story = {
   args: { ...alignedShortBook.args, audio: pausedAudio },
 };
 
-/** The place of the word "dog" in the short book's second sentence. */
-const dogPlace = { chapterIndex: 0, paragraphIndex: 1, offset: 4 };
-
-/** The translation of the sentence of a held word, beside where the word is drawn. Holding another word moves it there. */
-export const SentenceTranslationBesideWord: Story = {
+/** The dictionary pop-up on a held word of the short book, with its sentence row showing the sentence's translation, and the sentence underlined. */
+export const SentenceTranslationInPopup: Story = {
   ...alignedShortBook,
-  decorators: openedWith(
-    actions.readerTranslationPopupOpened(dogPlace, {
-      top: 180,
-      bottom: 204,
-      left: 120,
-      right: 150,
-    }),
-  ),
-};
-
-/** The translation of the current sentence as T opens it on a spoken sentence, at the foot of the window. */
-export const SentenceTranslationFromKeyboard: Story = {
-  ...alignedShortBook,
-  decorators: openedWith(actions.readerTranslationPopupOpened(dogPlace, null)),
-  args: { ...alignedShortBook.args, audio: pausedAudio },
+  decorators: openedWith(),
+  args: {
+    ...alignedShortBook.args,
+    audio: pausedAudio,
+    lookup: (
+      <DictionaryPopup
+        state={{ kind: "notFound", term: "dog" }}
+        mode="word"
+        resolveMediaUrl={resolveExampleMediaUrl}
+        sentence={{
+          play: { label: "Play the sentence (R)", onPlay: fn() },
+          translation: {
+            text: "El perro quiere comer. Tiene hambre.",
+            language: "es",
+            isShown: true,
+            onToggle: fn(),
+          },
+        }}
+        onSearch={fn()}
+        onCreateFlashcard={fn()}
+        onClose={fn()}
+        onSetUpDictionary={fn()}
+      />
+    ),
+    lookupRect: { top: 180, bottom: 204, left: 120, right: 150 },
+    highlightedSentence: [
+      {
+        chapter_index: 0,
+        paragraph_index: 1,
+        start: 0,
+        end: 39,
+        quote: "The dog wants to eat, and it is hungry.",
+      },
+    ],
+  },
 };
 
 const fixtureFiles = [

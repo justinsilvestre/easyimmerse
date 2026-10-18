@@ -23,6 +23,7 @@ export type CueWordGestures = {
     cue: Cue,
   ) => Promise<number | null> | null;
   onWordHold?: CueWordHandler;
+  onWordMouseHold?: CueWordHandler;
 };
 
 /** Binds the gestures to the cue whose words they come from. */
@@ -41,6 +42,7 @@ export function gesturesForCue(
     onWordHover: bind(gestures.onWordHover),
     lookUpMatchedLength: bind(gestures.lookUpMatchedLength),
     onWordHold: bind(gestures.onWordHold),
+    onWordMouseHold: bind(gestures.onWordMouseHold),
   };
 }
 

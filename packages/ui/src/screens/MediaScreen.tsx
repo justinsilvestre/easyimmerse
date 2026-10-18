@@ -1,4 +1,5 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
+import type { LookupSource } from "@easyimmerse/state";
 import {
   actions,
   selectCanChooseTracks,
@@ -28,6 +29,7 @@ import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupPlace } from "../lookup/lookupPlace.ts";
+import type { SentenceRowSource } from "../lookup/sentenceRowSource.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
@@ -60,6 +62,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
  * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already,
  * as `selectMediaKeyBinding` in the state package describes.
+ * A held tap or held mouse button on a word opens the pop-up with its cue's translation in the sentence row, as does T,
+ * when the translation subtitles are not shown over the video or in the subtitles panel; the row also replays the cue.
  * The file resumes where playback last was, as `resume` in the state package describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `playOpenedCard` in the state package describes.
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
@@ -143,10 +147,39 @@ export function MediaScreen({
     cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
     wordLookupsIn,
   );
-  const lookup = useSubtitleLookup(languages, {
-    draftFor,
-    savesAtOnce: true,
-  });
+  const isTranslationOnScreen =
+    subtitles.selection.translation_track_id !== null &&
+    ((panels.subtitleDisplay !== "target" && !panels.areSubtitlesHidden) ||
+      (panels.cues && !isEditorOpen));
+  /** The cue of a word's passage, or the cue shown now for the current one; null for a word of a book. */
+  const cueOf = (source: LookupSource | null) =>
+    source === null ? shownCue : source.kind === "cue" ? source.cue : null;
+  const sentence: SentenceRowSource = {
+    factsOf: (source) => {
+      const cue = cueOf(source);
+      const translationCue =
+        cue && !isTranslationOnScreen
+          ? findTranslationOf(cue, subtitles.translationCues)
+          : null;
+      return {
+        hasAudio: cue !== null,
+        translation: translationCue ? stripMarkup(translationCue.text) : null,
+      };
+    },
+    translationLanguage: settings.translation_language,
+    play: (source) => {
+      const cue = cueOf(source);
+      if (cue === null) return;
+      dispatch(actions.seekRequested(cue.start_ms / 1000));
+      dispatch(actions.playRequested());
+    },
+    playLabel: "Replay the cue (R)",
+  };
+  const lookup = useSubtitleLookup(
+    languages,
+    { draftFor, savesAtOnce: true },
+    sentence,
+  );
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -183,6 +216,7 @@ export function MediaScreen({
     toggleFullscreen: fullscreen.toggle,
     startFlashcardAtCursor: ({ destination }) =>
       lookup.startFlashcardAtCursor(destination),
+    toggleSentenceTranslation: lookup.toggleSentenceTranslation,
   });
   const cueSteps = useStableCallbacks({
     step: (cue: Cue, step: LineStep) => {

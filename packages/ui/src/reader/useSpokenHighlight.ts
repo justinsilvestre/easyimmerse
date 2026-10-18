@@ -1,11 +1,11 @@
 import type { TextSpan } from "@easyimmerse/types";
 import { type RefObject, useEffect, useRef } from "react";
 import {
-  clearSpokenHighlight,
-  highlightSpoken,
   isRangeInView,
   rangeOfShownSpan,
-} from "./readerSpokenHighlight.ts";
+  spokenHighlightName,
+} from "./readerTextHighlights.ts";
+import { useTextHighlight } from "./useTextHighlight.ts";
 
 /**
  * Highlights the text being spoken while the audio the book is aligned with plays, without changing the text's markup,
@@ -22,16 +22,7 @@ export function useSpokenHighlight(
   shownText: unknown,
   onFollow: (span: TextSpan) => void,
 ) {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the shown text changing is what calls for drawing the highlight again.
-  useEffect(() => {
-    const element = container.current;
-    const ranges = element
-      ? spans.flatMap((span) => rangeOfShownSpan(element, span) ?? [])
-      : [];
-    if (ranges.length > 0) highlightSpoken(ranges);
-    else clearSpokenHighlight();
-  }, [container, spans, shownText]);
-  useEffect(() => clearSpokenHighlight, []);
+  useTextHighlight(container, spokenHighlightName, spans, shownText);
 
   const latestFollow = useRef(onFollow);
   latestFollow.current = onFollow;

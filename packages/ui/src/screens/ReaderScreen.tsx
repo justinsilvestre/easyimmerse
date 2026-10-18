@@ -29,12 +29,15 @@ import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
 import { useBookTranslation } from "../reader/useBookTranslation.tsx";
 import { useReaderAudio } from "../reader/useReaderAudio.tsx";
 import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
+import { useReaderSentenceRow } from "../reader/useReaderSentenceRow.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
  * The book opens where it was last left, in the appearance last chosen.
- * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
- * The keys work as `selectReaderKeyBinding` in the state package describes; R and T act on the current sentence's audio and translation.
+ * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context,
+ * and saved at once, as on the media screen; the pop-up's sentence row plays a sentence's audio and shows its translation.
+ * The keys work as `selectReaderKeyBinding` in the state package describes; R and T act on the current sentence's audio and translation,
+ * and C and E make a flashcard from the word at the lookup cursor.
  * A book aligned with an audio file plays it from a bar above the progress slider, as `useReaderAudio` describes.
  * Another document of the project can be paired with the book as its translation, and read alone,
  * or once the two are aligned, together with the book.
@@ -124,7 +127,9 @@ function BookReader({
       mediaFile,
       settings,
     });
-  const lookup = useReaderLookup(languages, draftFor);
+  const audio = useReaderAudio(project.id, mediaFile.id, text);
+  const sentence = useReaderSentenceRow(text, bilingual, audio);
+  const lookup = useReaderLookup(languages, draftFor, sentence);
   const textLanguage = document.language ?? settings.target_language;
   const nearbySentences = useAppSelector((state) =>
     selectNearbySentences(state, text, mediaFile.id, textLanguage),
@@ -132,10 +137,10 @@ function BookReader({
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
     sentenceWordLookups(sentence, textLanguage),
   );
-  const audio = useReaderAudio(project.id, mediaFile.id, text);
   const controls = useReaderKeyBindings({
     playAt: audio?.playAt,
-    showTranslationAt: bilingual.showTranslationAt,
+    toggleSentenceTranslation: lookup.toggleSentenceTranslation,
+    startFlashcardAtCursor: lookup.startFlashcardAtCursor,
   });
   return (
     <ConnectedReaderView
@@ -150,6 +155,7 @@ function BookReader({
       lookupSize={lookup.popup?.size}
       lookupRect={lookup.popup?.rect}
       highlightedWord={lookup.highlightedWord}
+      highlightedSentence={lookup.highlightedSentence}
       callbacks={{
         ...lookup.wordGestures,
         onBack: () => dispatch(actions.closeMedia()),

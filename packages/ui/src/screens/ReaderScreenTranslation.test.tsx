@@ -1,5 +1,5 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { actions, selectFlashcardForm } from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type {
   InstalledPlugin,
   LookupResponse,
@@ -13,13 +13,14 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import {
   exampleShortBook,
   exampleShortBookAlignment,
   exampleShortBookTranslation,
 } from "../reader/exampleDocuments.ts";
+import { translatedHighlightName } from "../reader/readerTextHighlights.ts";
 import {
   paragraphAttribute,
   translationAttribute,
@@ -32,7 +33,9 @@ import {
 import {
   bodyOf,
   dictionarySummary,
+  findCreatedDraft,
   requestsTo,
+  savedFlashcard,
 } from "../testSupport/renderMediaScreen.tsx";
 import {
   type RenderOptions,
@@ -82,10 +85,27 @@ const lookupResponse: LookupResponse = {
 /** Every word is drawn in this rectangle, which the pointer lies inside. */
 const point = { clientX: 10, clientY: 10 };
 
+/** A highlight as the CSS Custom Highlight API keeps it, for a test environment that lacks the API. */
+class FakeHighlight {
+  readonly ranges: Range[];
+  priority = 0;
+  constructor(...ranges: Range[]) {
+    this.ranges = ranges;
+  }
+}
+
+const highlights = new Map<string, FakeHighlight>();
 const restorers: (() => void)[] = [];
+
+beforeEach(() => {
+  vi.stubGlobal("CSS", { highlights });
+  vi.stubGlobal("Highlight", FakeHighlight);
+});
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
+  highlights.clear();
   for (const restore of restorers.splice(0)) restore();
 });
 
@@ -163,6 +183,7 @@ async function renderReader({
       dictionaries: [dictionarySummary("wiktionary-de-en", "de", "en")],
     },
     "GET /dictionaries/lookup": lookupResponse,
+    "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
     <ReaderScreen project={fixtureProject} mediaFileId={bookFile.id} />,
@@ -220,6 +241,28 @@ const lookupQueries = (client: ReturnType<typeof createFakeBackendClient>) =>
   );
 
 const sentence = "The cat is sleeping on the windowsill.";
+const dogSentence = "The dog wants to eat, and it is hungry.";
+const dogTranslation = "El perro quiere comer. Tiene hambre.";
+
+/** Renders the reader on the book aligned with its translation, and waits for the translation, which the sentence row shows. */
+async function renderAligned() {
+  const rendered = await renderReader({ isAligned: true });
+  openPanel();
+  await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+  fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+  return rendered;
+}
+
+const findPopup = () =>
+  screen.findByRole("dialog", { name: "Dictionary" }, { timeout: 2000 });
+
+/** The text the translated-sentence highlight covers, or null when nothing is highlighted. */
+const translatedText = () =>
+  highlights.get(translatedHighlightName)?.ranges[0]?.toString() ?? null;
+
+const flashcardRequests = (
+  client: ReturnType<typeof createFakeBackendClient>,
+) => requestsTo(client.requests, "POST", "/projects/p1/flashcards");
 
 /** The element of the book's paragraph that holds the text. */
 const paragraphHolding = (text: string) =>
@@ -368,83 +411,14 @@ describe("ReaderScreen translation", () => {
     ).toBe("Chapter One");
   });
 
-  it("shows the translation of the sentence a held word belongs to", async () => {
-    await renderReader({ isAligned: true });
-    // Waits for the translation, which the pop-up shows.
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
-    pointAt("dog");
-    holdMouse();
-    expect(
-      (await screen.findByRole("dialog", { name: "Translation" })).textContent,
-    ).toBe("El perro quiere comer. Tiene hambre.");
-  });
-
-  it("closes the translation of a held word on Escape", async () => {
-    await renderReader({ isAligned: true });
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
-    pointAt("dog");
-    holdMouse();
-    await screen.findByRole("dialog", { name: "Translation" });
-    fireEvent.keyDown(document.body, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
-  });
-
-  it("shows the translation of the pointed word's sentence on T", async () => {
-    await renderReader({ isAligned: true });
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
-    pointAt("dog");
-    pointMouse();
-    fireEvent.keyDown(document.body, { key: "t" });
-    expect(
-      (await screen.findByRole("dialog", { name: "Translation" })).textContent,
-    ).toBe("El perro quiere comer. Tiene hambre.");
-  });
-
-  it("closes the dictionary pop-up as the translation of its word's sentence opens", async () => {
-    await renderReader({ isAligned: true });
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
-    pointAt("dog");
-    click();
-    await screen.findByRole("dialog", { name: "Dictionary" });
-    pointMouse();
-    fireEvent.keyDown(document.body, { key: "t" });
-    await screen.findByRole("dialog", { name: "Translation" });
-    expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
-  });
-
-  it("hides the translation of a sentence on T again", async () => {
-    await renderReader({ isAligned: true });
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
-    pointAt("dog");
-    holdMouse();
-    await screen.findByRole("dialog", { name: "Translation" });
-    fireEvent.keyDown(document.body, { key: "t" });
-    expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
-  });
-
   it("fills a flashcard's context translation from the aligned translation", async () => {
-    const { store } = await renderReader({ isAligned: true });
-    openPanel();
-    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
-    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    const { client } = await renderAligned();
     pointAt("cat");
     click(1);
     click(2);
-    await screen.findByRole("form", { name: "Flashcard" });
-    const card = selectFlashcardForm(store.getState().app)?.card;
-    expect(
-      card?.kind === "new" && card.draft.content.text_context_translation,
-    ).toBe("El gato duerme en el alféizar de la ventana.");
+    expect((await findCreatedDraft(client)).content).toMatchObject({
+      text_context_translation: "El gato duerme en el alféizar de la ventana.",
+    });
   });
 
   it("tells that a bilingual ebook cannot be made yet when no alignment plugin is installed", async () => {
@@ -470,6 +444,89 @@ describe("ReaderScreen translation", () => {
     );
     expect(
       await screen.findByText(/“Sentence aligner” is installed/),
+    ).toBeDefined();
+  });
+});
+
+describe("ReaderScreen translation of a held word's sentence", () => {
+  it("shows it in the dictionary pop-up's sentence row", async () => {
+    await renderAligned();
+    pointAt("dog");
+    holdMouse();
+    const popup = await findPopup();
+    expect(await within(popup).findByText(dogTranslation)).toBeDefined();
+  });
+
+  it("highlights the sentence the translation covers", async () => {
+    await renderAligned();
+    pointAt("dog");
+    holdMouse();
+    await within(await findPopup()).findByText(dogTranslation);
+    expect(translatedText()).toBe(dogSentence);
+  });
+
+  it("makes no flashcard from the held word", async () => {
+    const { client } = await renderAligned();
+    pointAt("dog");
+    holdMouse();
+    await within(await findPopup()).findByText(dogTranslation);
+    expect(flashcardRequests(client)).toEqual([]);
+  });
+
+  it("looks the held word up as a tap would in the interlinear view, where the translation is on screen", async () => {
+    await renderReader({ isAligned: true });
+    await chooseView(/^Interlinear/);
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    holdMouse();
+    const popup = await findPopup();
+    expect(
+      within(popup).queryByRole("button", { name: /translation/ }),
+    ).toBeNull();
+  });
+
+  it("shows the translation of the pointed word's sentence on T", async () => {
+    await renderAligned();
+    pointAt("dog");
+    pointMouse();
+    fireEvent.keyDown(document.body, { key: "t" });
+    const popup = await findPopup();
+    expect(await within(popup).findByText(dogTranslation)).toBeDefined();
+  });
+
+  it("hides the translation on T again", async () => {
+    await renderAligned();
+    pointAt("dog");
+    pointMouse();
+    fireEvent.keyDown(document.body, { key: "t" });
+    const popup = await findPopup();
+    await within(popup).findByText(dogTranslation);
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(within(popup).queryByText(dogTranslation)).toBeNull();
+  });
+
+  it("shows the translation from the sentence row's button after a tap", async () => {
+    await renderAligned();
+    pointAt("dog");
+    click();
+    const popup = await findPopup();
+    fireEvent.click(
+      await within(popup).findByRole("button", {
+        name: "Show the translation (T)",
+      }),
+    );
+    expect(await within(popup).findByText(dogTranslation)).toBeDefined();
+  });
+
+  it("keeps the translation shown for the next word looked up", async () => {
+    await renderAligned();
+    pointAt("dog");
+    holdMouse();
+    await within(await findPopup()).findByText(dogTranslation);
+    pointAt("cat");
+    click();
+    expect(
+      await screen.findByText("El gato duerme en el alféizar de la ventana."),
     ).toBeDefined();
   });
 });

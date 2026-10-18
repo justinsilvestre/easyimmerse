@@ -94,3 +94,43 @@ export const SearchMode: Story = {
 export const SearchModeWithResults: Story = {
   args: { mode: "search" },
 };
+
+/** The sentence row with only a play button, as for a word of a subtitle cue whose translation is already on screen. */
+export const SentenceWithAudio: Story = {
+  args: {
+    sentence: { play: { label: "Replay the cue (R)", onPlay: fn() } },
+  },
+};
+
+const sentenceTranslation = {
+  text: "El perro quiere comer. Tiene hambre.",
+  language: "es",
+  onToggle: fn(),
+};
+
+/** The sentence row with its translation hidden, as it starts, for a word of a book aligned with audio and a translation. */
+export const SentenceWithTranslationHidden: Story = {
+  args: {
+    sentence: {
+      play: { label: "Play the sentence (R)", onPlay: fn() },
+      translation: { ...sentenceTranslation, isShown: false },
+    },
+  },
+};
+
+/** The sentence row showing the translation, as after a held word or T. */
+export const SentenceWithTranslationShown: Story = {
+  args: {
+    sentence: {
+      play: { label: "Play the sentence (R)", onPlay: fn() },
+      translation: { ...sentenceTranslation, isShown: true },
+    },
+  },
+};
+
+/** A sentence with a translation but no audio, as in a book aligned with its translation alone. */
+export const SentenceWithTranslationOnly: Story = {
+  args: {
+    sentence: { translation: { ...sentenceTranslation, isShown: true } },
+  },
+};

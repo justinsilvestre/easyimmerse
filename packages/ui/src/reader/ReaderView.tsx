@@ -6,7 +6,7 @@ import {
   type ReaderScreenState,
   type ReaderViewMode,
 } from "@easyimmerse/state";
-import type { Document, TranslationLink } from "@easyimmerse/types";
+import type { Document, TextSpan, TranslationLink } from "@easyimmerse/types";
 import {
   type MouseEvent,
   type ReactNode,
@@ -39,6 +39,7 @@ import {
   lineHeights,
   lineLengthsEm,
 } from "./readerPreferences.ts";
+import { translatedHighlightName } from "./readerTextHighlights.ts";
 import type { ReaderTranslation } from "./readerTranslation.ts";
 import {
   chapterStartProgresses,
@@ -51,17 +52,14 @@ import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
 import { spokenSpansShown } from "./spokenSpansShown.ts";
 import { TranslationPanel } from "./TranslationPanel.tsx";
-import { TranslationPopup } from "./TranslationPopup.tsx";
 import {
   type HighlightedWord,
   useLookedUpHighlight,
 } from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
 import { useSpokenHighlight } from "./useSpokenHighlight.ts";
-import {
-  useTranslationPopup,
-  useTranslationView,
-} from "./useTranslationView.ts";
+import { useTextHighlight } from "./useTextHighlight.ts";
+import { useTranslationView } from "./useTranslationView.ts";
 import {
   type ReaderWord,
   type ReaderWordGestures,
@@ -115,6 +113,8 @@ type ReaderViewProps = {
    * or the character it looked up from when `matchedLength` is null because nothing matched.
    */
   highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
+  /** The text whose translation the dictionary pop-up's sentence row shows, highlighted as the sentence the translation covers. */
+  highlightedSentence?: readonly TextSpan[];
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. */
@@ -130,6 +130,7 @@ type ReaderViewProps = {
 const searchLimit = 500;
 /** The links of a translation shown without an alignment, kept as one array so that the spoken text keeps its identity. */
 const noLinks: readonly TranslationLink[] = [];
+const noSpans: readonly TextSpan[] = [];
 /**
  * The most text the paged layout lays out at once, about the length of a short novel.
  * Layout time grows with the text's length, so a longer chapter is shown in sections.
@@ -141,7 +142,8 @@ const sectionCharacterLimit = 250_000;
  * The text fills the window, set like a book; the toolbar and progress bar fade in when they are wanted.
  * Words are looked up and turned into flashcards with the same gestures as in the subtitles.
  * In a book aligned with audio, a Ctrl-click or Cmd-click on a word plays its sentence, the sentence being spoken is highlighted,
- * and the text follows it, as `useSpokenHighlight` describes. In a book aligned with its translation, a held word shows its sentence's translation.
+ * and the text follows it, as `useSpokenHighlight` describes. In a book aligned with its translation, a held word opens the dictionary pop-up
+ * with its sentence's translation, and the sentence is highlighted while the translation shows.
  * The keys do the same for the current sentence, as `selectReaderKeyBinding` in the state package describes.
  */
 export function ReaderView(props: ReaderViewProps) {
@@ -205,14 +207,6 @@ export function ReaderView(props: ReaderViewProps) {
   useLookedUpHighlight(
     shown.isTranslationShown ? undefined : props.highlightedWord,
   );
-  const translationPopup = useTranslationPopup({
-    viewMode,
-    document: props.document,
-    translation,
-    popup: reader.translationPopup,
-    onWordHold: callbacks.onWordHold,
-    dispatch,
-  });
 
   const { jumpTo } = shown;
   const goToChapter = (index: number, edge: "start" | "end") => {
@@ -250,6 +244,12 @@ export function ReaderView(props: ReaderViewProps) {
         offset: span.start,
       }),
   );
+  useTextHighlight(
+    textContainer,
+    translatedHighlightName,
+    shown.isTranslationShown ? noSpans : (props.highlightedSentence ?? noSpans),
+    shownText,
+  );
   const { playAt } = props.audio ?? {};
   const playWord = playAt && ((word: ReaderWord) => playAt(word.location));
   const turn = (direction: "next" | "previous") => {
@@ -270,8 +270,7 @@ export function ReaderView(props: ReaderViewProps) {
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
     onWordCommandClick: playWord,
-    onWordHold: translationPopup.onWordHold,
-    onWordMouseHold: translationPopup.onWordMouseHold,
+    onWordHold: callbacks.onWordHold,
     onBlankClick,
   });
   // The words of the translation are not looked up, since the dictionaries are for the book's language.
@@ -485,14 +484,6 @@ export function ReaderView(props: ReaderViewProps) {
         />
       )}
       {translation?.dialog}
-      {translationPopup.popup && (
-        <LookupAnchor wordRect={translationPopup.popup.rect} isWide={isWide}>
-          <TranslationPopup
-            text={translationPopup.popup.text}
-            language={translation?.language ?? language}
-          />
-        </LookupAnchor>
-      )}
     </div>
   );
 }

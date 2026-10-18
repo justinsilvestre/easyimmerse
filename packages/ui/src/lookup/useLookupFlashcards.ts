@@ -84,12 +84,14 @@ export function useLookupFlashcards(
       );
     },
     /**
-     * Starts a flashcard for the lookup cursor's word `cursorWord` once its lookup answers, or for no word when there is no cursor
-     * or no flashcard can be made for its word, saved at once or opened in the form as `destination` says.
+     * Starts a flashcard for the lookup cursor's word `cursorWord` once its lookup answers, or, when there is no cursor
+     * or no flashcard can be made for its word, for no word, from `wordlessPlace`, such as the cue shown now or the sentence being spoken;
+     * saved at once or opened in the form as `destination` says.
      */
     startFlashcardAtCursor: (
       cursorWord: ChosenWord | null,
       destination: FlashcardDestination,
+      wordlessPlace: LookupPlace | null = null,
     ) => {
       const flashcard =
         cursorWord && newFlashcard(cursorWord.word.term, placeOf(cursorWord));
@@ -97,7 +99,7 @@ export function useLookupFlashcards(
         actions.lookupCursorFlashcardRequested(
           destinationOf(destination),
           flashcard,
-          newFlashcard("", null),
+          newFlashcard("", wordlessPlace),
           context,
         ),
       );

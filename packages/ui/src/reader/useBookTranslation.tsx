@@ -5,7 +5,6 @@ import {
   useOpenBookQuery,
 } from "@easyimmerse/backend";
 import {
-  type AnchorRect,
   actions,
   isDocumentFileName,
   latestAlignments,
@@ -25,8 +24,7 @@ import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
  * Loads the translation a book is paired with, and its newest translation alignment when it is with that translation,
  * for the reader's translation panel and views. Pairing goes through the store, as does combining the two into a bilingual ebook,
  * which opens a dialog, which the reader shows, that tells that easyImmerse cannot align the two yet.
- * Also returns the translation of the passage at a place in the book, for a flashcard's context, or an empty string where none is linked,
- * and shows that translation in the reader's pop-up, for the key that asks for the current sentence's translation.
+ * Also returns the passage of the translation aligned with a place in the book, for a flashcard's context and the dictionary pop-up's sentence row.
  */
 export function useBookTranslation(
   project: Project,
@@ -94,21 +92,18 @@ export function useBookTranslation(
       />
     ),
   };
-  const passageTranslationAt = (location: ReaderLocation): string => {
+  /** The passage of the translation linked with the place in the book, and the book's text it covers, or null where none is linked. */
+  const linkedPassageAt = (location: ReaderLocation) => {
     const link = links && linkAt(links, bookText, location);
-    return link && document ? translationOfLink(document, link) : "";
-  };
-  /** Opens the reader's translation pop-up on the passage at the place, unless no translation is linked there. */
-  const showTranslationAt = (
-    location: ReaderLocation,
-    anchor: AnchorRect | null,
-  ) => {
-    if (passageTranslationAt(location) !== "")
-      dispatch(actions.readerTranslationPopupOpened(location, anchor));
+    return link && document
+      ? { translation: translationOfLink(document, link), spans: link.spans }
+      : null;
   };
   return {
     translation,
-    passageTranslationAt,
-    showTranslationAt: links ? showTranslationAt : undefined,
+    linkedPassageAt,
+    /** The translation of the passage at the place, or an empty string where none is linked. */
+    passageTranslationAt: (location: ReaderLocation) =>
+      linkedPassageAt(location)?.translation ?? "",
   };
 }

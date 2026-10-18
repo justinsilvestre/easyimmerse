@@ -410,3 +410,10 @@
   background-color: var(--color-highlight-soft);
   color: var(--color-fg);
 }
+
+/* The sentence whose translation the dictionary pop-up's sentence row shows, underlined so that it stays apart from the spoken sentence. */
+::highlight(reader-translated) {
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-fg);
+  text-underline-offset: 0.2em;
+}

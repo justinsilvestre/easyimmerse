@@ -16,10 +16,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type Gesture = "click" | "doubleClick" | "hover" | "hold";
+type Gesture = "click" | "doubleClick" | "hover" | "hold" | "mouseHold";
 
-/** Renders a sentence whose word gestures are recorded as `gesture word`. */
-function renderSentence(text = "Ich rufe an.") {
+/** Renders a sentence whose word gestures are recorded as `gesture word`, taking held mouse buttons too when `holdsWithMouse` is set. */
+function renderSentence(text = "Ich rufe an.", holdsWithMouse = false) {
   const gestures: string[] = [];
   const record = (gesture: Gesture) => (hit: { word: string }) => {
     gestures.push(`${gesture} ${hit.word}`);
@@ -32,10 +32,18 @@ function renderSentence(text = "Ich rufe an.") {
         onWordDoubleClick: record("doubleClick"),
         onWordHover: record("hover"),
         onWordHold: record("hold"),
+        onWordMouseHold: holdsWithMouse ? record("mouseHold") : undefined,
       }}
     />,
   );
   return gestures;
+}
+
+function holdMouse(element: HTMLElement, ms: number) {
+  fireEvent.pointerDown(element, { pointerType: "mouse", clientX: 5 });
+  act(() => vi.advanceTimersByTime(ms));
+  fireEvent.pointerUp(element, { pointerType: "mouse", clientX: 5 });
+  fireEvent.click(element, { detail: 1 });
 }
 
 const word = (name: string) => screen.getByRole("button", { name });
@@ -596,6 +604,18 @@ describe("useWordGestures", () => {
   it("reports a short tap as a click", () => {
     const gestures = renderSentence();
     holdTouch(word("an"), 200);
+    expect(gestures).toEqual(["click an"]);
+  });
+
+  it("reports a held mouse button and swallows the click that ends it, where mouse holds are taken", () => {
+    const gestures = renderSentence("Ich rufe an.", true);
+    holdMouse(word("an"), 600);
+    expect(gestures).toEqual(["mouseHold an"]);
+  });
+
+  it("reports a held mouse button as a click where only touches are held", () => {
+    const gestures = renderSentence();
+    holdMouse(word("an"), 600);
     expect(gestures).toEqual(["click an"]);
   });
 

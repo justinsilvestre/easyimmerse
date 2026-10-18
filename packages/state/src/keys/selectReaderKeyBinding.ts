@@ -1,12 +1,12 @@
 import type { RootState } from "../app/createAppStore.ts";
+import type { FlashcardDestination } from "../flashcards/flashcardActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
-import type { AnchorRect } from "../screen/lookup/lookupState.ts";
+import { selectLookup } from "../screen/lookup/lookupSelectors.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { selectReaderAlignedAudio } from "../screen/readerScreen/readerAudioSelectors.ts";
-import { readerScreenActions } from "../screen/readerScreen/readerScreenActions.ts";
 import {
   selectIsReaderPaged,
   selectIsReaderPanelOpen,
-  selectReaderScreen,
   selectReaderTranslationStatus,
   selectShownReaderViewMode,
 } from "../screen/readerScreen/readerScreenSelectors.ts";
@@ -24,30 +24,31 @@ import {
 } from "./keyBinding.ts";
 
 /**
- * What the reader completes with what only it holds: the layout of its pages, the search field, and the book's text,
- * in which it finds the sentence at a place and what is aligned with it.
+ * What the reader completes with what only it holds: the layout of its pages, the search field, the book's text,
+ * in which it finds the sentence at a place and what is aligned with it, and the drafts of flashcards.
  */
 type ReaderKeyCommand =
   | { type: "turnPage"; direction: "next" | "previous" }
   | { type: "openBookSearch" }
   /** Plays the audio of the sentence at the location. */
   | { type: "playSentence"; location: ReaderLocation }
-  /** Shows the translation of the sentence at the location, beside the anchor, or at the foot of the window without one. */
-  | {
-      type: "showSentenceTranslation";
-      location: ReaderLocation;
-      anchor: AnchorRect | null;
-    };
+  /** Shows the translation of the current sentence in the dictionary pop-up's sentence row, or hides it again. */
+  | { type: "toggleSentenceTranslation" }
+  /** Makes a flashcard from the lookup cursor's word, as a double-click on it would, saved at once or opened in the editor. */
+  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination };
 
 /**
  * Returns what a key does in the reader, or null to leave it to the browser.
  * Ctrl+F or Cmd+F searches the book, whose other pages the browser's own search cannot see.
- * Escape closes the translation of a sentence, else makes the dictionary pop-up compact, or closes it; L looks up from the lookup cursor.
+ * Escape makes the dictionary pop-up compact, or closes it; L looks up from the lookup cursor.
+ * C saves a flashcard from the cursor as a double-click there would, and E opens that flashcard in the editor instead,
+ * as they do on the media screen.
  * K plays and pauses the audio the book is aligned with, once the server cache names it, as it does on the media screen;
  * Space, which also does there, turns pages here.
- * R plays the audio of the current sentence, as it replays the cue on the media screen, and T shows or hides its translation,
- * where the book is aligned with the one and the other; the current sentence is the one `selectReaderCurrentSentence` describes,
- * and without one the keys do nothing.
+ * R plays the audio of the current sentence, as it replays the cue on the media screen, where the book is aligned with audio,
+ * and T shows or hides the translation of the current sentence in the dictionary pop-up's sentence row,
+ * where the book alone is shown and is aligned with its translation; the current sentence is the one `selectReaderCurrentSentence` describes,
+ * or else the sentence of the word the pop-up shows, and without one the keys do nothing.
  * In the paged layout, the arrow keys, Page Up and Page Down, and Space turn pages;
  * the scrolling layout leaves these keys to the browser, which scrolls with them.
  * While a panel or the flashcard editor is open, only the search and Escape work.
@@ -63,6 +64,18 @@ export function selectReaderKeyBinding(root: RootState, press: KeyPress) {
   switch (keyNameOf(press)) {
     case "l":
       return bindAction(lookupActions.lookupCursorLookedUp());
+    case "c":
+      return bindCommand<ReaderKeyCommand>({
+        type: "startFlashcardAtCursor",
+        destination: "save",
+      });
+    case "e":
+      return selectFlashcardForm(app) === null
+        ? bindCommand<ReaderKeyCommand>({
+            type: "startFlashcardAtCursor",
+            destination: "editor",
+          })
+        : null;
     case "k":
       return selectReaderAlignedAudio(root) !== null
         ? bindAction(screenActions.playToggleRequested())
@@ -77,13 +90,11 @@ export function selectReaderKeyBinding(root: RootState, press: KeyPress) {
 }
 
 /**
- * Returns what Escape does in the reader: closing the translation of a sentence, or what it does to an open dictionary pop-up,
- * wherever focus is, or else, as a shortcut, closing the lookup, which drops a flashcard waiting for its word.
+ * Returns what Escape does in the reader: what it does to an open dictionary pop-up, wherever focus is,
+ * or else, as a shortcut, closing the lookup, which drops a flashcard waiting for its word.
  */
 function selectReaderEscapeBinding(root: RootState, press: KeyPress) {
   const { app } = root;
-  if (selectReaderScreen(root).translationPopup !== null)
-    return bindAction(readerScreenActions.readerTranslationPopupClosed());
   const lookupEscape = selectLookupEscapeBinding(app);
   if (lookupEscape) return lookupEscape;
   return isShortcutPress(press) && !selectIsReaderPanelOpen(app)
@@ -93,31 +104,25 @@ function selectReaderEscapeBinding(root: RootState, press: KeyPress) {
 
 /** Plays the current sentence's audio, where the book is aligned with audio and there is a current sentence. */
 function selectPlaySentenceBinding(root: RootState) {
-  const sentence = selectReaderCurrentSentence(root);
-  return sentence !== null && selectReaderAlignedAudio(root) !== null
-    ? bindCommand<ReaderKeyCommand>({
-        type: "playSentence",
-        location: sentence.location,
-      })
+  const location = selectReaderCurrentSentence(root);
+  return location !== null && selectReaderAlignedAudio(root) !== null
+    ? bindCommand<ReaderKeyCommand>({ type: "playSentence", location })
     : null;
 }
 
 /**
- * Hides the translation of a sentence while one is shown, else shows the current sentence's translation
+ * Shows or hides the current sentence's translation, or that of the sentence of the word the pop-up shows,
  * while the book alone is shown and is aligned with its translation.
  */
 function selectSentenceTranslationBinding(root: RootState) {
-  if (selectReaderScreen(root).translationPopup !== null)
-    return bindAction(readerScreenActions.readerTranslationPopupClosed());
-  const sentence = selectReaderCurrentSentence(root);
   const isAlignedTextShown =
     selectReaderTranslationStatus(root) === "aligned" &&
     selectShownReaderViewMode(root) === "target";
-  return sentence !== null && isAlignedTextShown
-    ? bindCommand<ReaderKeyCommand>({
-        type: "showSentenceTranslation",
-        ...sentence,
-      })
+  const hasSentence =
+    selectReaderCurrentSentence(root) !== null ||
+    selectLookup(root.app)?.popup != null;
+  return isAlignedTextShown && hasSentence
+    ? bindCommand<ReaderKeyCommand>({ type: "toggleSentenceTranslation" })
     : null;
 }
 

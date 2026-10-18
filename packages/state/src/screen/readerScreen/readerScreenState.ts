@@ -1,6 +1,5 @@
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 import type { ItemSpan } from "../itemSpan.ts";
-import type { AnchorRect } from "../lookup/lookupState.ts";
 
 export type ReaderPanel = "contents" | "search" | "appearance" | "translation";
 
@@ -23,15 +22,6 @@ export type ReaderTranslationStatus = "absent" | "unaligned" | "aligned";
 /** The page of the chapter in view, counted from zero, and how many pages the chapter fills. */
 export type PageInfo = { page: number; pageCount: number };
 
-/**
- * The pop-up that shows the translation of one sentence of the book: where the word it was opened on lies,
- * and where that word is drawn, beside which the pop-up stands; null when it was opened from the keyboard, which puts it at the foot of the window.
- */
-export type ReaderTranslationPopup = {
-  location: ReaderLocation;
-  anchor: AnchorRect | null;
-};
-
 /** The reader's own state. Its place in the book is the stored reading location. */
 export type ReaderScreenState = {
   /** The view the user chose. The view shown can differ, as `shownReaderViewMode` describes. */
@@ -48,8 +38,6 @@ export type ReaderScreenState = {
   nearSpan: ItemSpan | null;
   /** The page in view in the paged layout, as last measured; null until measured. */
   pageInfo: PageInfo | null;
-  /** The translation of a sentence shown over the text, or null while none is. */
-  translationPopup: ReaderTranslationPopup | null;
 };
 
 export const initialReaderScreen: ReaderScreenState = {
@@ -61,5 +49,4 @@ export const initialReaderScreen: ReaderScreenState = {
   search: { query: "", activeMatchIndex: null },
   nearSpan: null,
   pageInfo: null,
-  translationPopup: null,
 };

@@ -28,17 +28,6 @@ describe("updateMediaScreen", () => {
       expect(lookup.popup).toEqual({ mode: "word", chosen: cat });
     });
 
-    it("closes the pop-up when the translation of a sentence opens in its place", () => {
-      const [lookup] = apply(
-        actions.readerTranslationPopupOpened(
-          { chapterIndex: 0, paragraphIndex: 0, offset: 4 },
-          null,
-        ),
-        clickedCat,
-      );
-      expect(lookup.popup).toBeNull();
-    });
-
     it("closes after the double-click interval when the word it shows is clicked again", () => {
       const [, effects] = apply(clickedCat, clickedCat);
       expect(effects).toEqual([closeTimer]);
@@ -253,6 +242,78 @@ describe("updateMediaScreen", () => {
           actions.lookupSearchOpened(),
         );
         expect(effects).not.toContainEqual({ type: "playPlayer" });
+      });
+    });
+  });
+});
+
+describe("updateMediaScreen", () => {
+  describe("for a held word", () => {
+    const heldDog = actions.lookupWordHeld(dog, true);
+    const heldDogWithoutTranslation = actions.lookupWordHeld(dog, false);
+
+    it("opens the pop-up on the word", () => {
+      const [lookup] = apply(heldDog);
+      expect(lookup.popup).toEqual({ mode: "word", chosen: dog });
+    });
+
+    it("keeps the pop-up open when it shows the word already", () => {
+      const [lookup] = apply(heldDog, actions.lookupWordClicked(dog, "touch"));
+      expect(lookup.popup?.chosen).toEqual(dog);
+    });
+
+    it("starts no close for the word it shows already", () => {
+      const [, effects] = apply(
+        heldDog,
+        actions.lookupWordClicked(dog, "touch"),
+      );
+      expect(effects).not.toContainEqual(closeTimer);
+    });
+
+    it("shows the sentence row's translation when the word's sentence has one", () => {
+      const [lookup] = apply(heldDog);
+      expect(lookup.isSentenceTranslationShown).toBe(true);
+    });
+
+    it("leaves the sentence row's translation hidden when the word's sentence has none", () => {
+      const [lookup] = apply(heldDogWithoutTranslation);
+      expect(lookup.isSentenceTranslationShown).toBe(false);
+    });
+
+    it("starts no flashcard", () => {
+      const [lookup] = apply(heldDog);
+      expect(lookup.pendingFlashcard).toBeNull();
+    });
+  });
+
+  describe("for the sentence row's translation", () => {
+    const toggled = actions.lookupSentenceTranslationToggled();
+
+    it("starts hidden", () => {
+      const [lookup] = apply(clickedCat);
+      expect(lookup.isSentenceTranslationShown).toBe(false);
+    });
+
+    it("shows it when toggled", () => {
+      const [lookup] = apply(toggled, clickedCat);
+      expect(lookup.isSentenceTranslationShown).toBe(true);
+    });
+
+    it("hides it when toggled again", () => {
+      const [lookup] = apply(toggled, clickedCat, toggled);
+      expect(lookup.isSentenceTranslationShown).toBe(false);
+    });
+
+    it("keeps the choice through closing", () => {
+      const [lookup] = apply(actions.lookupClosed(), clickedCat, toggled);
+      expect(lookup.isSentenceTranslationShown).toBe(true);
+    });
+
+    it("opens the pop-up on its search field with the translation shown, for T without a cursor", () => {
+      const [lookup] = apply(actions.lookupSentenceTranslationOpened());
+      expect(lookup).toMatchObject({
+        popup: { mode: "search", chosen: null },
+        isSentenceTranslationShown: true,
       });
     });
   });

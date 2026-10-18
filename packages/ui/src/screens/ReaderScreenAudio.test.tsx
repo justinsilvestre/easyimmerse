@@ -4,11 +4,17 @@ import {
   createBrowserFileRegistry,
 } from "@easyimmerse/state";
 import type { Alignment, MediaFile } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { exampleAudioAlignment } from "../reader/exampleAudioAlignment.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
-import { spokenHighlightName } from "../reader/readerSpokenHighlight.ts";
+import { spokenHighlightName } from "../reader/readerTextHighlights.ts";
 import { paragraphAttribute } from "../reader/textOffsets.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
@@ -226,6 +232,23 @@ describe("ReaderScreen with a book aligned with audio", () => {
     await playButton();
     fireEvent.keyDown(document.body, { key: "r" });
     expect(effects.calls).not.toContainEqual({ type: "playPlayer" });
+  });
+
+  it("plays a sentence from the play button in the dictionary pop-up's sentence row", async () => {
+    const { effects } = await renderReader();
+    await playButton();
+    pointAt("dog");
+    const text = screen.getByRole("main");
+    const point = { clientX: 10, clientY: 10 };
+    fireEvent.pointerDown(text, { ...point, pointerType: "mouse" });
+    fireEvent.click(text, { ...point, detail: 1 });
+    const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+    fireEvent.click(
+      await within(popup).findByRole("button", {
+        name: "Play the sentence (R)",
+      }),
+    );
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0.8 });
   });
 
   it("plays and pauses on K", async () => {
