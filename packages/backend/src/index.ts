@@ -9,6 +9,7 @@ export {
   useCreateFlashcardMutation,
   useDeleteFlashcardMutation,
   useGetConversionCacheStatusQuery,
+  useGetMediaAvailabilityQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
   useGetSubtitleCuesQuery,

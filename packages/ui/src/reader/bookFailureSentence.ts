@@ -1,8 +1,8 @@
+import { browserFileNotices } from "../media/browserFileNotices.ts";
+
 const failureSentences: Record<string, string> = {
-  browserFileUnreachable:
-    "This file was added in a web browser, and this app cannot reach it.",
-  browserFileGone:
-    "This file is no longer open in the browser. Add it again to read it.",
+  browserFileUnreachable: browserFileNotices.unreachable,
+  browserFileGone: browserFileNotices.notOpen("read"),
   OFFLINE:
     "This file lies on a computer's disk, and only the easyImmerse server can read it.",
   NETWORK: "The easyImmerse server could not be reached.",

@@ -1,4 +1,5 @@
 import {
+  useGetMediaAvailabilityQuery,
   useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
@@ -14,7 +15,8 @@ import {
   selectMediaImport,
   transientNotice,
 } from "@easyimmerse/state";
-import type { Project } from "@easyimmerse/types";
+import type { MediaAvailabilityResponse, Project } from "@easyimmerse/types";
+import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
@@ -24,6 +26,7 @@ import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { MediaSection } from "../projects/MediaSection.tsx";
+import type { PathAvailabilities } from "../projects/mediaIssueOf.ts";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectFlashcardsPanel } from "../projects/ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "../projects/ProjectView.tsx";
@@ -182,11 +185,29 @@ function useImportSources(): MediaImportSource[] {
 function useMediaItems(projectId: string) {
   const mediaFiles = useListMediaFilesQuery(projectId);
   const flashcards = useListFlashcardsQuery(projectId);
+  const availability = useGetMediaAvailabilityQuery(projectId, {
+    refetchOnMountOrArgChange: true,
+  });
+  const registry = useBrowserFileRegistry();
   return {
     items: mediaItemsOf(
       mediaFiles.data?.media_files ?? [],
       flashcards.data?.flashcards ?? [],
+      registry,
+      pathAvailabilitiesOf(availability.data),
     ),
     error: mediaFiles.error,
   };
+}
+
+/** What the server reported for each media file at a path, empty until its answer arrives. */
+function pathAvailabilitiesOf(
+  response: MediaAvailabilityResponse | undefined,
+): PathAvailabilities {
+  return new Map(
+    response?.media_files.map(({ media_id, availability }) => [
+      media_id,
+      availability,
+    ]),
+  );
 }

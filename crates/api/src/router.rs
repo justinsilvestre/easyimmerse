@@ -16,9 +16,9 @@ use crate::auth::host_check::check_host;
 use crate::routes::{
     alignments, anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache,
     conversions, dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup,
-    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_clip,
-    media_frame, media_import, media_playback_method, media_stream, media_tracks, media_waveform,
-    openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
+    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_availability,
+    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
+    media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -94,6 +94,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         ))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
+        .routes(routes!(media_availability::get_media_availability))
         .routes(routes!(media_import::get_import_form))
         .routes(routes!(media_import::submit_import_step))
         .routes(routes!(plugins::get_media_source_job))

@@ -2,6 +2,7 @@ import { isAudioFileName } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useEffect, useMemo } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
+import { browserFileNotices } from "../media/browserFileNotices.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 import type { PlayerStatus } from "./PlayerStatus.ts";
 import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
@@ -30,14 +31,8 @@ function browserPlayback(
   url: string | null,
   name: string,
 ): PlayerStatus {
-  if (!hasRegistry)
-    return failedPlayback(
-      "This file was added in a web browser, and this app cannot reach it.",
-    );
-  if (file === null)
-    return failedPlayback(
-      "This file is no longer open in the browser. Add it again to play it.",
-    );
+  if (!hasRegistry) return failedPlayback(browserFileNotices.unreachable);
+  if (file === null) return failedPlayback(browserFileNotices.notOpen("play"));
   if (url === null) return loadingPlayback;
   return {
     status: "ready",
