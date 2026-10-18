@@ -34,7 +34,7 @@ import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
  * The screen for reading one of the project's ebooks or text files.
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
- * The keys work as `selectReaderKeyBinding` in the state package describes.
+ * The keys work as `selectReaderKeyBinding` in the state package describes; P and T act on the current sentence's audio and translation.
  * A book aligned with an audio file plays it from a bar above the progress slider, as `useReaderAudio` describes.
  * Another document of the project can be paired with the book as its translation, and read alone,
  * or once the two are aligned, together with the book.
@@ -105,7 +105,6 @@ function BookReader({
   const preferences = useAppSelector((state) =>
     selectReaderPreferences(state.app),
   );
-  const controls = useReaderKeyBindings();
   const form = useAppSelector((state) => selectFlashcardForm(state.app));
   const languages = {
     target: settings.target_language,
@@ -134,6 +133,10 @@ function BookReader({
     sentenceWordLookups(sentence, textLanguage),
   );
   const audio = useReaderAudio(project.id, mediaFile.id, text);
+  const controls = useReaderKeyBindings({
+    playAt: audio?.playAt,
+    showTranslationAt: bilingual.showTranslationAt,
+  });
   return (
     <ConnectedReaderView
       mediaFileId={mediaFile.id}

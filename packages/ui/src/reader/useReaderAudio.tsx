@@ -11,7 +11,7 @@ import { useAlignedAudio } from "./useAlignedAudio.ts";
 /**
  * The audio the open book is aligned with, for the reader view, or undefined when it has none.
  * The bar holds the player, which `ReaderAudioPlayer` explains; the dialogs are the track choice or conversion notice
- * its audio file may call for. A Ctrl-click or Cmd-click on a word seeks to the start of its segment and plays.
+ * its audio file may call for. Playing at a place in the book seeks to the start of its segment and plays.
  */
 export function useReaderAudio(
   projectId: string,
@@ -31,8 +31,8 @@ export function useReaderAudio(
     ),
     spokenSpan,
     isPlaying,
-    onPlayWord: (word) => {
-      const segment = segmentAt(aligned.segments, text, word.location);
+    playAt: (location) => {
+      const segment = segmentAt(aligned.segments, text, location);
       if (segment === null) return;
       dispatch(actions.seekRequested(segment.start_ms / 1000));
       dispatch(actions.playRequested());

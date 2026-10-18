@@ -213,6 +213,21 @@ describe("ReaderScreen with a book aligned with audio", () => {
     expect(effects.calls).toContainEqual({ type: "playPlayer" });
   });
 
+  it("plays the sentence being spoken from its start on P", async () => {
+    const { store, effects } = await renderReader();
+    await playButton();
+    act(() => store.dispatch(actions.playerTimeChanged(1)));
+    fireEvent.keyDown(document.body, { key: "p" });
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0.8 });
+  });
+
+  it("leaves P to the browser before anything is spoken or looked up", async () => {
+    const { effects } = await renderReader();
+    await playButton();
+    fireEvent.keyDown(document.body, { key: "p" });
+    expect(effects.calls).not.toContainEqual({ type: "playPlayer" });
+  });
+
   it("plays and pauses on K", async () => {
     const { effects } = await renderReader();
     await playButton();

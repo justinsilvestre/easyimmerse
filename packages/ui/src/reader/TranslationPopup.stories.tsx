@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
 import { TranslationPopup } from "./TranslationPopup.tsx";
 
 const meta = {
@@ -9,7 +8,6 @@ const meta = {
   args: {
     text: "El perro quiere comer. Tiene hambre.",
     language: "es",
-    onClose: fn(),
   },
 } satisfies Meta<typeof TranslationPopup>;
 

@@ -384,6 +384,45 @@ describe("ReaderScreen translation", () => {
     expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
   });
 
+  it("shows the translation of the looked-up word's sentence on T", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    click();
+    await screen.findByRole("dialog", { name: "Dictionary" });
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(
+      (await screen.findByRole("dialog", { name: "Translation" })).textContent,
+    ).toBe("El perro quiere comer. Tiene hambre.");
+  });
+
+  it("closes the dictionary pop-up as the translation of its word's sentence opens", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    click();
+    await screen.findByRole("dialog", { name: "Dictionary" });
+    fireEvent.keyDown(document.body, { key: "t" });
+    await screen.findByRole("dialog", { name: "Translation" });
+    expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
+  });
+
+  it("hides the translation of a sentence on T again", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    holdMouse();
+    await screen.findByRole("dialog", { name: "Translation" });
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
+  });
+
   it("fills a flashcard's context translation from the aligned translation", async () => {
     const { store } = await renderReader({ isAligned: true });
     openPanel();

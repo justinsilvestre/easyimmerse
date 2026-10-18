@@ -54,6 +54,8 @@ export function updateLookup(
       return updated(searched(dropPending(lookup), action.word));
     case "lookupClosed":
     case "lookupCloseDue":
+    // The translation of a sentence takes the pop-up's place beside the text.
+    case "readerTranslationPopupOpened":
       return close(lookup);
     case "lookupSetAside":
       return setAside(dropPending(lookup));

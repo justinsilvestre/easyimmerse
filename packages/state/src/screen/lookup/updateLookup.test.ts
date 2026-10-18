@@ -28,6 +28,17 @@ describe("updateMediaScreen", () => {
       expect(lookup.popup).toEqual({ mode: "word", chosen: cat });
     });
 
+    it("closes the pop-up when the translation of a sentence opens in its place", () => {
+      const [lookup] = apply(
+        actions.readerTranslationPopupOpened(
+          { chapterIndex: 0, paragraphIndex: 0, offset: 4 },
+          null,
+        ),
+        clickedCat,
+      );
+      expect(lookup.popup).toBeNull();
+    });
+
     it("closes after the double-click interval when the word it shows is clicked again", () => {
       const [, effects] = apply(clickedCat, clickedCat);
       expect(effects).toEqual([closeTimer]);

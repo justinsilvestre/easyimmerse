@@ -5,21 +5,15 @@ import { TranslationPopup } from "./TranslationPopup.tsx";
 
 afterEach(cleanup);
 
-/** A word that opens the translation when clicked, as a held word in the reader does, so that closing can hand focus back to it. */
+/** A word that shows and hides the translation when clicked, as a held word and the store do in the reader, so that closing can hand focus back to it. */
 function PopupOpener() {
   const [isOpen, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)}>
+      <button type="button" onClick={() => setOpen(!isOpen)}>
         Hund
       </button>
-      {isOpen && (
-        <TranslationPopup
-          text="The dog sleeps."
-          language="en"
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {isOpen && <TranslationPopup text="The dog sleeps." language="en" />}
     </>
   );
 }
@@ -40,9 +34,9 @@ describe("TranslationPopup", () => {
     );
   });
 
-  it("hands focus back to where it was when Escape closes it", () => {
+  it("hands focus back to where it was when it closes", () => {
     const opener = openPopup();
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(opener);
     expect(document.activeElement).toBe(opener);
   });
 });

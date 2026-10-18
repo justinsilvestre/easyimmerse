@@ -218,10 +218,15 @@ export type {
   PageInfo,
   ReaderPanel,
   ReaderScreenState,
+  ReaderTranslationPopup,
   ReaderTranslationStatus,
   ReaderViewMode,
 } from "./screen/readerScreen/readerScreenState.ts";
 export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
+export {
+  type ReaderSentence,
+  selectReaderCurrentSentence,
+} from "./screen/readerScreen/selectReaderCurrentSentence.ts";
 export {
   selectCuePanelSpan,
   selectCurrentTime,

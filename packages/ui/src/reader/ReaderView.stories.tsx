@@ -349,7 +349,7 @@ const pausedAudio = {
   ),
   spokenSpan: audioSegments[1]?.span ?? null,
   isPlaying: false,
-  onPlayWord: fn(),
+  playAt: fn(),
 } satisfies ReaderStoryArgs["audio"];
 
 /** The short book aligned with its audio, paused in the second sentence. */

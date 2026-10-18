@@ -1,5 +1,6 @@
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 import type { ItemSpan } from "../itemSpan.ts";
+import type { AnchorRect } from "../lookup/lookupState.ts";
 import type {
   PageInfo,
   ReaderPanel,
@@ -37,6 +38,17 @@ export const readerScreenActions = {
       mediaFileId,
       translationMediaFileId,
     }) as const,
+  /**
+   * The user asked to see the translation of the sentence at `location`, by holding a word of it or from the keyboard.
+   * `anchor` is where the held word is drawn, or null from the keyboard. The dictionary pop-up closes, since the two would overlap.
+   */
+  readerTranslationPopupOpened: (
+    location: ReaderLocation,
+    anchor: AnchorRect | null,
+  ) => ({ type: "readerTranslationPopupOpened", location, anchor }) as const,
+  /** The user closed the translation of a sentence, with Escape or its key. */
+  readerTranslationPopupClosed: () =>
+    ({ type: "readerTranslationPopupClosed" }) as const,
   /** The user asked to combine the book and its paired translation into a bilingual ebook, which opens the dialog about doing so. */
   readerCombineRequested: () => ({ type: "readerCombineRequested" }) as const,
   /** The user closed the dialog about combining the book and its translation. */
