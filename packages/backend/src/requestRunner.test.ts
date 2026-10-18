@@ -193,6 +193,34 @@ describe("runRequest", () => {
     });
   });
 
+  it("settles with refetched data when a refetch is already pending for the entry", async () => {
+    const reads = [{ media_files: [] }, { media_files: [mediaFile] }];
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let getCount = 0;
+    const store = createStore({
+      send: async <T>(request: BackendRequest) => {
+        if (request.method !== "GET")
+          return { data: mediaFile } as BackendResult<T>;
+        const data = reads[getCount++];
+        if (getCount > 1) await held;
+        return { data } as BackendResult<T>;
+      },
+    });
+    const thunkDispatch = store.dispatch as unknown as BackendDispatch;
+    await thunkDispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await settle(store, adding);
+    await vi.waitFor(() => expect(getCount).toBe(2));
+    const running = runRequest(listing, store.dispatch as Dispatch);
+    release();
+    expect(await running.settled).toEqual({
+      ok: true,
+      data: { media_files: [mediaFile] },
+    });
+  });
+
   it("settles a query that ends with no data as a failure", async () => {
     const store = createStore(answering({ data: undefined }));
     const outcome = await settle(store, listing);
