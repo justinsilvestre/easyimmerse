@@ -245,7 +245,7 @@ describe("runRequest", () => {
       backendApi.endpoints.listMediaFiles.initiate("p1"),
     );
     await vi.waitFor(() => expect(gets.count()).toBe(1));
-    store.dispatch(
+    thunkDispatch(
       backendApi.util.invalidateTags([{ type: "MediaFiles", id: "p1" }]),
     );
     gets.release(0);
