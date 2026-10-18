@@ -67,6 +67,22 @@ function holdingFirstGet(client: BackendClient) {
   return { send, release: () => release() };
 }
 
+/** A client whose GETs each answer `{ media_files: [], tag }`, with `tag` their index, once released. */
+function gatedGets() {
+  const releases: (() => void)[] = [];
+  const send: BackendClient["send"] = async <T>(request: BackendRequest) => {
+    const tag = releases.length;
+    if (request.method === "GET")
+      await new Promise<void>((resolve) => releases.push(resolve));
+    return { data: { media_files: [], tag } } as BackendResult<T>;
+  };
+  return {
+    client: { send } satisfies BackendClient,
+    count: () => releases.length,
+    release: (index: number) => releases[index]?.(),
+  };
+}
+
 const waveformWindow: ServerRequest = {
   kind: "getWaveformWindow",
   projectId: "p1",
@@ -190,6 +206,56 @@ describe("runRequest", () => {
     expect(await running.settled).toEqual({
       ok: true,
       data: { media_files: [] },
+    });
+  });
+
+  it("settles with refetched data when a refetch is already pending for the entry", async () => {
+    const reads = [{ media_files: [] }, { media_files: [mediaFile] }];
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let getCount = 0;
+    const store = createStore({
+      send: async <T>(request: BackendRequest) => {
+        if (request.method !== "GET")
+          return { data: mediaFile } as BackendResult<T>;
+        const data = reads[getCount++];
+        if (getCount > 1) await held;
+        return { data } as BackendResult<T>;
+      },
+    });
+    const thunkDispatch = store.dispatch as unknown as BackendDispatch;
+    await thunkDispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await settle(store, adding);
+    await vi.waitFor(() => expect(getCount).toBe(2));
+    const running = runRequest(listing, store.dispatch as Dispatch);
+    release();
+    expect(await running.settled).toEqual({
+      ok: true,
+      data: { media_files: [mediaFile] },
+    });
+  });
+
+  it("settles with refetched data when the refetch started as an earlier fetch settled", async () => {
+    const gets = gatedGets();
+    const store = createStore(gets.client);
+    const thunkDispatch = store.dispatch as unknown as BackendDispatch;
+    const earlier = thunkDispatch(
+      backendApi.endpoints.listMediaFiles.initiate("p1"),
+    );
+    await vi.waitFor(() => expect(gets.count()).toBe(1));
+    thunkDispatch(
+      backendApi.util.invalidateTags([{ type: "MediaFiles", id: "p1" }]),
+    );
+    gets.release(0);
+    await earlier;
+    await vi.waitFor(() => expect(gets.count()).toBe(2));
+    const running = runRequest(listing, store.dispatch as Dispatch);
+    gets.release(1);
+    expect(await running.settled).toEqual({
+      ok: true,
+      data: { media_files: [], tag: 1 },
     });
   });
 
