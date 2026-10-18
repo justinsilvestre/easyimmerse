@@ -144,10 +144,11 @@ export function useReaderKeyboardCursor(props: KeyboardCursorProps) {
       onPointerDownCapture: () => {
         isPressing.current = true;
       },
-      onPointerCancelCapture: () => {
+      // The press has given focus by the time it lifts, so a later focus is the keyboard's again.
+      onPointerUpCapture: () => {
         isPressing.current = false;
       },
-      onClickCapture: () => {
+      onPointerCancelCapture: () => {
         isPressing.current = false;
       },
       onFocus: (event: FocusEvent<HTMLElement>) => {
