@@ -54,7 +54,6 @@ import { flashcardNoticeKeys, withdraw } from "./flashcardNotices.ts";
 import { askSave } from "./flashcardSaves.ts";
 import { selectLatestFlashcard } from "./flashcardsSelectors.ts";
 import { isFlashcardSettled } from "./settleFlashcardRequest.ts";
-import { flashcardStartedBy } from "./startedCards.ts";
 import { holdForLookup, startLookupWait } from "./waitingCards.ts";
 
 /** The slices of the app state that the form reads: the flashcard rules' slices, and the server's capabilities for pictures. */
@@ -79,10 +78,9 @@ export function updateFlashcardForm(
   )
     return replaceForm(form, formFromLookup(finished), app);
   if (picturesFoundBy(action, app)) return updated(withPictures(form));
-  const started = flashcardStartedBy(lookup, action);
-  if (started)
-    return started.destination === "editor"
-      ? replaceForm(form, openedForm(newCard(started.flashcard)), app)
+  if (action.type === "flashcardStarted")
+    return action.destination === "editor"
+      ? replaceForm(form, openedForm(newCard(action.flashcard)), app)
       : updated(form);
   switch (action.type) {
     case "flashcardOpened":

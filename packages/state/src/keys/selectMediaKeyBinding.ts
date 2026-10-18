@@ -1,5 +1,4 @@
 import type { AppState } from "../app/appState.ts";
-import type { FlashcardDestination } from "../flashcards/flashcardActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
@@ -14,10 +13,8 @@ import {
   selectLookupEscapeBinding,
 } from "./keyBinding.ts";
 
-/** What the media screen completes with data only it holds: the drafts of flashcards, and the fullscreen state. */
-type MediaKeyCommand =
-  | { type: "toggleFullscreen" }
-  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination };
+/** What the media screen completes with data only it holds: the fullscreen state. */
+type MediaKeyCommand = { type: "toggleFullscreen" };
 
 /**
  * Returns what a key does on the media screen, or null to leave it to the browser.
@@ -55,16 +52,10 @@ export function selectMediaKeyBinding(
       return bindAction(lookupActions.lookupCursorLookedUp());
     case "c":
       // Works while a card is open in the editor, too.
-      return bindCommand<MediaKeyCommand>({
-        type: "startFlashcardAtCursor",
-        destination: "save",
-      });
+      return bindAction(lookupActions.lookupCursorFlashcardRequested("save"));
     case "e":
       return selectFlashcardForm(app) === null
-        ? bindCommand<MediaKeyCommand>({
-            type: "startFlashcardAtCursor",
-            destination: "editor",
-          })
+        ? bindAction(lookupActions.lookupCursorFlashcardRequested("editor"))
         : null;
     default:
       return null;

@@ -93,7 +93,7 @@ describe("selectMediaKeyBinding", () => {
   it("saves a flashcard from the lookup cursor on C", () => {
     const press = exampleKeyPress("c");
     expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
-      bindCommand({ type: "startFlashcardAtCursor", destination: "save" }),
+      bindAction(actions.lookupCursorFlashcardRequested("save")),
     );
   });
 
@@ -101,15 +101,13 @@ describe("selectMediaKeyBinding", () => {
     const press = exampleKeyPress("c");
     expect(
       selectMediaKeyBinding(stateAfter(openM1, startNew("f1")), press),
-    ).toEqual(
-      bindCommand({ type: "startFlashcardAtCursor", destination: "save" }),
-    );
+    ).toEqual(bindAction(actions.lookupCursorFlashcardRequested("save")));
   });
 
   it("opens a flashcard from the lookup cursor in the editor on E", () => {
     const press = exampleKeyPress("e");
     expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
-      bindCommand({ type: "startFlashcardAtCursor", destination: "editor" }),
+      bindAction(actions.lookupCursorFlashcardRequested("editor")),
     );
   });
 

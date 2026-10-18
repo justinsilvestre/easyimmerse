@@ -1,8 +1,10 @@
 import type {
   AnkiPendingDeletions,
+  ListDictionariesResponse,
   PlaybackMethodRequest,
   TimedTextTrack,
 } from "@easyimmerse/types";
+import type { PickedMediaFile } from "../platform/effects.ts";
 import { cacheKey } from "./cacheKey.ts";
 import type { ServerResponses } from "./serverRequest.ts";
 
@@ -26,16 +28,19 @@ export type CachedQueries = {
   };
   listSubtitleTracks: { projectId: string; mediaFileId: string };
   getSubtitleCues: { projectId: string; mediaFileId: string; trackId: string };
+  probePictures: PickedMediaFile;
   getProject: string;
   listMediaFiles: string;
   listFlashcards: string;
   listAnkiPendingDeletions: string;
+  listDictionaries: undefined;
   checkAnkiConnection: undefined;
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
+  listDictionaries: ListDictionariesResponse;
   getSubtitleCues: TimedTextTrack;
 };
 

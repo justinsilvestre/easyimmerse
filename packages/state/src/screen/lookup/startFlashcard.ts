@@ -24,7 +24,7 @@ import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 
 /**
  * The flashcard that a word's action asks for,
- * or null when the action asks for none, as a word held in a pop-up that shows nothing or the C key with no lookup cursor.
+ * or null when the action asks for none, as a word held in a pop-up that shows nothing.
  */
 export function requestedFlashcard(
   lookup: LookupState,
@@ -32,13 +32,6 @@ export function requestedFlashcard(
 ): PendingFlashcard | null {
   if (action.type === "lookupFlashcardRequested")
     return pendingFor(action.chosen, action);
-  if (action.type === "lookupCursorFlashcardRequested") {
-    const { atCursor } = action;
-    const chosen = lookup.cursor?.chosen;
-    return atCursor && chosen
-      ? pendingFor(chosen, { ...action, flashcard: atCursor })
-      : null;
-  }
   if (action.type !== "lookupPopupWordHeld") return null;
   const chosen = popupWordChosen(lookup, action.term);
   return chosen && pendingFor(chosen, action);

@@ -6,7 +6,6 @@ import {
   cat,
   dog,
   holdInPopup,
-  requestCursorFlashcard,
   requestFlashcard,
 } from "../screen/lookup/lookupTestSupport.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
@@ -405,19 +404,6 @@ describe("flashcardCommands", () => {
     ).toEqual([]);
   });
 
-  it("when the C key is pressed with no cursor, saves a flashcard for no word", () => {
-    expect(
-      requestsAsked(appAfter(), requestCursorFlashcard(null)).map(
-        ({ request }) => request.flashcardId,
-      ),
-    ).toEqual(["f-wordless"]);
-  });
-
-  it("when the C key is pressed at a cursor, saves no flashcard for no word", () => {
-    const app = appAfter(actions.lookupCursorMoved(cat, "mouse"));
-    expect(requestsAsked(app, requestCursorFlashcard(cat))).toEqual([]);
-  });
-
   it("when a flashcard for a word no dictionary covers is asked for, saves it at once", () => {
     const app = appAfter(requestFlashcard(cat));
     const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
@@ -531,16 +517,6 @@ describe("flashcardCommands", () => {
     it("when the pop-up is closed while a word's flashcard for the form waits for its lookup, keeps it waiting", () => {
       const app = appAfter(requestFlashcard(cat, "editor"));
       expect(heldCardIds(applied(app, actions.lookupClosed()))).toEqual([
-        "f-cat",
-      ]);
-    });
-
-    it("when the C key is pressed on another word before its lookup answers, keeps it waiting", () => {
-      const app = appAfter(
-        actions.lookupCursorMoved(dog, "mouse"),
-        requestFlashcard(cat),
-      );
-      expect(heldCardIds(applied(app, requestCursorFlashcard(dog)))).toEqual([
         "f-cat",
       ]);
     });
