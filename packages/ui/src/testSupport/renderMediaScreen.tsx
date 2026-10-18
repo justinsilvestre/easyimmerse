@@ -153,7 +153,7 @@ export function renderMediaScreen({
  * Holds the project's record in the cache, as the project screen does while it shows the media screen,
  * for the store's commands that make flashcards from the project's settings.
  */
-function ProjectRead({ projectId }: { projectId: string }) {
+export function ProjectRead({ projectId }: { projectId: string }) {
   useGetProjectQuery(projectId);
   return null;
 }
