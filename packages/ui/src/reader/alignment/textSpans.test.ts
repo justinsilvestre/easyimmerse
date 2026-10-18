@@ -153,6 +153,35 @@ describe("clampSpanToDocument", () => {
     const moon = quoted(span(1, 0, 11, 18), "🌙 alle");
     expect(clampSpanToDocument(moon, createDocument())).toEqual(moon);
   });
+
+  describe("in a text whose hard line breaks were unwrapped", () => {
+    const unwrapped: Document = {
+      title: "Book",
+      language: null,
+      chapters: [
+        {
+          title: null,
+          paragraphs: ["Der Hund schläft. Die", "字字\u200B字。"],
+        },
+      ],
+    };
+
+    it("keeps a span whose quote has a line break where the text has a space", () => {
+      const sentence = quoted(span(0, 0, 4, 21), "Hund schläft.\nDie");
+      expect(clampSpanToDocument(sentence, unwrapped)).toEqual(sentence);
+    });
+
+    it("keeps a span whose quote has a line break where the text has a zero-width space", () => {
+      const sentence = quoted(span(0, 1, 0, 5), "字字\n字。");
+      expect(clampSpanToDocument(sentence, unwrapped)).toEqual(sentence);
+    });
+
+    it("returns null for a span whose quote has a line break where the text has a letter", () => {
+      expect(
+        clampSpanToDocument(quoted(span(0, 0, 0, 5), "D\nr H"), unwrapped),
+      ).toBeNull();
+    });
+  });
 });
 
 describe("textOfSpan", () => {

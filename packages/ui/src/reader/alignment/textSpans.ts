@@ -1,5 +1,6 @@
 import type { ReaderLocation } from "@easyimmerse/state";
 import type { Document, TextSpan } from "@easyimmerse/types";
+import { zeroWidthSpace } from "../unwrapHardLineBreaks.ts";
 
 /** A paragraph of a document, addressed by position as the reader addresses it. */
 export type ParagraphAddress = { chapterIndex: number; paragraphIndex: number };
@@ -51,7 +52,7 @@ export function spansOfParagraph(
 
 /**
  * The span cut to the paragraph it addresses, or null when the document has no such chapter or paragraph,
- * or when the span has a quote and the text at its clamped position differs from it.
+ * or when the span has a quote and the text at its clamped position does not match it.
  * Its start and end are clamped to the paragraph's length, so a span past the end of the text becomes empty.
  * Saved alignments go stale when the parser splits a document differently: this keeps them usable,
  * and ignores a span whose quote shows that it now points at other text.
@@ -66,10 +67,27 @@ export function clampSpanToDocument(
   const end = Math.min(span.end, paragraph.length);
   if (
     typeof span.quote === "string" &&
-    span.quote !== paragraph.slice(start, end)
+    !quoteMatches(span.quote, paragraph.slice(start, end))
   )
     return null;
   return { ...span, start, end };
+}
+
+/**
+ * Whether a span's quote, taken from the parser's text, matches the text the reader shows at the span's position.
+ * The reader shows plain text with its hard line breaks unwrapped, so a line break in the quote also matches
+ * the space or zero-width space that took its place.
+ */
+function quoteMatches(quote: string, shown: string): boolean {
+  if (quote.length !== shown.length) return false;
+  for (let index = 0; index < quote.length; index++) {
+    const character = shown[index];
+    const isUnwrappedBreak =
+      quote[index] === "\n" &&
+      (character === " " || character === zeroWidthSpace);
+    if (quote[index] !== character && !isUnwrappedBreak) return false;
+  }
+  return true;
 }
 
 /** The text a span covers, or an empty string when it lies outside the document or its quote does not match. */
