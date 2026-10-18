@@ -28,6 +28,21 @@ To regenerate `sample.epub` after editing the tree (the `mimetype` entry must co
 cd fixtures/sample-epub && rm -f ../sample.epub && zip -X0 ../sample.epub mimetype && zip -Xr9D ../sample.epub META-INF OEBPS
 ```
 
+## sample-translation.txt
+
+A Spanish translation of `sample.epub` as plain text, UTF-8 with LF line endings: nine short paragraphs separated by single blank lines, with the chapter titles ("Capítulo uno", "Capítulo dos") as paragraphs of their own. The plain-text parser reads it as one untitled chapter, so every span that addresses it has `chapter_index` 0 and `paragraph_index` 0 to 5. The second paragraph of the first chapter is translated as two sentences ("El perro quiere comer. Tiene hambre.") so that one English sentence aligns with two Spanish ones.
+
+Hand-written. Edit directly, then recompute `sample-translation-alignment.json`.
+
+## sample-translation-alignment.json and sample-audio-alignment.json
+
+Two `AddAlignmentRequest` bodies for `sample.epub`, as described in `docs/alignment-data.md`. Both have `provider` set to `null`. The media file ids inside them are placeholders that tests replace with real ones: `"translation"` for the translation document in `sample-translation-alignment.json` and `"audio"` for the audio file in `sample-audio-alignment.json`.
+
+- `sample-translation-alignment.json` is a `translation` alignment with one link per sentence of the book, in document order. Each link pairs the sentence with the matching sentence of `sample-translation.txt`. The chapter titles are not paragraphs of the parsed EPUB, so they have no links. The link for "The dog wants to eat, and it is hungry." has two translation spans, one for each Spanish sentence, which exercises the many-to-many shape.
+- `sample-audio-alignment.json` is an `audio` alignment with one timed segment per sentence, in document order. The times are ascending, do not overlap, and all lie within the three seconds of `sample.mp3` (its duration is 3.03 s), so the last segment ends at 2950 ms.
+
+Hand-written. The spans were not typed by hand: a throwaway script parsed `sample.epub` and `sample-translation.txt` with the WebAssembly build of the Rust parser, split every paragraph into sentences with `Intl.Segmenter`, and printed the offsets as JSON, after checking that each span's slice is one whole sentence. Offsets are UTF-16 code units into the paragraph exactly as the parser produces it, with `end` exclusive. Each span also carries its `quote`, the exact text it covers (`paragraph.slice(start, end)`), taken from the same parser run as the offsets. If the parser's paragraphing or whitespace handling changes, recompute them; if the text of `sample.epub` or `sample-translation.txt` changes, recompute them as well.
+
 ## die-verwandlung.txt.gz and die-verwandlung.epub
 
 Franz Kafka's "Die Verwandlung" (1915, in the public domain), a whole novella in German for exercising the reader with a realistic book: long chapters, many pages, and words to look up. The text comes from Project Gutenberg eBook #22367, with Project Gutenberg's header, footer, and license removed.
