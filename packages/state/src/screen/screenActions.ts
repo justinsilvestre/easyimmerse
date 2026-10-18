@@ -22,6 +22,11 @@ import type { MediaImportSource } from "./projectScreen/mediaImportWizard.ts";
 export const screenActions = {
   seekRequested: (seconds: number) =>
     ({ type: "seekRequested", seconds }) as const,
+  /** The user asked to skip to the next cue or back to the previous one, as `skipTarget` describes. */
+  cueSkipRequested: (direction: "back" | "forward") =>
+    ({ type: "cueSkipRequested", direction }) as const,
+  /** The user asked to replay the cue shown now, as `replayTarget` describes. */
+  cueReplayRequested: () => ({ type: "cueReplayRequested" }) as const,
   playerTimeChanged: (seconds: number) =>
     ({ type: "playerTimeChanged", seconds }) as const,
   playerDurationChanged: (seconds: number) =>

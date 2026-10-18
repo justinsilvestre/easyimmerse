@@ -38,6 +38,10 @@ import {
   type Rollback,
 } from "./flashcardForm.ts";
 import {
+  dragClipEndpoint,
+  dragScreenshotMarker,
+} from "./flashcardFormDrags.ts";
+import {
   closeForm,
   deleteFromForm,
   editForm,
@@ -87,6 +91,10 @@ export function updateFlashcardForm(
       return replaceForm(form, restoredForm(action.card), app);
     case "flashcardEdited":
       return updated(form && editForm(form, action.edit));
+    case "clipEndpointDragged":
+      return updated(form && dragClipEndpoint(form, action));
+    case "screenshotMarkerDragged":
+      return updated(form && dragScreenshotMarker(form, action));
     case "flashcardSaveRequested":
       return form ? requestSave(form, app) : updated(form);
     case "flashcardClosed":

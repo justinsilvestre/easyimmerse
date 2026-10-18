@@ -3,6 +3,7 @@ import type {
   Document,
   MediaFile,
   PlaybackMethodRequest,
+  TimedTextTrack,
 } from "@easyimmerse/types";
 import { cacheKey } from "./cacheKey.ts";
 import type { ServerResponses } from "./serverRequest.ts";
@@ -25,6 +26,8 @@ export type CachedQueries = {
     mediaFileId: string;
     request: PlaybackMethodRequest;
   };
+  listSubtitleTracks: { projectId: string; mediaFileId: string };
+  getSubtitleCues: { projectId: string; mediaFileId: string; trackId: string };
   getProject: string;
   listMediaFiles: string;
   listAlignments: { projectId: string; mediaFileId: string };
@@ -39,6 +42,7 @@ export type CachedQueries = {
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
   openBook: Document;
+  getSubtitleCues: TimedTextTrack;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

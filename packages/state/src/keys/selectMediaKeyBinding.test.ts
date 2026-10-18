@@ -44,28 +44,28 @@ describe("selectMediaKeyBinding", () => {
   it("skips back to the previous cue on the left arrow", () => {
     const press = exampleKeyPress("ArrowLeft");
     expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
-      bindCommand({ type: "skipCue", direction: "back" }),
+      bindAction(actions.cueSkipRequested("back")),
     );
   });
 
   it("skips forward to the next cue on the right arrow", () => {
     const press = exampleKeyPress("ArrowRight");
     expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
-      bindCommand({ type: "skipCue", direction: "forward" }),
+      bindAction(actions.cueSkipRequested("forward")),
     );
   });
 
   it("skips cues on the arrows while a control, such as one in the dictionary pop-up, has focus", () => {
     const press = exampleKeyPress("ArrowRight", { focus: "control" });
     expect(selectMediaKeyBinding(withPopup(), press)).toEqual(
-      bindCommand({ type: "skipCue", direction: "forward" }),
+      bindAction(actions.cueSkipRequested("forward")),
     );
   });
 
   it("replays the cue shown now on R", () => {
     const press = exampleKeyPress("r");
     expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
-      bindCommand({ type: "replayCue" }),
+      bindAction(actions.cueReplayRequested()),
     );
   });
 

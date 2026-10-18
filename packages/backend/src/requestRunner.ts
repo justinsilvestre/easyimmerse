@@ -21,7 +21,14 @@ type RequestOf<K extends ServerRequestKind> = Extract<
 
 type StartedMutation = { unwrap(): Promise<unknown>; abort(): void };
 
-type StartedQuery = StartedMutation & { unsubscribe(): void };
+type StartedQuery = StartedMutation & {
+  unsubscribe(): void;
+  queryCacheKey: string;
+};
+
+type CacheEntry = { status: string; data?: unknown; error?: unknown };
+
+type BackendState = { backend: { queries: Record<string, CacheEntry> } };
 
 type StartedRequest = StartedMutation | StartedQuery;
 
@@ -226,6 +233,7 @@ export const requestEndpoints = {
 /**
  * Sends a request through its endpoint in the store that `dispatch` belongs to, and reports its outcome.
  * Aborting a query that another caller started does not stop it, and the request then settles with its data.
+ * A query settles with its entry's data once no fetch is pending for it, so a refetch that begins as the query's own fetch settles is awaited.
  * A query that ends with neither data nor an error settles as a failure.
  */
 export const runRequest: RequestRunner = (request, dispatch) => {
@@ -233,7 +241,7 @@ export const runRequest: RequestRunner = (request, dispatch) => {
     typeof request.kind
   >;
   const started = (dispatch as BackendDispatch)(start(request));
-  const settled = started.unwrap().then(
+  const settled = unwrapSettled(started, dispatch as BackendDispatch).then(
     (data): RequestOutcome =>
       isQuery(started) && data === undefined
         ? { ok: false, error: noDataFailure }
@@ -245,6 +253,30 @@ export const runRequest: RequestRunner = (request, dispatch) => {
     typeof request.kind
   >;
 };
+
+const entryPollMs = 10;
+
+/** Unwraps a started request. For a query, waits until the cache entry has no fetch pending and reads the entry's latest result. */
+async function unwrapSettled(
+  started: StartedRequest,
+  dispatch: BackendDispatch,
+) {
+  const data = await started.unwrap();
+  if (!isQuery(started)) return data;
+  for (;;) {
+    const entry = dispatch(readEntry(started.queryCacheKey));
+    if (entry?.status !== "pending") {
+      if (entry?.status === "rejected") throw entry.error;
+      return entry?.data;
+    }
+    await new Promise((resolve) => setTimeout(resolve, entryPollMs));
+  }
+}
+
+function readEntry(queryCacheKey: string) {
+  return (_dispatch: unknown, getState: () => unknown) =>
+    (getState() as BackendState).backend.queries[queryCacheKey];
+}
 
 function isQuery(started: StartedRequest): started is StartedQuery {
   return "unsubscribe" in started;

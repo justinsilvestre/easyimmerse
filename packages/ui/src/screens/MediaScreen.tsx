@@ -22,7 +22,6 @@ import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useAppStore } from "../hooks/useAppStore.ts";
 import { useFullscreen } from "../hooks/useFullscreen.ts";
 import { useKeyBindings } from "../hooks/useKeyBindings.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
@@ -41,9 +40,7 @@ import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { selectCuesToPrefetch } from "../media/selectCuesToPrefetch.ts";
-import { selectMediaPlayback } from "../media/selectMediaPlayback.ts";
 import { selectSubtitleAppearance } from "../media/selectSubtitleAppearance.ts";
-import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
@@ -79,10 +76,7 @@ export function MediaScreen({
   const projectId = project.id;
   const { settings } = project;
   const mediaFile = useMediaFile(projectId, mediaFileId);
-  const store = useAppStore();
   const isPlaying = useAppSelector((state) => selectPlayer(state).isPlaying);
-  // Read when the user acts rather than subscribed to, so that the player's time moving does not render the screen.
-  const playbackNow = () => selectMediaPlayback(store.getState());
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
   const source = mediaSourceOf(
@@ -183,14 +177,7 @@ export function MediaScreen({
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
-    onSkip: (direction) => {
-      const { currentMs, durationMs } = playbackNow();
-      dispatch(
-        actions.seekRequested(
-          skipTarget(subtitles.cues, currentMs, durationMs, direction) / 1000,
-        ),
-      );
-    },
+    onSkip: (direction) => dispatch(actions.cueSkipRequested(direction)),
     onVolumeChange: (volume) => dispatch(actions.volumeChangeRequested(volume)),
     onToggleMute: () => dispatch(actions.muteToggleRequested()),
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
@@ -206,13 +193,6 @@ export function MediaScreen({
       : undefined,
   };
   useKeyBindings((root, press) => selectMediaKeyBinding(root.app, press), {
-    skipCue: ({ direction }) => playerCallbacks.onSkip(direction),
-    replayCue: () =>
-      dispatch(
-        actions.seekRequested(
-          replayTarget(subtitles.cues, playbackNow().currentMs) / 1000,
-        ),
-      ),
     toggleFullscreen: fullscreen.toggle,
     startFlashcardAtCursor: ({ destination }) =>
       lookup.startFlashcardAtCursor(destination),
