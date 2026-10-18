@@ -90,6 +90,13 @@ describe("updateMediaScreen", () => {
       expect(screen.reader.viewMode).toBe("interlinear");
     });
 
+    it("keeps how far the translation is ready, as the reader reported it", () => {
+      const [screen] = apply(
+        actions.readerTranslationStatusReported("aligned"),
+      );
+      expect(screen.reader.translationStatus).toBe("aligned");
+    });
+
     it("counts a change of view as a jump", () => {
       const [screen] = apply(actions.readerViewModeChosen("translation"));
       expect(screen.reader.jumpCount).toBe(1);

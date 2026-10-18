@@ -3,6 +3,7 @@ import type { ItemSpan } from "../itemSpan.ts";
 import type {
   PageInfo,
   ReaderPanel,
+  ReaderTranslationStatus,
   ReaderViewMode,
 } from "./readerScreenState.ts";
 
@@ -17,6 +18,9 @@ export const readerScreenActions = {
     translationLocation?: ReaderLocation,
   ) =>
     ({ type: "readerViewModeChosen", viewMode, translationLocation }) as const,
+  /** The reader found how far the book's translation is ready to be shown, which decides the views it can show. */
+  readerTranslationStatusReported: (status: ReaderTranslationStatus) =>
+    ({ type: "readerTranslationStatusReported", status }) as const,
   /** The user moved to another place in the translation-only view; `matchIndex` is the search result chosen there, if any. */
   readerTranslationJumped: (
     location: ReaderLocation,

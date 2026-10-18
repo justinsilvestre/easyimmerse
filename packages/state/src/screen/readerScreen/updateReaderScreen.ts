@@ -24,6 +24,10 @@ export function updateReaderScreen(
         // The chosen match lies in the text shown before.
         search: { ...reader.search, activeMatchIndex: null },
       };
+    case "readerTranslationStatusReported":
+      return reader.translationStatus === action.status
+        ? reader
+        : { ...reader, translationStatus: action.status };
     case "readerTranslationJumped":
       return {
         ...reader,

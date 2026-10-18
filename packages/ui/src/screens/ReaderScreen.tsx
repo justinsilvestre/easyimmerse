@@ -78,6 +78,8 @@ export function ReaderScreen({
     return <ReaderStatus title={title} onBack={close} />;
   return (
     <BookReader
+      // Each book starts afresh, as the reader's state in the store does when a book opens.
+      key={mediaFile.id}
       project={project}
       mediaFile={mediaFile}
       mediaFiles={data?.media_files ?? [mediaFile]}

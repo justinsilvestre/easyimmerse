@@ -1,4 +1,8 @@
-import type { ReaderLocation, ReaderViewMode } from "@easyimmerse/state";
+import type {
+  ReaderLocation,
+  ReaderTranslationStatus,
+  ReaderViewMode,
+} from "@easyimmerse/state";
 import type { Document, MediaFile, TranslationLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { translationParagraphsOf } from "./alignment/translationAlignment.ts";
@@ -33,14 +37,12 @@ export function viewModesOf(
     : ["target", "translation"];
 }
 
-/** The view the reader shows: the one chosen while it is offered and the translation it needs has loaded, or else the book alone. */
-export function shownViewMode(
-  chosen: ReaderViewMode,
+/** How far the translation is ready to be shown: once paired and loaded, alone, and once also aligned, together with the book. */
+export function translationStatusOf(
   translation: ReaderTranslation | undefined,
-): ReaderViewMode {
-  return viewModesOf(translation).includes(chosen) && translation?.document
-    ? chosen
-    : "target";
+): ReaderTranslationStatus {
+  if (!translation?.paired || !translation.document) return "absent";
+  return translation.links ? "aligned" : "unaligned";
 }
 
 /**

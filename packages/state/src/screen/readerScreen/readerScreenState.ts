@@ -13,12 +13,21 @@ export type ReaderViewMode =
   | "interlinear"
   | "parallel";
 
+/**
+ * How far the book's translation is ready to be shown: not at all, while none is paired or it is still loading;
+ * alone, once it has loaded; or also together with the book, once it is aligned with it.
+ */
+export type ReaderTranslationStatus = "absent" | "unaligned" | "aligned";
+
 /** The page of the chapter in view, counted from zero, and how many pages the chapter fills. */
 export type PageInfo = { page: number; pageCount: number };
 
 /** The reader's own state. Its place in the book is the stored reading location. */
 export type ReaderScreenState = {
+  /** The view the user chose. The view shown can differ, as `shownReaderViewMode` describes. */
   viewMode: ReaderViewMode;
+  /** How far the translation is ready to be shown, as the reader last reported it. */
+  translationStatus: ReaderTranslationStatus;
   /** The place in the translation-only view. It is not stored, since the stored place is the book's own. */
   translationLocation: ReaderLocation;
   /** Counts the jumps, so that jumping twice to one place moves the text twice. */
@@ -37,6 +46,7 @@ export type ReaderScreenState = {
 
 export const initialReaderScreen: ReaderScreenState = {
   viewMode: "target",
+  translationStatus: "absent",
   translationLocation: { chapterIndex: 0, paragraphIndex: 0, offset: 0 },
   jumpCount: 0,
   panel: null,

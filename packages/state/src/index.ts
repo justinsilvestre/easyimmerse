@@ -173,11 +173,13 @@ export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActio
 export {
   isReaderPaged,
   selectReaderScreen,
+  shownReaderViewMode,
 } from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {
   PageInfo,
   ReaderPanel,
   ReaderScreenState,
+  ReaderTranslationStatus,
   ReaderViewMode,
 } from "./screen/readerScreen/readerScreenState.ts";
 export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
