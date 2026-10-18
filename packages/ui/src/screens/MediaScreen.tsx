@@ -172,7 +172,7 @@ export function MediaScreen({
       ? () => dispatch(actions.trackChoiceRequested())
       : undefined,
   };
-  useKeyBindings(selectMediaKeyBinding, {
+  useKeyBindings((root, press) => selectMediaKeyBinding(root.app, press), {
     skipCue: ({ direction }) => playerCallbacks.onSkip(direction),
     replayCue: () =>
       dispatch(

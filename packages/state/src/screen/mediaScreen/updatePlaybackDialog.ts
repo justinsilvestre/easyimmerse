@@ -1,5 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
+import type { ReadableState } from "../../app/feature.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ScreenState } from "../screenState.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
@@ -12,7 +12,10 @@ import { playedMediaFileOf } from "./playedMediaFile.ts";
 type DialogState = ScreenState["dialog"];
 
 /** The slices of the app state that the playback rules read: the shown media screen and the preferences. */
-export type PlaybackApp = Pick<AppState, "route" | "screen" | "preferences">;
+export type PlaybackApp = Pick<
+  ReadableState,
+  "route" | "screen" | "preferences" | "backend"
+>;
 
 /**
  * Opens the track choice before the first play when a kind has several tracks and no choice is saved, or when the user asks,
@@ -59,13 +62,13 @@ export function updatePlaybackDialog(
 type OpenPathPlayback = { mediaFileId: string; playback: PathPlayback };
 
 function selectOpenPathPlayback(
-  app: Pick<AppState, "route" | "screen">,
+  app: Pick<ReadableState, "route" | "screen" | "backend">,
 ): OpenPathPlayback | null {
   const open = selectMediaScreen(app);
   const playback = open?.screen.playback ?? null;
   return open && playback
     ? {
-        mediaFileId: playedMediaFileOf(open.screen, open.route).mediaFileId,
+        mediaFileId: playedMediaFileOf(app.backend, open.route).mediaFileId,
         playback,
       }
     : null;

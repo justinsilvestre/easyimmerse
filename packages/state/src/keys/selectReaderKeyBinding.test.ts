@@ -3,13 +3,17 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import { startNew } from "../flashcards/flashcardsTestSupport.ts";
+import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { exampleKeyPress } from "./exampleKeyPress.ts";
 import { bindAction, bindCommand } from "./keyBinding.ts";
 import { selectReaderKeyBinding } from "./selectReaderKeyBinding.ts";
 
 const openBook = actions.openMediaFileRequested("p1", "b1");
-/** The reader on a book just opened, in the paged layout, after the actions given. */
-const reading = (...done: AppAction[]) => stateAfter(openBook, ...done);
+/** The reader on a book just opened, in the paged layout, after the actions given, with nothing in the server cache. */
+const reading = (...done: AppAction[]) => ({
+  app: stateAfter(openBook, ...done),
+  backend: emptyServerCache,
+});
 const scrolling = () =>
   reading(
     actions.preferencesLoaded({

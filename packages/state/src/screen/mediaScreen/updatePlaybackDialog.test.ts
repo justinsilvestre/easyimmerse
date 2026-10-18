@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { withEmptyServerCache } from "../../server/serverCacheWith.ts";
 import {
   exampleCopyPlayback,
   exampleTracksOneEach,
@@ -29,7 +30,11 @@ const dialogAfter = (action: AppAction, ...before: AppAction[]) => {
     actions.preferencesLoaded({}),
     ...before,
   );
-  return updatePlaybackDialog(app.screen.dialog, action, app);
+  return updatePlaybackDialog(
+    app.screen.dialog,
+    action,
+    withEmptyServerCache(app),
+  );
 };
 
 const playing = [

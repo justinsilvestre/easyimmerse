@@ -1,5 +1,7 @@
 import type {
   AnkiPendingDeletions,
+  Document,
+  MediaFile,
   PlaybackMethodRequest,
 } from "@easyimmerse/types";
 import { cacheKey } from "./cacheKey.ts";
@@ -25,6 +27,9 @@ export type CachedQueries = {
   };
   getProject: string;
   listMediaFiles: string;
+  listAlignments: { projectId: string; mediaFileId: string };
+  /** A book's parsed text, cached under the name and source of its media file. */
+  openBook: Pick<MediaFile, "name" | "source">;
   listFlashcards: string;
   listAnkiPendingDeletions: string;
   checkAnkiConnection: undefined;
@@ -33,6 +38,7 @@ export type CachedQueries = {
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
+  openBook: Document;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

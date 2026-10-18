@@ -5,14 +5,12 @@ import {
   type ReaderScreenState,
 } from "./readerScreenState.ts";
 
-/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, counts its jumps, and keeps the audio it plays. */
+/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps. */
 export function updateReaderScreen(
   reader: ReaderScreenState,
   action: AppAction,
 ): ReaderScreenState {
   switch (action.type) {
-    case "readerAudioOpened":
-      return { ...reader, audioMediaFileId: action.audioFile.id };
     // A change of view counts as a jump, so that the text now shown opens at the reader's place.
     case "readerViewModeChosen":
       return {

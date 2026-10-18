@@ -9,7 +9,10 @@ import { selectOpenPlayedMediaFile } from "./playedMediaFile.ts";
  * It is the open file, or in the reader the audio file the book is aligned with, as `playedMediaFileOf` describes.
  */
 function openFileOf(root: RootState) {
-  const played = selectOpenPlayedMediaFile(root.app);
+  const played = selectOpenPlayedMediaFile({
+    ...root.app,
+    backend: root.backend,
+  });
   return played
     ? { projectId: played.projectId, mediaFileId: played.mediaFileId }
     : null;

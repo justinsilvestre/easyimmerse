@@ -7,12 +7,12 @@ import {
 import {
   actions,
   isDocumentFileName,
+  latestAlignments,
   type ReaderLocation,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { latestAlignments } from "./alignment/latestAlignments.ts";
 import { linkAt, translationOfLink } from "./alignment/translationAlignment.ts";
 import { BilingualEbookDialog } from "./BilingualEbookDialog.tsx";
 import type { ReaderTranslation } from "./readerTranslation.ts";

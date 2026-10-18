@@ -3,13 +3,14 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { PickedFile } from "../platform/effects.ts";
+import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { updateDialog } from "./updateDialog.ts";
 
 /** The app with the dictionaries page of Settings open over the home screen. */
-const onDictionariesPage = stateAfter(
-  actions.navigated({ type: "openDictionaries" }),
+const onDictionariesPage = withEmptyServerCache(
+  stateAfter(actions.navigated({ type: "openDictionaries" })),
 );
 
 /** Applies an action to a dialog while the dictionaries page is on top. */

@@ -1,4 +1,4 @@
-import type { AppState, KeyBinding, KeyPress } from "@easyimmerse/state";
+import type { KeyBinding, KeyPress, RootState } from "@easyimmerse/state";
 import { useEffect, useEffectEvent } from "react";
 import { keyPressOf } from "./keyPressOf.ts";
 import { useAppStore } from "./useAppStore.ts";
@@ -16,12 +16,12 @@ type CommandHandlers<Given extends Command> = {
  * The focused element sees each key first, so that a key it handles, which it marks by preventing the default, can be told apart.
  */
 export function useKeyBindings<Given extends Command>(
-  selectBinding: (app: AppState, press: KeyPress) => KeyBinding<Given> | null,
+  selectBinding: (root: RootState, press: KeyPress) => KeyBinding<Given> | null,
   handlers: NoInfer<CommandHandlers<Given>>,
 ): void {
   const store = useAppStore();
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    const binding = selectBinding(store.getState().app, keyPressOf(event));
+    const binding = selectBinding(store.getState(), keyPressOf(event));
     if (binding === null) return;
     event.preventDefault();
     if (binding.kind === "action") store.dispatch(binding.action);

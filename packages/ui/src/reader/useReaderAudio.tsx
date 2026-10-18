@@ -1,4 +1,4 @@
-import { actions, selectPlayer } from "@easyimmerse/state";
+import { actions, selectPlayer, selectSpokenSpan } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -6,7 +6,6 @@ import { PlaybackDialogs } from "../player/PlaybackDialogs.tsx";
 import { segmentAt } from "./alignment/audioAlignment.ts";
 import { ReaderAudioPlayer } from "./ReaderAudioPlayer.tsx";
 import type { ReaderAudio } from "./readerAudio.ts";
-import { selectSpokenSpan } from "./selectSpokenSpan.ts";
 import { useAlignedAudio } from "./useAlignedAudio.ts";
 
 /**
@@ -22,10 +21,7 @@ export function useReaderAudio(
 ): ReaderAudio | undefined {
   const dispatch = useAppDispatch();
   const aligned = useAlignedAudio(projectId, bookId);
-  const segments = aligned?.segments;
-  const spokenSpan = useAppSelector((state) =>
-    selectSpokenSpan(state, segments),
-  );
+  const spokenSpan = useAppSelector(selectSpokenSpan);
   const isPlaying = useAppSelector((state) => selectPlayer(state).isPlaying);
   if (aligned === null) return undefined;
   return {

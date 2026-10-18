@@ -21,21 +21,6 @@ export function segmentAt(
   );
 }
 
-/**
- * The first segment heard at the time, from its start up to but not including its end,
- * or null when none is. Segments need not be sorted by time.
- */
-export function segmentSpokenAt(
-  segments: readonly TimedSpan[],
-  timeMs: number,
-): TimedSpan | null {
-  return (
-    segments.find(
-      (segment) => segment.start_ms <= timeMs && timeMs < segment.end_ms,
-    ) ?? null
-  );
-}
-
 /** The segments whose text lies in the given paragraph, in document order. */
 export function segmentsOfParagraph(
   segments: readonly TimedSpan[],

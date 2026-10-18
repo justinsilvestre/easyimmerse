@@ -200,7 +200,12 @@ export {
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
-export { selectReaderAudioMediaFileId } from "./screen/readerScreen/readerAudioSelectors.ts";
+export { latestAlignments } from "./screen/readerScreen/latestAlignments.ts";
+export {
+  type AlignedAudio,
+  selectReaderAlignedAudio,
+  selectSpokenSpan,
+} from "./screen/readerScreen/readerAudioSelectors.ts";
 export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActions.ts";
 export {
   isReaderPaged,

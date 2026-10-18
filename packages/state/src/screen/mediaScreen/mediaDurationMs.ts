@@ -22,7 +22,7 @@ export function mediaScreenDurationMs(
   if (playerSeconds > 0) return playerSeconds * 1000;
   const route = mainScreenOf(app.route);
   if (route.screen !== "media") return 0;
-  const { projectId, mediaFileId } = playedMediaFileOf(screen, route);
+  const { projectId, mediaFileId } = playedMediaFileOf(app.backend, route);
   const tracks = cacheEntry(app.backend, "getMediaTracks", {
     projectId,
     mediaFileId,

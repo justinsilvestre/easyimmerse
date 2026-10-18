@@ -1,6 +1,7 @@
 import type { AppState } from "../app/appState.ts";
+import type { RootState } from "../app/createAppStore.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
-import { selectReaderAudioMediaFileId } from "../screen/readerScreen/readerAudioSelectors.ts";
+import { selectReaderAlignedAudio } from "../screen/readerScreen/readerAudioSelectors.ts";
 import {
   selectIsReaderPaged,
   selectIsReaderPanelOpen,
@@ -25,16 +26,15 @@ type ReaderKeyCommand =
  * Returns what a key does in the reader, or null to leave it to the browser.
  * Ctrl+F or Cmd+F searches the book, whose other pages the browser's own search cannot see.
  * Escape makes the dictionary pop-up compact, or closes it, and L looks up from the lookup cursor.
- * K plays and pauses the audio the book is aligned with, as it does on the media screen; Space, which also does there, turns pages here.
+ * K plays and pauses the audio the book is aligned with, once the server cache names it, as it does on the media screen;
+ * Space, which also does there, turns pages here.
  * In the paged layout, the arrow keys, Page Up and Page Down, and Space turn pages;
  * the scrolling layout leaves these keys to the browser, which scrolls with them.
  * While a panel or the flashcard editor is open, only the search and the pop-up's Escape work.
  * Space is left to a focused control, and every key to Settings or a modal dialog over the reader.
  */
-export function selectReaderKeyBinding(
-  app: Pick<AppState, "route" | "screen" | "preferences">,
-  press: KeyPress,
-) {
+export function selectReaderKeyBinding(root: RootState, press: KeyPress) {
+  const { app } = root;
   if (isScreenCovered(app, press)) return null;
   if (isFindPress(press))
     return bindCommand<ReaderKeyCommand>({ type: "openBookSearch" });
@@ -42,7 +42,7 @@ export function selectReaderKeyBinding(
   if (!isShortcutPress(press) || selectIsReaderPanelOpen(app)) return null;
   if (keyNameOf(press) === "l")
     return bindAction(lookupActions.lookupCursorLookedUp());
-  if (keyNameOf(press) === "k" && selectReaderAudioMediaFileId(app) !== null)
+  if (keyNameOf(press) === "k" && selectReaderAlignedAudio(root) !== null)
     return bindAction(screenActions.playToggleRequested());
   return selectIsReaderPaged(app) ? pageTurnOf(press) : null;
 }

@@ -6,6 +6,7 @@ import {
   mediaScreenEnteredBy,
   mediaScreenLeftBy,
 } from "../screen/mediaScreenRouteChanges.ts";
+import { alignedAudioSettledBy } from "../screen/readerScreen/alignedAudioSettledBy.ts";
 import { crossesSaveInterval } from "./playbackPosition.ts";
 import {
   isSameLocation,
@@ -18,11 +19,11 @@ import { initialStoredPlaces } from "./storedPlacesState.ts";
 
 /**
  * Updates the stored places: loads a media file's places when its screen opens, and the playback position
- * of the audio file the reader opens, and saves them as reading and playback move on and when its screen closes.
+ * of the audio file the open book turns out to be aligned with, and saves them as reading and playback move on and when its screen closes.
  */
 export const updateStoredPlaces: FeatureUpdate<
   StoredPlacesState,
-  "route" | "screen"
+  "route" | "screen" | "backend"
 > = (places, action, app) => {
   switch (action.type) {
     case "readingLocationLoaded":
@@ -35,8 +36,10 @@ export const updateStoredPlaces: FeatureUpdate<
     case "readerJumped":
     case "readerMatchChosen":
       return readingMoved(places, action.mediaFileId, action.location);
-    case "readerAudioOpened":
-      return updated(places, ...playbackLoads(places, action.audioFile.id));
+    case "requestSettled": {
+      const audio = alignedAudioSettledBy(action, app);
+      return updated(places, ...(audio ? playbackLoads(places, audio.id) : []));
+    }
     case "playbackPositionLoaded":
       return updated({
         ...places,
@@ -49,7 +52,7 @@ export const updateStoredPlaces: FeatureUpdate<
           open.screen.playing.player.currentTimeSeconds,
           action.seconds,
         )
-        ? savePlayback(places, open, action.seconds)
+        ? savePlayback(places, open, action.seconds, app.backend)
         : updated(places);
     }
     case "playerPlayingChanged": {
@@ -59,13 +62,16 @@ export const updateStoredPlaces: FeatureUpdate<
             places,
             open,
             open.screen.playing.player.currentTimeSeconds,
+            app.backend,
           )
         : updated(places);
     }
     default: {
       const left = mediaScreenLeftBy(app, action);
       const [saved, saves] =
-        left === null ? updated(places) : saveOnLeaving(places, left);
+        left === null
+          ? updated(places)
+          : saveOnLeaving(places, left, app.backend);
       const entered = mediaScreenEnteredBy(app, action);
       if (entered === null) return updated(saved, ...saves);
       return updated(saved, ...saves, ...placeLoads(places, entered));
@@ -76,7 +82,7 @@ export const updateStoredPlaces: FeatureUpdate<
 /** The stored places as a feature: where to resume each book and media file. */
 export const storedPlacesFeature: Feature<
   StoredPlacesState,
-  "route" | "screen"
+  "route" | "screen" | "backend"
 > = {
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,
@@ -116,7 +122,7 @@ function placeLoads(places: StoredPlacesState, mediaFileId: string) {
   return [...readingLoads, ...playbackLoads(places, mediaFileId)];
 }
 
-/** Loads the stored playback position of a media file unless it is already known, as for the audio file the reader opens. */
+/** Loads the stored playback position of a media file unless it is already known, as for the audio file the reader plays. */
 function playbackLoads(
   places: StoredPlacesState,
   mediaFileId: string,

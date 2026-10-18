@@ -10,6 +10,7 @@ import { containerCodecStrings } from "./playbackMethodRules.ts";
 /** The ids of the media screen's playback requests. Sending one again under its id aborts the one still running. */
 export const playbackRequestIds = (mediaFileId: string) => ({
   mediaFile: `media/${mediaFileId}/mediaFile`,
+  alignments: `media/${mediaFileId}/alignments`,
   tracks: `media/${mediaFileId}/tracks`,
   method: `media/${mediaFileId}/playbackMethod`,
   saveSelection: `media/${mediaFileId}/saveTrackSelection`,
@@ -21,6 +22,15 @@ export function mediaFileRequest({ projectId, mediaFileId }: MediaRoute) {
     type: "sendRequest",
     id: playbackRequestIds(mediaFileId).mediaFile,
     request: { kind: "listMediaFiles", projectId },
+  } satisfies Effect;
+}
+
+/** Asks for the alignments of the open book, among which the reader finds the audio it plays. */
+export function alignmentsRequest({ projectId, mediaFileId }: MediaRoute) {
+  return {
+    type: "sendRequest",
+    id: playbackRequestIds(mediaFileId).alignments,
+    request: { kind: "listAlignments", projectId, mediaFileId },
   } satisfies Effect;
 }
 
