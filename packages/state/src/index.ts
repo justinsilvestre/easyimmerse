@@ -210,6 +210,8 @@ export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActio
 export {
   isReaderPaged,
   selectReaderScreen,
+  selectReaderTranslationStatus,
+  selectShownReaderViewMode,
   shownReaderViewMode,
 } from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {

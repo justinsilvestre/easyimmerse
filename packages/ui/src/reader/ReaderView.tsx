@@ -4,6 +4,7 @@ import {
   type ReaderPreferences,
   type ReaderScreenAction,
   type ReaderScreenState,
+  type ReaderViewMode,
 } from "@easyimmerse/state";
 import type { Document, TranslationLink } from "@easyimmerse/types";
 import {
@@ -87,6 +88,8 @@ type ReaderViewProps = {
   /** The reader's place, which the text shows and keeps through changes of layout. */
   location: ReaderLocation;
   reader: ReaderScreenState;
+  /** The view shown: the one chosen once the translation it needs is ready, as `selectShownReaderViewMode` decides. */
+  viewMode: ReaderViewMode;
   dispatch: (action: ReaderViewAction) => void;
   /** The book's title, or the file's name when the book has none. */
   title: string;
@@ -141,7 +144,8 @@ export function ReaderView(props: ReaderViewProps) {
   const { preferences, callbacks } = props;
   // In the translation-only view, the translation's text, place and language stand in for the book's.
   const shown = useTranslationView(props);
-  const { document, location, language, viewMode } = shown;
+  const { document, location, language } = shown;
+  const { viewMode } = props;
   const ownControls = useReaderControls();
   const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);

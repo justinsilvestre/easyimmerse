@@ -3,7 +3,6 @@ import {
   type ReaderLocation,
   type ReaderScreenState,
   type ReaderViewMode,
-  shownReaderViewMode,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
@@ -36,6 +35,7 @@ export function useTranslationView({
   location,
   language,
   reader,
+  viewMode,
   translation,
   dispatch,
 }: {
@@ -43,11 +43,12 @@ export function useTranslationView({
   document: Document;
   location: ReaderLocation;
   language: string;
-  reader: ReaderScreenState;
+  reader: Pick<ReaderScreenState, "translationLocation">;
+  /** The view shown, as `selectShownReaderViewMode` decides. */
+  viewMode: ReaderViewMode;
   translation?: ReaderTranslation;
   dispatch: (action: ReaderViewAction) => void;
 }) {
-  const viewMode = shownReaderViewMode(reader);
   const translationDocument = translation?.document ?? null;
   const links = translation?.links ?? null;
   const translationLanguage = translation?.language ?? language;
@@ -126,7 +127,6 @@ export function useTranslationView({
     parallelRows,
   ]);
   return {
-    viewMode,
     viewModes: viewModesOf(translation),
     isTranslationShown,
     ...shown,

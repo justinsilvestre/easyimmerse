@@ -44,7 +44,7 @@ export function selectReaderKeyBinding(root: RootState, press: KeyPress) {
     return bindAction(lookupActions.lookupCursorLookedUp());
   if (keyNameOf(press) === "k" && selectReaderAlignedAudio(root) !== null)
     return bindAction(screenActions.playToggleRequested());
-  return selectIsReaderPaged(app) ? pageTurnOf(press) : null;
+  return selectIsReaderPaged(root) ? pageTurnOf(press) : null;
 }
 
 /**

@@ -1,19 +1,18 @@
-import { actions, selectReaderScreen } from "@easyimmerse/state";
-import { type ComponentProps, useEffect } from "react";
+import {
+  selectReaderScreen,
+  selectShownReaderViewMode,
+} from "@easyimmerse/state";
+import type { ComponentProps } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ReaderView } from "./ReaderView.tsx";
-import { translationStatusOf } from "./readerTranslation.ts";
 import { selectReaderLocation } from "./selectReaderLocation.ts";
 
-/**
- * The reader view, with its place and its state read from the store.
- * It reports to the store how far the translation is ready, so that the store knows which view is shown, as its keys need.
- */
+/** The reader view, with its place, its state and the view it shows read from the store. */
 export function ConnectedReaderView(
   props: Omit<
     ComponentProps<typeof ReaderView>,
-    "location" | "reader" | "dispatch"
+    "location" | "reader" | "viewMode" | "dispatch"
   >,
 ) {
   const dispatch = useAppDispatch();
@@ -21,15 +20,13 @@ export function ConnectedReaderView(
     selectReaderLocation(state, props.document, props.mediaFileId),
   );
   const reader = useAppSelector(selectReaderScreen);
-  const translationStatus = translationStatusOf(props.translation);
-  useEffect(() => {
-    dispatch(actions.readerTranslationStatusReported(translationStatus));
-  }, [dispatch, translationStatus]);
+  const viewMode = useAppSelector(selectShownReaderViewMode);
   return (
     <ReaderView
       {...props}
       location={location}
       reader={reader}
+      viewMode={viewMode}
       dispatch={dispatch}
     />
   );

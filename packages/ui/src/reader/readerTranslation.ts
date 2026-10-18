@@ -1,8 +1,4 @@
-import type {
-  ReaderLocation,
-  ReaderTranslationStatus,
-  ReaderViewMode,
-} from "@easyimmerse/state";
+import type { ReaderLocation, ReaderViewMode } from "@easyimmerse/state";
 import type { Document, MediaFile, TranslationLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { translationParagraphsOf } from "./alignment/translationAlignment.ts";
@@ -35,14 +31,6 @@ export function viewModesOf(
   return translation.links
     ? ["target", "translation", "interlinear", "parallel"]
     : ["target", "translation"];
-}
-
-/** How far the translation is ready to be shown: once paired and loaded, alone, and once also aligned, together with the book. */
-export function translationStatusOf(
-  translation: ReaderTranslation | undefined,
-): ReaderTranslationStatus {
-  if (!translation?.paired || !translation.document) return "absent";
-  return translation.links ? "aligned" : "unaligned";
 }
 
 /**
