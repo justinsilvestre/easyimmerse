@@ -40,8 +40,8 @@ const translationClosed = bindAction(actions.readerTranslationPopupClosed());
 
 const wordPlace = { chapterIndex: 0, paragraphIndex: 0, offset: 4 };
 const rect = { top: 10, bottom: 30, left: 40, right: 80 };
-/** The dictionary pop-up open on a word of the book's first sentence. */
-const wordLookedUp = actions.lookupWordClicked(
+/** The mouse pointing at a word of the book's first sentence. */
+const wordPointed = actions.lookupCursorMoved(
   chosenTextWord(wordPlace, rect),
   "mouse",
 );
@@ -167,26 +167,26 @@ describe("selectReaderKeyBinding", () => {
     });
   });
 
-  describe("on P", () => {
-    const pressP = exampleKeyPress("p");
+  describe("on R", () => {
+    const pressR = exampleKeyPress("r");
 
-    it("plays the sentence of the word looked up", () => {
-      const root = readingWith(alignedReaderCache, wordLookedUp);
-      expect(selectReaderKeyBinding(root, pressP)).toEqual(
+    it("plays the sentence of the word pointed at", () => {
+      const root = readingWith(alignedReaderCache, wordPointed);
+      expect(selectReaderKeyBinding(root, pressR)).toEqual(
         bindCommand({ type: "playSentence", location: wordPlace }),
       );
     });
 
-    it("plays the sentence being spoken when no word is looked up", () => {
+    it("plays the sentence being spoken when no word is pointed at", () => {
       const root = readingWith(alignedReaderCache, speaking);
-      expect(selectReaderKeyBinding(root, pressP)).toEqual(
+      expect(selectReaderKeyBinding(root, pressR)).toEqual(
         bindCommand({ type: "playSentence", location: spokenPlace }),
       );
     });
 
     it("does nothing without a current sentence", () => {
       expect(
-        selectReaderKeyBinding(readingWith(alignedReaderCache), pressP),
+        selectReaderKeyBinding(readingWith(alignedReaderCache), pressR),
       ).toBeNull();
     });
 
@@ -196,26 +196,26 @@ describe("selectReaderKeyBinding", () => {
           alignments: [translationAlignment()],
           isPaired: true,
         }),
-        wordLookedUp,
+        wordPointed,
       );
-      expect(selectReaderKeyBinding(root, pressP)).toBeNull();
+      expect(selectReaderKeyBinding(root, pressR)).toBeNull();
     });
 
     it("leaves the key alone while a panel is open", () => {
       const root = readingWith(
         alignedReaderCache,
-        wordLookedUp,
+        wordPointed,
         actions.readerPanelOpened("contents"),
       );
-      expect(selectReaderKeyBinding(root, pressP)).toBeNull();
+      expect(selectReaderKeyBinding(root, pressR)).toBeNull();
     });
   });
 
   describe("on T", () => {
     const pressT = exampleKeyPress("t");
 
-    it("shows the translation of the looked-up word's sentence beside the word", () => {
-      const root = readingWith(alignedReaderCache, wordLookedUp);
+    it("shows the translation of the pointed word's sentence beside the word", () => {
+      const root = readingWith(alignedReaderCache, wordPointed);
       expect(selectReaderKeyBinding(root, pressT)).toEqual(
         bindCommand({
           type: "showSentenceTranslation",
@@ -250,7 +250,7 @@ describe("selectReaderKeyBinding", () => {
     it("does nothing while the book is not aligned with its translation", () => {
       const root = readingWith(
         readerCacheWith({ isPaired: true }),
-        wordLookedUp,
+        wordPointed,
       );
       expect(selectReaderKeyBinding(root, pressT)).toBeNull();
     });
@@ -259,7 +259,7 @@ describe("selectReaderKeyBinding", () => {
       const root = readingWith(
         alignedReaderCache,
         actions.readerViewModeChosen("interlinear"),
-        wordLookedUp,
+        wordPointed,
       );
       expect(selectReaderKeyBinding(root, pressT)).toBeNull();
     });

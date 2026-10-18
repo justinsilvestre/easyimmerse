@@ -10,7 +10,7 @@ import { selectReaderCurrentSentence } from "./selectReaderCurrentSentence.ts";
 
 const wordPlace = { chapterIndex: 0, paragraphIndex: 0, offset: 4 };
 const rect = { top: 10, bottom: 30, left: 40, right: 80 };
-const lookedUp = actions.lookupWordClicked(
+const pointed = actions.lookupCursorMoved(
   chosenTextWord(wordPlace, rect),
   "mouse",
 );
@@ -24,13 +24,13 @@ describe("selectReaderCurrentSentence", () => {
     );
   });
 
-  it("returns the place of the word the dictionary pop-up shows", () => {
-    const root = readingWith(alignedReaderCache, lookedUp);
+  it("returns the place of the word under the lookup cursor", () => {
+    const root = readingWith(alignedReaderCache, pointed);
     expect(selectReaderCurrentSentence(root)?.location).toEqual(wordPlace);
   });
 
-  it("returns where the word the dictionary pop-up shows is drawn", () => {
-    const root = readingWith(alignedReaderCache, lookedUp);
+  it("returns where the word under the lookup cursor is drawn", () => {
+    const root = readingWith(alignedReaderCache, pointed);
     expect(selectReaderCurrentSentence(root)?.anchor).toEqual(rect);
   });
 
@@ -42,26 +42,16 @@ describe("selectReaderCurrentSentence", () => {
     });
   });
 
-  it("prefers the looked-up word's sentence to the spoken one", () => {
-    const root = readingWith(alignedReaderCache, speaking, lookedUp);
+  it("prefers the pointed word's sentence to the spoken one", () => {
+    const root = readingWith(alignedReaderCache, speaking, pointed);
     expect(selectReaderCurrentSentence(root)?.location).toEqual(wordPlace);
   });
 
-  it("prefers the sentence whose translation is shown", () => {
-    const shownPlace = { chapterIndex: 1, paragraphIndex: 0, offset: 2 };
+  it("returns null once the mouse leaves the words and nothing is spoken", () => {
     const root = readingWith(
       alignedReaderCache,
-      lookedUp,
-      actions.readerTranslationPopupOpened(shownPlace, null),
-    );
-    expect(selectReaderCurrentSentence(root)?.location).toEqual(shownPlace);
-  });
-
-  it("returns null once the dictionary pop-up closes and nothing is spoken", () => {
-    const root = readingWith(
-      alignedReaderCache,
-      lookedUp,
-      actions.lookupClosed(),
+      pointed,
+      actions.lookupCursorLeft("mouse"),
     );
     expect(selectReaderCurrentSentence(root)).toBeNull();
   });

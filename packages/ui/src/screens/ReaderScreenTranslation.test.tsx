@@ -196,6 +196,15 @@ function click(detail = 1) {
   fireEvent.click(text, { ...point, detail });
 }
 
+/** Moves the mouse onto the word pointed at, which places the lookup cursor there. */
+function pointMouse() {
+  fireEvent.pointerMove(screen.getByRole("main"), {
+    ...point,
+    pointerType: "mouse",
+    buttons: 0,
+  });
+}
+
 /** Holds the mouse button down on the word pointed at, for as long as a held tap. */
 function holdMouse() {
   fireEvent.pointerDown(screen.getByRole("main"), {
@@ -384,14 +393,13 @@ describe("ReaderScreen translation", () => {
     expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
   });
 
-  it("shows the translation of the looked-up word's sentence on T", async () => {
+  it("shows the translation of the pointed word's sentence on T", async () => {
     await renderReader({ isAligned: true });
     openPanel();
     await within(panel()).findByRole("radio", { name: /^Interlinear/ });
     fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
     pointAt("dog");
-    click();
-    await screen.findByRole("dialog", { name: "Dictionary" });
+    pointMouse();
     fireEvent.keyDown(document.body, { key: "t" });
     expect(
       (await screen.findByRole("dialog", { name: "Translation" })).textContent,
@@ -406,6 +414,7 @@ describe("ReaderScreen translation", () => {
     pointAt("dog");
     click();
     await screen.findByRole("dialog", { name: "Dictionary" });
+    pointMouse();
     fireEvent.keyDown(document.body, { key: "t" });
     await screen.findByRole("dialog", { name: "Translation" });
     expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();

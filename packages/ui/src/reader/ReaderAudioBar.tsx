@@ -6,7 +6,7 @@ import { formatTimestamp } from "../media/formatTimestamp.ts";
  * The compact player of the audio a book is aligned with, shown above the progress slider:
  * play and pause, the time played and the whole length, and a slider to move through the audio.
  * The slider waits until the audio's length is known; a failure to play takes its place.
- * The play button's tooltip names the keys: K plays and pauses, and P plays the current sentence.
+ * The play button's tooltip names the keys: K plays and pauses, and R plays the current sentence.
  */
 export function ReaderAudioBar({
   isPlaying,
@@ -29,7 +29,7 @@ export function ReaderAudioBar({
     <div className="flex items-center gap-2 text-xs text-fg-muted tabular-nums">
       <IconButton
         label={isPlaying ? "Pause the audio (K)" : "Play the audio (K)"}
-        title={`${isPlaying ? "Pause" : "Play"} the audio (K). P plays the current sentence.`}
+        title={`${isPlaying ? "Pause" : "Play"} the audio (K). R plays the current sentence.`}
         disabled={failure !== null}
         onClick={onTogglePlay}
       >

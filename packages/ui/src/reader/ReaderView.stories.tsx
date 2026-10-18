@@ -153,8 +153,8 @@ function popupFor(word: string, onClose: () => void) {
  * the keys and the dictionary pop-up work in every story.
  * A click opens the pop-up on a word, and resting the mouse on another moves it there.
  * "Ungeziefer" and "fressen" have entries.
- * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself,
- * and T finds no looked-up word there; the translation of a held word, and T on a spoken sentence, go through the store.
+ * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself;
+ * the translation of a held word, and R and T on the word under the mouse, go through the store.
  * The book's translation comes from the fake backend the story's store talks to.
  */
 function StatefulReader(args: ReaderStoryArgs) {

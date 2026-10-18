@@ -45,8 +45,9 @@ type ReaderKeyCommand =
  * Escape closes the translation of a sentence, else makes the dictionary pop-up compact, or closes it; L looks up from the lookup cursor.
  * K plays and pauses the audio the book is aligned with, once the server cache names it, as it does on the media screen;
  * Space, which also does there, turns pages here.
- * P plays the audio of the current sentence, and T shows or hides its translation, where the book is aligned with the one
- * and the other; the current sentence is the one `selectReaderCurrentSentence` describes, and without one the keys do nothing.
+ * R plays the audio of the current sentence, as it replays the cue on the media screen, and T shows or hides its translation,
+ * where the book is aligned with the one and the other; the current sentence is the one `selectReaderCurrentSentence` describes,
+ * and without one the keys do nothing.
  * In the paged layout, the arrow keys, Page Up and Page Down, and Space turn pages;
  * the scrolling layout leaves these keys to the browser, which scrolls with them.
  * While a panel or the flashcard editor is open, only the search and Escape work.
@@ -66,7 +67,7 @@ export function selectReaderKeyBinding(root: RootState, press: KeyPress) {
       return selectReaderAlignedAudio(root) !== null
         ? bindAction(screenActions.playToggleRequested())
         : null;
-    case "p":
+    case "r":
       return selectPlaySentenceBinding(root);
     case "t":
       return selectSentenceTranslationBinding(root);
