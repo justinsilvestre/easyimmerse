@@ -96,7 +96,10 @@ fn push_video_codec(args: &mut Args, job: &ConversionJob) {
             deinterlace,
             ..
         }) => {
-            args.push_all(["-c:v", encoder, "-realtime", "1", "-profile:v", "high"]);
+            // VideoToolbox's real-time hint is left unset. Under that hint the encoder ties the
+            // frames to the wall clock and may drop frames to keep up, which ffmpeg does not
+            // report; without it every submitted frame is encoded.
+            args.push_all(["-c:v", encoder, "-profile:v", "high"]);
             args.push_all(["-pix_fmt", "yuv420p", "-b:v", &bit_rate.to_string()]);
             args.push_all(["-bf", "0", "-g", "1000000", "-force_key_frames", "source"]);
             args.push_all(["-fps_mode", "passthrough", "-enc_time_base:v", "demux"]);
@@ -326,10 +329,17 @@ mod tests {
         let video = transcode_video(None, false);
         let job = job(Some(&video), Some(&COPY_AUDIO), Some("mpeg4"));
         assert!(joined(&job).contains(
-            "-c:v h264_videotoolbox -realtime 1 -profile:v high -pix_fmt yuv420p \
+            "-c:v h264_videotoolbox -profile:v high -pix_fmt yuv420p \
              -b:v 2764800 -bf 0 -g 1000000 -force_key_frames source \
              -fps_mode passthrough -enc_time_base:v demux -c:a copy"
         ));
+    }
+
+    #[test]
+    fn never_asks_the_encoder_for_real_time_encoding() {
+        let video = transcode_video(None, false);
+        let job = job(Some(&video), Some(&COPY_AUDIO), Some("mpeg4"));
+        assert!(!joined(&job).contains("-realtime"));
     }
 
     #[test]
