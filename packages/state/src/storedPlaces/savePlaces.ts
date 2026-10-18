@@ -1,6 +1,7 @@
 import { updated } from "../app/updated.ts";
 import type { OpenMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { playedMediaFileOf } from "../screen/mediaScreen/playedMediaFile.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
 
 /**
@@ -12,9 +13,10 @@ export function savePlayback(
   places: StoredPlacesState,
   open: OpenMediaScreen,
   seconds: number,
+  backend: ServerCacheSlice,
 ) {
   if (open.screen.playing.player.durationSeconds === 0) return updated(places);
-  const { mediaFileId } = playedMediaFileOf(open.screen, open.route);
+  const { mediaFileId } = playedMediaFileOf(backend, open.route);
   const ms = seconds * 1000;
   return updated(
     { ...places, playback: { ...places.playback, [mediaFileId]: ms } },
@@ -29,6 +31,7 @@ export function savePlayback(
 export function saveOnLeaving(
   places: StoredPlacesState,
   left: OpenMediaScreen,
+  backend: ServerCacheSlice,
 ) {
   const { mediaFileId } = left.route;
   const location = places.reading[mediaFileId];
@@ -36,6 +39,7 @@ export function saveOnLeaving(
     places,
     left,
     left.screen.playing.player.currentTimeSeconds,
+    backend,
   );
   return location
     ? updated(

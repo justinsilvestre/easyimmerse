@@ -160,7 +160,7 @@ export function MediaScreen({
       ? () => dispatch(actions.trackChoiceRequested())
       : undefined,
   };
-  useKeyBindings(selectMediaKeyBinding, {
+  useKeyBindings((root, press) => selectMediaKeyBinding(root.app, press), {
     toggleFullscreen: fullscreen.toggle,
   });
   const cueSteps = useStableCallbacks({

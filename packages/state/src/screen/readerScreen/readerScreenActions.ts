@@ -1,13 +1,13 @@
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 import type { ItemSpan } from "../itemSpan.ts";
+import type { AnchorRect } from "../lookup/lookupState.ts";
 import type {
   PageInfo,
   ReaderPanel,
-  ReaderTranslationStatus,
   ReaderViewMode,
 } from "./readerScreenState.ts";
 
-/** The action creators of the reader: its jumps, panels, chrome and search, and the paragraphs and the page it measured in view. */
+/** The action creators of the reader: its jumps, panels, dialogs, chrome and search, and the paragraphs and the page it measured in view. */
 export const readerScreenActions = {
   /**
    * The user chose which text to show. The translation-only view opens at `translationLocation` when given,
@@ -18,9 +18,6 @@ export const readerScreenActions = {
     translationLocation?: ReaderLocation,
   ) =>
     ({ type: "readerViewModeChosen", viewMode, translationLocation }) as const,
-  /** The reader found how far the book's translation is ready to be shown, which decides the views it can show. */
-  readerTranslationStatusReported: (status: ReaderTranslationStatus) =>
-    ({ type: "readerTranslationStatusReported", status }) as const,
   /** The user moved to another place in the translation-only view; `matchIndex` is the search result chosen there, if any. */
   readerTranslationJumped: (
     location: ReaderLocation,
@@ -41,6 +38,22 @@ export const readerScreenActions = {
       mediaFileId,
       translationMediaFileId,
     }) as const,
+  /**
+   * The user asked to see the translation of the sentence at `location`, by holding a word of it or from the keyboard.
+   * `anchor` is where the held word is drawn, or null from the keyboard. The dictionary pop-up closes, since the two would overlap.
+   */
+  readerTranslationPopupOpened: (
+    location: ReaderLocation,
+    anchor: AnchorRect | null,
+  ) => ({ type: "readerTranslationPopupOpened", location, anchor }) as const,
+  /** The user closed the translation of a sentence, with Escape or its key. */
+  readerTranslationPopupClosed: () =>
+    ({ type: "readerTranslationPopupClosed" }) as const,
+  /** The user asked to combine the book and its paired translation into a bilingual ebook, which opens the dialog about doing so. */
+  readerCombineRequested: () => ({ type: "readerCombineRequested" }) as const,
+  /** The user closed the dialog about combining the book and its translation. */
+  readerCombineDialogClosed: () =>
+    ({ type: "readerCombineDialogClosed" }) as const,
   /** The user moved to another place in the book, as by the contents or the progress bar. */
   readerJumped: (mediaFileId: string, location: ReaderLocation) =>
     ({ type: "readerJumped", mediaFileId, location }) as const,

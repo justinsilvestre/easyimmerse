@@ -1,10 +1,6 @@
 import type { Document, TimedSpan } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import {
-  segmentAt,
-  segmentSpokenAt,
-  segmentsOfParagraph,
-} from "./audioAlignment.ts";
+import { segmentAt, segmentsOfParagraph } from "./audioAlignment.ts";
 
 function segment(
   paragraphIndex: number,
@@ -62,24 +58,6 @@ describe("segmentAt", () => {
         offset: 12,
       }),
     ).toBeNull();
-  });
-});
-
-describe("segmentSpokenAt", () => {
-  it("finds the segment heard at the time", () => {
-    expect(segmentSpokenAt([first, second, third], 1200)).toBe(second);
-  });
-
-  it("finds the next segment at the end of an earlier one", () => {
-    expect(segmentSpokenAt([first, second, third], 1000)).toBe(second);
-  });
-
-  it("finds a segment in a list not sorted by time", () => {
-    expect(segmentSpokenAt([third, second, first], 500)).toBe(first);
-  });
-
-  it("returns null after the last segment ends", () => {
-    expect(segmentSpokenAt([first, second, third], 4000)).toBeNull();
   });
 });
 

@@ -206,25 +206,38 @@ export {
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
-export { selectReaderAudioMediaFileId } from "./screen/readerScreen/readerAudioSelectors.ts";
+export { latestAlignments } from "./screen/readerScreen/latestAlignments.ts";
+export {
+  type AlignedAudio,
+  selectReaderAlignedAudio,
+  selectSpokenSpan,
+} from "./screen/readerScreen/readerAudioSelectors.ts";
 export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActions.ts";
 export {
   isReaderPaged,
   selectReaderScreen,
+  selectReaderTranslationStatus,
+  selectShownReaderViewMode,
   shownReaderViewMode,
 } from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {
   PageInfo,
   ReaderPanel,
   ReaderScreenState,
+  ReaderTranslationPopup,
   ReaderTranslationStatus,
   ReaderViewMode,
 } from "./screen/readerScreen/readerScreenState.ts";
 export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
 export {
+  type ReaderSentence,
+  selectReaderCurrentSentence,
+} from "./screen/readerScreen/selectReaderCurrentSentence.ts";
+export {
   selectCuePanelSpan,
   selectCurrentTime,
   selectDictionaryRemovalQuestion,
+  selectIsBilingualEbookDialogOpen,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectOfflineCues,

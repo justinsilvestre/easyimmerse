@@ -3,6 +3,7 @@ import type { MediaFile } from "@easyimmerse/types";
 import { FileText } from "lucide-react";
 import { useId } from "react";
 import { Button } from "../components/Button.tsx";
+import { Kbd } from "../components/Kbd.tsx";
 import { ReaderSheet } from "./ReaderSheet.tsx";
 
 const viewModeLabels: Record<
@@ -24,7 +25,7 @@ const viewModeLabels: Record<
 /**
  * The panel where the book is paired with its translation, another ebook or text file of the project, and where the view is chosen:
  * the book alone or its translation alone, and once the two are aligned, both together, interlinear or in parallel.
- * Until they are aligned, it offers to combine them into a bilingual ebook.
+ * Until they are aligned, it offers to combine them into a bilingual ebook; once they are, it tells how to see one sentence's translation.
  */
 export function TranslationPanel({
   candidates,
@@ -92,6 +93,13 @@ export function TranslationPanel({
                 </label>
               ))}
             </fieldset>
+            {isAligned && (
+              <p className="text-fg-muted">
+                While the book is shown alone, hold a word, or press{" "}
+                <Kbd>T</Kbd> with a word looked up or a sentence being spoken,
+                to see the translation of its sentence.
+              </p>
+            )}
             {!isAligned && (
               <div className="flex flex-col gap-2">
                 <p className="text-fg-muted">

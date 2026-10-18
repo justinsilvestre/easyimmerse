@@ -36,6 +36,7 @@ function renderReader(
       document={exampleShortBook}
       location={overrides.location ?? startOfBook}
       reader={{ ...initialReaderScreen, ...overrides.reader }}
+      viewMode="target"
       dispatch={(action) => dispatched.push(action)}
       title="Sample Book"
       projectName="English reading"

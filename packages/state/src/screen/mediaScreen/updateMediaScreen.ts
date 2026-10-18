@@ -46,7 +46,8 @@ const updateOtherParts = combineUpdates<MediaScreenState, [ScreenApp]>({
     ),
   cuePanelSpan: (span, action) =>
     updated(action.type === "cuePanelSpanMeasured" ? action.span : span),
-  reader: (reader, action) => updated(updateReaderScreen(reader, action)),
+  reader: (reader, action, app) =>
+    updated(updateReaderScreen(reader, action, app)),
   lookup: (lookup, action, app) =>
     updateLookup(lookup, action, selectShownMediaScreen(app).playing.player),
   sourceMedia: updateSourceMedia,

@@ -90,13 +90,6 @@ describe("updateMediaScreen", () => {
       expect(screen.reader.viewMode).toBe("interlinear");
     });
 
-    it("keeps how far the translation is ready, as the reader reported it", () => {
-      const [screen] = apply(
-        actions.readerTranslationStatusReported("aligned"),
-      );
-      expect(screen.reader.translationStatus).toBe("aligned");
-    });
-
     it("counts a change of view as a jump", () => {
       const [screen] = apply(actions.readerViewModeChosen("translation"));
       expect(screen.reader.jumpCount).toBe(1);
@@ -186,6 +179,60 @@ describe("updateMediaScreen", () => {
       expect((app.screen.main as MediaScreenState).reader.viewMode).toBe(
         "target",
       );
+    });
+
+    describe("for the translation of a sentence", () => {
+      const place = { chapterIndex: 0, paragraphIndex: 1, offset: 4 };
+      const rect = { top: 10, bottom: 30, left: 40, right: 80 };
+      const opened = actions.readerTranslationPopupOpened(place, rect);
+
+      it("shows the translation of the sentence at the held word", () => {
+        const [screen] = apply(opened);
+        expect(screen.reader.translationPopup).toEqual({
+          location: place,
+          anchor: rect,
+        });
+      });
+
+      it("hides it when the user closes it", () => {
+        const [screen] = apply(actions.readerTranslationPopupClosed(), opened);
+        expect(screen.reader.translationPopup).toBeNull();
+      });
+
+      it("hides it when the reader moves on", () => {
+        const [screen] = apply(
+          actions.readingLocationReported("m1", later),
+          actions.readingLocationLoaded("m1", null),
+          opened,
+        );
+        expect(screen.reader.translationPopup).toBeNull();
+      });
+
+      it("keeps it when the reader reports the place it is at", () => {
+        const [screen] = apply(
+          actions.readingLocationReported("m1", { ...later }),
+          actions.readingLocationLoaded("m1", later),
+          opened,
+        );
+        expect(screen.reader.translationPopup).not.toBeNull();
+      });
+
+      it.each([
+        actions.readerJumped("m1", later),
+        actions.readerPanelToggled("contents"),
+        actions.readerChromeToggled(),
+        actions.readerViewModeChosen("interlinear"),
+        actions.lookupSearchOpened(),
+        actions.lookupCursorLookedUp(),
+      ])("hides it on $type", (action) => {
+        const [screen] = apply(action, opened);
+        expect(screen.reader.translationPopup).toBeNull();
+      });
+
+      it("keeps it while the audio plays on", () => {
+        const [screen] = apply(actions.playerTimeChanged(2), opened);
+        expect(screen.reader.translationPopup).not.toBeNull();
+      });
     });
 
     it("keeps the reader's state when the measured page is unchanged", () => {

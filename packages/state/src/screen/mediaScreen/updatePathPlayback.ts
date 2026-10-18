@@ -5,12 +5,14 @@ import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { isDocumentFileName } from "../mediaFileExtensions.ts";
+import { alignedAudioSettledBy } from "../readerScreen/alignedAudioSettledBy.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { pathPlaybackOf } from "./pathPlayback.ts";
 import { picturesProbeOf } from "./picturesProbe.ts";
 import {
+  alignmentsRequest,
   measureRequest,
   playbackRequestIds,
   saveSelectionRequest,
@@ -27,7 +29,8 @@ import type { PlaybackApp } from "./updatePlaybackDialog.ts";
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
  * and asks for a playback method with the track choice and the lossless-audio preference. The first request waits while the user
  * makes the first track choice; each later choice is saved and asked about anew. A file the browser holds is probed for pictures instead.
- * The file is the one the player plays, which in the reader is the audio file the book is aligned with, as `playedMediaFileOf` describes.
+ * The file is the one the player plays, which in the reader is the audio file the book is aligned with, as `playedMediaFileOf` describes:
+ * a book's record asks for its alignments, among which the audio file is found.
  */
 export function updatePathPlayback(
   playback: PathPlayback | null,
@@ -83,26 +86,18 @@ export function updatePathPlayback(
           ? playback
           : { ...playback, isConversionAccepted: true },
       );
-    case "readerAudioOpened":
-      return readerAudioOpened(playback, action.audioFile, played);
     default:
       return updated(playback);
   }
 }
 
 /**
- * Starts working out how the audio file the reader opened plays, unless the player plays it already:
+ * Starts working out how the audio file the open book is aligned with plays, once the book's alignments name it:
  * a file on the server's disk asks for its tracks, and a file the browser holds needs nothing more.
  */
-function readerAudioOpened(
-  playback: PathPlayback | null,
-  audioFile: MediaFile,
-  played: MediaRoute,
-) {
-  if (audioFile.id === played.mediaFileId) return updated(playback);
-  const audio = { ...played, mediaFileId: audioFile.id };
+function alignedAudioFound(audioFile: MediaFile, played: MediaRoute) {
   return audioFile.source.kind === "path"
-    ? updated(pathPlaybackOf(audioFile), tracksRequest(audio))
+    ? updated(pathPlaybackOf(audioFile), tracksRequest(played))
     : updated(null);
 }
 
@@ -120,13 +115,15 @@ function requestSettled(
     const file = action.outcome.data.media_files.find(
       (listed) => listed.id === route.mediaFileId,
     );
-    // A book has nothing to play itself; the reader opens the audio file it is aligned with instead.
+    // A book has nothing to play itself; the reader plays the audio file it is aligned with instead.
     if (file !== undefined && isDocumentFileName(file.name))
-      return updated(playback);
+      return updated(playback, alignmentsRequest(route));
     return playback === null && file?.source.kind === "path"
       ? updated(pathPlaybackOf(file), tracksRequest(route))
       : updated(playback, ...picturesProbeOf(action, app));
   }
+  const audioFile = alignedAudioSettledBy(action, app);
+  if (audioFile !== null) return alignedAudioFound(audioFile, played);
   if (isSettled(action, ids.tracks, "getMediaTracks") && action.outcome.ok)
     return playback === null
       ? updated(playback)

@@ -196,6 +196,15 @@ function click(detail = 1) {
   fireEvent.click(text, { ...point, detail });
 }
 
+/** Moves the mouse onto the word pointed at, which places the lookup cursor there. */
+function pointMouse() {
+  fireEvent.pointerMove(screen.getByRole("main"), {
+    ...point,
+    pointerType: "mouse",
+    buttons: 0,
+  });
+}
+
 /** Holds the mouse button down on the word pointed at, for as long as a held tap. */
 function holdMouse() {
   fireEvent.pointerDown(screen.getByRole("main"), {
@@ -381,6 +390,45 @@ describe("ReaderScreen translation", () => {
     holdMouse();
     await screen.findByRole("dialog", { name: "Translation" });
     fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
+  });
+
+  it("shows the translation of the pointed word's sentence on T", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    pointMouse();
+    fireEvent.keyDown(document.body, { key: "t" });
+    expect(
+      (await screen.findByRole("dialog", { name: "Translation" })).textContent,
+    ).toBe("El perro quiere comer. Tiene hambre.");
+  });
+
+  it("closes the dictionary pop-up as the translation of its word's sentence opens", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    click();
+    await screen.findByRole("dialog", { name: "Dictionary" });
+    pointMouse();
+    fireEvent.keyDown(document.body, { key: "t" });
+    await screen.findByRole("dialog", { name: "Translation" });
+    expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
+  });
+
+  it("hides the translation of a sentence on T again", async () => {
+    await renderReader({ isAligned: true });
+    openPanel();
+    await within(panel()).findByRole("radio", { name: /^Interlinear/ });
+    fireEvent.click(within(panel()).getByRole("button", { name: "Close" }));
+    pointAt("dog");
+    holdMouse();
+    await screen.findByRole("dialog", { name: "Translation" });
+    fireEvent.keyDown(document.body, { key: "t" });
     expect(screen.queryByRole("dialog", { name: "Translation" })).toBeNull();
   });
 

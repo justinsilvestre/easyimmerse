@@ -1,5 +1,5 @@
 import type { AudioTarget, PlaybackMethodRequest } from "@easyimmerse/types";
-import type { AppState } from "../../app/appState.ts";
+import type { ReadableState } from "../../app/feature.ts";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
@@ -13,7 +13,7 @@ type MethodPreferences = Pick<PreferencesState, "values" | "isLoaded">;
 /** Sends the first playback method request, unless one was sent or the first track choice is open. */
 export function requestFirstPlaybackMethod(
   playback: PathPlayback | null,
-  app: Pick<AppState, "route" | "screen">,
+  app: Pick<ReadableState, "route" | "screen" | "backend">,
   preferences: MethodPreferences,
 ) {
   const { dialog } = app.screen;

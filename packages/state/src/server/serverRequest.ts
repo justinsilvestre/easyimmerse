@@ -1,6 +1,7 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  AlignmentsResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
   Flashcard,
@@ -62,6 +63,7 @@ export type ServerRequest =
     }
   | { kind: "getProject"; projectId: string }
   | { kind: "listMediaFiles"; projectId: string }
+  | { kind: "listAlignments"; projectId: string; mediaFileId: string }
   | { kind: "listFlashcards"; projectId: string }
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
@@ -202,6 +204,7 @@ export type ServerResponses = {
   addSubtitleTrack: SubtitleTrack;
   getProject: Project;
   listMediaFiles: ListMediaFilesResponse;
+  listAlignments: AlignmentsResponse;
   listFlashcards: ListFlashcardsResponse;
   addMediaFile: MediaFile;
   parseTimedText: TimedTextTrack;

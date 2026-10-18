@@ -1,18 +1,15 @@
-import type { AppState } from "../../app/appState.ts";
-import { selectPlayedMediaFile } from "./playedMediaFile.ts";
+import type { ReadableState } from "../../app/feature.ts";
 import { initialPlayerState } from "./playerState.ts";
 import type { PlayingState } from "./playingState.ts";
 
 /**
- * Starts the player over for the audio file the reader opened, with the file's stored position to resume from,
- * unless the player plays that file already. A position not yet read arrives later, as on the media screen.
+ * Starts the player over for the audio file the open book turns out to be aligned with, with the file's stored position
+ * to resume from. A position not yet read arrives later, as on the media screen.
  */
-export function readerAudioOpened(
-  playing: PlayingState,
+export function playingAlignedAudio(
   audioFileId: string,
-  app: Pick<AppState, "route" | "screen" | "storedPlaces">,
+  app: Pick<ReadableState, "storedPlaces">,
 ): PlayingState {
-  if (selectPlayedMediaFile(app).mediaFileId === audioFileId) return playing;
   return {
     player: initialPlayerState,
     isLooping: false,

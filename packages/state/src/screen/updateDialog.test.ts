@@ -3,13 +3,14 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { PickedFile } from "../platform/effects.ts";
+import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { updateDialog } from "./updateDialog.ts";
 
 /** The app with the dictionaries page of Settings open over the home screen. */
-const onDictionariesPage = stateAfter(
-  actions.navigated({ type: "openDictionaries" }),
+const onDictionariesPage = withEmptyServerCache(
+  stateAfter(actions.navigated({ type: "openDictionaries" })),
 );
 
 /** Applies an action to a dialog while the dictionaries page is on top. */
@@ -105,6 +106,48 @@ describe("updateDialog", () => {
   it("leaves another dialog open for subtitleAppearanceClosed", () => {
     const [dialog] = applyDialog(picking, actions.subtitleAppearanceClosed());
     expect(dialog).toBe(picking);
+  });
+
+  describe("for combining a book with its translation", () => {
+    const combining = { kind: "bilingualEbook" } as const;
+    /** Applies an action to a dialog while the reader shows b1. */
+    const applyInReader = (
+      dialog: Parameters<typeof updateDialog>[0],
+      action: AppAction,
+    ) =>
+      updateDialog(
+        dialog,
+        action,
+        withEmptyServerCache(
+          stateAfter(actions.openMediaFileRequested("p1", "b1")),
+        ),
+      );
+
+    it("opens the dialog when the user asks to combine them", () => {
+      const [dialog] = applyInReader(null, actions.readerCombineRequested());
+      expect(dialog).toEqual(combining);
+    });
+
+    it("closes the dialog when the user closes it", () => {
+      const [dialog] = applyInReader(
+        combining,
+        actions.readerCombineDialogClosed(),
+      );
+      expect(dialog).toBeNull();
+    });
+
+    it("leaves another dialog open when the user closes it", () => {
+      const [dialog] = applyInReader(
+        picking,
+        actions.readerCombineDialogClosed(),
+      );
+      expect(dialog).toBe(picking);
+    });
+
+    it("closes the dialog when the reader closes", () => {
+      const [dialog] = applyInReader(combining, actions.closeMedia());
+      expect(dialog).toBeNull();
+    });
   });
 
   describe("for the removal of a dictionary", () => {

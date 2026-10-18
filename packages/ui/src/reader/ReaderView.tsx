@@ -4,6 +4,7 @@ import {
   type ReaderPreferences,
   type ReaderScreenAction,
   type ReaderScreenState,
+  type ReaderViewMode,
 } from "@easyimmerse/state";
 import type { Document, TranslationLink } from "@easyimmerse/types";
 import {
@@ -61,7 +62,11 @@ import {
   useTranslationPopup,
   useTranslationView,
 } from "./useTranslationView.ts";
-import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
+import {
+  type ReaderWord,
+  type ReaderWordGestures,
+  useWordPointer,
+} from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
@@ -87,6 +92,8 @@ type ReaderViewProps = {
   /** The reader's place, which the text shows and keeps through changes of layout. */
   location: ReaderLocation;
   reader: ReaderScreenState;
+  /** The view shown: the one chosen once the translation it needs is ready, as `selectShownReaderViewMode` decides. */
+  viewMode: ReaderViewMode;
   dispatch: (action: ReaderViewAction) => void;
   /** The book's title, or the file's name when the book has none. */
   title: string;
@@ -134,14 +141,16 @@ const sectionCharacterLimit = 250_000;
  * The text fills the window, set like a book; the toolbar and progress bar fade in when they are wanted.
  * Words are looked up and turned into flashcards with the same gestures as in the subtitles.
  * In a book aligned with audio, a Ctrl-click or Cmd-click on a word plays its sentence, the sentence being spoken is highlighted,
- * and the text follows it, as `useSpokenHighlight` describes.
+ * and the text follows it, as `useSpokenHighlight` describes. In a book aligned with its translation, a held word shows its sentence's translation.
+ * The keys do the same for the current sentence, as `selectReaderKeyBinding` in the state package describes.
  */
 export function ReaderView(props: ReaderViewProps) {
   const { reader, dispatch, translation } = props;
   const { preferences, callbacks } = props;
   // In the translation-only view, the translation's text, place and language stand in for the book's.
   const shown = useTranslationView(props);
-  const { document, location, language, viewMode } = shown;
+  const { document, location, language } = shown;
+  const { viewMode } = props;
   const ownControls = useReaderControls();
   const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
@@ -200,11 +209,9 @@ export function ReaderView(props: ReaderViewProps) {
     viewMode,
     document: props.document,
     translation,
-    location,
+    popup: reader.translationPopup,
     onWordHold: callbacks.onWordHold,
-    onOpen: () => {
-      if (hasLookup) callbacks.onDismissLookup();
-    },
+    dispatch,
   });
 
   const { jumpTo } = shown;
@@ -243,6 +250,8 @@ export function ReaderView(props: ReaderViewProps) {
         offset: span.start,
       }),
   );
+  const { playAt } = props.audio ?? {};
+  const playWord = playAt && ((word: ReaderWord) => playAt(word.location));
   const turn = (direction: "next" | "previous") => {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
@@ -260,7 +269,7 @@ export function ReaderView(props: ReaderViewProps) {
     onWordDoubleClick: callbacks.onWordDoubleClick,
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
-    onWordCommandClick: props.audio?.onPlayWord,
+    onWordCommandClick: playWord,
     onWordHold: translationPopup.onWordHold,
     onWordMouseHold: translationPopup.onWordMouseHold,
     onBlankClick,
@@ -481,7 +490,6 @@ export function ReaderView(props: ReaderViewProps) {
           <TranslationPopup
             text={translationPopup.popup.text}
             language={translation?.language ?? language}
-            onClose={translationPopup.close}
           />
         </LookupAnchor>
       )}

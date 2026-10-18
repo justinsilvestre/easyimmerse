@@ -34,8 +34,9 @@ export function updateDialog(
 
 /**
  * Opens the platform's file picker for a pick request, and marks the subtitles pick as open until it ends.
- * Opens and closes the media screen's subtitle appearance dialog, and the question whether to remove a dictionary,
- * which removes the dictionary once confirmed. The media screen's playback dialogs follow `updatePlaybackDialog`.
+ * Opens and closes the media screen's subtitle appearance dialog, the reader's dialog about combining a book with its translation,
+ * and the question whether to remove a dictionary, which removes the dictionary once confirmed.
+ * The media screen's playback dialogs follow `updatePlaybackDialog`.
  */
 function dialogAfter(dialog: DialogState, action: AppAction, app: PlaybackApp) {
   switch (action.type) {
@@ -61,6 +62,10 @@ function dialogAfter(dialog: DialogState, action: AppAction, app: PlaybackApp) {
       return updated({ kind: "subtitleAppearance" });
     case "subtitleAppearanceClosed":
       return updated(dialog?.kind === "subtitleAppearance" ? null : dialog);
+    case "readerCombineRequested":
+      return updated({ kind: "bilingualEbook" });
+    case "readerCombineDialogClosed":
+      return updated(dialog?.kind === "bilingualEbook" ? null : dialog);
     case "dictionaryRemovalRequested":
       return updated({
         kind: "removeDictionary",
@@ -87,6 +92,7 @@ function isLeftBy(
     case "trackChoice":
     case "conversionNotice":
     case "subtitleAppearance":
+    case "bilingualEbook":
       return mainScreenMoveOf(app, action) !== null;
     case "removeDictionary": {
       const route = routeAfter(app, action);

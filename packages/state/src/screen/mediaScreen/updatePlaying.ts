@@ -1,25 +1,26 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
+import type { ReadableState } from "../../app/feature.ts";
 import { updated } from "../../app/updated.ts";
+import { alignedAudioSettledBy } from "../readerScreen/alignedAudioSettledBy.ts";
 import { endLoopOutside, loopAtEnd } from "./clipLoop.ts";
 import { pauseAtClipEnd, playClip } from "./clipPlayback.ts";
 import { selectShownMediaScreen } from "./mediaScreenSelectors.ts";
 import { formClipOf, type PlayingState } from "./playingState.ts";
 import { playOpenedCard } from "./playOpenedCard.ts";
-import { readerAudioOpened } from "./readerAudioPlaying.ts";
+import { playingAlignedAudio } from "./readerAudioPlaying.ts";
 import { positionLoaded, resume } from "./resume.ts";
 import { seekTo, withPlayer } from "./seekTo.ts";
 
 /**
  * Records what the player reports, passes the user's requests on to the platform's player,
  * keeps the clip loop, the clip Play and the resume seek in step with the player, and plays the clip of the flashcard open in the form.
- * In the reader, it starts the player over for the audio file the book is aligned with.
+ * In the reader, it starts the player over for the audio file the book turns out to be aligned with.
  * The clip is the one the form held before the action.
  */
 export function updatePlaying(
   playing: PlayingState,
   action: AppAction,
-  app: Pick<AppState, "route" | "screen" | "storedPlaces">,
+  app: Pick<ReadableState, "route" | "screen" | "storedPlaces" | "backend">,
 ) {
   const clip = formClipOf(selectShownMediaScreen(app));
   switch (action.type) {
@@ -78,8 +79,10 @@ export function updatePlaying(
       return positionLoaded(playing, action, app);
     case "flashcardFormOpened":
       return playOpenedCard(playing, action.clip);
-    case "readerAudioOpened":
-      return updated(readerAudioOpened(playing, action.audioFile.id, app));
+    case "requestSettled": {
+      const audio = alignedAudioSettledBy(action, app);
+      return updated(audio ? playingAlignedAudio(audio.id, app) : playing);
+    }
     default:
       return updated(playing);
   }

@@ -1,3 +1,4 @@
+import { useListMediaFilesQuery } from "@easyimmerse/backend";
 import {
   type AppAction,
   actions,
@@ -7,7 +8,12 @@ import {
   selectPreferencesLoaded,
   selectReaderPreferences,
 } from "@easyimmerse/state";
-import type { Document, LookupResult, MediaFile } from "@easyimmerse/types";
+import type {
+  Document,
+  LookupResult,
+  MediaFile,
+  Project,
+} from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
@@ -29,6 +35,11 @@ import {
 } from "../storybook/parseDocumentWithWasm.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
+import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  fixtureProject,
+  fixtureResponses,
+} from "../testSupport/fixtureResponses.ts";
 import { ConnectedReaderView } from "./ConnectedReaderView.tsx";
 import { exampleAudioAlignment } from "./exampleAudioAlignment.ts";
 import {
@@ -40,14 +51,42 @@ import {
 } from "./exampleDocuments.ts";
 import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
+import { useBookTranslation } from "./useBookTranslation.tsx";
 import { useReaderKeyBindings } from "./useReaderKeyBindings.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
 
-/** The reader's props apart from those the stories take from the store: its preferences, and the controls its keys work. */
+/**
+ * The reader's props apart from those the stories take from the store: its preferences, the controls its keys work,
+ * and its translation, which the fake backend's media files and alignments decide.
+ */
 type ReaderStoryArgs = Omit<
   ComponentProps<typeof ConnectedReaderView>,
-  "preferences" | "controls"
+  "preferences" | "controls" | "translation"
 >;
+
+/** The project the stories read in, whose translations are Spanish. */
+const storyProject: Project = {
+  ...fixtureProject,
+  settings: {
+    ...fixtureProject.settings,
+    name: "German reading",
+    translation_language: "es",
+  },
+};
+
+/** The media file of the book a story shows, under the id the story stores its place under. */
+function bookFileOf(mediaFileId: string, name: string): MediaFile {
+  return {
+    id: mediaFileId,
+    project_id: storyProject.id,
+    name,
+    source: { kind: "path", path: `/books/${name}` },
+    created_at_ms: 0,
+    track_selection_json: null,
+    origin: null,
+    translation_media_file_id: null,
+  };
+}
 
 /** Enough senses that the pop-up must scroll to show them all. */
 const longEntrySenses = [
@@ -114,14 +153,28 @@ function popupFor(word: string, onClose: () => void) {
  * the keys and the dictionary pop-up work in every story.
  * A click opens the pop-up on a word, and resting the mouse on another moves it there.
  * "Ungeziefer" and "fressen" have entries.
- * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself.
+ * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself;
+ * the translation of a held word, and R and T on the word under the mouse, go through the store.
+ * The book's translation comes from the fake backend the story's store talks to.
  */
 function StatefulReader(args: ReaderStoryArgs) {
   const dispatch = useAppDispatch();
   const preferences = useAppSelector((state) =>
     selectReaderPreferences(state.app),
   );
-  const controls = useReaderKeyBindings();
+  const bookFile = bookFileOf(args.mediaFileId, `${args.title}.epub`);
+  const mediaFiles = useListMediaFilesQuery(storyProject.id).data
+    ?.media_files ?? [bookFile];
+  const bilingual = useBookTranslation(
+    storyProject,
+    mediaFiles.find(({ id }) => id === bookFile.id) ?? bookFile,
+    mediaFiles,
+    args.document,
+  );
+  const controls = useReaderKeyBindings({
+    playAt: args.audio?.playAt,
+    showTranslationAt: bilingual.showTranslationAt,
+  });
   const [word, setWord] = useState<ReaderWord | null>(null);
   const [isInitialLookupOpen, setInitialLookupOpen] = useState(true);
   const close = () => {
@@ -138,6 +191,7 @@ function StatefulReader(args: ReaderStoryArgs) {
       {...args}
       preferences={preferences}
       controls={controls}
+      translation={bilingual.translation}
       lookup={lookup}
       lookupRect={word?.rect}
       highlightedWord={word ? { word } : undefined}
@@ -349,7 +403,7 @@ const pausedAudio = {
   ),
   spokenSpan: audioSegments[1]?.span ?? null,
   isPlaying: false,
-  onPlayWord: fn(),
+  playAt: fn(),
 } satisfies ReaderStoryArgs["audio"];
 
 /** The short book aligned with its audio, paused in the second sentence. */
@@ -374,51 +428,90 @@ const translationFile: MediaFile = {
   translation_media_file_id: null,
 };
 
-const shortBookAlignment = exampleShortBookAlignment("b1", "t1").content;
+/**
+ * A fake backend whose project holds the short book, paired with its Spanish translation,
+ * and aligned with it sentence by sentence unless `isAligned` is false.
+ */
+function shortBookBackend(isAligned = true) {
+  return createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /projects/p1/media": {
+      media_files: [
+        { ...bookFileOf("b1", "sample.epub"), translation_media_file_id: "t1" },
+        translationFile,
+      ],
+    },
+    "GET /projects/p1/media/b1/alignments": {
+      alignments: isAligned ? [exampleShortBookAlignment("b1", "t1")] : [],
+    },
+    "POST /documents/parse-local": exampleShortBookTranslation,
+  });
+}
 
-/** The short book, aligned with its Spanish translation sentence by sentence. */
+/** The short book, read in a project that holds its Spanish translation, aligned sentence by sentence. */
 const alignedShortBook = {
-  document: exampleShortBook,
-  title: "Sample Book",
-  language: "en",
-  translation: {
-    candidates: [translationFile],
-    paired: translationFile,
-    document: exampleShortBookTranslation,
-    language: "es",
-    links:
-      shortBookAlignment.kind === "translation"
-        ? shortBookAlignment.links
-        : null,
-    onChoose: fn(),
-    onCombine: fn(),
-  },
-} satisfies Partial<ReaderStoryArgs>;
+  parameters: { appStore: { client: shortBookBackend() } },
+  args: { document: exampleShortBook, title: "Sample Book", language: "en" },
+} satisfies Partial<Story>;
 
 export const TranslationPanelOpen: Story = {
+  ...alignedShortBook,
   decorators: openedWith(actions.readerPanelOpened("translation")),
-  args: alignedShortBook,
+};
+
+/** The short book paired with its translation but not yet aligned, with the dialog about combining the two open. */
+export const CombiningIntoBilingualEbook: Story = {
+  ...alignedShortBook,
+  parameters: { appStore: { client: shortBookBackend(false) } },
+  decorators: openedWith(
+    actions.readerPanelOpened("translation"),
+    actions.readerCombineRequested(),
+  ),
 };
 
 export const TranslationOnly: Story = {
+  ...alignedShortBook,
   decorators: openedWith(actions.readerViewModeChosen("translation")),
-  args: alignedShortBook,
 };
 
 export const Interlinear: Story = {
+  ...alignedShortBook,
   decorators: openedWith(actions.readerViewModeChosen("interlinear")),
-  args: alignedShortBook,
 };
 
 export const Parallel: Story = {
+  ...alignedShortBook,
   decorators: openedWith(actions.readerViewModeChosen("parallel")),
-  args: alignedShortBook,
 };
 
 /** The short book aligned with both its audio and its translation, in the interlinear view, paused in the second sentence. */
 export const InterlinearWithAudio: Story = {
+  ...alignedShortBook,
   decorators: openedWith(actions.readerViewModeChosen("interlinear")),
-  args: { ...alignedShortBook, audio: pausedAudio },
+  args: { ...alignedShortBook.args, audio: pausedAudio },
+};
+
+/** The place of the word "dog" in the short book's second sentence. */
+const dogPlace = { chapterIndex: 0, paragraphIndex: 1, offset: 4 };
+
+/** The translation of the sentence of a held word, beside where the word is drawn. Holding another word moves it there. */
+export const SentenceTranslationBesideWord: Story = {
+  ...alignedShortBook,
+  decorators: openedWith(
+    actions.readerTranslationPopupOpened(dogPlace, {
+      top: 180,
+      bottom: 204,
+      left: 120,
+      right: 150,
+    }),
+  ),
+};
+
+/** The translation of the current sentence as T opens it on a spoken sentence, at the foot of the window. */
+export const SentenceTranslationFromKeyboard: Story = {
+  ...alignedShortBook,
+  decorators: openedWith(actions.readerTranslationPopupOpened(dogPlace, null)),
+  args: { ...alignedShortBook.args, audio: pausedAudio },
 };
 
 const fixtureFiles = [

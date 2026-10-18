@@ -14,7 +14,7 @@ import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
  * and the compact bar that drives it.
  *
  * The reader hosts a player for another file than its own because the book itself has nothing to play: its sentences are
- * heard in the audio file. Once the reader has told the store which file that is (`readerAudioOpened`), the store's player
+ * heard in the audio file. Once the server cache names that file, the store's player
  * plays it in place of the route's file, as `playedMediaFileOf` in the state package describes, so the media screen's
  * playback works unchanged: the playback method is worked out for the audio file, its stored position is resumed and saved,
  * and seeks and plays reach this element through the player registry as they reach the media screen's.

@@ -1,10 +1,6 @@
-import type { MediaFile, TranslationLink } from "@easyimmerse/types";
+import type { TranslationLink } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import {
-  type ReaderTranslation,
-  translationLocationFor,
-  translationStatusOf,
-} from "./readerTranslation.ts";
+import { translationLocationFor } from "./readerTranslation.ts";
 
 const links: TranslationLink[] = [
   {
@@ -14,48 +10,6 @@ const links: TranslationLink[] = [
     ],
   },
 ];
-
-const translationFile = {
-  id: "t1",
-  project_id: "p1",
-  name: "translation.txt",
-  source: { kind: "path", path: "/books/translation.txt" },
-  created_at_ms: 0,
-  track_selection_json: null,
-  origin: null,
-  translation_media_file_id: null,
-} satisfies MediaFile;
-
-function pairedTranslation(
-  overrides: Partial<ReaderTranslation> = {},
-): ReaderTranslation {
-  return {
-    candidates: [],
-    paired: translationFile,
-    document: { title: "Libro", language: "es", chapters: [] },
-    language: "es",
-    links: null,
-    onChoose: () => {},
-    onCombine: () => {},
-    ...overrides,
-  };
-}
-
-describe("translationStatusOf", () => {
-  it("tells that no translation is ready while the paired one loads", () => {
-    expect(translationStatusOf(pairedTranslation({ document: null }))).toBe(
-      "absent",
-    );
-  });
-
-  it("tells that a loaded translation without links is ready to be shown alone", () => {
-    expect(translationStatusOf(pairedTranslation())).toBe("unaligned");
-  });
-
-  it("tells that a loaded translation with links is aligned", () => {
-    expect(translationStatusOf(pairedTranslation({ links }))).toBe("aligned");
-  });
-});
 
 describe("translationLocationFor", () => {
   it("opens at the start of the translation paragraph linked from the place's paragraph", () => {

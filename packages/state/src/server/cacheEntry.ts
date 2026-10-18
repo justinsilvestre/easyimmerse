@@ -1,6 +1,8 @@
 import type {
   AnkiPendingDeletions,
+  Document,
   ListDictionariesResponse,
+  MediaFile,
   PlaybackMethodRequest,
   TimedTextTrack,
 } from "@easyimmerse/types";
@@ -31,6 +33,9 @@ export type CachedQueries = {
   probePictures: PickedMediaFile;
   getProject: string;
   listMediaFiles: string;
+  listAlignments: { projectId: string; mediaFileId: string };
+  /** A book's parsed text, cached under the name and source of its media file. */
+  openBook: Pick<MediaFile, "name" | "source">;
   listFlashcards: string;
   listAnkiPendingDeletions: string;
   listDictionaries: undefined;
@@ -40,6 +45,7 @@ export type CachedQueries = {
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
+  openBook: Document;
   listDictionaries: ListDictionariesResponse;
   getSubtitleCues: TimedTextTrack;
 };

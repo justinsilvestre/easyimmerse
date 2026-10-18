@@ -5,14 +5,17 @@ import {
   useOpenBookQuery,
 } from "@easyimmerse/backend";
 import {
+  type AnchorRect,
   actions,
   isDocumentFileName,
+  latestAlignments,
   type ReaderLocation,
+  selectIsBilingualEbookDialogOpen,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { latestAlignments } from "./alignment/latestAlignments.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { linkAt, translationOfLink } from "./alignment/translationAlignment.ts";
 import { BilingualEbookDialog } from "./BilingualEbookDialog.tsx";
 import type { ReaderTranslation } from "./readerTranslation.ts";
@@ -20,9 +23,10 @@ import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 
 /**
  * Loads the translation a book is paired with, and its newest translation alignment when it is with that translation,
- * for the reader's translation panel and views. Pairing goes through the store; combining the two into a bilingual ebook
- * opens a dialog, which the reader shows, that tells that easyImmerse cannot align the two yet.
- * Also returns the translation of the passage at a place in the book, for a flashcard's context, or an empty string where none is linked.
+ * for the reader's translation panel and views. Pairing goes through the store, as does combining the two into a bilingual ebook,
+ * which opens a dialog, which the reader shows, that tells that easyImmerse cannot align the two yet.
+ * Also returns the translation of the passage at a place in the book, for a flashcard's context, or an empty string where none is linked,
+ * and shows that translation in the reader's pop-up, for the key that asks for the current sentence's translation.
  */
 export function useBookTranslation(
   project: Project,
@@ -61,7 +65,7 @@ export function useBookTranslation(
       ),
     [mediaFiles, mediaFile.id],
   );
-  const [isCombining, setCombining] = useState(false);
+  const isCombining = useAppSelector(selectIsBilingualEbookDialogOpen);
   const plugins = useListPluginsQuery(isCombining ? undefined : skipToken);
   const alignmentPlugins = plugins.data
     ? plugins.data.plugins.filter(({ kind }) => kind === "alignment")
@@ -82,11 +86,11 @@ export function useBookTranslation(
           translationMediaFileId,
         ),
       ),
-    onCombine: () => setCombining(true),
+    onCombine: () => dispatch(actions.readerCombineRequested()),
     dialog: isCombining && (
       <BilingualEbookDialog
         alignmentPlugins={alignmentPlugins}
-        onClose={() => setCombining(false)}
+        onClose={() => dispatch(actions.readerCombineDialogClosed())}
       />
     ),
   };
@@ -94,5 +98,17 @@ export function useBookTranslation(
     const link = links && linkAt(links, bookText, location);
     return link && document ? translationOfLink(document, link) : "";
   };
-  return { translation, passageTranslationAt };
+  /** Opens the reader's translation pop-up on the passage at the place, unless no translation is linked there. */
+  const showTranslationAt = (
+    location: ReaderLocation,
+    anchor: AnchorRect | null,
+  ) => {
+    if (passageTranslationAt(location) !== "")
+      dispatch(actions.readerTranslationPopupOpened(location, anchor));
+  };
+  return {
+    translation,
+    passageTranslationAt,
+    showTranslationAt: links ? showTranslationAt : undefined,
+  };
 }

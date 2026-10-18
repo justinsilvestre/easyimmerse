@@ -11,6 +11,9 @@ import { createSelector } from "reselect";
 import { derivePlayerStatus } from "./derivePlayerStatus.ts";
 import { loadingPlayback } from "./PlayerStatus.ts";
 
+const playedFileOf = (root: RootState) =>
+  selectOpenPlayedMediaFile({ ...root.app, backend: root.backend });
+
 /**
  * Returns what the player shows for the file on the server's disk that the open media screen plays,
  * from the tracks and the playback method that the media screen's update asked for.
@@ -19,8 +22,8 @@ import { loadingPlayback } from "./PlayerStatus.ts";
 export const selectPathPlayerStatus = createSelector(
   [
     selectServerConfig,
-    (root: RootState) => selectOpenPlayedMediaFile(root.app)?.projectId,
-    (root: RootState) => selectOpenPlayedMediaFile(root.app)?.mediaFileId,
+    (root: RootState) => playedFileOf(root)?.projectId,
+    (root: RootState) => playedFileOf(root)?.mediaFileId,
     selectOpenTracksEntry,
     selectOpenMethodEntry,
     selectPathPlayback,

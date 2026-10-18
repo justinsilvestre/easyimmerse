@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { updateStoredPlaces } from "./updateStoredPlaces.ts";
 
 /** Applies an action to the stored places after the given earlier actions. */
 const apply = (action: AppAction, ...before: AppAction[]) => {
   const app = stateAfter(...before);
-  return updateStoredPlaces(app.storedPlaces, action, app);
+  return updateStoredPlaces(
+    app.storedPlaces,
+    action,
+    withEmptyServerCache(app),
+  );
 };
 
 const location = { chapterIndex: 1, paragraphIndex: 4, offset: 10 };
@@ -97,7 +102,7 @@ describe("updateStoredPlaces", () => {
       const [places] = updateStoredPlaces(
         app.storedPlaces,
         actions.readingLocationReported("b1", { ...location }),
-        app,
+        withEmptyServerCache(app),
       );
       expect(places).toBe(app.storedPlaces);
     });

@@ -59,6 +59,8 @@ export const requestEndpoints = {
     backendApi.endpoints.getProject.initiate(projectId),
   listMediaFiles: ({ projectId }) =>
     backendApi.endpoints.listMediaFiles.initiate(projectId),
+  listAlignments: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.listAlignments.initiate({ projectId, mediaFileId }),
   listFlashcards: ({ projectId }) =>
     backendApi.endpoints.listFlashcards.initiate(projectId),
   addMediaFile: ({ projectId, request }) =>

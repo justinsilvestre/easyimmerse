@@ -1,5 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
+import type { ReadableState } from "../../app/feature.ts";
 import { updated } from "../../app/updated.ts";
 import { selectPlayedMediaFile } from "./playedMediaFile.ts";
 import type { PlayingState } from "./playingState.ts";
@@ -17,7 +17,7 @@ type PositionLoaded = Extract<AppAction, { type: "playbackPositionLoaded" }>;
 export function positionLoaded(
   playing: PlayingState,
   action: PositionLoaded,
-  app: Pick<AppState, "route" | "screen" | "storedPlaces">,
+  app: Pick<ReadableState, "route" | "storedPlaces" | "backend">,
 ) {
   const { mediaFileId } = selectPlayedMediaFile(app);
   return action.mediaFileId === mediaFileId &&
