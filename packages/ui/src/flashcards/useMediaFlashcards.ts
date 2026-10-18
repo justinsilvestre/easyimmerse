@@ -1,15 +1,12 @@
 import { useListFlashcardsQuery } from "@easyimmerse/backend";
 import {
   actions,
-  type EditorAction,
   segmentIdOf,
   selectFlashcardForm,
   selectMediaFlashcards,
 } from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useAppStore } from "../hooks/useAppStore.ts";
-import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { selectFlashcardSegments } from "./selectFlashcardSegments.ts";
 
 /**
@@ -20,7 +17,6 @@ import { selectFlashcardSegments } from "./selectFlashcardSegments.ts";
  */
 export function useMediaFlashcards(projectId: string, mediaFileId: string) {
   const dispatch = useAppDispatch();
-  const store = useAppStore();
   const listed = useListFlashcardsQuery(projectId).data?.flashcards;
   const flashcards = useAppSelector(
     (state) => selectMediaFlashcards(state, listed, mediaFileId).flashcards,
@@ -32,8 +28,6 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     const form = selectFlashcardForm(state.app);
     return form && segmentIdOf(form.card);
   });
-  const edit = (action: EditorAction) =>
-    dispatch(actions.flashcardEdited(action));
   /** Opens a listed flashcard, or a failed save never saved, which goes to the form with its edits. */
   const open = (id: string) => {
     const card = flashcards.find((flashcard) => flashcard.id === id) ?? null;
@@ -53,6 +47,11 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
       const card = flashcards.find((listed) => listed.cue_index === cueIndex);
       if (card) open(card.id);
     },
-    ...flashcardRetiming(() => selectFlashcardForm(store.getState().app), edit),
+    /** Moves one end of the open card's clip from its waveform handle; the store ignores a drag of any other card's segment. */
+    moveClipEndpoint: (id: string, endpoint: "start" | "end", ms: number) =>
+      dispatch(actions.clipEndpointDragged(id, endpoint, ms)),
+    /** Moves the open card's screenshot time from its waveform marker. */
+    moveScreenshot: (id: string, ms: number) =>
+      dispatch(actions.screenshotMarkerDragged(id, ms)),
   };
 }

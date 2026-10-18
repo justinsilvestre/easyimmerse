@@ -24,6 +24,15 @@ export const flashcardActions = {
   /** The user changed the open card: a field, the clip, the screenshot time or the included fields. */
   flashcardEdited: (edit: EditorAction) =>
     ({ type: "flashcardEdited", edit }) as const,
+  /** The user dragged one end of a card's clip on the waveform to a time. Only the open card's handles can be dragged. */
+  clipEndpointDragged: (
+    segmentId: string,
+    endpoint: "start" | "end",
+    ms: number,
+  ) => ({ type: "clipEndpointDragged", segmentId, endpoint, ms }) as const,
+  /** The user dragged a card's screenshot marker on the waveform to a time. Only the open card's marker can be dragged. */
+  screenshotMarkerDragged: (segmentId: string, ms: number) =>
+    ({ type: "screenshotMarkerDragged", segmentId, ms }) as const,
   flashcardSaveRequested: () => ({ type: "flashcardSaveRequested" }) as const,
   /** The user closed the form without saving. */
   flashcardClosed: () => ({ type: "flashcardClosed" }) as const,
