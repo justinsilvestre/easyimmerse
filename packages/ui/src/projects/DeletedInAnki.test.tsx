@@ -10,11 +10,14 @@ const deletion = (flashcardId: string, word: string) => ({
   requested_at_ms: 1,
 });
 
+const ankiSearch = "nid:1 OR nid:2";
+
 function renderList(words: readonly string[] = ["Katze", "Hund"]) {
   const calls: string[] = [];
   render(
     <DeletedInAnki
       deletions={words.map((word, index) => deletion(`f${index}`, word))}
+      ankiSearch={ankiSearch}
       onCopyAnkiSearch={() => calls.push("copy")}
       onMarkDone={() => calls.push("done")}
     />,
@@ -27,7 +30,7 @@ describe("DeletedInAnki", () => {
     renderList();
     expect(
       screen.getByRole("heading", {
-        name: "2 deleted flashcards to delete in Anki",
+        name: "2 deleted flashcards still in Anki",
       }),
     ).toBeDefined();
   });
@@ -48,9 +51,14 @@ describe("DeletedInAnki", () => {
     renderList();
     expect(
       screen.getByText(
-        "A package cannot delete notes from Anki. Paste the search into Anki's browser to find their notes, delete them there, then mark them as done. If you turn AnkiConnect on, it deletes them for you.",
+        "You've deleted these flashcards in easyImmerse, but their notes may still be in Anki. To remove them from Anki, you can search for them in Anki's card browser and delete them from there.",
       ),
     ).toBeDefined();
+  });
+
+  it("shows the Anki search", () => {
+    renderList();
+    expect(screen.getByText(ankiSearch)).toBeDefined();
   });
 
   it("copies the Anki search", () => {
@@ -61,7 +69,9 @@ describe("DeletedInAnki", () => {
 
   it("marks the deleted flashcards as done", () => {
     const calls = renderList();
-    fireEvent.click(screen.getByRole("button", { name: "Mark as done" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Dismiss this message" }),
+    );
     expect(calls).toEqual(["done"]);
   });
 });

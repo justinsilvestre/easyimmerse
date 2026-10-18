@@ -11,14 +11,14 @@ import {
   exportedSync,
   neverExportedSync,
 } from "./exampleFlashcardSyncs.ts";
-import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
+import { ProjectFlashcardsPanel } from "./ProjectFlashcardsPanel.tsx";
 
 const meta = {
-  title: "Projects/FlashcardSyncPanel",
-  component: FlashcardSyncPanel,
+  title: "Projects/ProjectFlashcardsPanel",
+  component: ProjectFlashcardsPanel,
   decorators: [
     (Story) => (
-      <div className="w-full max-w-[40rem]">
+      <div className="w-[min(40rem,calc(100vw-2rem))]">
         <Story />
       </div>
     ),
@@ -32,12 +32,12 @@ const meta = {
     onSetUpAnkiConnect: fn(),
     onTurnOffAnkiConnect: fn(),
     onStartReview: fn(),
-    onSendToAnki: fn(),
     onCheckConnection: fn(),
+    onTryAnkiSyncAgain: fn(),
     onCopyAnkiSearch: fn(),
     onMarkDeletionsDone: fn(),
   },
-} satisfies Meta<typeof FlashcardSyncPanel>;
+} satisfies Meta<typeof ProjectFlashcardsPanel>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -70,17 +70,26 @@ export const AnkiChecking: Story = {
   args: { sync: ankiConnectSync({ connection: "checking" }) },
 };
 
-export const AnkiConnected: Story = {
-  args: { sync: ankiConnectSync() },
+export const AnkiSyncFailed: Story = {
+  args: { sync: ankiConnectSync({ hasSyncFailed: true }) },
 };
 
-export const AnkiConnectedWithChangedFlashcards: Story = {
-  args: { sync: ankiConnectSync({}, { changedCount: 2 }) },
-};
-
-export const AnkiConnectedBeforeAnyFlashcardReachedAnki: Story = {
+export const AnkiSyncFailedWithNotesToDelete: Story = {
   args: {
-    sync: ankiConnectSync({}, { newCount: 12, hasBeenFlushed: false }),
+    sync: ankiConnectSync({ hasSyncFailed: true, pendingDeletionCount: 2 }),
+  },
+};
+
+export const SendingChangedFlashcardsToAnki: Story = {
+  args: { sync: ankiConnectSync({ isSyncing: true }, { changedCount: 2 }) },
+};
+
+export const SendingToAnkiBeforeAnyFlashcardReachedAnki: Story = {
+  args: {
+    sync: ankiConnectSync(
+      { isSyncing: true },
+      { newCount: 12, hasBeenFlushed: false },
+    ),
   },
 };
 
@@ -91,6 +100,12 @@ export const AnkiConnectedWithNoFlashcardsYet: Story = {
       flashcardCount: 0,
       nextCard: null,
     },
+  },
+};
+
+export const AnkiConnectedWithEveryFlashcardInAnki: Story = {
+  args: {
+    sync: { ...ankiConnectSync({}, { newCount: 0 }), nextCard: null },
   },
 };
 

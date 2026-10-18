@@ -15,7 +15,7 @@ export function AnkiConnectSetupDialog({
   return (
     <ModalDialog
       title="Set up AnkiConnect"
-      description="Send cards straight to Anki on this computer while it runs."
+      description="Use the AnkiConnect add-on for the Anki desktop app and send cards straight from easyImmerse to Anki as you make them."
       onCancel={onClose}
       footer={
         <>
@@ -26,22 +26,41 @@ export function AnkiConnectSetupDialog({
         </>
       }
     >
+      <p className="text-sm">
+        Requires{" "}
+        <a
+          href="https://apps.ankiweb.net/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Anki for desktop
+        </a>
+        , version 23.10 or later.
+      </p>
+      <p className="text-sm">
+        In order to <b>install AnkiConnect</b>:
+      </p>
       <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm">
-        <li>Install Anki for desktop, version 23.10 or later.</li>
+        <li>In Anki, choose Tools &gt; Add-ons &gt; Get Add-ons.</li>
         <li>
-          In Anki, choose Tools, then Add-ons, then Get Add-ons, and enter the
-          code <code className="font-mono">{ankiConnectCode}</code> to install
-          AnkiConnect. Restart Anki.
+          Enter the code <code className="font-mono">{ankiConnectCode}</code> to
+          install AnkiConnect.
         </li>
-        <li>Keep Anki open while you send cards.</li>
-        <li>
-          The first time, Anki asks whether to let easyImmerse use it. Choose
-          Yes.
-        </li>
+        <li>Restart Anki.</li>
       </ol>
-      <p className="text-sm text-fg-muted">
-        New cards are sent as soon as they are saved. Cards that could not be
-        sent wait until you send them.
+      <p className="text-sm">
+        Once you've got AnkiConnect installed,{" "}
+        <strong>allow easyImmerse to connect to Anki</strong>:
+      </p>
+
+      <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm">
+        <li>Open Anki.</li>
+        <li>Press Connect to Anki below.</li>
+        <li>Once Anki asks whether to let easyImmerse use it, choose "Yes".</li>
+      </ol>
+      <p className="text-sm">
+        After that, <b>keep Anki open as you use easyImmerse</b>, and an Anki
+        card/note will be created for each new card you make in easyImmerse.
       </p>
     </ModalDialog>
   );

@@ -14,6 +14,7 @@ import {
 import { oldestFirst } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 import { ankiSearchOf } from "./ankiSearch.ts";
+import { hasSyncFailed } from "./ankiSyncFailures.ts";
 import {
   isChangedSinceDelivered,
   isNeverDelivered,
@@ -55,6 +56,8 @@ export type AnkiConnectSync = {
   pendingDeletionCount: number;
   /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
   isSyncing: boolean;
+  /** Whether the last send or deletion failed while Anki stays connected, and nothing has been tried since. */
+  hasSyncFailed: boolean;
 };
 
 /** What the project overview's flashcards panel shows about each way the project's flashcards reach Anki. */
@@ -71,7 +74,7 @@ export type FlashcardSync = {
 
 /**
  * Selects how the project's flashcards reach Anki, from the cached project, flashcards and pending deletions from Anki,
- * and the last check of the connection to Anki.
+ * the last check of the connection to Anki, and the last failed send and deletion.
  * The result keeps its reference while those do.
  */
 export const selectFlashcardSync = createSelector(
@@ -86,6 +89,8 @@ export const selectFlashcardSync = createSelector(
       hasAnkiConnectRequest(root.app.operations.requests, projectId),
     (root: RootState, projectId: string) =>
       cachedDeletions(root.backend, projectId),
+    (root: RootState, projectId: string) =>
+      hasSyncFailed(root.app.operations.failedRequests, projectId),
   ],
   (
     usesAnkiConnect,
@@ -93,6 +98,7 @@ export const selectFlashcardSync = createSelector(
     connection,
     isSyncing,
     deletions,
+    hasFailed,
   ): FlashcardSync => ({
     flashcardCount: flashcards.length,
     queue: queueOf(flashcards),
@@ -103,6 +109,8 @@ export const selectFlashcardSync = createSelector(
           deniedOrigin: deniedOriginOf(connection),
           pendingDeletionCount: deletions.length,
           isSyncing,
+          hasSyncFailed:
+            hasFailed && !isSyncing && statusOf(connection) === "connected",
         }
       : null,
     nextCard: firstMadeContent(flashcards.filter(isQueued)),

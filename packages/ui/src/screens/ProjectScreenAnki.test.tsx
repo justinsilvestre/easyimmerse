@@ -52,7 +52,7 @@ function renderOverview() {
 /** Exports the card through the dialog to the path the platform picks. */
 async function exportToPath({ effects }: ReturnType<typeof renderOverview>) {
   fireEvent.click(
-    await screen.findByRole("button", { name: /Export an Anki deck/ }),
+    await screen.findByRole("button", { name: /^Export an Anki deck package/ }),
   );
   fireEvent.click(await screen.findByRole("button", { name: "Export 1 card" }));
   await vi.waitFor(() =>
@@ -119,7 +119,7 @@ describe("ProjectScreen's ways to Anki", () => {
     const rendered = renderOverview();
     await exportToPath(rendered);
     expect(
-      await screen.findByText("Exported 1 flashcard to an Anki package."),
+      await screen.findByText("Exported 1 flashcard to an Anki deck package."),
     ).toBeDefined();
   });
 

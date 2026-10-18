@@ -8,6 +8,10 @@ export type {
 } from "./anki/ankiResponses.ts";
 export { flashcardNoteQuery } from "./anki/ankiSearch.ts";
 export {
+  type ProjectFlashcardsMode,
+  projectFlashcardsModeOf,
+} from "./anki/projectFlashcardsMode.ts";
+export {
   type AnkiExportView,
   selectAnkiExport,
   selectIsAnkiConnectSetupOpen,

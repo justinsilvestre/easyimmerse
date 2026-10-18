@@ -16,9 +16,9 @@ import {
   exportedSync,
   neverExportedSync,
 } from "./exampleFlashcardSyncs.ts";
-import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
 import type { MediaItem } from "./MediaList.tsx";
 import { MediaSection } from "./MediaSection.tsx";
+import { ProjectFlashcardsPanel } from "./ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "./ProjectView.tsx";
 
 const media: MediaItem[] = [
@@ -76,7 +76,7 @@ function sections(
         onOpenMedia={fn()}
         onDeleteMedia={fn()}
       />
-      <FlashcardSyncPanel
+      <ProjectFlashcardsPanel
         sync={flashcardSync}
         includedFields={fieldsOfPreset("intermediate")}
         frontFields={frontFieldsOfPreset("intermediate")}
@@ -85,8 +85,8 @@ function sections(
         onSetUpAnkiConnect={fn()}
         onTurnOffAnkiConnect={fn()}
         onStartReview={fn()}
-        onSendToAnki={fn()}
         onCheckConnection={fn()}
+        onTryAnkiSyncAgain={fn()}
         onCopyAnkiSearch={fn()}
         onMarkDeletionsDone={fn()}
       />

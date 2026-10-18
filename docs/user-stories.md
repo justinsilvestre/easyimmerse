@@ -107,19 +107,7 @@ As a user:
   - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
   - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
-- when I have not yet exported flashcards from this project or used the easyImmerse SRS for this project:
-  - [ ] I see a button to export an Anki deck package for the project
-  - [ ] I see a button to set up AnkiConnect for direct export to Anki
-  - [ ] I see a button to start reviewing flashcards in the easyImmerse SRS
-- when the last export/review action was to use AnkiConnect or export an Anki deck package:
-  - [ ] I see a button to set up AnkiConnect for direct export to Anki, or if setup was already completed, I see whether AnkiConnect syncing is on and the connection status
-  - [x] I see a button to export an Anki deck package for the project
-  - [ ] I can open a menu and see a button to start reviewing flashcards in the easyImmerse SRS
-  - [x] I see a preview of the first-created flashcard in the Anki updates queue
-- when the last review action was to use the easyImmerse SRS:
-  - [ ] I see a preview of the next flashcard to review, and a button to continue reviewing in the easyImmerse SRS
-- when updates are waiting in the Anki updates queue:
-  - [x] I can see the flashcard sync panel
+  - [x] I can see the project flashcards panel
 - when I click on the "Add media" button:
   - [x] I am prompted to select a media file to add to the project
 - when a media-source plugin is active:
@@ -525,7 +513,8 @@ As a web app user:
 
 As a user:
 - when updates are waiting in the Anki updates queue:
-  - [x] I can press a button to try sending them to Anki, and I see whether it succeeded
+  - [x] they are sent as soon as easyImmerse connects to Anki, and I see whether it succeeded
+  - [x] if a send failed while Anki stayed connected, I see that the sync failed and can try again
 - when an earlier export has removed cards from the Anki updates queue:
   - [x] I see how many cards are new and how many have changed since that export, or since the queue was last emptied
 - when I save a flashcard while AnkiConnect is on, but Anki is not connected:
@@ -536,9 +525,26 @@ As a user:
 
 ---
 
-### Flashcard sync panel
+### Project flashcards panel
 
 As a user:
+- when no flashcard of this project has reached Anki, and I have not reviewed any in the easyImmerse SRS:
+  - [ ] I can see three buttons in this order:
+    - a button to start reviewing flashcards in the easyImmerse SRS
+    - a button to set up AnkiConnect for direct export to Anki
+    - a button to export an Anki deck package
+- when AnkiConnect is on for the project, OR when AnkiConnect is off though flashcards of this project have have reached Anki through AnkiConnect before:
+  - [ ] I can see whether Anki is connected
+  - [ ] I can see any updates waiting in the Anki updates queue
+  - [ ] I can open a "More options" menu with buttons to export an Anki deck package and to start reviewing flashcards in the easyImmerse SRS
+- when AnkiConnect is off, and flashcards of this project have reached Anki through a deck package:
+  - [ ] I can see what waits in the Anki updates queue and the button to export an Anki deck package
+  - [ ] I can open a "More options" menu with buttons to set up AnkiConnect and to start reviewing flashcards in the easyImmerse SRS
+- when flashcards are waiting in the Anki updates queue, and I have no reviews in the easyImmerse SRS due in the future for flashcards of this project:
+  - [x] I see a preview of the first-created flashcard in the Anki updates queue
+- when AnkiConnect is off, and I have reviews in the easyImmerse SRS due in the future for flashcards of this project:
+  - [ ] I can see the front of the next flashcard due for review, and a button to continue reviewing
+  - [ ] I can open a "More options" menu with buttons to export an Anki deck package and to set up AnkiConnect
 - when I click the button to set up AnkiConnect for direct export to Anki:
   - [x] I see what to install, and that Anki must be running
 - when I switch on AnkiConnect for the project:
@@ -573,10 +579,12 @@ As a user:
   - [x] I see the status of the AnkiConnect connection, checked when I open the project
   - [x] I see how many cards in the Anki updates queue are new and how many have changed, the same counts shown when exporting an Anki package
   - [x] I see how many deleted flashcards still have notes in Anki
-  - [x] I see a preview of the earliest-created flashcard waiting to be sent
-  - [x] I see a button to send new, changed, and deleted flashcards to Anki through AnkiConnect
-  - [x] I can turn AnkiConnect off
-- when I see a preview of a flashcard waiting to be sent:
+  - [x] I see a preview of the earliest-created flashcard in the Anki updates queue
+  - [x] I do not need to press a button to send flashcards to Anki
+  - [x] I can turn AnkiConnect off with a switch
+- when sending flashcards to Anki through AnkiConnect fails:
+  - [x] I can try again with a button
+- when I see a preview of a flashcard in the Anki updates queue:
   - [ ] I see its screenshot, as the card in Anki would show it
   - [ ] I can play its audio clip
 - when a flashcard reached Anki without its audio clip or screenshot, because easyImmerse could not read the media file at the time:
@@ -599,12 +607,8 @@ As a user:
   - [x] I can choose to export only cards from specific media files, each listed with its number of cards
   - [ ] I can choose to export all cards from a selected media file, or only specific cards from that media file
   - [x] I can choose to keep the cards in the Anki updates queue after the export (this being the default option *only when AnkiConnect is on*; the point is to let me back up my deck or share it with someone, and still make a targeted update to my own Anki deck later)
-  - [x] I am told that the audio and screenshots are included when the easyImmerse server has ffmpeg and can read the media file
-  - [x] I am told that importing a package again adds the new cards and refreshes the others, keeping their review progress, and that I can change the look of the cards in Anki after importing them
-- when I choose to export my flashcards to Anki, and AnkiConnect is OFF:
-  - [x] I am told that a package cannot delete notes from Anki, so when I delete a flashcard that was exported as part of a package, I must delete its note in Anki myself, or turn on AnkiConnect to have it done
-- when I choose to export my flashcards to Anki, and AnkiConnect is ON:
-  - [x] I am told that a package cannot delete notes from Anki, but that AnkiConnect can delete the notes of the flashcards I delete
+  - [x] I am told that importing a package again adds the new cards and refreshes the others, keeping their review progress
+  - [x] I am told that a package cannot delete notes from Anki, so when I delete a flashcard that was exported as part of a package, I must delete its note in Anki myself, and that AnkiConnect keeps my collection in sync instead
 - when I choose to export my flashcards to Anki, and some of the cards were first added to Anki through AnkiConnect, rather than from a package:
   - [x] I am warned that importing the package into the same Anki collection would add a second copy of each of those cards, because Anki does not recognize them as the notes AnkiConnect created
   - [x] I am told that I can find the doubled notes with Notes > Find Duplicates in Anki's browser, searching the "easyImmerse id" field

@@ -22,10 +22,10 @@ import { AnkiConnectSetupDialog } from "../projects/AnkiConnectSetupDialog.tsx";
 import { AnkiExportDialog } from "../projects/AnkiExportDialog.tsx";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
-import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
+import { ProjectFlashcardsPanel } from "../projects/ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "../projects/ProjectView.tsx";
 
 /**
@@ -115,7 +115,6 @@ export function ProjectOverview({
           allCount={ankiExport.allCount}
           marksExported={ankiExport.marksExported}
           duplicateCount={ankiExport.duplicateCount}
-          usesAnkiConnect={ankiExport.usesAnkiConnect}
           isBusy={ankiExport.isBusy}
           onScopeChange={(scope) =>
             dispatch(actions.ankiExportScopeChosen(scope))
@@ -136,7 +135,7 @@ export function ProjectOverview({
           onClose={() => dispatch(actions.ankiConnectSetupClosed())}
         />
       )}
-      <FlashcardSyncPanel
+      <ProjectFlashcardsPanel
         sync={flashcardSync}
         includedFields={settings.flashcard_fields}
         frontFields={settings.flashcard_front_fields}
@@ -147,10 +146,10 @@ export function ProjectOverview({
         onExportPackage={() => dispatch(actions.ankiExportOpened())}
         onSetUpAnkiConnect={() => dispatch(actions.ankiConnectSetupOpened())}
         onStartReview={notYet}
-        onSendToAnki={() => dispatch(actions.ankiSendRequested())}
         onCheckConnection={() =>
           dispatch(actions.ankiConnectionCheckRequested())
         }
+        onTryAnkiSyncAgain={() => dispatch(actions.ankiSendRequested())}
         onTurnOffAnkiConnect={() => dispatch(actions.ankiConnectTurnedOff())}
         onCopyAnkiSearch={() =>
           dispatch(

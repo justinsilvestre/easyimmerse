@@ -56,6 +56,7 @@ export function ankiConnectSync(
       deniedOrigin: null,
       pendingDeletionCount: 0,
       isSyncing: false,
+      hasSyncFailed: false,
       ...changes,
     },
   };

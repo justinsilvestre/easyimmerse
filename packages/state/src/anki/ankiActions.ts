@@ -39,7 +39,7 @@ export const ankiActions = {
   /** The user asked whether Anki can be reached now. */
   ankiConnectionCheckRequested: () =>
     ({ type: "ankiConnectionCheckRequested" }) as const,
-  /** The user asked to send every flashcard Anki does not have yet. */
+  /** The user asked to send to Anki every flashcard it does not have yet, and to delete from it the notes of deleted flashcards. */
   ankiSendRequested: () => ({ type: "ankiSendRequested" }) as const,
   /** The user marked as done the deleted flashcards the project screen lists as still in Anki. */
   ankiDeletionsMarkedDone: () => ({ type: "ankiDeletionsMarkedDone" }) as const,

@@ -1,11 +1,14 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 /** A labelled checkbox, with an optional second line explaining the choice. */
 export function CheckboxField({
   label,
   hint,
   ...rest
-}: Omit<ComponentProps<"input">, "type"> & { label: string; hint?: string }) {
+}: Omit<ComponentProps<"input">, "type"> & {
+  label: string;
+  hint?: ReactNode;
+}) {
   return (
     <label className="flex cursor-pointer items-start gap-2 text-sm has-disabled:cursor-not-allowed has-disabled:opacity-50">
       <input

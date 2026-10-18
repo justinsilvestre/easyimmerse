@@ -15,7 +15,7 @@ export function exportedNotice({
 }: Pick<AnkiPackageExport, "flashcardCount" | "skippedMediaCount">) {
   return notice(
     "success",
-    `Exported ${count(flashcardCount, "flashcard")} to an Anki package.`,
+    `Exported ${count(flashcardCount, "flashcard")} to an Anki deck package.`,
     skippedMediaLine(skippedMediaCount),
   );
 }
@@ -106,7 +106,7 @@ function flashcardName(word: string) {
 export function exportFailedNotice(failure: Pick<RequestFailure, "message">) {
   return notice(
     "danger",
-    `The Anki package could not be exported: ${failure.message}`,
+    `The Anki deck package could not be exported: ${failure.message}`,
   );
 }
 

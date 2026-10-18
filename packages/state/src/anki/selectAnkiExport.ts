@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
 import { mainScreenOf } from "../route/route.ts";
-import { cachedFlashcards, cachedUsesAnkiConnect } from "./ankiCache.ts";
+import { cachedFlashcards } from "./ankiCache.ts";
 import type { AnkiExportDialog } from "./ankiExportDialog.ts";
 import {
   flashcardsToExport,
@@ -14,8 +14,6 @@ export type AnkiExportView = AnkiExportDialog & {
   allCount: number;
   /** The exported flashcards that AnkiConnect put into Anki before any export marked them, which an import would duplicate there. */
   duplicateCount: number;
-  /** Whether the project uses AnkiConnect, which deletes the notes of deleted flashcards from Anki, as no package can. */
-  usesAnkiConnect: boolean;
 };
 
 /**
@@ -34,14 +32,8 @@ export const selectAnkiExport = createSelector(
         ? cachedFlashcards(root.backend, main.projectId)
         : [];
     },
-    (root: RootState) => {
-      const main = mainScreenOf(root.app.route);
-      return main.screen === "project"
-        ? cachedUsesAnkiConnect(root.backend, main.projectId)
-        : false;
-    },
   ],
-  (dialog, flashcards, usesAnkiConnect): AnkiExportView | null => {
+  (dialog, flashcards): AnkiExportView | null => {
     if (dialog === null) return null;
     const { mediaFileIds } = dialog;
     const countOf = (scope: AnkiExportDialog["scope"]) =>
@@ -53,7 +45,6 @@ export const selectAnkiExport = createSelector(
       duplicateCount: flashcardsToExport(flashcards, dialog).filter(
         wasSentBeforeExport,
       ).length,
-      usesAnkiConnect,
     };
   },
 );

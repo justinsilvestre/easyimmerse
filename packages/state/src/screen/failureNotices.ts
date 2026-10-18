@@ -33,7 +33,7 @@ export function failureNotices(action: AppAction) {
     case "recordAnkiExported":
       return [
         failure(
-          "The Anki package was saved, but the export could not be recorded",
+          "The Anki deck package was saved, but the export could not be recorded",
         ),
       ];
     case "setAnkiConnect":

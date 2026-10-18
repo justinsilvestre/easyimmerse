@@ -1,4 +1,5 @@
 import type { AnkiExportScope } from "@easyimmerse/state";
+import { type ReactNode, useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
@@ -18,7 +19,6 @@ export function AnkiExportDialog({
   allCount,
   marksExported,
   duplicateCount,
-  usesAnkiConnect,
   isBusy,
   onScopeChange,
   onMarkingChange,
@@ -38,8 +38,6 @@ export function AnkiExportDialog({
   marksExported: boolean;
   /** The exported cards that AnkiConnect put into Anki before any export took them out of the queue, which an import there would duplicate. */
   duplicateCount: number;
-  /** Whether the project uses AnkiConnect, which deletes the notes of deleted flashcards from Anki, as no package can. */
-  usesAnkiConnect: boolean;
   isBusy: boolean;
   onScopeChange: (scope: AnkiExportScope) => void;
   onMarkingChange: (marksExported: boolean) => void;
@@ -50,8 +48,8 @@ export function AnkiExportDialog({
   const count = scope === "newAndChanged" ? newAndChangedCount : allCount;
   return (
     <ModalDialog
-      title="Export an Anki deck"
-      description="Save a package of flashcards to import into Anki."
+      title="Export an Anki deck package"
+      description="Save your flashcards in .apkg format for use in Anki."
       onCancel={onClose}
       footer={
         <>
@@ -80,7 +78,11 @@ export function AnkiExportDialog({
       />
       {mediaFiles.length > 0 && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="pb-2 text-sm font-medium">From</legend>
+          <legend className="pb-2 text-sm font-medium">
+            Including{" "}
+            {scope === "newAndChanged" ? "newly added or updated" : "all"} cards
+            from:
+          </legend>
           {mediaFiles.map((mediaFile) => (
             <CheckboxField
               key={mediaFile.id}
@@ -92,28 +94,25 @@ export function AnkiExportDialog({
           ))}
         </fieldset>
       )}
-      <CheckboxField
-        label="Keep these cards in the Anki updates queue"
-        hint="Choose this for a copy such as a deck you share or keep as a backup, not one to import into the Anki that this project sends to. Otherwise the export takes the cards out of the queue, and the next export leaves them out unless they change."
-        checked={!marksExported}
-        onChange={(event) => onMarkingChange(!event.target.checked)}
-      />
+
       {duplicateCount > 0 && <DuplicateWarning count={duplicateCount} />}
       <div className="flex flex-col gap-2 text-sm text-fg-muted">
         <p>
-          Audio and screenshots are included when the easyImmerse server has
-          ffmpeg and can read the media file.
+          <b>Technical limitation:</b> an .apkg import cannot delete notes from
+          Anki. When you delete a card in easyImmerse after adding it to Anki
+          via .apkg import, its note stays in Anki until you delete it there
+          yourself. Consider using AnkiConnect if you are concerned with keeping
+          your Anki collection in sync with easyImmerse.
         </p>
         <p>
-          Importing a package again adds the new cards and refreshes the others,
-          keeping their progress. The look of the cards can be changed in Anki
-          once they are imported.
+          If this .apkg file contains cards that you previously imported into
+          Anki via .apkg, their content will be overwritten, but your review
+          progress for these cards will be preserved.
         </p>
-        <p>
-          {usesAnkiConnect
-            ? "A package cannot delete notes from Anki, but AnkiConnect deletes the notes of the flashcards you delete."
-            : "A package cannot delete notes from Anki. When you delete a flashcard that went out in a package, delete its note in Anki yourself, or turn on AnkiConnect, which deletes the notes of the flashcards you delete."}
-        </p>
+        <QueueChoice
+          marksExported={marksExported}
+          onMarkingChange={onMarkingChange}
+        />
       </div>
     </ModalDialog>
   );
@@ -124,23 +123,106 @@ function exportLabel(count: number, isBusy: boolean) {
   return isBusy ? "Exporting…" : `Export ${pluralize(count, "card")}`;
 }
 
-/**
- * Warns that some of the cards are already in the Anki that AnkiConnect sends to, under notes whose GUIDs Anki chose,
- * so that importing the package there would add a second note for each, and tells how Anki's browser finds such doubles:
- * the easyImmerse id field is unique to each flashcard, so Find Duplicates on it lists exactly the doubled notes.
- */
+/** Asks whether the export keeps its cards in the Anki updates queue, saying beside each answer when it suits. */
+function QueueChoice({
+  marksExported,
+  onMarkingChange,
+}: {
+  marksExported: boolean;
+  onMarkingChange: (marksExported: boolean) => void;
+}) {
+  const groupName = useId();
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="pb-2 font-medium text-fg">
+        Flush these cards from the Anki updates queue after export?
+      </legend>
+      <QueueOption
+        label="Yes"
+        groupName={groupName}
+        checked={marksExported}
+        onSelect={() => onMarkingChange(true)}
+      >
+        Choose this if you are making this .apkg deck to{" "}
+        <strong>update your own Anki collection</strong> right now.
+      </QueueOption>
+      <QueueOption
+        label="No"
+        groupName={groupName}
+        checked={!marksExported}
+        onSelect={() => onMarkingChange(false)}
+      >
+        Choose this if you'd like to{" "}
+        <strong>send these updates to Anki later</strong> (e.g. via
+        AnkiConnect), but you still want this .apkg to share your deck with
+        someone else or as a backup.
+      </QueueOption>
+    </fieldset>
+  );
+}
+
+function QueueOption({
+  label,
+  groupName,
+  checked,
+  onSelect,
+  children,
+}: {
+  label: string;
+  groupName: string;
+  checked: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+}) {
+  const labelId = useId();
+  const hintId = useId();
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded border border-line px-3 py-2 has-checked:border-accent has-checked:bg-accent-soft">
+      <input
+        type="radio"
+        name={groupName}
+        className="mt-1"
+        checked={checked}
+        aria-labelledby={labelId}
+        aria-describedby={hintId}
+        onChange={onSelect}
+      />
+      <span className="flex flex-col">
+        <span id={labelId} className="text-fg">
+          {label}
+        </span>
+        <span id={hintId} className="text-xs">
+          {children}
+        </span>
+      </span>
+    </label>
+  );
+}
+
 function DuplicateWarning({ count }: { count: number }) {
-  const sent =
-    count === 1
-      ? "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card."
-      : `${count} of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each.`;
   return (
     <p
       role="note"
       className="rounded-md border border-warning-line bg-warning-soft p-3 text-sm text-warning-fg"
     >
-      {sent} You can find any doubled notes with Notes &gt; Find Duplicates in
-      Anki's browser, searching the “easyImmerse id” field.
+      If possible, please <strong>continue using AnkiConnect</strong> rather
+      than .apkg import to update your Anki collection. Importing an .apkg file
+      that includes cards already added via AnkiConnect may result in duplicate
+      notes/cards inside your Anki collection.
+      <br />
+      <br />
+      {count === 1 ? (
+        <>
+          <strong>1 card</strong> in this package has
+        </>
+      ) : (
+        <>
+          <strong>{count} cards</strong> in this package have
+        </>
+      )}{" "}
+      already been sent to Anki through AnkiConnect. To find duplicate notes in
+      your Anki collection, navigate to <i>Notes &gt; Find Duplicates</i> within
+      the Anki card browser, and search on the “easyImmerse id” field.
     </p>
   );
 }

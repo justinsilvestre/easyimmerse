@@ -115,20 +115,6 @@ describe("selectAnkiExport", () => {
     ).toMatchObject({ duplicateCount: 1 });
   });
 
-  it("tells whether the project uses AnkiConnect", () => {
-    const usingAnkiConnect = ankiCache(true);
-    expect(
-      selectAnkiExport({
-        app: stateAfterWithCache(
-          usingAnkiConnect,
-          openOverview,
-          actions.ankiExportOpened(),
-        ),
-        backend: usingAnkiConnect,
-      }),
-    ).toMatchObject({ usesAnkiConnect: true });
-  });
-
   it("counts only the cards of the ticked media files", () => {
     expect(
       selectAnkiExport(

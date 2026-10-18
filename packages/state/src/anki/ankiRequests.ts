@@ -7,6 +7,10 @@ export const ankiRequestIds = (projectId: string) => ({
   /** The record of an export whose package the user kept a copy of after the server wrote it at a staging path. */
   exported: `project/${projectId}/ankiExported`,
   ankiConnect: `project/${projectId}/ankiConnect`,
+  /** The record of the project's last failed send to Anki, kept until it is tried again. */
+  sendFailed: `project/${projectId}/ankiSendFailed`,
+  /** The record of the project's last failed deletion of notes from Anki, kept until it is tried again. */
+  deleteFailed: `project/${projectId}/ankiDeleteFailed`,
   deletionsCleared: `project/${projectId}/ankiDeletionsCleared`,
   /** The read of the project as its overview opens, which tells whether to check the connection to Anki. */
   projectRead: `project/${projectId}/projectRead`,

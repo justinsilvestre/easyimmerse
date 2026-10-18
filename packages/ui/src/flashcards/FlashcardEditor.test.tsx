@@ -296,7 +296,7 @@ describe("FlashcardEditor's Delete", () => {
     });
     pressDelete();
     expect(confirmDialog().textContent).toContain(
-      "Its note stays in Anki until you delete it there, since a package cannot delete notes and AnkiConnect is off.",
+      "Its corresponding Anki note stays in Anki until you delete it there.",
     );
   });
 

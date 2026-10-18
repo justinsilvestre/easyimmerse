@@ -194,7 +194,7 @@ describe("ProjectForm", () => {
     renderForm();
     expect(
       screen.getByText(
-        /flashcard that an export took out of the Anki updates queue, or that AnkiConnect sent to Anki/,
+        /flashcard that an export flushed from the Anki updates queue, or that AnkiConnect sent to Anki/,
       ),
     ).toBeDefined();
   });

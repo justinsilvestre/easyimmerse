@@ -124,7 +124,7 @@ export function ProjectForm({
         />
         <CheckboxField
           label="List deleted flashcards that are still in Anki"
-          hint="When you delete a flashcard that an export took out of the Anki updates queue, or that AnkiConnect sent to Anki, the project screen lists it so that you can delete it there too. Turning this off stops new ones from being listed; those already listed stay until you mark them done. While AnkiConnect is on, it deletes them from Anki itself."
+          hint="When you delete a flashcard that an export flushed from the Anki updates queue, or that AnkiConnect sent to Anki, the project screen lists it so that you can delete it there too. Turning this off stops new ones from being listed; those already listed stay until you mark them done. While AnkiConnect is on, it deletes them from Anki itself."
           checked={state.lists_anki_deletions}
           onChange={() => dispatch({ type: "deletionListingToggled" })}
         />

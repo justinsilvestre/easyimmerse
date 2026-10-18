@@ -48,9 +48,8 @@ const noteLines = {
   anyDeletedByAnkiConnectLater:
     "If you imported it into Anki from a package, its note there is deleted the next time easyImmerse reaches Anki.",
   staysListed:
-    "Its note stays in Anki until you delete it there or turn AnkiConnect on, since a package cannot delete notes. The project screen lists it in the Anki updates queue, with a search that finds the note.",
-  stays:
-    "Its note stays in Anki until you delete it there, since a package cannot delete notes and AnkiConnect is off.",
+    "Its corresponding Anki note stays in Anki until you delete it there or turn AnkiConnect on. A record of deleted flashcards is kept for your reference in the project screen.",
+  stays: "Its corresponding Anki note stays in Anki until you delete it there.",
 } satisfies Record<AnkiFateOfDeletion["note"], string>;
 
 /** Describes what deleting the flashcard for the word does, in the project and in Anki. */

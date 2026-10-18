@@ -15,6 +15,7 @@ import {
   clearDeletions,
   setAnkiConnect,
 } from "./ankiRequests.ts";
+import { forgetSyncFailures } from "./ankiSyncFailures.ts";
 import { syncWithAnki } from "./syncWithAnki.ts";
 
 type AnkiConnectApp = Pick<ReadableState, "backend" | "operations">;
@@ -48,7 +49,7 @@ export function updateAnkiConnectSetup(
  * Returns the effects of the project overview's AnkiConnect actions, which change no state:
  * a check whether Anki can be reached, as asked for or once the overview has read that the project uses AnkiConnect;
  * a send of every flashcard Anki has no note for, oldest first, followed by the deletion of the notes of deleted flashcards
- * that Anki could not be reached for, as asked for or once Anki is found running;
+ * that Anki could not be reached for, as asked for, which forgets the last failed ones, or once Anki is found running;
  * the turning off of AnkiConnect; and the clearing of the deletions the panel lists, which the user marked done.
  */
 export function ankiConnectEffects(
@@ -60,7 +61,10 @@ export function ankiConnectEffects(
     case "ankiConnectionCheckRequested":
       return [checkAnkiConnection];
     case "ankiSendRequested":
-      return syncWithAnki(projectId, app);
+      return [
+        ...forgetSyncFailures(projectId),
+        ...syncWithAnki(projectId, app),
+      ];
     case "ankiConnectTurnedOff":
       return [setAnkiConnect(projectId, false)];
     case "ankiDeletionsMarkedDone":

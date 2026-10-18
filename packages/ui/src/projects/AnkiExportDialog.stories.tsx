@@ -29,7 +29,6 @@ const meta = {
     allCount: 41,
     marksExported: true,
     duplicateCount: 0,
-    usesAnkiConnect: false,
     isBusy: false,
     onScopeChange: fn(),
     onMarkingChange: fn(),
@@ -50,14 +49,6 @@ export const KeepingTheCardsInTheQueue: Story = {
 
 export const WarningOfDuplicates: Story = {
   args: { duplicateCount: 12 },
-};
-
-export const WarningOfDuplicatesWhileKeepingTheQueue: Story = {
-  args: { duplicateCount: 12, marksExported: false, usesAnkiConnect: true },
-};
-
-export const WithAnkiConnectOn: Story = {
-  args: { usesAnkiConnect: true, marksExported: false },
 };
 
 export const AllCards: Story = {

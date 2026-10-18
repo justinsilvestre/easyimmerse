@@ -35,19 +35,19 @@ describe("deletionDescription", () => {
     );
   });
 
-  it("says that the note stays in Anki, since a package cannot delete it, and that the project screen lists its deletion with a search", () => {
+  it("says that the note stays in Anki, and that the project screen keeps a record of the deletion", () => {
     expect(
       deletionDescription("Haus", { note: "staysListed", wasPackaged: false }),
     ).toBe(
-      `${base} Its note stays in Anki until you delete it there or turn AnkiConnect on, since a package cannot delete notes. The project screen lists it in the Anki updates queue, with a search that finds the note.`,
+      `${base} Its corresponding Anki note stays in Anki until you delete it there or turn AnkiConnect on. A record of deleted flashcards is kept for your reference in the project screen.`,
     );
   });
 
-  it("says that the note stays in Anki, since a package cannot delete it and AnkiConnect is off", () => {
+  it("says that the note stays in Anki until it is deleted there", () => {
     expect(
       deletionDescription("Haus", { note: "stays", wasPackaged: false }),
     ).toBe(
-      `${base} Its note stays in Anki until you delete it there, since a package cannot delete notes and AnkiConnect is off.`,
+      `${base} Its corresponding Anki note stays in Anki until you delete it there.`,
     );
   });
 

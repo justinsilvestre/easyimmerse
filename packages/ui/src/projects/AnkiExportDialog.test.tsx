@@ -22,7 +22,6 @@ function renderDialog(
       allCount={4}
       marksExported
       duplicateCount={0}
-      usesAnkiConnect={false}
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
       onMarkingChange={(marksExported) =>
@@ -39,10 +38,8 @@ function renderDialog(
 
 const exportButton = () => screen.getByRole("button", { name: /^Export/ });
 
-const keepInQueueCheckbox = () =>
-  screen.getByRole("checkbox", {
-    name: /Keep these cards in the Anki updates queue/,
-  });
+const queueAnswer = (name: "Yes" | "No") =>
+  screen.getByRole("radio", { name }) as HTMLInputElement;
 
 const isDisabled = (element: HTMLElement) =>
   (element as HTMLButtonElement).disabled;
@@ -82,48 +79,56 @@ describe("AnkiExportDialog", () => {
     expect(isDisabled(exportButton())).toBe(true);
   });
 
-  it("shows that the cards are kept in the Anki updates queue while they are not marked as exported", () => {
+  it("answers No to flushing the queue while the cards are not marked as exported", () => {
     renderDialog({ marksExported: false });
-    expect((keepInQueueCheckbox() as HTMLInputElement).checked).toBe(true);
+    expect(queueAnswer("No").checked).toBe(true);
   });
 
-  it("says that cards kept in the queue suit a copy not meant for the Anki the project sends to", () => {
+  it("says beside keeping the cards in the queue that it suits a backup or a shared copy", () => {
     renderDialog();
-    expect(
-      screen.getByText(
-        /share or keep as a backup.*not one to import into the Anki/,
-      ),
-    ).toBeDefined();
+    expect(queueAnswer("No").getAttribute("aria-describedby")).toBe(
+      screen.getByText(/as a backup/).closest("[id]")?.id,
+    );
   });
 
-  it("chooses to keep the cards in the queue by not marking them as exported", () => {
+  it("says beside flushing the queue that it suits updating your own collection", () => {
+    renderDialog();
+    expect(queueAnswer("Yes").getAttribute("aria-describedby")).toBe(
+      screen.getByText("update your own Anki collection").closest("[id]")?.id,
+    );
+  });
+
+  it("keeps the cards in the queue by not marking them as exported", () => {
     const calls = renderDialog();
-    fireEvent.click(keepInQueueCheckbox());
+    fireEvent.click(queueAnswer("No"));
     expect(calls).toEqual(["marking false"]);
   });
 
-  it("chooses to take the cards out of the queue by marking them as exported", () => {
+  it("flushes the queue by marking the cards as exported", () => {
     const calls = renderDialog({ marksExported: false });
-    fireEvent.click(keepInQueueCheckbox());
+    fireEvent.click(queueAnswer("Yes"));
     expect(calls).toEqual(["marking true"]);
   });
 
   it("warns that importing would duplicate the cards AnkiConnect sent", () => {
     renderDialog({ duplicateCount: 2 });
-    expect(
-      screen.getByText(
-        "2 of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each. You can find any doubled notes with Notes > Find Duplicates in Anki's browser, searching the “easyImmerse id” field.",
-      ),
-    ).toBeDefined();
+    expect(screen.getByRole("note").textContent).toContain(
+      "2 cards in this package have already been sent to Anki through AnkiConnect.",
+    );
   });
 
   it("names a single card AnkiConnect sent in its warning", () => {
     renderDialog({ duplicateCount: 1 });
-    expect(
-      screen.getByText(
-        "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card. You can find any doubled notes with Notes > Find Duplicates in Anki's browser, searching the “easyImmerse id” field.",
-      ),
-    ).toBeDefined();
+    expect(screen.getByRole("note").textContent).toContain(
+      "1 card in this package has already been sent to Anki through AnkiConnect.",
+    );
+  });
+
+  it("tells how to find the doubled notes in Anki", () => {
+    renderDialog({ duplicateCount: 1 });
+    expect(screen.getByRole("note").textContent).toContain(
+      "Notes > Find Duplicates",
+    );
   });
 
   it("warns of duplicates while the cards are kept in the queue", () => {
@@ -136,21 +141,10 @@ describe("AnkiExportDialog", () => {
     expect(screen.queryByRole("note")).toBeNull();
   });
 
-  it("tells that a package cannot delete notes, which you delete in Anki yourself while AnkiConnect is off", () => {
+  it("tells that a package cannot delete notes from Anki", () => {
     renderDialog();
     expect(
-      screen.getByText(
-        "A package cannot delete notes from Anki. When you delete a flashcard that went out in a package, delete its note in Anki yourself, or turn on AnkiConnect, which deletes the notes of the flashcards you delete.",
-      ),
-    ).toBeDefined();
-  });
-
-  it("tells that AnkiConnect deletes the notes a package cannot while it is on", () => {
-    renderDialog({ usesAnkiConnect: true });
-    expect(
-      screen.getByText(
-        "A package cannot delete notes from Anki, but AnkiConnect deletes the notes of the flashcards you delete.",
-      ),
+      screen.getByText(/an \.apkg import cannot delete notes from Anki/),
     ).toBeDefined();
   });
 

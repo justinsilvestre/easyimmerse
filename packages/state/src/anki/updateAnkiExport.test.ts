@@ -265,14 +265,14 @@ describe("updateAnkiExport", () => {
   it("tells how many cards were exported", () => {
     expect(
       noticesAfter(...confirmed, exported({ ok: true, data: saved() })),
-    ).toEqual(["Exported 2 flashcards to an Anki package."]);
+    ).toEqual(["Exported 2 flashcards to an Anki deck package."]);
   });
 
   it("tells how many audio clips and screenshots were left out", () => {
     expect(
       noticesAfter(...confirmed, exported({ ok: true, data: saved(3) })),
     ).toEqual([
-      "Exported 2 flashcards to an Anki package. 3 audio clips or screenshots could not be included.",
+      "Exported 2 flashcards to an Anki deck package. 3 audio clips or screenshots could not be included.",
     ]);
   });
 
@@ -306,7 +306,7 @@ describe("updateAnkiExport", () => {
 
   it("tells why the export failed", () => {
     expect(noticesAfter(...confirmed, exported(failed))).toEqual([
-      "The Anki package could not be exported: the disk is full",
+      "The Anki deck package could not be exported: the disk is full",
     ]);
   });
 
@@ -415,7 +415,7 @@ describe("updateAnkiExport when the platform keeps a copy of a staged package", 
 
   it("tells how many cards were exported once the user kept a copy", () => {
     expect(noticesAfter(...staged(), copySaved)).toEqual([
-      "Exported 2 flashcards to an Anki package.",
+      "Exported 2 flashcards to an Anki deck package.",
     ]);
   });
 
@@ -433,7 +433,7 @@ describe("updateAnkiExport when the platform keeps a copy of a staged package", 
 
   it("tells why keeping a copy failed", () => {
     expect(noticesAfter(...staged(), copyFailed)).toEqual([
-      "The Anki package could not be exported: no space left",
+      "The Anki deck package could not be exported: no space left",
     ]);
   });
 

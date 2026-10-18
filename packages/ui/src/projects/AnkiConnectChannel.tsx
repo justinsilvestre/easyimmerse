@@ -1,26 +1,23 @@
-import type {
-  AnkiConnectionStatus,
-  AnkiConnectSync,
-  AnkiUpdatesQueue,
-} from "@easyimmerse/state";
-import { Plug, Send } from "lucide-react";
+import type { AnkiConnectSync, AnkiUpdatesQueue } from "@easyimmerse/state";
 import type { ReactNode } from "react";
-import { Badge } from "../components/Badge.tsx";
-import { Button } from "../components/Button.tsx";
 import { pluralize } from "../components/pluralize.ts";
+import { AnkiConnectStatus, type ChannelStatus } from "./AnkiConnectStatus.tsx";
+import { Count } from "./Count.tsx";
+import { FlashcardsColumns } from "./FlashcardsColumns.tsx";
 import { newAndChangedPhrase } from "./newAndChangedPhrase.ts";
-import { SyncChannel } from "./SyncChannel.tsx";
+import { QueueSummary } from "./QueueSummary.tsx";
 
 /**
- * Shows AnkiConnect while it is on for the project: whether Anki answers, what waits to be sent or deleted,
- * and the buttons to send, check again, get help, or turn AnkiConnect off.
+ * Shows AnkiConnect while it is on for the project: its status above, and under it what waits to be sent or deleted, with a `preview` of the next card.
+ * Sending needs no button, since a connection check that finds Anki sends what waits; only a failed sync offers to try again.
  */
 export function AnkiConnectChannel({
   sync,
   queue,
   flashcardCount,
-  onSendToAnki,
+  preview,
   onCheckConnection,
+  onTryAgain,
   onSetUpAnkiConnect,
   onTurnOff,
 }: {
@@ -28,123 +25,108 @@ export function AnkiConnectChannel({
   queue: AnkiUpdatesQueue;
   /** Every flashcard of the project. */
   flashcardCount: number;
-  onSendToAnki: () => void;
+  /** The next card in the Anki updates queue, or null when the queue is empty. */
+  preview: ReactNode;
   onCheckConnection: () => void;
+  /** Sends to Anki again what a failed sync left waiting. */
+  onTryAgain: () => void;
   onSetUpAnkiConnect: () => void;
   onTurnOff: () => void;
 }) {
-  const isUpToDate =
-    queue.newCount + queue.changedCount === 0 &&
-    sync.pendingDeletionCount === 0;
+  const hasFlashcards = flashcardCount > 0;
+  const status = statusOf(sync, queue);
+  const summary = ankiConnectSummary(queue, sync, status, flashcardCount);
   return (
-    <SyncChannel
-      icon={<Plug className="size-5" aria-hidden />}
-      title="AnkiConnect"
-      headerAction={
-        <Button variant="subtle" size="sm" onClick={onTurnOff}>
-          Turn off
-        </Button>
+    <FlashcardsColumns
+      queue={
+        hasFlashcards ? (
+          <QueueSummary summary={summary} preview={preview} />
+        ) : null
       }
+      action={null}
+      placement="above"
     >
-      {connectionBadges[sync.connection]}
-      <p>
-        {ankiConnectSummary(queue, sync.pendingDeletionCount, flashcardCount)}
-      </p>
-      <ConnectionHint {...sync} />
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button
-          variant="primary"
-          disabled={isUpToDate || sync.isSyncing}
-          onClick={onSendToAnki}
-        >
-          <Send className="size-4" aria-hidden />
-          {sync.isSyncing ? "Sending…" : "Send to Anki"}
-        </Button>
-        {isUnconnected(sync.connection) && (
-          <>
-            <Button onClick={onCheckConnection}>Check again</Button>
-            <Button variant="subtle" onClick={onSetUpAnkiConnect}>
-              Setup help
-            </Button>
-          </>
-        )}
-      </div>
-    </SyncChannel>
+      <AnkiConnectStatus
+        status={status}
+        isSyncing={sync.isSyncing}
+        deniedOrigin={sync.deniedOrigin}
+        onCheckConnection={onCheckConnection}
+        onTryAgain={onTryAgain}
+        onSetUpAnkiConnect={onSetUpAnkiConnect}
+        onTurnOff={onTurnOff}
+      />
+      {!hasFlashcards && <p className="self-stretch text-center">{summary}</p>}
+    </FlashcardsColumns>
   );
 }
 
-/** Counts the flashcards in the Anki updates queue, which wait to be sent to Anki, and the notes waiting to be deleted from it. */
-function ankiConnectSummary(
-  { newCount, changedCount }: AnkiUpdatesQueue,
-  pendingDeletionCount: number,
-  flashcardCount: number,
-) {
-  const notes = pluralize(pendingDeletionCount, "note");
-  const isAllSent = newCount + changedCount === 0;
-  if (isAllSent && pendingDeletionCount > 0)
-    return `${notes} waiting to be deleted from Anki.`;
-  if (isAllSent)
-    return flashcardCount === 0
-      ? "No flashcards yet."
-      : "No flashcards waiting to be sent.";
-  const unsent = `${newAndChangedPhrase(newCount, changedCount)} waiting to be sent`;
-  return pendingDeletionCount === 0
-    ? `${unsent}.`
-    : `${unsent}, ${notes} to delete.`;
+/** Tells of a failed sync only while something still waits, since a failure whose flashcards reached Anki since is no longer the user's concern. */
+function statusOf(
+  sync: AnkiConnectSync,
+  queue: AnkiUpdatesQueue,
+): ChannelStatus {
+  return sync.hasSyncFailed &&
+    !isNothingWaiting(queue, sync.pendingDeletionCount)
+    ? "syncFailed"
+    : sync.connection;
 }
-
-const connectionBadges = {
-  checking: <Badge>Checking Anki…</Badge>,
-  connected: <Badge tone="success">Anki connected</Badge>,
-  unreachable: <Badge tone="danger">Anki unreachable</Badge>,
-  denied: <Badge tone="danger">Anki refused easyImmerse</Badge>,
-} satisfies Record<AnkiConnectionStatus, ReactNode>;
 
 /**
- * Tells how to connect to Anki when the last check did not.
- * AnkiConnect asks again each time a page it refused checks, unless the user chose to ignore that page's origin, which its config then lists.
- * When that origin is not known, emptying the list is the step that still works.
+ * Says what will be sent to Anki or deleted from it, or, when nothing will, how many flashcards Anki has, with the counts in bold.
+ * While Anki is connected, what is left is said to wait for it, since a send is under way or about to start, unless the last sync failed.
  */
-function ConnectionHint({
-  connection,
-  deniedOrigin,
-}: Pick<AnkiConnectSync, "connection" | "deniedOrigin">) {
-  switch (connection) {
-    case "checking":
-    case "connected":
-      return null;
-    case "unreachable":
-      return (
-        <p className="text-fg-muted">
-          Start Anki with the AnkiConnect add-on installed, then check again.
-        </p>
-      );
-    case "denied":
-      return (
-        <p className="text-fg-muted">
-          Check again and choose Yes when Anki asks. If it does not ask, choose
-          Tools, then Add-ons in Anki, select AnkiConnect, choose Config,{" "}
-          {deniedOrigin === null ? (
-            <>
-              empty <Code>ignoreOriginList</Code>
-            </>
-          ) : (
-            <>
-              remove <Code>{deniedOrigin}</Code> from{" "}
-              <Code>ignoreOriginList</Code>
-            </>
-          )}
-          , and check again.
-        </p>
-      );
-  }
+function ankiConnectSummary(
+  { newCount, changedCount }: AnkiUpdatesQueue,
+  { pendingDeletionCount }: AnkiConnectSync,
+  status: ChannelStatus,
+  flashcardCount: number,
+): ReactNode {
+  const notes = <Count>{pluralize(pendingDeletionCount, "note")}</Count>;
+  const hasNotes = pendingDeletionCount > 0;
+  const isAllSent = newCount + changedCount === 0;
+  if (isAllSent && hasNotes)
+    return status === "syncFailed" ? (
+      <>{notes} could not be deleted from Anki.</>
+    ) : (
+      <>{notes} waiting to be deleted from Anki.</>
+    );
+  if (isAllSent)
+    return flashcardCount === 0 ? (
+      "Once you've made some flashcards from media, they will be sent automatically to Anki."
+    ) : (
+      <>
+        <Count>{pluralize(flashcardCount, "flashcard")}</Count> exported to Anki
+        so far.
+      </>
+    );
+  const flashcards = (
+    <Count>{newAndChangedPhrase(newCount, changedCount)}</Count>
+  );
+  if (status === "syncFailed")
+    return (
+      <>
+        {flashcards} could not be sent to Anki
+        {hasNotes && <>, with {notes} still to delete</>}.
+      </>
+    );
+  if (status === "connected")
+    return (
+      <>
+        {flashcards}
+        {hasNotes && <> and {notes} to delete</>} waiting for Anki.
+      </>
+    );
+  return (
+    <>
+      {flashcards} will be sent{hasNotes && <> and {notes} deleted</>} the next
+      time easyImmerse connects to Anki.
+    </>
+  );
 }
 
-function Code({ children }: { children: ReactNode }) {
-  return <code className="font-mono">{children}</code>;
-}
-
-/** Tells whether the last check found that easyImmerse cannot use Anki, so that the user can check again or get help. */
-function isUnconnected(connection: AnkiConnectionStatus) {
-  return connection === "unreachable" || connection === "denied";
+function isNothingWaiting(
+  { newCount, changedCount }: AnkiUpdatesQueue,
+  pendingDeletionCount: number,
+) {
+  return newCount + changedCount + pendingDeletionCount === 0;
 }

@@ -22,6 +22,7 @@ import {
   sendToAnki,
 } from "./ankiRequests.ts";
 import type { AnkiDeletionOutcome, AnkiSendOutcome } from "./ankiResponses.ts";
+import { trackSyncFailures } from "./ankiSyncFailures.ts";
 import { isNeverDelivered } from "./ankiUpdatesQueue.ts";
 import { sendUnsent, syncWithAnki } from "./syncWithAnki.ts";
 
@@ -37,7 +38,7 @@ type AnkiSettled = Settled<"sendFlashcardsToAnki" | "deleteAnkiNotes">;
  * Every deletion that deletes notes is told of. A note that Anki could not be reached to delete is deleted the next time Anki is found running,
  * and the notice says so.
  * Once a send or a deletion finds Anki running although the app had not known it to be, the project is synced with Anki,
- * on whichever screen the user is.
+ * on whichever screen the user is. The last failed send and deletion are kept, as `trackSyncFailures` describes.
  */
 export function ankiCommands(action: AppAction, app: AnkiApp) {
   if (action.type !== "requestSettled") return [];
@@ -47,6 +48,7 @@ export function ankiCommands(action: AppAction, app: AnkiApp) {
     ...syncOnceFound(action, app),
     ...sendNotices(action),
     ...deleteNotices(action),
+    ...trackSyncFailures(action, app),
   ];
 }
 

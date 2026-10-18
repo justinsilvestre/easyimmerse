@@ -8,17 +8,19 @@ import { pluralize } from "../components/pluralize.ts";
  */
 export function DeletedInAnki({
   deletions,
+  ankiSearch,
   onCopyAnkiSearch,
   onMarkDone,
 }: {
   deletions: readonly AnkiPendingDeletion[];
+  ankiSearch: string;
   onCopyAnkiSearch: () => void;
   onMarkDone: () => void;
 }) {
   return (
     <div className="flex w-full flex-col gap-2 rounded-md bg-surface-muted p-3">
       <h4 className="font-medium">
-        {pluralize(deletions.length, "deleted flashcard")} to delete in Anki
+        {pluralize(deletions.length, "deleted flashcard")} still in Anki
       </h4>
       <ul className="flex flex-wrap gap-x-3 gap-y-1">
         {deletions.map(({ flashcard_id, word }) => (
@@ -26,16 +28,26 @@ export function DeletedInAnki({
         ))}
       </ul>
       <p className="text-fg-muted">
-        A package cannot delete notes from Anki. Paste the search into Anki's
-        browser to find their notes, delete them there, then mark them as done.
-        If you turn AnkiConnect on, it deletes them for you.
+        You've deleted these flashcards in easyImmerse, but their notes may
+        still be in Anki. To remove them from Anki, you can search for them in
+        Anki's card browser and delete them from there.
       </p>
+      <p className="text-sm text-fg-muted">
+        Consider using AnkiConnect in the future to automatically sync your Anki
+        collection with your easyImmerse flashcards.
+      </p>
+      <figure>
+        <figcaption className="sr-only">Anki search</figcaption>
+        <code className="block select-all break-all rounded border border-line bg-surface p-2 font-mono text-xs">
+          {ankiSearch}
+        </code>
+      </figure>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={onCopyAnkiSearch}>
           Copy Anki search
         </Button>
         <Button size="sm" variant="subtle" onClick={onMarkDone}>
-          Mark as done
+          Dismiss this message
         </Button>
       </div>
     </div>

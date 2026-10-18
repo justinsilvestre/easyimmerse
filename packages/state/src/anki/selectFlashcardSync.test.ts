@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
+import { exampleDraft } from "../flashcards/exampleFlashcards.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheKey } from "../server/cacheKey.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
@@ -261,6 +262,61 @@ describe("selectFlashcardSync", () => {
     expect(
       syncOf(checked(true, allSent), openOverview, actions.ankiSendRequested()),
     ).toMatchObject({ ankiConnect: { isSyncing: true } });
+  });
+
+  describe("after a send to Anki failed", () => {
+    const sendFailed = actions.requestSettled(
+      "project/p1/ankiSend/1",
+      { kind: "sendFlashcardsToAnki", projectId: "p1", flashcardIds: ["f1"] },
+      { ok: false, error: { status: 500, message: "down" } },
+    );
+
+    it("says the sync failed while Anki stays connected", () => {
+      expect(syncOf(checked(true), sendFailed)).toMatchObject({
+        ankiConnect: { hasSyncFailed: true },
+      });
+    });
+
+    it("says no sync failed while Anki is unreachable", () => {
+      expect(syncOf(checked(false), sendFailed)).toMatchObject({
+        ankiConnect: { hasSyncFailed: false },
+      });
+    });
+
+    it("says no sync failed once a check that finds Anki settles", () => {
+      const found = actions.requestSettled(
+        "ankiConnection",
+        { kind: "checkAnkiConnection" },
+        { ok: true, data: { connected: true, version: 6 } },
+      );
+      expect(
+        syncOf(checked(true), openOverview, sendFailed, found),
+      ).toMatchObject({ ankiConnect: { hasSyncFailed: false } });
+    });
+
+    it("says no sync failed while a later send is under way", () => {
+      const saved = actions.requestSettled(
+        "flashcard/f3/1",
+        {
+          kind: "saveFlashcard",
+          projectId: "p1",
+          flashcardId: "f3",
+          draft: exampleDraft("f3"),
+          isNew: false,
+          purpose: { type: "undo", word: "f3" },
+        },
+        { ok: true, data: ankiFlashcard("f3", "m1", 1) },
+      );
+      expect(syncOf(checked(true), sendFailed, saved)).toMatchObject({
+        ankiConnect: { hasSyncFailed: false },
+      });
+    });
+  });
+
+  it("says no sync failed while flashcards wait for a connected Anki and no send failed", () => {
+    expect(syncOf(checked(true))).toMatchObject({
+      ankiConnect: { hasSyncFailed: false },
+    });
   });
 
   it("keeps its result while nothing it reads changes", () => {
