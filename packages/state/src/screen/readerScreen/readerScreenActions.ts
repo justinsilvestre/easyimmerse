@@ -6,7 +6,7 @@ import type {
   ReaderViewMode,
 } from "./readerScreenState.ts";
 
-/** The action creators of the reader: its jumps, panels, chrome and search, and the paragraphs and the page it measured in view. */
+/** The action creators of the reader: its jumps, panels, dialogs, chrome and search, and the paragraphs and the page it measured in view. */
 export const readerScreenActions = {
   /**
    * The user chose which text to show. The translation-only view opens at `translationLocation` when given,
@@ -37,6 +37,11 @@ export const readerScreenActions = {
       mediaFileId,
       translationMediaFileId,
     }) as const,
+  /** The user asked to combine the book and its paired translation into a bilingual ebook, which opens the dialog about doing so. */
+  readerCombineRequested: () => ({ type: "readerCombineRequested" }) as const,
+  /** The user closed the dialog about combining the book and its translation. */
+  readerCombineDialogClosed: () =>
+    ({ type: "readerCombineDialogClosed" }) as const,
   /** The user moved to another place in the book, as by the contents or the progress bar. */
   readerJumped: (mediaFileId: string, location: ReaderLocation) =>
     ({ type: "readerJumped", mediaFileId, location }) as const,

@@ -226,6 +226,7 @@ export {
   selectCuePanelSpan,
   selectCurrentTime,
   selectDictionaryRemovalQuestion,
+  selectIsBilingualEbookDialogOpen,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectOfflineCues,

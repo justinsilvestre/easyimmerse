@@ -101,6 +101,8 @@ export type ScreenState = {
     | { kind: "subtitleAppearance" }
     /** The question whether to remove a dictionary, asked on the dictionaries page. */
     | { kind: "removeDictionary"; dictionaryId: string }
+    /** The reader's notice about combining the open book and its translation into a bilingual ebook. */
+    | { kind: "bilingualEbook" }
     | null;
 };
 

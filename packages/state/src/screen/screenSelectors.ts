@@ -44,6 +44,10 @@ export const selectCuePanelSpan = (state: AppRoot): ItemSpan | null =>
 export const selectIsSubtitleAppearanceOpen = (state: AppRoot) =>
   state.app.screen.dialog?.kind === "subtitleAppearance";
 
+/** Tells whether the reader's dialog about combining the book and its translation into a bilingual ebook is open. */
+export const selectIsBilingualEbookDialogOpen = (state: AppRoot) =>
+  state.app.screen.dialog?.kind === "bilingualEbook";
+
 /** Returns the dictionary that the removal question asks about, or null while it is not asked. */
 export const selectDictionaryRemovalQuestion = (state: AppRoot) =>
   state.app.screen.dialog?.kind === "removeDictionary"
