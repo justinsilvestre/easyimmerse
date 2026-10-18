@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addTags, parseTags, splitTypedTags } from "./parseTags.ts";
+import { parseTags, splitTypedTags } from "./parseTags.ts";
 
 describe("parseTags", () => {
   it("splits on commas and trims each tag", () => {
@@ -26,11 +26,5 @@ describe("splitTypedTags", () => {
 
   it("keeps the text after the last comma pending", () => {
     expect(splitTypedTags("tv, ep").pending).toBe("ep");
-  });
-});
-
-describe("addTags", () => {
-  it("leaves out tags that are already present", () => {
-    expect(addTags(["tv"], ["tv", "dark"])).toEqual(["tv", "dark"]);
   });
 });

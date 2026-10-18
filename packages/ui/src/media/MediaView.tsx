@@ -1,4 +1,4 @@
-import type { SubtitleDisplay } from "@easyimmerse/state";
+import { findTranslationOf, type SubtitleDisplay } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +11,6 @@ import { useElementSize } from "../hooks/useElementSize.ts";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { CueTextCursor } from "./cueCursor.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
-import { findTranslationOf } from "./findCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
 import type { PlayerCallbacks, PlayerPanelsState } from "./PlayerControls.tsx";
 import { SourceChip } from "./SourceChip.tsx";

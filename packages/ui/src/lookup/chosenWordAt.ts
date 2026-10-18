@@ -1,6 +1,9 @@
-import type { ChosenWord, LookupWord } from "@easyimmerse/state";
+import {
+  type ChosenWord,
+  type LookupWord,
+  stripMarkup,
+} from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
-import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { type LookupText, lookupTextAt } from "./lookupTextAt.ts";
 

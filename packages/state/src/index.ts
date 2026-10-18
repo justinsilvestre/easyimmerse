@@ -40,6 +40,9 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export { addTags } from "./flashcards/addTags.ts";
+export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
+export { draftFromCue } from "./flashcards/draftFromCue.ts";
 export type {
   EditorAction,
   EditorState,
@@ -68,6 +71,7 @@ export type {
   LookupFlashcardFields,
 } from "./flashcards/lookupFields.ts";
 export { flashcardFieldsFromLookup } from "./flashcards/lookupFields.ts";
+export { mediaNameTag } from "./flashcards/mediaNameTag.ts";
 export {
   type StatusLineSave,
   selectStatusLineSaves,
@@ -161,6 +165,7 @@ export { isConversionNoticeDue } from "./screen/mediaScreen/conversionNotice.ts"
 export {
   findCueAt,
   findCueShownAt,
+  findTranslationOf,
 } from "./screen/mediaScreen/findCue.ts";
 export {
   selectCanChooseTracks,
@@ -185,6 +190,7 @@ export { selectOpenPlayedMediaFile } from "./screen/mediaScreen/playedMediaFile.
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export { selectShownCue } from "./screen/mediaScreen/selectShownCue.ts";
 export { selectSourceMedia } from "./screen/mediaScreen/sourceMedia/sourceMediaSelectors.ts";
+export { stripMarkup } from "./screen/mediaScreen/stripMarkup.ts";
 export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,

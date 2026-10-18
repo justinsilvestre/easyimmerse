@@ -1,4 +1,4 @@
-import type { BackendRequest } from "@easyimmerse/backend";
+import { type BackendRequest, useGetProjectQuery } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
   BatchLookupRequest,
@@ -128,9 +128,12 @@ export function renderMediaScreen({
     batchLookups,
   );
   const rendered = renderWithAppStore(
-    <Profiler id="MediaScreen" onRender={() => onCommit?.()}>
-      <MediaScreen project={fixtureProject} mediaFileId="m1" />
-    </Profiler>,
+    <>
+      <ProjectRead projectId={fixtureProject.id} />
+      <Profiler id="MediaScreen" onRender={() => onCommit?.()}>
+        <MediaScreen project={fixtureProject} mediaFileId="m1" />
+      </Profiler>
+    </>,
     client,
     { server: fakeServer },
   );
@@ -144,6 +147,15 @@ export function renderMediaScreen({
   const advanceClock = (ms: number) =>
     act(() => rendered.effects.clock.advanceBy(ms));
   return { ...rendered, client, advanceClock };
+}
+
+/**
+ * Holds the project's record in the cache, as the project screen does while it shows the media screen,
+ * for the store's commands that make flashcards from the project's settings.
+ */
+function ProjectRead({ projectId }: { projectId: string }) {
+  useGetProjectQuery(projectId);
+  return null;
 }
 
 type Release = () => void;

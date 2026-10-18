@@ -1,10 +1,9 @@
+import { addTags, mediaNameTag } from "@easyimmerse/state";
 import type {
   FlashcardDraft,
   MediaFile,
   ProjectSettings,
 } from "@easyimmerse/types";
-import { mediaNameTag } from "./mediaNameTag.ts";
-import { addTags } from "./parseTags.ts";
 
 /**
  * Starts a flashcard for a word from an ebook or a text file under the project's flashcard settings, with the sentence around the word as its context.

@@ -1,6 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { findCueAt, findCueShownAt } from "./findCue.ts";
+import { findCueAt, findCueShownAt, findTranslationOf } from "./findCue.ts";
 
 const cues: Cue[] = [
   { index: 1, start_ms: 500, end_ms: 1500, text: "Eins" },
@@ -32,5 +32,17 @@ describe("findCueShownAt", () => {
 
   it("is null before the first cue", () => {
     expect(findCueShownAt(cues, 100)).toBeNull();
+  });
+});
+
+describe("findTranslationOf", () => {
+  it("matches a translation cue with slightly different timings", () => {
+    const translation: Cue = {
+      index: 1,
+      start_ms: 1900,
+      end_ms: 3100,
+      text: "Two",
+    };
+    expect(findTranslationOf(cues[1] as Cue, [translation])).toBe(translation);
   });
 });

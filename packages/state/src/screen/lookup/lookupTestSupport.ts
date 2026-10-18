@@ -62,21 +62,6 @@ export const requestFlashcard = (
     exampleContext,
   );
 
-/**
- * The C key as the UI makes its flashcards: one for the cursor's word `atCursor`, under the id f-cursor,
- * and one for no word, under the id f-wordless. Pass null for `atCursor` when there is no cursor.
- */
-export const requestCursorFlashcard = (
-  atCursor: ChosenWord | null,
-  destination: FlashcardDestination = "save",
-) =>
-  actions.lookupCursorFlashcardRequested(
-    destination,
-    atCursor && exampleNewFlashcard("f-cursor", atCursor.word.term),
-    exampleNewFlashcard("f-wordless", ""),
-    exampleContext,
-  );
-
 /** A word held inside the pop-up, which becomes a flashcard saved at once. */
 export const holdInPopup = (term: string) =>
   actions.lookupPopupWordHeld(
