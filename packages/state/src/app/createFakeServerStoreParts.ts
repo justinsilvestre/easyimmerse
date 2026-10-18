@@ -84,6 +84,7 @@ const abortedOutcome: RequestOutcome = { ok: false, error: abortedFailure };
 const cachedQueryKinds: readonly string[] = [
   "getMediaTracks",
   "choosePlaybackMethod",
+  "listSubtitleTracks",
 ] satisfies (keyof CachedQueries)[];
 
 /** Stores the answer of every settled query that state code reads, under the arguments it was sent with. */

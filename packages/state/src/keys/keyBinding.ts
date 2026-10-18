@@ -24,7 +24,7 @@ export type KeyPress = {
 
 /**
  * What a key does: an action the store handles alone,
- * or a command that the screen completes with data only it holds, such as the subtitles or the layout of a page.
+ * or a command that the screen completes with data only it holds, such as the fullscreen state or the layout of a page.
  */
 export type KeyBinding<Command> =
   | { kind: "action"; action: AppAction }
