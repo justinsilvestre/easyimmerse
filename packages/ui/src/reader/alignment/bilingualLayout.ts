@@ -1,5 +1,6 @@
 import type { Document, TextSpan, TranslationLink } from "@easyimmerse/types";
 import {
+  clampSpanToDocument,
   compareSpans,
   isInParagraph,
   type ParagraphAddress,
@@ -16,22 +17,25 @@ export type InterlinearLine = { at: number; text: string };
 /**
  * The translations the interlinear view shows in a paragraph, in the order of the passages they follow.
  * Each link's translation follows the last of its document spans, so a passage that runs on into the next paragraph is translated there.
- * A link whose translation is empty, for text the translation leaves out, shows nothing.
+ * A link whose translation is empty, for text the translation leaves out, shows nothing,
+ * and neither does one whose last span's quote no longer matches the book's text.
  */
 export function interlinearLinesOf(
   links: readonly TranslationLink[],
+  document: Document,
   translationDocument: Document,
   chapterIndex: number,
   paragraphIndex: number,
-  paragraphLength: number,
 ): InterlinearLine[] {
   return linksOfParagraph(links, chapterIndex, paragraphIndex).flatMap(
     (link) => {
       const last = lastSpanOf(link.spans);
+      const fitted =
+        last && isInParagraph(last, chapterIndex, paragraphIndex)
+          ? clampSpanToDocument(last, document)
+          : null;
       const text = translationOfLink(translationDocument, link);
-      if (!last || !isInParagraph(last, chapterIndex, paragraphIndex) || !text)
-        return [];
-      return [{ at: Math.min(last.end, paragraphLength), text }];
+      return fitted && text ? [{ at: fitted.end, text }] : [];
     },
   );
 }

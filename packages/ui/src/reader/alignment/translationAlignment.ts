@@ -2,21 +2,25 @@ import type { ReaderLocation } from "@easyimmerse/state";
 import type { Document, TextSpan, TranslationLink } from "@easyimmerse/types";
 import {
   compareSpans,
+  fittedSpanContains,
   isInParagraph,
   type ParagraphAddress,
-  spanContains,
   spansOfParagraph,
   textOfSpans,
 } from "./textSpans.ts";
 
-/** The link one of whose document spans holds the location, or null when no link covers it. */
+/**
+ * The link one of whose spans in the document holds the location, or null when no link covers it.
+ * A span whose quote no longer matches the document's text covers nothing.
+ */
 export function linkAt(
   links: readonly TranslationLink[],
+  document: Document,
   location: ReaderLocation,
 ): TranslationLink | null {
   return (
     links.find(({ spans }) =>
-      spans.some((span) => spanContains(span, location)),
+      spans.some((span) => fittedSpanContains(span, document, location)),
     ) ?? null
   );
 }

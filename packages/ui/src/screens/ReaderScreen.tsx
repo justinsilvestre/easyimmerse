@@ -109,7 +109,8 @@ function BookReader({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  const bilingual = useBookTranslation(project, mediaFile, mediaFiles);
+  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
+  const bilingual = useBookTranslation(project, mediaFile, mediaFiles, text);
   /** The draft of a flashcard for a word, with its sentence as context, translated where the book is aligned with its translation. */
   const draftFor = (word: string, place: LookupPlace | null) =>
     draftFromText({
@@ -123,7 +124,6 @@ function BookReader({
       settings,
     });
   const lookup = useReaderLookup(languages, draftFor);
-  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
   const textLanguage = document.language ?? settings.target_language;
   const nearbySentences = useAppSelector((state) =>
     selectNearbySentences(state, text, mediaFile.id, textLanguage),
@@ -131,7 +131,7 @@ function BookReader({
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
     sentenceWordLookups(sentence, textLanguage),
   );
-  const audio = useReaderAudio(project.id, mediaFile.id);
+  const audio = useReaderAudio(project.id, mediaFile.id, text);
   return (
     <ConnectedReaderView
       mediaFileId={mediaFile.id}

@@ -9,7 +9,7 @@ import {
   isDocumentFileName,
   type ReaderLocation,
 } from "@easyimmerse/state";
-import type { MediaFile, Project } from "@easyimmerse/types";
+import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { latestAlignments } from "./alignment/latestAlignments.ts";
@@ -28,6 +28,8 @@ export function useBookTranslation(
   project: Project,
   mediaFile: MediaFile,
   mediaFiles: readonly MediaFile[],
+  /** The book's text as the reader shows it, in which the places translated lie. */
+  bookText: Document,
 ) {
   const dispatch = useAppDispatch();
   const paired =
@@ -89,7 +91,7 @@ export function useBookTranslation(
     ),
   };
   const passageTranslationAt = (location: ReaderLocation): string => {
-    const link = links && linkAt(links, location);
+    const link = links && linkAt(links, bookText, location);
     return link && document ? translationOfLink(document, link) : "";
   };
   return { translation, passageTranslationAt };

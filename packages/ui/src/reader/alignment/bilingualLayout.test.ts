@@ -49,15 +49,35 @@ const runOnLinks: TranslationLink[] = [
 describe("interlinearLinesOf", () => {
   it("puts the translation of a sentence after its end", () => {
     expect(
-      interlinearLinesOf(links, exampleShortBookTranslation, 0, 1, 39),
+      interlinearLinesOf(
+        links,
+        exampleShortBook,
+        exampleShortBookTranslation,
+        0,
+        1,
+      ),
     ).toEqual([{ at: 39, text: "El perro quiere comer. Tiene hambre." }]);
   });
 
   it("translates a sentence that runs on into the next paragraph there", () => {
-    expect(interlinearLinesOf(runOnLinks, translationOfTwo, 0, 1, 11)).toEqual([
+    expect(
+      interlinearLinesOf(runOnLinks, twoParagraphs, translationOfTwo, 0, 1),
+    ).toEqual([
       { at: 5, text: "Two three." },
       { at: 11, text: "Four." },
     ]);
+  });
+
+  it("leaves out a translation whose sentence's quote no longer matches the book", () => {
+    const stale: TranslationLink[] = [
+      {
+        spans: [{ ...span(0, 1, 6, 11), quote: "drei." }],
+        translation_spans: [span(0, 1, 0, 5)],
+      },
+    ];
+    expect(
+      interlinearLinesOf(stale, twoParagraphs, translationOfTwo, 0, 1),
+    ).toEqual([]);
   });
 });
 

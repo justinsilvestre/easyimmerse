@@ -1,4 +1,5 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
+import type { Document } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { PlaybackDialogs } from "../player/PlaybackDialogs.tsx";
@@ -16,6 +17,8 @@ import { useAlignedAudio } from "./useAlignedAudio.ts";
 export function useReaderAudio(
   projectId: string,
   bookId: string,
+  /** The book's text as the reader shows it, in which the words played lie. */
+  text: Document,
 ): ReaderAudio | undefined {
   const dispatch = useAppDispatch();
   const aligned = useAlignedAudio(projectId, bookId);
@@ -33,7 +36,7 @@ export function useReaderAudio(
     spokenSpan,
     isPlaying,
     onPlayWord: (word) => {
-      const segment = segmentAt(aligned.segments, word.location);
+      const segment = segmentAt(aligned.segments, text, word.location);
       if (segment === null) return;
       dispatch(actions.seekRequested(segment.start_ms / 1000));
       dispatch(actions.playRequested());

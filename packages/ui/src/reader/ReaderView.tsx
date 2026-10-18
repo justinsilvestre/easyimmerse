@@ -198,6 +198,7 @@ export function ReaderView(props: ReaderViewProps) {
   );
   const translationPopup = useTranslationPopup({
     viewMode,
+    document: props.document,
     translation,
     location,
     onWordHold: callbacks.onWordHold,

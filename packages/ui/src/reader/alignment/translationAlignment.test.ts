@@ -55,10 +55,25 @@ const joinedLink = link(
 /** Text the translation leaves out. */
 const omittedLink = link([span(0, 0, 41, 50)], []);
 
+/** The book the links pair with the translation, with paragraphs long enough to hold the links' document spans. */
+const book: Document = {
+  title: "Buch",
+  language: "de",
+  chapters: [
+    {
+      title: "I",
+      paragraphs: [
+        "Der Hund schläft. Die Katze isst. Sie hat Hunger, sagt man.",
+        "Sie ist sehr hungrig, so wie immer.",
+      ],
+    },
+  ],
+};
+
 describe("linkAt", () => {
   it("finds the link whose document text holds the location", () => {
     expect(
-      linkAt([dogLink, catLink, hungryLink], {
+      linkAt([dogLink, catLink, hungryLink], book, {
         chapterIndex: 0,
         paragraphIndex: 0,
         offset: 20,
@@ -68,7 +83,7 @@ describe("linkAt", () => {
 
   it("finds a link by any of its document spans", () => {
     expect(
-      linkAt([dogLink, joinedLink], {
+      linkAt([dogLink, joinedLink], book, {
         chapterIndex: 0,
         paragraphIndex: 1,
         offset: 25,
@@ -78,10 +93,24 @@ describe("linkAt", () => {
 
   it("returns null for text no link covers", () => {
     expect(
-      linkAt([dogLink, catLink], {
+      linkAt([dogLink, catLink], book, {
         chapterIndex: 0,
         paragraphIndex: 0,
         offset: 17,
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null where the link's quote no longer matches the text", () => {
+    const stale = link(
+      [{ ...span(0, 0, 18, 33), quote: "Der Hund schläf" }],
+      [span(0, 1, 0, 13)],
+    );
+    expect(
+      linkAt([dogLink, stale], book, {
+        chapterIndex: 0,
+        paragraphIndex: 0,
+        offset: 20,
       }),
     ).toBeNull();
   });

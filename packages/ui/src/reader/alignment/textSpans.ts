@@ -27,6 +27,16 @@ export function spanContains(
   );
 }
 
+/** Whether the character at the location lies inside the span as `clampSpanToDocument` fits it to the document, which a stale span never does. */
+export function fittedSpanContains(
+  span: TextSpan,
+  document: Document,
+  location: ReaderLocation,
+): boolean {
+  const fitted = clampSpanToDocument(span, document);
+  return fitted !== null && spanContains(fitted, location);
+}
+
 /** Whether the span lies in the given paragraph. */
 export function isInParagraph(
   span: TextSpan,

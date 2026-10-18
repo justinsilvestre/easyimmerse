@@ -89,7 +89,6 @@ export function useTranslationView({
       parallelRows.besideTitle(chapterIndex),
     );
     if (viewMode === "interlinear") {
-      const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
       // Each paragraph's links are looked for among the chapter's alone, which keeps a long book quick to show.
       const chapterLinks = links.filter(({ spans }) =>
         spans.some((span) => span.chapter_index === chapterIndex),
@@ -101,10 +100,10 @@ export function useTranslationView({
         linesOf: (paragraphIndex) =>
           interlinearLinesOf(
             chapterLinks,
+            document,
             translationDocument,
             chapterIndex,
             paragraphIndex,
-            paragraphs[paragraphIndex]?.length ?? 0,
           ),
       };
     }
@@ -177,12 +176,15 @@ type ShownTranslation = {
  */
 export function useTranslationPopup({
   viewMode,
+  document,
   translation,
   location,
   onWordHold,
   onOpen,
 }: {
   viewMode: ReaderViewMode;
+  /** The book's text, in which the held words lie. */
+  document: Document;
   translation: ReaderTranslation | undefined;
   location: ReaderLocation;
   onWordHold: (word: ReaderWord) => void;
@@ -193,7 +195,7 @@ export function useTranslationPopup({
   const links = viewMode === "target" ? translation?.links : null;
   const translationDocument = translation?.document;
   const show = (word: ReaderWord): boolean => {
-    const link = links && linkAt(links, word.location);
+    const link = links && linkAt(links, document, word.location);
     const text =
       link && translationDocument
         ? translationOfLink(translationDocument, link)

@@ -1,4 +1,4 @@
-import type { TimedSpan } from "@easyimmerse/types";
+import type { Document, TimedSpan } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
   segmentAt,
@@ -20,6 +20,14 @@ function segment(
   };
 }
 
+const book: Document = {
+  title: "Book",
+  language: "de",
+  chapters: [
+    { title: null, paragraphs: ["Der Hund. Er schläft tief.", "Gute Nacht."] },
+  ],
+};
+
 const first = segment(0, 0, 10, 0, 1000);
 const second = segment(0, 11, 20, 1000, 2500);
 const third = segment(1, 0, 8, 2500, 4000);
@@ -27,7 +35,7 @@ const third = segment(1, 0, 8, 2500, 4000);
 describe("segmentAt", () => {
   it("finds the segment whose text holds the location", () => {
     expect(
-      segmentAt([first, second, third], {
+      segmentAt([first, second, third], book, {
         chapterIndex: 0,
         paragraphIndex: 0,
         offset: 12,
@@ -37,10 +45,21 @@ describe("segmentAt", () => {
 
   it("returns null for text no segment covers", () => {
     expect(
-      segmentAt([first, second, third], {
+      segmentAt([first, second, third], book, {
         chapterIndex: 0,
         paragraphIndex: 0,
         offset: 10,
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null where the segment's quote no longer matches the text", () => {
+    const stale = { ...second, span: { ...second.span, quote: "Gute Nach" } };
+    expect(
+      segmentAt([first, stale, third], book, {
+        chapterIndex: 0,
+        paragraphIndex: 0,
+        offset: 12,
       }),
     ).toBeNull();
   });
