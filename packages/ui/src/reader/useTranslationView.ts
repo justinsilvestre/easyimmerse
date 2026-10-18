@@ -149,7 +149,7 @@ export function useTranslationView({
           ? actions.readerTranslationJumped(at, index)
           : actions.readerMatchChosen(mediaFileId, index, at),
       ),
-    /** Shows another view; the translation-only view opens at the translation of the place being read. */
+    /** Shows another view; the translation-only view opens at the translation of the place being read, or where it was left. */
     chooseViewMode: (mode: ReaderViewMode) =>
       dispatch(
         actions.readerViewModeChosen(

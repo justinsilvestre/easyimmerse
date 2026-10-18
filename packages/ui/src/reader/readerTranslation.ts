@@ -2,7 +2,6 @@ import type { ReaderLocation, ReaderViewMode } from "@easyimmerse/state";
 import type { Document, MediaFile, TranslationLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { translationParagraphsOf } from "./alignment/translationAlignment.ts";
-import { startOfBook } from "./readingProgress.ts";
 
 /** The translation a book is read with, and how to change it, as the reader view takes them. */
 export type ReaderTranslation = {
@@ -45,13 +44,13 @@ export function shownViewMode(
 }
 
 /**
- * Where the translation-only view opens from a place in the book:
- * at the first paragraph of the translation linked from the place's paragraph, or at the translation's start.
+ * Where the translation-only view opens from a place in the book: at the first paragraph of the translation
+ * linked from the place's paragraph, or undefined where no link leaves it, so that the view opens where it was left.
  */
 export function translationLocationFor(
   links: readonly TranslationLink[] | null,
   location: ReaderLocation,
-): ReaderLocation {
+): ReaderLocation | undefined {
   const [first] = links
     ? translationParagraphsOf(
         links,
@@ -59,5 +58,5 @@ export function translationLocationFor(
         location.paragraphIndex,
       )
     : [];
-  return first ? { ...first, offset: 0 } : startOfBook;
+  return first && { ...first, offset: 0 };
 }

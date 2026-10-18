@@ -158,6 +158,18 @@ describe("updateMediaScreen", () => {
       expect(screen.reader.viewMode).toBe("target");
     });
 
+    it("opens the translation-only view at the start of a translation newly paired", () => {
+      const [screen] = apply(
+        actions.readerTranslationChosen("p1", "m1", "t2"),
+        actions.readerTranslationLocationReported(translationPlace),
+      );
+      expect(screen.reader.translationLocation).toEqual({
+        chapterIndex: 0,
+        paragraphIndex: 0,
+        offset: 0,
+      });
+    });
+
     it("shows the book's own text again when another file opens", () => {
       const app = stateAfter(
         actions.openMediaFileRequested("p1", "m1"),

@@ -1,5 +1,9 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { PageInfo, ReaderScreenState } from "./readerScreenState.ts";
+import {
+  initialReaderScreen,
+  type PageInfo,
+  type ReaderScreenState,
+} from "./readerScreenState.ts";
 
 /** Opens and closes the reader's panels and chrome, keeps its search and what it measured, counts its jumps, and keeps the audio it plays. */
 export function updateReaderScreen(
@@ -32,11 +36,17 @@ export function updateReaderScreen(
       };
     case "readerTranslationLocationReported":
       return { ...reader, translationLocation: action.location };
-    // The views that show the translation showed the one paired before.
+    // The views that show the translation, and the place in the translation-only view, belonged to the one paired before.
     case "readerTranslationChosen":
-      return reader.viewMode === "target"
-        ? reader
-        : { ...reader, viewMode: "target", jumpCount: reader.jumpCount + 1 };
+      return {
+        ...reader,
+        viewMode: "target",
+        translationLocation: initialReaderScreen.translationLocation,
+        jumpCount:
+          reader.viewMode === "target"
+            ? reader.jumpCount
+            : reader.jumpCount + 1,
+      };
     case "readerJumped":
       return { ...reader, jumpCount: reader.jumpCount + 1 };
     case "readerMatchChosen":
