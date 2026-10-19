@@ -2,6 +2,7 @@ import { flashcardsEffectRunners } from "../flashcards/flashcardsEffectRunners.t
 import type { Effects } from "../platform/effects.ts";
 import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
+import { recoveryEffectRunners } from "../recovery/recoveryEffectRunners.ts";
 import { screenEffectRunners } from "../screen/screenEffectRunners.ts";
 import type { RequestTable } from "../server/requestTable.ts";
 import { serverEffectRunners } from "../server/serverEffectRunners.ts";
@@ -32,6 +33,7 @@ const effectRunners = {
   ...screenEffectRunners,
   ...preferencesEffectRunners,
   ...storedPlacesEffectRunners,
+  ...recoveryEffectRunners,
   ...flashcardsEffectRunners,
   ...platformEffectRunners,
   ...timerEffectRunners,

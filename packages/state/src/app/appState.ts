@@ -3,6 +3,7 @@ import type { MediaImports } from "../mediaImports/mediaImportWizard.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
+import type { RecoveryState } from "../recovery/updateRecovery.ts";
 import type { Route } from "../route/route.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
@@ -19,6 +20,7 @@ export type AppState = {
   server: ServerState;
   preferences: PreferencesState;
   storedPlaces: StoredPlacesState;
+  recovery: RecoveryState;
   notices: NoticesState;
   operations: OperationsState;
   /** The adding of a dictionary from a file, which lasts across screens while it runs or its failure waits to be seen. */

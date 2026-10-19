@@ -11,6 +11,8 @@ import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
+import type { RecoveryAction } from "../recovery/recoveryActions.ts";
+import { recoveryActions } from "../recovery/recoveryActions.ts";
 import type { RouteAction } from "../route/routeActions.ts";
 import { routeActions } from "../route/routeActions.ts";
 import type { LookupAction } from "../screen/lookup/lookupActions.ts";
@@ -37,6 +39,7 @@ const featureActionCreators = [
   readerScreenActions,
   preferencesActions,
   storedPlacesActions,
+  recoveryActions,
   flashcardActions,
   platformActions,
   serverActions,
@@ -71,6 +74,7 @@ export type AppAction =
   | ReaderScreenAction
   | PreferencesAction
   | StoredPlacesAction
+  | RecoveryAction
   | FlashcardAction
   | PlatformAction
   | ServerAction
