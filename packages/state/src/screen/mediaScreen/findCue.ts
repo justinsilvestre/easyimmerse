@@ -12,3 +12,11 @@ export function findCueAt(cues: readonly Cue[], ms: number): Cue | null {
 export function findCueShownAt(cues: readonly Cue[], ms: number): Cue | null {
   return cues.findLast((cue) => cue.start_ms <= ms) ?? null;
 }
+
+/** Finds the translation cue spoken at the middle of a cue, which matches cues whose timings differ slightly. */
+export function findTranslationOf(
+  cue: Cue,
+  translationCues: readonly Cue[],
+): Cue | null {
+  return findCueAt(translationCues, (cue.start_ms + cue.end_ms) / 2);
+}

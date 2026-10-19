@@ -1,5 +1,4 @@
 import type { AppState } from "../app/appState.ts";
-import type { FlashcardDestination } from "../flashcards/flashcardActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
@@ -14,10 +13,9 @@ import {
   selectLookupEscapeBinding,
 } from "./keyBinding.ts";
 
-/** What the media screen completes with data only it holds: the cues' translations, the drafts of flashcards, and the fullscreen state. */
+/** What the media screen completes with data only it holds: the cues' translations and the fullscreen state. */
 type MediaKeyCommand =
   | { type: "toggleFullscreen" }
-  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination }
   /** Shows the translation of the current cue in the dictionary pop-up's sentence row, or hides it again. */
   | { type: "toggleSentenceTranslation" };
 
@@ -58,16 +56,10 @@ export function selectMediaKeyBinding(
       return bindAction(lookupActions.lookupCursorLookedUp());
     case "c":
       // Works while a card is open in the editor, too.
-      return bindCommand<MediaKeyCommand>({
-        type: "startFlashcardAtCursor",
-        destination: "save",
-      });
+      return bindAction(lookupActions.lookupCursorFlashcardRequested("save"));
     case "e":
       return selectFlashcardForm(app) === null
-        ? bindCommand<MediaKeyCommand>({
-            type: "startFlashcardAtCursor",
-            destination: "editor",
-          })
+        ? bindAction(lookupActions.lookupCursorFlashcardRequested("editor"))
         : null;
     case "t":
       return bindCommand<MediaKeyCommand>({

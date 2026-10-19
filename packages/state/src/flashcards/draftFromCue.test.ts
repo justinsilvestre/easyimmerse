@@ -1,18 +1,21 @@
-import type { MediaFile, ProjectSettings } from "@easyimmerse/types";
+import type { ProjectSettings } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { exampleCues, exampleTranslationCues } from "../media/exampleCues.ts";
-import { defaultProjectSettings } from "../projects/newProjectSettings.ts";
+import {
+  exampleCues,
+  exampleTranslationCues,
+} from "../screen/mediaScreen/exampleCues.ts";
+import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleProjectSettings } from "../server/exampleProject.ts";
 import { draftFromCue } from "./draftFromCue.ts";
 
-const mediaFile: MediaFile = {
-  id: "m1",
-  project_id: "p1",
-  name: "Dark S01E01.mkv",
-  source: { kind: "path", path: "/videos/dark.mkv" },
-  created_at_ms: 0,
-  track_selection_json: null,
-  origin: null,
-  translation_media_file_id: null,
+const mediaFile = exampleMediaFile("m1", "Dark S01E01.mkv");
+
+/** The settings of a German project that tags each card with its media file's name. */
+const defaultProjectSettings: ProjectSettings = {
+  ...exampleProjectSettings,
+  target_language: "de",
+  flashcard_fields: ["word", "text_context", "audio_context", "screenshot"],
+  tags_media_name: true,
 };
 
 const cue = exampleCues[2] ?? null;

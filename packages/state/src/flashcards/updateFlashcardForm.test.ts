@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type AppAction, actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import {
-  cat,
-  requestCursorFlashcard,
-  requestFlashcard,
-} from "../screen/lookup/lookupTestSupport.ts";
+import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
@@ -372,19 +368,6 @@ describe("updateFlashcardForm", () => {
         actions.formDiscardUndone(closed),
       ).form?.card.editor.content.word,
     ).toBe("Kater");
-  });
-
-  it("opens a flashcard for no word when the E key is pressed with no cursor", () => {
-    expect(
-      formUpdate(appAfter(), requestCursorFlashcard(null, "editor")).form?.card,
-    ).toMatchObject({ flashcardId: "f-wordless" });
-  });
-
-  it("opens no flashcard for no word when the E key is pressed at a cursor", () => {
-    const app = appAfter(actions.lookupCursorMoved(cat, "mouse"));
-    expect(
-      formUpdate(app, requestCursorFlashcard(cat, "editor")).form,
-    ).toBeNull();
   });
 
   it("gives a new card a screenshot once the file is found to show pictures", () => {

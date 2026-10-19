@@ -2,6 +2,7 @@ import type { Cue } from "@easyimmerse/types";
 import type { AppRoot } from "../../app/createAppStore.ts";
 import { selectPlayer } from "../screenSelectors.ts";
 import { findCueAt, findCueShownAt } from "./findCue.ts";
+import type { PlayerState } from "./playerState.ts";
 
 /**
  * Returns the cue to show over the video at the player's time, given cues in order of their start.
@@ -11,14 +12,19 @@ import { findCueAt, findCueShownAt } from "./findCue.ts";
 export const selectShownCue = (
   state: AppRoot,
   cues: readonly Cue[],
-): Cue | null => {
-  const { currentTimeSeconds, lastSeekSeconds } = selectPlayer(state);
+): Cue | null => shownCueOf(selectPlayer(state), cues);
+
+/** Returns the cue to show at the player's time, as `selectShownCue` describes, from the player's state. */
+export function shownCueOf(
+  { currentTimeSeconds, lastSeekSeconds }: PlayerState,
+  cues: readonly Cue[],
+): Cue | null {
   return shownCueAt(
     cues,
     currentTimeSeconds * 1000,
     lastSeekSeconds === null ? null : Math.round(lastSeekSeconds * 1000),
   );
-};
+}
 
 /**
  * Finds the cue shown at `ms`. `lastSeekMs` is where the last seek went,

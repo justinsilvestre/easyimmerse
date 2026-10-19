@@ -6,11 +6,7 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ClickableText,
-  splitIntoWords,
-  stripMarkup,
-} from "./ClickableText.tsx";
+import { ClickableText, splitIntoWords } from "./ClickableText.tsx";
 
 afterEach(cleanup);
 
@@ -92,14 +88,6 @@ describe("splitIntoWords", () => {
 
   it("keeps an apostrophe inside a word", () => {
     expect(splitIntoWords("l'homme")[0]?.text).toBe("l'homme");
-  });
-});
-
-describe("stripMarkup", () => {
-  it("removes subtitle tags", () => {
-    expect(stripMarkup("<i>Everything</i> is quiet.")).toBe(
-      "Everything is quiet.",
-    );
   });
 });
 

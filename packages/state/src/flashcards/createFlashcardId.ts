@@ -1,3 +1,6 @@
+/** The Web Crypto API, which every platform the store runs on provides, though the store itself is compiled for no platform. */
+declare const crypto: { getRandomValues(array: Uint8Array): Uint8Array };
+
 /** Creates the id a new flashcard is saved under, in the form of the ids the backend makes: 32 lowercase hexadecimal digits. */
 export function createFlashcardId(): string {
   // crypto.getRandomValues works outside secure contexts too, unlike crypto.randomUUID.

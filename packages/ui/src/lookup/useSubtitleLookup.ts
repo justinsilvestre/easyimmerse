@@ -74,11 +74,6 @@ export function useSubtitleLookup(
     cursor,
     popup,
     openSearch: lookup.openSearch,
-    /**
-     * Starts a flashcard for the word at the cursor once its lookup answers, as a double-click there would,
-     * or, when there is no cursor, for no word; saved at once, or opened in the editor, as `destination` says.
-     */
-    startFlashcardAtCursor: lookup.startFlashcardAtCursor,
     /** The T key: shows or hides the current cue's translation in the pop-up's sentence row. */
     toggleSentenceTranslation: lookup.toggleSentenceTranslation,
     /** Saves a flashcard for no word, from the cue shown now, as the New flashcard button does. */

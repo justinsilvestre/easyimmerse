@@ -48,6 +48,7 @@ import {
   findCreatedDraft,
   findSubtitles,
   openFlashcardFor,
+  ProjectRead,
   renderMediaScreen,
   requestsTo,
   savedFlashcard,
@@ -90,7 +91,10 @@ function renderBrowserVideoScreen(
     "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
-    <MediaScreen project={fixtureProject} mediaFileId="m3" />,
+    <>
+      <ProjectRead projectId={fixtureProject.id} />
+      <MediaScreen project={fixtureProject} mediaFileId="m3" />
+    </>,
     client,
     {
       server: fakeServer,
