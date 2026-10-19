@@ -533,7 +533,7 @@ As a user:
   - [ ] I can see the import progress visualized in the progress bar and as a number of entries out of the total which have been processed so far
     - The bar fills to the share of the dictionary's files read, for Yomitan dictionaries so far, and the entries stored so far are counted; the total number of entries is not known before the import ends.
   - [x] when I leave the dictionaries settings, the import goes on, and the footer shows the file being added and how far it is; clicking it brings me back to the dictionaries settings
-  - [x] if the import fails while I am elsewhere, the footer says so until I have seen the failure in the dictionaries settings
+  - [x] if the import fails while I am elsewhere, the footer says so until I dismiss the failure in the dictionaries settings
 - when a dictionary fails to be added:
   - [ ] a notice informing me of the failure stays on the screen until dismissed
 - when I attempt to add a dictionary that is already in my list:
