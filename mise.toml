@@ -101,7 +101,7 @@ description = "Regenerate the license notices of every Rust crate and npm packag
 run = "node scripts/dependency-notices/index.ts"
 
 [tasks."license-notices:check"]
-description = "Fail when the license notices are stale or a shipped license is outside the allowed list"
+description = "Fail when a license in the committed notices is outside the allowed list"
 run = "node scripts/dependency-notices/index.ts --check"
 
 [tasks."fixtures:media"]
