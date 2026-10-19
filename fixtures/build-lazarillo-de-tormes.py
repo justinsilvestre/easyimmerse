@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from epub_writer import write_epub
+from recording_notes import mark_recorded_passage
 
 FIXTURES = Path(__file__).parent
 
@@ -40,8 +41,10 @@ CLIP_END = "94.9"
 def main(spanish_path, english_path, audio_path):
     spanish = gutenberg_body(Path(spanish_path))
     english = gutenberg_body(Path(english_path))
-    write_epub(FIXTURES / "lazarillo-de-tormes.epub", SPANISH_METADATA, spanish_chapters(spanish))
-    write_epub(FIXTURES / "lazarillo-de-tormes.en.epub", ENGLISH_METADATA, english_chapters(english))
+    spanish_chapters_marked = mark_recorded_passage(spanish_chapters(spanish), 0, "aborrecido el vivir?")
+    english_chapters_marked = mark_recorded_passage(english_chapters(english), 2, "less for his life than the others?")
+    write_epub(FIXTURES / "lazarillo-de-tormes.epub", SPANISH_METADATA, spanish_chapters_marked)
+    write_epub(FIXTURES / "lazarillo-de-tormes.en.epub", ENGLISH_METADATA, english_chapters_marked)
     write_clip(audio_path, FIXTURES / "lazarillo-de-tormes.m4a")
 
 

@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 from epub_writer import write_epub
+from recording_notes import mark_recorded_passage
 
 FIXTURES = Path(__file__).parent
 SECTION_COUNT = 3
@@ -31,8 +32,10 @@ ENGLISH_CREDITS = [
 
 
 def main(japanese_path, english_path, audio_path):
-    write_epub(FIXTURES / "toshishun.epub", japanese_metadata(), japanese_chapters(japanese_path))
-    write_epub(FIXTURES / "toshishun.en.epub", english_metadata(), english_chapters(english_path))
+    japanese = mark_recorded_passage(japanese_chapters(japanese_path), 4, "かすかに白く浮んでいるのです。")
+    english = mark_recorded_passage(english_chapters(english_path), 2, "through the evening haze.")
+    write_epub(FIXTURES / "toshishun.epub", japanese_metadata(), japanese)
+    write_epub(FIXTURES / "toshishun.en.epub", english_metadata(), english)
     write_clip(audio_path, FIXTURES / "toshishun.m4a")
 
 
