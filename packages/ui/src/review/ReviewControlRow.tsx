@@ -1,6 +1,13 @@
 import type { ReviewSessionProgress } from "@easyimmerse/state";
 import clsx from "clsx";
-import { ArrowLeft, Pencil, Trash2, Undo2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  CirclePause,
+  Pencil,
+  Trash2,
+  Undo2,
+} from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
@@ -19,6 +26,8 @@ export function ReviewControlRow({
   onBack,
   onUndo,
   onEditFlashcard,
+  onBury,
+  onSuspend,
   onDeleteFlashcard,
 }: {
   projectName: string;
@@ -30,6 +39,10 @@ export function ReviewControlRow({
   onUndo: () => void;
   /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone. */
   onEditFlashcard: (() => void) | null;
+  /** Hides the card until the next day begins. */
+  onBury: () => void;
+  /** Leaves the card out of the review until the user unsuspends it in the editor. */
+  onSuspend: () => void;
   onDeleteFlashcard: () => void;
 }) {
   const editItem: MenuItem[] = onEditFlashcard
@@ -70,6 +83,16 @@ export function ReviewControlRow({
           isUnavailable={!hasCard}
           items={[
             ...editItem,
+            {
+              label: "Bury until tomorrow",
+              icon: <CalendarClock className="size-4" aria-hidden />,
+              onSelect: onBury,
+            },
+            {
+              label: "Suspend",
+              icon: <CirclePause className="size-4" aria-hidden />,
+              onSelect: onSuspend,
+            },
             {
               label: "Delete flashcard",
               icon: <Trash2 className="size-4" aria-hidden />,

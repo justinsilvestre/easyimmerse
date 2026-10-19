@@ -1,4 +1,4 @@
-import type { ReviewRating } from "@easyimmerse/types";
+import type { ReviewHoldKind, ReviewRating } from "@easyimmerse/types";
 
 /**
  * The action creators of the review screen. The review opens with the `openReview` navigation step and closes with any step away from it;
@@ -12,12 +12,22 @@ export const reviewActions = {
   /** The user rated the card shown, once its back was shown. */
   reviewRated: (rating: ReviewRating, atMs: number) =>
     ({ type: "reviewRated", rating, atMs }) as const,
-  /** The user asked to take back the latest rating of the session. */
+  /** The user asked to take back the latest step of the session: a rating, or setting a card aside. */
   reviewUndoRequested: () => ({ type: "reviewUndoRequested" }) as const,
   /** The user asked to hear the audio of the card shown again. */
   reviewAudioReplayed: () => ({ type: "reviewAudioReplayed" }) as const,
   /** The user asked for twenty more new cards today, from the end of the session. */
   reviewAllowanceRaised: () => ({ type: "reviewAllowanceRaised" }) as const,
+  /** The user asked to review today some of the reviews the day's limit left for later days, from the end of the session. */
+  reviewMoreReviewsRequested: () =>
+    ({ type: "reviewMoreReviewsRequested" }) as const,
+  /** The user set the card shown aside: buried it until tomorrow, or suspended it. */
+  reviewCardHeld: (hold: ReviewHoldKind, atMs: number) =>
+    ({ type: "reviewCardHeld", hold, atMs }) as const,
+  /** The user asked to see the shown card's screenshot at full size. */
+  reviewScreenshotExpanded: () =>
+    ({ type: "reviewScreenshotExpanded" }) as const,
+  reviewScreenshotClosed: () => ({ type: "reviewScreenshotClosed" }) as const,
   /** The user asked to load the session's cards again after they failed to load. */
   reviewQueueRetried: () => ({ type: "reviewQueueRetried" }) as const,
   /** The user asked to edit the card shown, which opens it in the editor on its media file's screen. */

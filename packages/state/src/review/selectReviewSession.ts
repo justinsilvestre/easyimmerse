@@ -8,9 +8,9 @@ import type { AppState } from "../app/appState.ts";
 import type { RootState } from "../app/createAppStore.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
-import { extraNewCardCount } from "./reviewRequests.ts";
+import { extraNewCardCount, extraReviewCount } from "./reviewRequests.ts";
 import type { ReviewScreenState } from "./reviewScreenState.ts";
-import { canUndo } from "./reviewSession.ts";
+import { answersOf, canUndo } from "./reviewSession.ts";
 import type { ReviewEnd, ReviewSessionProgress } from "./reviewSessionView.ts";
 
 /** Returns the review screen's state, or null while the review is not the main screen. */
@@ -28,8 +28,9 @@ export function selectReviewProjectId(root: Pick<RootState, "app">) {
 }
 
 /**
- * Selects what the review screen shows: the card and its side, the cards left by kind, how the session ended,
- * whether Undo can take a rating back, and a key that changes whenever the card's audio is to play from its start.
+ * Selects what the review screen shows: the card and its side, how often a leech was forgotten, the cards left by kind, how the session ended,
+ * whether Undo can take a step back, whether the screenshot is shown at full size,
+ * and a key that changes whenever the card's audio is to play from its start.
  * The end reads the cached project and the cached summary of its review. Null while the review is not the main screen.
  */
 export const selectReviewSession = createSelector(
@@ -41,14 +42,16 @@ export const selectReviewSession = createSelector(
   (session, project, summary) =>
     session && {
       card: session.shown,
+      leechLapseCount: leechLapseCountOf(session.shown),
       stage: session.stage,
       progress: progressOf(session),
       end: endOf(session, project, summary),
       canUndo: canUndo(session),
       isConfirmingDelete: session.isConfirmingDelete,
+      isScreenshotExpanded: session.isScreenshotExpanded,
       audioPlayKey: [
         session.shown?.flashcard.id,
-        session.answers.length,
+        session.steps.length,
         session.replayCount,
       ].join("/"),
     },
@@ -64,13 +67,18 @@ function cachedOfReview<K extends "getProject" | "getReviewSummary">(
     : cacheEntry(root.backend, endpointName, projectId)?.data;
 }
 
+/** How often the user forgot a leech, or null for a card that is no leech. */
+function leechLapseCountOf(card: ReviewQueueCard | null) {
+  return card?.state?.is_leech ? card.state.lapses : null;
+}
+
 function progressOf(session: ReviewScreenState): ReviewSessionProgress {
   const left = [
     ...(session.shown ? [session.shown] : []),
     ...session.queue,
     ...session.comingBack,
   ];
-  const finished = session.answers.length;
+  const finished = answersOf(session.steps).length;
   return {
     finished,
     total: finished + left.length,
@@ -89,12 +97,16 @@ function endOf(
 ): ReviewEnd | null {
   if (session.shown !== null || session.queueStatus === "loading") return null;
   if (session.queueStatus === "failed") return { kind: "failed" };
-  if (session.answers.length > 0)
+  const reviewedCount = answersOf(session.steps).length;
+  const heldBackCount = summary?.held_back_count ?? 0;
+  if (reviewedCount > 0 || heldBackCount > 0)
     return {
       kind: "doneForToday",
-      reviewedCount: session.answers.length,
+      reviewedCount,
       comesBack: comesBackOf(session.comingBack),
       moreNewCount: Math.min(extraNewCardCount, project?.unreviewed_count ?? 0),
+      heldBackCount,
+      moreReviewCount: Math.min(extraReviewCount, heldBackCount),
     };
   if (project?.flashcard_count === 0) return { kind: "noFlashcards" };
   return { kind: "nothingDue", nextDueAtMs: summary?.next_due_at_ms ?? null };

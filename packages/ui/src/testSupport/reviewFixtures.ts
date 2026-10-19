@@ -57,6 +57,7 @@ function flashcardOf(
     exported_at_ms: null,
     was_packaged: false,
     sent_at_ms: null,
+    is_suspended: false,
   };
 }
 
@@ -79,6 +80,7 @@ export const fixtureReviewSummary: ReviewSummary = {
   due_count: 0,
   learning_count: 0,
   new_count: 3,
+  held_back_count: 0,
   next_due_at_ms: null,
   next_card: fixtureReviewQueue.cards[0]?.flashcard ?? null,
   has_progress: false,
@@ -99,6 +101,7 @@ export function answerReviewFixture(
     lapses: 0,
     learning_step: 0,
     last_reviewed_at_ms: answeredAtMs,
+    is_leech: false,
   } as const;
   return {
     state,

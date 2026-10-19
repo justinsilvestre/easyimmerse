@@ -132,6 +132,7 @@ export type {
   ReviewEnd,
   ReviewSessionProgress,
 } from "./review/reviewSessionView.ts";
+export { selectIsFlashcardSuspended } from "./review/selectIsFlashcardSuspended.ts";
 export {
   selectReviewProjectId,
   selectReviewSession,

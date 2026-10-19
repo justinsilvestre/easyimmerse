@@ -65,6 +65,8 @@ export function ConnectedReviewScreen({
       <ReviewScreen
         projectName={settings.name}
         card={card}
+        leechLapseCount={session.leechLapseCount}
+        isScreenshotExpanded={session.isScreenshotExpanded}
         stage={session.stage}
         end={session.end}
         progress={session.progress}
@@ -81,14 +83,21 @@ export function ConnectedReviewScreen({
         onShowAnswer={showAnswer}
         onRate={rate}
         onReplayAudio={() => dispatch(actions.reviewAudioReplayed())}
+        onExpandScreenshot={() => dispatch(actions.reviewScreenshotExpanded())}
+        onCloseScreenshot={() => dispatch(actions.reviewScreenshotClosed())}
         onUndo={() => dispatch(actions.reviewUndoRequested())}
         onBack={onBack}
         onLearnMore={() => dispatch(actions.reviewAllowanceRaised())}
+        onReviewMore={() => dispatch(actions.reviewMoreReviewsRequested())}
         onRetry={() => dispatch(actions.reviewQueueRetried())}
         onEditFlashcard={
           shown?.flashcard.media_file_id
             ? () => dispatch(actions.reviewFlashcardEditRequested())
             : null
+        }
+        onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
+        onSuspend={() =>
+          dispatch(actions.reviewCardHeld("suspended", Date.now()))
         }
         onDeleteFlashcard={() =>
           dispatch(actions.reviewFlashcardDeleteRequested())

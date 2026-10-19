@@ -31,6 +31,7 @@ const meta = {
     isRevealed: false,
     isMediaUnavailable: false,
     onPlayAudio: fn(),
+    onExpandScreenshot: fn(),
   },
 } satisfies Meta<typeof ReviewCard>;
 

@@ -117,6 +117,7 @@ function savedFlashcard(updatedAtMs: number) {
     exported_at_ms: null,
     was_packaged: false,
     sent_at_ms: null,
+    is_suspended: false,
   } satisfies Flashcard;
 }
 

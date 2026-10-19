@@ -17,6 +17,10 @@ export type ReviewEnd =
       comesBack: { count: number; atMs: number } | null;
       /** The new cards that "Learn more" would add to today's, beyond the day's allowance. None hides the button. */
       moreNewCount: number;
+      /** The reviews due today that the day's limit left for later days. While any are, no new cards are introduced. */
+      heldBackCount: number;
+      /** The reviews that "Review more" would add to today's, from those held back. None hides the button. */
+      moreReviewCount: number;
     }
   | { kind: "nothingDue"; nextDueAtMs: number | null }
   | { kind: "noFlashcards" }

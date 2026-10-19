@@ -36,6 +36,7 @@ export function ReviewCard({
   isRevealed,
   isMediaUnavailable,
   onPlayAudio,
+  onExpandScreenshot,
 }: {
   content: FlashcardContent;
   includedFields: readonly FlashcardFieldKey[];
@@ -45,6 +46,8 @@ export function ReviewCard({
   isRevealed: boolean;
   isMediaUnavailable: boolean;
   onPlayAudio: () => void;
+  /** Shows the screenshot at full size. */
+  onExpandScreenshot: () => void;
 }) {
   const shownFields = isMediaUnavailable
     ? includedFields.filter((key) => !mediaFields.includes(key))
@@ -56,6 +59,7 @@ export function ReviewCard({
     size: "large",
     screenshotUrl,
     onPlayAudio,
+    onExpandScreenshot,
   } satisfies Omit<FlashcardFieldContext, "side">;
   return (
     <div className="flex w-full max-w-xl animate-card-in flex-col gap-3 self-center">

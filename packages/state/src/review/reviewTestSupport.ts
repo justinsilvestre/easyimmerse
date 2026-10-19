@@ -1,5 +1,6 @@
 import type {
   ReviewCardState,
+  ReviewHoldKind,
   ReviewIntervals,
   ReviewPhase,
   ReviewQueueCard,
@@ -37,6 +38,7 @@ export function exampleCardState(
     lapses: 0,
     learning_step: 0,
     last_reviewed_at_ms: 0,
+    is_leech: false,
   };
 }
 
@@ -121,6 +123,30 @@ export function undoSettled(answeredAtMs: number, isUndone = true) {
           data: { flashcard_id: "", state: null, intervals: exampleIntervals },
         }
       : { ok: false, error: { status: 409, message: "Not the latest" } },
+  );
+}
+
+/** The bury or suspension of a flashcard of p1 landing, or failing. */
+export function holdSettled(
+  flashcardId: string,
+  hold: ReviewHoldKind,
+  isHeld = true,
+) {
+  return actions.requestSettled(
+    `${reviewRequestIds("p1").hold}/1`,
+    { kind: "holdReviewCard", projectId: "p1", flashcardId, hold },
+    isHeld
+      ? { ok: true, data: undefined }
+      : { ok: false, error: { status: 500, message: "Server error" } },
+  );
+}
+
+/** The lift of a hold on a flashcard of p1 landing. */
+export function liftSettled(flashcardId: string) {
+  return actions.requestSettled(
+    `${reviewRequestIds("p1").hold}/2`,
+    { kind: "liftReviewHold", projectId: "p1", flashcardId },
+    { ok: true, data: undefined },
   );
 }
 

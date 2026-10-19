@@ -15,11 +15,17 @@ afterEach(cleanup);
  */
 async function renderReview() {
   let fetchCount = 0;
-  const client = createFakeBackendClient({
-    ...fixtureResponses,
-    "GET /projects/p1/review/queue": () =>
-      fetchCount++ === 0 ? fixtureReviewQueue : { cards: [] },
-  });
+  const client = createFakeBackendClient(
+    {
+      ...fixtureResponses,
+      "GET /projects/p1/review/queue": () =>
+        fetchCount++ === 0 ? fixtureReviewQueue : { cards: [] },
+    },
+    [
+      ["PUT", /^\/projects\/p1\/review\/holds\/\w+$/, null],
+      ["DELETE", /^\/projects\/p1\/review\/holds\/\w+$/, null],
+    ],
+  );
   const rendered = renderWithAppStore(<Screens />, client);
   act(() =>
     rendered.store.dispatch(
@@ -90,6 +96,30 @@ describe("ConnectedReviewScreen", () => {
   it("shows the card again on Undo", async () => {
     await renderReview();
     await remember();
+    await showsWord("Hund");
+    const undo = screen.getByRole("button", { name: "Undo" });
+    await vi.waitFor(() => expect(undo.hasAttribute("disabled")).toBe(false));
+    fireEvent.click(undo);
+    await expect(showsWord("Katze")).resolves.toBeUndefined();
+  });
+
+  it("buries the card shown from the More menu", async () => {
+    const { client } = await renderReview();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Bury until tomorrow" }),
+    );
+    await vi.waitFor(() =>
+      expect(
+        client.requests.find(({ method }) => method === "PUT")?.body?.value,
+      ).toMatchObject({ kind: "buried" }),
+    );
+  });
+
+  it("shows a suspended card again on Undo", async () => {
+    await renderReview();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Suspend" }));
     await showsWord("Hund");
     const undo = screen.getByRole("button", { name: "Undo" });
     await vi.waitFor(() => expect(undo.hasAttribute("disabled")).toBe(false));

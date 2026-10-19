@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import { fetchQueue, raiseAllowance, sendUndo } from "./reviewRequests.ts";
+import {
+  fetchQueue,
+  raiseAllowance,
+  sendHold,
+  sendLift,
+  sendUndo,
+} from "./reviewRequests.ts";
 import {
   answerFailed,
   answerLanded,
   exampleQueueCard,
+  holdSettled,
+  liftSettled,
   openReview,
   queueArrived,
   queueFailed,
@@ -72,8 +80,8 @@ describe("updateReviewScreen", () => {
   });
 
   it("keeps the rating for Undo", () => {
-    expect(reviewAfter(arrived, ...rated("good")).answers).toEqual([
-      { card: a, answeredAtMs: null },
+    expect(reviewAfter(arrived, ...rated("good")).steps).toEqual([
+      { kind: "answer", card: a, answeredAtMs: null },
     ]);
   });
 
@@ -127,7 +135,7 @@ describe("updateReviewScreen", () => {
         ...rated("good"),
         answerLanded("a", 7),
       );
-      expect(review.answers[0]?.answeredAtMs).toBe(7);
+      expect(review.steps[0]).toMatchObject({ answeredAtMs: 7 });
     });
 
     it("brings back a card that the answer leaves in a learning step", () => {
@@ -237,7 +245,7 @@ describe("updateReviewScreen", () => {
         actions.reviewUndoRequested(),
         undoSettled(7),
       );
-      expect(review.answers).toEqual([]);
+      expect(review.steps).toEqual([]);
     });
 
     it("keeps the rating when the undo fails", () => {
@@ -246,7 +254,7 @@ describe("updateReviewScreen", () => {
         actions.reviewUndoRequested(),
         undoSettled(7, false),
       );
-      expect(review.answers).toHaveLength(1);
+      expect(review.steps).toHaveLength(1);
     });
   });
 
@@ -258,9 +266,113 @@ describe("updateReviewScreen", () => {
 
   it("raises today's allowance of new cards and fetches the queue again", () => {
     expect(effectsOf(actions.reviewAllowanceRaised(), queueArrived())).toEqual([
-      raiseAllowance("p1"),
+      raiseAllowance("p1", { newCards: 20, reviews: 0 }),
       fetchQueue("p1"),
     ]);
+  });
+
+  it("raises today's allowance of reviews and fetches the queue again", () => {
+    expect(
+      effectsOf(actions.reviewMoreReviewsRequested(), queueArrived()),
+    ).toEqual([
+      raiseAllowance("p1", { newCards: 0, reviews: 100 }),
+      fetchQueue("p1"),
+    ]);
+  });
+
+  describe("on burying the shown card", () => {
+    const buried = actions.reviewCardHeld("buried", 0);
+
+    it("sends the bury", () => {
+      expect(effectsOf(buried, arrived)).toEqual([
+        sendHold("p1", "a", "buried"),
+      ]);
+    });
+
+    it("shows the next card", () => {
+      expect(shownId(arrived, buried)).toBe("b");
+    });
+
+    it("keeps the bury for Undo", () => {
+      expect(reviewAfter(arrived, buried).steps).toEqual([
+        { kind: "hold", card: a, hold: "buried", hasLanded: false },
+      ]);
+    });
+
+    it("puts the card back in the queue when the bury fails", () => {
+      const review = reviewAfter(
+        arrived,
+        buried,
+        holdSettled("a", "buried", false),
+      );
+      expect(review.queue[0]?.flashcard.id).toBe("a");
+    });
+  });
+
+  describe("on undoing a suspension", () => {
+    const suspended = [
+      arrived,
+      actions.reviewCardHeld("suspended", 0),
+      holdSettled("a", "suspended"),
+    ];
+
+    it("brings the card back into the review", () => {
+      expect(effectsOf(actions.reviewUndoRequested(), ...suspended)).toEqual([
+        sendLift("p1", "a"),
+      ]);
+    });
+
+    it("waits for the suspension to land", () => {
+      expect(
+        effectsOf(
+          actions.reviewUndoRequested(),
+          arrived,
+          actions.reviewCardHeld("suspended", 0),
+        ),
+      ).toEqual([]);
+    });
+
+    it("shows the card again once the lift lands", () => {
+      expect(
+        shownId(...suspended, actions.reviewUndoRequested(), liftSettled("a")),
+      ).toBe("a");
+    });
+
+    it("forgets the undone suspension", () => {
+      const review = reviewAfter(
+        ...suspended,
+        actions.reviewUndoRequested(),
+        liftSettled("a"),
+      );
+      expect(review.steps).toEqual([]);
+    });
+  });
+
+  describe("on tapping the screenshot", () => {
+    it("shows it at full size", () => {
+      expect(
+        reviewAfter(arrived, actions.reviewScreenshotExpanded())
+          .isScreenshotExpanded,
+      ).toBe(true);
+    });
+
+    it("closes it again", () => {
+      const review = reviewAfter(
+        arrived,
+        actions.reviewScreenshotExpanded(),
+        actions.reviewScreenshotClosed(),
+      );
+      expect(review.isScreenshotExpanded).toBe(false);
+    });
+
+    it("closes it with the next card", () => {
+      const review = reviewAfter(
+        arrived,
+        actions.reviewScreenshotExpanded(),
+        ...rated("good"),
+      );
+      expect(review.isScreenshotExpanded).toBe(false);
+    });
   });
 
   describe("on deleting the shown card", () => {

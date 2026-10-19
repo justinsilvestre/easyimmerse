@@ -24,6 +24,7 @@ export function ankiFlashcard(
     exported_at_ms: sentAs.exportedAtMs ?? null,
     was_packaged: sentAs.exportedAtMs !== undefined,
     sent_at_ms: sentAs.sentAtMs ?? null,
+    is_suspended: false,
   };
 }
 

@@ -26,6 +26,8 @@ const meta = {
     onBack: fn(),
     onUndo: fn(),
     onEditFlashcard: fn(),
+    onBury: fn(),
+    onSuspend: fn(),
     onDeleteFlashcard: fn(),
   },
 } satisfies Meta<typeof ReviewControlRow>;

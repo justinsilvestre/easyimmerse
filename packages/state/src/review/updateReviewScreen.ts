@@ -5,22 +5,27 @@ import { updated } from "../app/updated.ts";
 import { flashcardActions } from "../flashcards/flashcardActions.ts";
 import type { ReviewAction } from "./reviewActions.ts";
 import {
+  extraNewCardCount,
+  extraReviewCount,
   fetchQueue,
   raiseAllowance,
   sendAnswer,
   sendDeletion,
+  sendHold,
+  sendLift,
   sendUndo,
 } from "./reviewRequests.ts";
-import type { ReviewScreenState } from "./reviewScreenState.ts";
+import type { ReviewScreenState, SessionStep } from "./reviewScreenState.ts";
 import { canUndo, showNext } from "./reviewSession.ts";
 import { settleReviewRequest } from "./settleReviewRequest.ts";
 
 type Rated = Extract<ReviewAction, { type: "reviewRated" }>;
+type Held = Extract<ReviewAction, { type: "reviewCardHeld" }>;
 
 /**
- * Updates the review of a project: the card shown and its side, the ratings sent and taken back,
+ * Updates the review of a project: the card shown and its side, the ratings and holds sent and taken back,
  * and the fetches of the queue, which happen as the screen opens and again whenever the session runs out of cards.
- * A rating moves on to the next card at once, without waiting for the server.
+ * A rating, a bury or a suspension moves on to the next card at once, without waiting for the server.
  */
 export function updateReviewScreen(
   session: ReviewScreenState,
@@ -37,7 +42,26 @@ export function updateReviewScreen(
     case "reviewAudioReplayed":
       return updated({ ...session, replayCount: session.replayCount + 1 });
     case "reviewAllowanceRaised":
-      return reload(session, raiseAllowance(projectId), fetchQueue(projectId));
+      return reload(
+        session,
+        raiseAllowance(projectId, { newCards: extraNewCardCount, reviews: 0 }),
+        fetchQueue(projectId),
+      );
+    case "reviewMoreReviewsRequested":
+      return reload(
+        session,
+        raiseAllowance(projectId, { newCards: 0, reviews: extraReviewCount }),
+        fetchQueue(projectId),
+      );
+    case "reviewCardHeld":
+      return hold(session, action, projectId);
+    case "reviewScreenshotExpanded":
+      return updated({
+        ...session,
+        isScreenshotExpanded: session.shown !== null,
+      });
+    case "reviewScreenshotClosed":
+      return updated({ ...session, isScreenshotExpanded: false });
     case "reviewQueueRetried":
       return reload(session, fetchQueue(projectId));
     case "reviewFlashcardEditRequested":
@@ -76,26 +100,45 @@ function rate(
   const card = session.shown;
   if (card === null || session.stage !== "back") return updated(session);
   const durationMs = Math.max(0, atMs - (session.shownAtMs ?? atMs));
-  const answer = { card, answeredAtMs: null };
+  const step: SessionStep = { kind: "answer", card, answeredAtMs: null };
   return moveOn(
-    { ...session, answers: [...session.answers, answer] },
+    { ...session, steps: [...session.steps, step] },
     atMs,
     projectId,
     sendAnswer(projectId, card.flashcard.id, rating, durationMs),
   );
 }
 
-/** Takes back the session's latest rating once it has landed, unless an undo is already on its way. */
-function requestUndo(session: ReviewScreenState, projectId: string) {
-  const answeredAtMs = session.answers.at(-1)?.answeredAtMs;
-  if (!canUndo(session) || answeredAtMs == null) return updated(session);
-  return updated(
-    { ...session, undoingAtMs: answeredAtMs },
-    sendUndo(projectId, answeredAtMs),
+/** Buries or suspends the shown card and shows the next one. */
+function hold(
+  session: ReviewScreenState,
+  { hold, atMs }: Held,
+  projectId: string,
+) {
+  const card = session.shown;
+  if (card === null) return updated(session);
+  const step: SessionStep = { kind: "hold", card, hold, hasLanded: false };
+  return moveOn(
+    { ...session, steps: [...session.steps, step] },
+    atMs,
+    projectId,
+    sendHold(projectId, card.flashcard.id, hold),
   );
 }
 
-/** Deletes the shown card and moves on. Its ratings in the session go with it, as its review history does on the server. */
+/** Takes back the session's latest step once it has landed, unless an undo is already on its way. */
+function requestUndo(session: ReviewScreenState, projectId: string) {
+  const latest = session.steps.at(-1);
+  if (!canUndo(session) || latest === undefined) return updated(session);
+  return updated(
+    { ...session, undoing: latest },
+    latest.kind === "answer"
+      ? sendUndo(projectId, latest.answeredAtMs ?? 0)
+      : sendLift(projectId, latest.card.flashcard.id),
+  );
+}
+
+/** Deletes the shown card and moves on. Its steps in the session go with it, as its review history does on the server. */
 function deleteShown(
   session: ReviewScreenState,
   atMs: number,
@@ -103,11 +146,11 @@ function deleteShown(
 ) {
   const card = session.shown;
   if (card === null) return updated({ ...session, isConfirmingDelete: false });
-  const answers = session.answers.filter(
-    (answer) => answer.card.flashcard.id !== card.flashcard.id,
+  const steps = session.steps.filter(
+    (step) => step.card.flashcard.id !== card.flashcard.id,
   );
   return moveOn(
-    { ...session, answers, isConfirmingDelete: false },
+    { ...session, steps, isConfirmingDelete: false },
     atMs,
     projectId,
     sendDeletion(projectId, card.flashcard.id),

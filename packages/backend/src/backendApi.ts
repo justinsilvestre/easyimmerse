@@ -54,6 +54,8 @@ import type {
   ReviewAnswerRequest,
   ReviewAnswerResponse,
   ReviewAnswerUndone,
+  ReviewHoldKind,
+  ReviewHoldRequest,
   ReviewQueue,
   ReviewRating,
   ReviewSummary,
@@ -165,7 +167,17 @@ type ReviewAnswerArgs = {
 
 type ReviewUndoArgs = { projectId: string; answeredAtMs: number };
 
-type ReviewAllowanceArgs = { projectId: string; extraNewCards: number };
+type ReviewAllowanceArgs = {
+  projectId: string;
+  extraNewCards: number;
+  extraReviews: number;
+};
+
+type ReviewHoldArgs = {
+  projectId: string;
+  flashcardId: string;
+  hold: ReviewHoldKind;
+};
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -291,6 +303,13 @@ const reviewAnsweredTags = (projectId: string) =>
     { type: "Review", id: projectId },
     { type: "Projects", id: projectId },
     "Projects",
+  ] as const;
+
+/** The data a hold or its lift changes: what an answer changes, and whether the project's flashcards are suspended. */
+const reviewHeldTags = (projectId: string) =>
+  [
+    ...reviewAnsweredTags(projectId),
+    { type: "Flashcards", id: projectId },
   ] as const;
 
 /** The client's UTC offset now, as a query parameter of the review routes, which place the current time in the user's local day. */
@@ -475,7 +494,7 @@ export const backendApi = createApi({
         reviewAnsweredTags(projectId),
     }),
     raiseReviewAllowance: build.mutation<void, ReviewAllowanceArgs>({
-      query: ({ projectId, extraNewCards }) => ({
+      query: ({ projectId, extraNewCards, extraReviews }) => ({
         method: "POST",
         path: `/projects/${projectId}/review/allowance`,
         body: {
@@ -483,12 +502,38 @@ export const backendApi = createApi({
           value: {
             utc_offset_min: utcOffsetMinOf(new Date()),
             extra_new_cards: extraNewCards,
+            extra_reviews: extraReviews,
           } satisfies ReviewAllowanceRequest,
         },
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Review", id: projectId },
       ],
+    }),
+    /** Buries a card until the user's next day begins, or suspends it until they unsuspend it. */
+    holdReviewCard: build.mutation<void, ReviewHoldArgs>({
+      query: ({ projectId, flashcardId, hold }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}/review/holds/${flashcardId}`,
+        body: {
+          kind: "json",
+          value: {
+            kind: hold,
+            utc_offset_min: utcOffsetMinOf(new Date()),
+          } satisfies ReviewHoldRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewHeldTags(projectId),
+    }),
+    /** Brings a card back into the review, as unburying or unsuspending it does. */
+    liftReviewHold: build.mutation<void, FlashcardArgs>({
+      query: ({ projectId, flashcardId }) => ({
+        method: "DELETE",
+        path: `/projects/${projectId}/review/holds/${flashcardId}`,
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewHeldTags(projectId),
     }),
     listPlugins: build.query<ListPluginsResponse, void>({
       query: () => ({ method: "GET", path: "/plugins" }),

@@ -1,12 +1,24 @@
-import type { ReviewQueueCard } from "@easyimmerse/types";
+import type { ReviewHoldKind, ReviewQueueCard } from "@easyimmerse/types";
 
-/** A rating given in the session, kept so that Undo can take it back and show the card again as it was. */
-export type SessionAnswer = {
-  /** The card as it was shown when rated. */
-  card: ReviewQueueCard;
-  /** The time of the answer's log entry, which names it to the server; null until the answer has landed. */
-  answeredAtMs: number | null;
-};
+/**
+ * A step the user took in the session, kept so that Undo can take it back and show the card again as it was:
+ * a rating, or burying or suspending the card shown.
+ */
+export type SessionStep =
+  | {
+      kind: "answer";
+      /** The card as it was shown when rated. */
+      card: ReviewQueueCard;
+      /** The time of the answer's log entry, which names it to the server; null until the answer has landed. */
+      answeredAtMs: number | null;
+    }
+  | {
+      kind: "hold";
+      /** The card as it was shown when set aside. */
+      card: ReviewQueueCard;
+      hold: ReviewHoldKind;
+      hasLanded: boolean;
+    };
 
 /**
  * The review screen's state: the session's cards, the card shown, and the ratings given.
@@ -23,13 +35,16 @@ export type ReviewScreenState = {
   stage: "front" | "back";
   /** When the shown card appeared, as the user's last action dates it; null when it appeared without one, as when the queue first arrives. */
   shownAtMs: number | null;
-  answers: readonly SessionAnswer[];
+  /** The steps taken in the session, oldest first. */
+  steps: readonly SessionStep[];
   /** How the latest request for the queue went. The queue is fetched as the screen opens, and again when it runs out. */
   queueStatus: "loading" | "loaded" | "failed";
-  /** The time of the answer whose undo is on its way, or null. */
-  undoingAtMs: number | null;
+  /** The step whose undo is on its way, or null. */
+  undoing: SessionStep | null;
   /** Whether the deletion of the shown card waits for the user's confirmation. */
   isConfirmingDelete: boolean;
+  /** Whether the shown card's screenshot is shown at full size over the screen. */
+  isScreenshotExpanded: boolean;
   /** How many times the user asked to hear the shown cards' audio again, which plays it from its start each time. */
   replayCount: number;
 };
@@ -42,9 +57,10 @@ export const initialReviewScreen: ReviewScreenState = {
   shown: null,
   stage: "front",
   shownAtMs: null,
-  answers: [],
+  steps: [],
   queueStatus: "loading",
-  undoingAtMs: null,
+  undoing: null,
   isConfirmingDelete: false,
+  isScreenshotExpanded: false,
   replayCount: 0,
 };

@@ -1,5 +1,5 @@
 import type { ReviewCardState, ReviewQueueCard } from "@easyimmerse/types";
-import type { ReviewScreenState } from "./reviewScreenState.ts";
+import type { ReviewScreenState, SessionStep } from "./reviewScreenState.ts";
 
 /** How long before its due time a card still being learned may be shown, when nothing else is left, as Anki's learn-ahead limit allows. */
 export const learnAheadMs = 20 * 60 * 1000;
@@ -19,10 +19,20 @@ export function showNext(session: ReviewScreenState, atMs: number) {
   return { ...session, shown: null } satisfies ReviewScreenState;
 }
 
-/** Tells whether Undo can take back the session's latest rating: it has landed, and no undo is on its way. */
+/** Tells whether Undo can take back the session's latest step: it has landed, and no undo is on its way. */
 export function canUndo(session: ReviewScreenState): boolean {
-  const latest = session.answers.at(-1);
-  return session.undoingAtMs === null && latest?.answeredAtMs != null;
+  const latest = session.steps.at(-1);
+  return session.undoing === null && latest !== undefined && hasLanded(latest);
+}
+
+/** Tells whether the server has recorded a step. */
+export function hasLanded(step: SessionStep): boolean {
+  return step.kind === "answer" ? step.answeredAtMs !== null : step.hasLanded;
+}
+
+/** The ratings among the steps. */
+export function answersOf(steps: readonly SessionStep[]) {
+  return steps.filter((step) => step.kind === "answer");
 }
 
 /** Shows a card from its front. */
@@ -35,6 +45,7 @@ export function showCard(
     shown: card,
     stage: "front",
     isConfirmingDelete: false,
+    isScreenshotExpanded: false,
   } satisfies ReviewScreenState;
 }
 
