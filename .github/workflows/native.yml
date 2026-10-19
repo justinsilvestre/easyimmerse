@@ -118,9 +118,10 @@ jobs:
 
   # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars.
   # Every target has a runner of its own architecture, so the sidecars run from inside each bundle.
+  # The job is slow, so it skips pull requests and runs once changes reach main, or on a native-ci-bundle tag.
   bundle:
     needs: gate
-    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-bundle-'))
+    if: needs.gate.outputs.passed != 'true' && github.event_name != 'pull_request' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-bundle-'))
     strategy:
       fail-fast: false
       matrix:
@@ -310,8 +311,11 @@ jobs:
           path: apps/native/.appium
           key: ${{ steps.appium-cache.outputs.cache-primary-key }}
 
+  # Runs although bundle is skipped on pull requests.
+  # A pass recorded by a pull request cannot skip bundle on main, because a run on main cannot read caches saved by a pull request.
   record:
     needs: [gate, desktop, bundle, android, ios]
+    if: ${{ !cancelled() && !failure() && needs.gate.outputs.passed != 'true' && github.ref_type != 'tag' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
