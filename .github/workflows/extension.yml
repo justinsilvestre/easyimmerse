@@ -82,6 +82,8 @@ jobs:
             apps/extension/.output/*.zip
             !apps/extension/.output/*-sources.zip
           if-no-files-found: error
+          # The action skips hidden directories such as .output unless told otherwise.
+          include-hidden-files: true
           retention-days: 14
 
       - name: Firefox manifest lint
