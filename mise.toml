@@ -189,9 +189,12 @@ run = ["node scripts/web-desktop/guardDesktop.ts", "pnpm --filter @easyimmerse/n
 
 # The desktop app connects to this server in development. The Redux DevTools browser extension shows its store
 # through the extension's remote monitor, set to the local server at localhost:8000.
+# The server is fetched on demand rather than installed with the workspace, because its sqlite3 dependency has no
+# prebuilt binary for some CI platforms and fails to build there. Electron's install script is skipped, since the
+# browser extension replaces the server's desktop window.
 [tasks.devtools]
 description = "Serve Redux DevTools for the desktop and mobile apps in development"
-run = "pnpm --filter @easyimmerse/native exec redux-devtools --hostname=localhost --port=8000"
+run = "pnpm dlx --allow-build=sqlite3 @redux-devtools/cli@5.0.0 --hostname=localhost --port=8000"
 
 [tasks.web-dev]
 description = "Run the web app with hot reloading against a local server at http://127.0.0.1:8788"

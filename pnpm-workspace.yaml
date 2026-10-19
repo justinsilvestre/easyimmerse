@@ -21,9 +21,3 @@ allowBuilds:
 # Appium's install script only prints a notice and installs drivers listed in the consuming
 # package's manifest, which this repository does not use; drivers go through `mise run appium:install`.
   appium: false
-# The Redux DevTools server stores reports in SQLite, whose install script fetches the native
-# binding. Its Electron dependency downloads a desktop app that the browser-based monitor does not need,
-# and the install script of its Apollo protobuf dependency only checks the installed version.
-  sqlite3: true
-  electron: false
-  '@apollo/protobufjs': false
