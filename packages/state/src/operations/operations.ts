@@ -20,10 +20,10 @@ export type RequestRecord = {
   isWaiting: boolean;
   /** How long the request may go unanswered once sent before it is aborted, if it has such a limit. */
   timeLimitMs?: number;
-  /** How long the request may go unanswered once sent before it counts as slow, if it can. */
+  /** How long the request may go unanswered once asked for before it counts as slow, if it can. */
   slowAfterMs?: number;
-  /** True once the request has gone unanswered for `slowAfterMs`. */
-  isSlow?: boolean;
+  /** True once the request has gone unanswered for `slowAfterMs` since it was first asked for. */
+  isSlow: boolean;
   /** The id of the request this one is held for. A held request is not sent until its id is sent again without it. */
   heldFor?: string;
 };

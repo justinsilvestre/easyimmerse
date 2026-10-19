@@ -11,6 +11,7 @@ const slowable: RequestRecord = {
   id: "a",
   request,
   isWaiting: false,
+  isSlow: false,
   slowAfterMs: 2000,
 };
 
@@ -20,16 +21,51 @@ const operationsWith = (...requests: RequestRecord[]) => ({
   jobs: {},
 });
 
-describe("request slowness", () => {
-  it("starts a request's slowness timer when it is sent", () => {
+const slowTimerOfA = {
+  type: "startTimer",
+  id: "requests/slow/a",
+  ms: 2000,
+  action: actions.requestWentSlow("a"),
+} as const;
+const busyScope: RequestRecord = {
+  id: "b",
+  request,
+  scope: "s",
+  isWaiting: false,
+  isSlow: false,
+};
+
+describe("requestSlowness", () => {
+  it("starts a request's slowness timer when it is asked for", () => {
     const [, effects] = trackRequests(operationsWith(), [
       { type: "sendRequest", id: "a", request, slowAfterMs: 2000 },
     ]);
+    expect(effects).toContainEqual(slowTimerOfA);
+  });
+
+  it("starts the slowness timer of a request that waits for its scope", () => {
+    const [, effects] = trackRequests(operationsWith(busyScope), [
+      { type: "sendRequest", id: "a", request, scope: "s", slowAfterMs: 2000 },
+    ]);
+    expect(effects).toContainEqual(slowTimerOfA);
+  });
+
+  it("keeps the slowness timer of a request that is sent again", () => {
+    const [, effects] = trackRequests(operationsWith(slowable), [
+      { type: "abortRequest", id: "a" },
+      { type: "sendRequest", id: "a", request, slowAfterMs: 2000 },
+    ]);
+    expect(effects).not.toContainEqual(slowTimerOfA);
+  });
+
+  it("cancels the slowness timer of a waiting request that is withdrawn", () => {
+    const waiting = { ...slowable, scope: "s", isWaiting: true };
+    const [, effects] = trackRequests(operationsWith(busyScope, waiting), [
+      { type: "abortRequest", id: "a" },
+    ]);
     expect(effects).toContainEqual({
-      type: "startTimer",
+      type: "cancelTimer",
       id: "requests/slow/a",
-      ms: 2000,
-      action: actions.requestWentSlow("a"),
     });
   });
 
@@ -72,5 +108,21 @@ describe("request slowness", () => {
       initialAppState,
     );
     expect(next).toBe(operations);
+  });
+
+  it("cancels the slowness timer of a waiting request that settles", () => {
+    const waiting = { ...slowable, isWaiting: true };
+    const [, effects] = operationsFeature.update(
+      operationsWith(waiting),
+      actions.requestSettled("a", request, {
+        ok: false,
+        error: { status: "ABORTED", message: "aborted" },
+      }),
+      initialAppState,
+    );
+    expect(effects).toContainEqual({
+      type: "cancelTimer",
+      id: "requests/slow/a",
+    });
   });
 });

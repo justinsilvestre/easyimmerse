@@ -16,8 +16,8 @@ describe("operationsFeature", () => {
   it("forgets a request once it settles", () => {
     const operations = {
       requests: [
-        { id: "a", request: first, isWaiting: false },
-        { id: "b", request: second, isWaiting: false },
+        { id: "a", request: first, isWaiting: false, isSlow: false },
+        { id: "b", request: second, isWaiting: false, isSlow: false },
       ],
       failedRequests: [],
       jobs: {},

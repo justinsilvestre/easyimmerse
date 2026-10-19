@@ -2,7 +2,6 @@ import type { PerformedEffect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import type { OperationsState, RequestRecord } from "./operations.ts";
 import { recordRequestEffects, sendEffectOf } from "./recordRequestEffects.ts";
-import { slownessTimer } from "./requestSlowness.ts";
 import { timeLimitTimer } from "./requestTimeLimit.ts";
 
 type Requests = readonly RequestRecord[];
@@ -13,7 +12,7 @@ type Requests = readonly RequestRecord[];
  * then the first waiting request of each scope with none in flight or held is sent. A held request waits until it is released.
  * The abort of a waiting request forgets it and settles it as aborted, since it was never sent,
  * unless the same effects send its id again, which replaces it instead.
- * A request with a time limit or a slowness wait starts its timer as it goes out.
+ * A request with a time limit starts it as it goes out.
  */
 export function trackRequests(
   operations: OperationsState,
@@ -30,17 +29,13 @@ export function trackRequests(
   );
 }
 
-/** Adds the start of its time limit and of its slowness timer after each send of a request that has them. */
+/** Adds the start of its time limit after each send of a request that has one. */
 function withTimeLimits(effects: readonly PerformedEffect[]) {
-  return effects.flatMap((effect): PerformedEffect[] => {
-    if (effect.type !== "sendRequest") return [effect];
-    const { id, timeLimitMs, slowAfterMs } = effect;
-    return [
-      effect,
-      ...(timeLimitMs === undefined ? [] : [timeLimitTimer(id, timeLimitMs)]),
-      ...(slowAfterMs === undefined ? [] : [slownessTimer(id, slowAfterMs)]),
-    ];
-  });
+  return effects.flatMap((effect) =>
+    effect.type === "sendRequest" && effect.timeLimitMs !== undefined
+      ? [effect, timeLimitTimer(effect.id, effect.timeLimitMs)]
+      : [effect],
+  );
 }
 
 /** Sends the first waiting request of each scope that has no request in flight or held. */

@@ -28,15 +28,21 @@ const firstInFlight: RequestRecord = {
   request: first,
   scope: "s",
   isWaiting: false,
+  isSlow: false,
 };
 const secondWaiting: RequestRecord = {
   id: "b",
   request: second,
   scope: "s",
   isWaiting: true,
+  isSlow: false,
   timeLimitMs: 30_000,
 };
-const secondInFlight: RequestRecord = { ...secondWaiting, isWaiting: false };
+const secondInFlight: RequestRecord = {
+  ...secondWaiting,
+  isWaiting: false,
+  isSlow: false,
+};
 
 describe("operations", () => {
   it("starts a request's time limit when it is sent, not while it waits", () => {

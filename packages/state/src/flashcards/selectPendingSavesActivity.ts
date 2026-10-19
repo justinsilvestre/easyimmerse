@@ -1,5 +1,6 @@
 import { createSelector } from "reselect";
 import type { FooterActivity } from "../footer/footerActivity.ts";
+import type { RequestRecord } from "../operations/operations.ts";
 import { selectFlashcardRequests } from "./flashcardRequests.ts";
 
 /**
@@ -9,15 +10,9 @@ import { selectFlashcardRequests } from "./flashcardRequests.ts";
 export const selectPendingSavesActivity = createSelector(
   [selectFlashcardRequests],
   (requests): FooterActivity | null => {
-    const saves = requests.filter(
-      ({ request }) => request.kind === "saveFlashcard",
-    );
-    if (!saves.some(({ isSlow }) => isSlow === true)) return null;
-    const count = new Set(
-      saves.map(({ request }) =>
-        request.kind === "saveFlashcard" ? request.flashcardId : null,
-      ),
-    ).size;
+    const saves = requests.filter(isSave);
+    if (!saves.some(({ isSlow }) => isSlow)) return null;
+    const count = new Set(saves.map(({ request }) => request.flashcardId)).size;
     return {
       id: "flashcard-saves",
       label: `Saving ${count} ${count === 1 ? "flashcard" : "flashcards"}…`,
@@ -27,3 +22,11 @@ export const selectPendingSavesActivity = createSelector(
     };
   },
 );
+
+type SaveRecord = RequestRecord & {
+  request: Extract<RequestRecord["request"], { kind: "saveFlashcard" }>;
+};
+
+function isSave(record: RequestRecord): record is SaveRecord {
+  return record.request.kind === "saveFlashcard";
+}
