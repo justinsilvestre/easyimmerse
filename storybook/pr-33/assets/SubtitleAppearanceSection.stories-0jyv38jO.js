@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t,t as n}from"./withAppStore-BvWvDp9B.js";import{n as r,t as i}from"./SubtitleAppearanceSection-g-N9uNaa.js";var a,o,s;function c(){return(c=e((()=>{n(),r(),a={title:`Media/SubtitleAppearanceSection`,component:i,decorators:[t]},o={},s=[`Defaults`]})))()}c();export{o as Defaults,s as __namedExportsOrder,a as default};
