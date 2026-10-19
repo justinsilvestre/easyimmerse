@@ -27,6 +27,19 @@ export const lookupActions = {
   /** The L key: looks up the word at the cursor, or opens the search field when there is no cursor. */
   lookupCursorLookedUp: () => ({ type: "lookupCursorLookedUp" }) as const,
   /**
+   * A word of the text held, by a touch or the mouse button, or the T key on the cursor's word while the pop-up shows another.
+   * The pop-up opens at the word, or stays there, and its sentence row shows the translation
+   * when `hasTranslation` says the word's sentence or cue has one that is not already on screen. No flashcard is made.
+   */
+  lookupWordHeld: (chosen: ChosenWord, hasTranslation: boolean) =>
+    ({ type: "lookupWordHeld", chosen, hasTranslation }) as const,
+  /** The sentence row's translation button, or the T key while the pop-up shows the current sentence: shows the row's translation, or hides it again. */
+  lookupSentenceTranslationToggled: () =>
+    ({ type: "lookupSentenceTranslationToggled" }) as const,
+  /** The T key with no lookup cursor and no pop-up: opens the pop-up on its search field, with the sentence row showing the current sentence's or cue's translation. */
+  lookupSentenceTranslationOpened: () =>
+    ({ type: "lookupSentenceTranslationOpened" }) as const,
+  /**
    * A word inside the pop-up held on a touch screen, which becomes a flashcard filled from its lookup.
    * `flashcard` holds the id and draft the dispatcher made, and `context` sorts the lookup's definitions into its fields.
    */

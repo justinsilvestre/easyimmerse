@@ -37,5 +37,7 @@ export function useReaderAudio(
       dispatch(actions.seekRequested(segment.start_ms / 1000));
       dispatch(actions.playRequested());
     },
+    hasSegmentAt: (location) =>
+      segmentAt(aligned.segments, text, location) !== null,
   };
 }

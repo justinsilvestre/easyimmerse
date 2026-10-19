@@ -32,6 +32,14 @@ export function useLookupFlashcards(
     const draft = flashcards.draftFor(word, place);
     return draft && { id: createFlashcardId(), draft };
   };
+  const startWordless = (
+    destination: FlashcardDestination,
+    place: LookupPlace | null,
+  ) => {
+    const flashcard = newFlashcard("", place);
+    if (flashcard)
+      dispatch(actions.flashcardStarted(flashcard, destinationOf(destination)));
+  };
   return {
     /** Starts a flashcard for a word once its lookup answers, saved at once or opened in the form as the screen and `destination` say. */
     startFlashcardFor: (
@@ -83,13 +91,31 @@ export function useLookupFlashcards(
         ),
       );
     },
-    /** Makes a flashcard for no word, saved at once or opened in the form as `destination` says. */
-    startWordlessFlashcard: (destination: FlashcardDestination) => {
-      const flashcard = newFlashcard("", null);
-      if (flashcard)
+    /**
+     * Starts a flashcard for the lookup cursor's word `cursorWord` once its lookup answers, or, when there is no cursor
+     * or no flashcard can be made for its word, for no word, from `wordlessPlace`, such as the sentence being spoken;
+     * saved at once or opened in the form as `destination` says.
+     */
+    startFlashcardAtCursor: (
+      cursorWord: ChosenWord | null,
+      destination: FlashcardDestination,
+      wordlessPlace: LookupPlace | null,
+    ) => {
+      const flashcard =
+        cursorWord && newFlashcard(cursorWord.word.term, placeOf(cursorWord));
+      if (cursorWord && flashcard)
         dispatch(
-          actions.flashcardStarted(flashcard, destinationOf(destination)),
+          actions.lookupFlashcardRequested(
+            cursorWord,
+            destinationOf(destination),
+            flashcard,
+            context,
+          ),
         );
+      else startWordless(destination, wordlessPlace);
     },
+    /** Makes a flashcard for no word, saved at once or opened in the form as `destination` says. */
+    startWordlessFlashcard: (destination: FlashcardDestination) =>
+      startWordless(destination, null),
   };
 }

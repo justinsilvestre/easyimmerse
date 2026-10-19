@@ -14,4 +14,6 @@ export type ReaderAudio = {
   isPlaying: boolean;
   /** Plays the segment that holds the place in the book, for a Ctrl-click or Cmd-click on a word, or the key for the current sentence. */
   playAt: (location: ReaderLocation) => void;
+  /** Tells whether the audio speaks the place in the book, so that a sentence there can be played. */
+  hasSegmentAt: (location: ReaderLocation) => boolean;
 };

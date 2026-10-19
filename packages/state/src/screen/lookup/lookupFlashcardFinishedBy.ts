@@ -51,8 +51,11 @@ function dropsPending(lookup: LookupState, action: AppAction): boolean {
       return (
         action.input === "keyboard" || !showsOccurrence(lookup, action.chosen)
       );
+    case "lookupWordHeld":
+      return !showsOccurrence(lookup, action.chosen);
     case "lookupCursorLookedUp":
     case "lookupSearchOpened":
+    case "lookupSentenceTranslationOpened":
     case "lookupTermSearched":
     case "lookupClosed":
     case "lookupCloseDue":

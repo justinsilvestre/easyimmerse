@@ -26,7 +26,9 @@ import {
 import {
   bodyOf,
   dictionarySummary,
+  findCreatedDraft,
   requestsTo,
+  savedFlashcard,
 } from "../testSupport/renderMediaScreen.tsx";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { ReaderScreen } from "./ReaderScreen.tsx";
@@ -110,6 +112,7 @@ async function renderReader({ hasBatchLookups = false } = {}) {
       dictionaries: [dictionarySummary("wiktionary-de-en", "de", "en")],
     },
     "GET /dictionaries/lookup": lookupResponse,
+    "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
     <ReaderScreen project={fixtureProject} mediaFileId={bookFile.id} />,
@@ -147,6 +150,15 @@ async function restMouse(client: ReturnType<typeof createFakeBackendClient>) {
     expect(lookupQueries(client).length).toBeGreaterThan(before),
   );
   await act(async () => {});
+}
+
+/** Moves the mouse onto the word pointed at, which places the lookup cursor there. */
+function pointMouse() {
+  fireEvent.pointerMove(screen.getByRole("main"), {
+    ...point,
+    pointerType: "mouse",
+    buttons: 0,
+  });
 }
 
 const findPopup = () => screen.findByRole("dialog", { name: "Dictionary" });
@@ -249,15 +261,105 @@ describe("ReaderScreen lookup", () => {
     );
   });
 
-  it("starts a flashcard filled from the lookup on a double-click", async () => {
-    await renderReader();
-    pointAt("cat");
-    click(1);
-    click(2);
-    await screen.findByRole("form", { name: "Flashcard" });
-    expect(
-      (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
-    ).toBe("fressen");
+  describe("on a double-click on a word", () => {
+    it("saves a flashcard filled from the lookup at once", async () => {
+      const { client } = await renderReader();
+      pointAt("cat");
+      click(1);
+      click(2);
+      expect((await findCreatedDraft(client)).content.word).toBe("fressen");
+    });
+
+    it("tells the user once the flashcard is saved, offering Undo", async () => {
+      await renderReader();
+      pointAt("cat");
+      click(1);
+      click(2);
+      await screen.findByText("Saved the flashcard for “fressen”.");
+      expect(screen.getByRole("button", { name: "Undo" })).toBeDefined();
+    });
+
+    it("opens no flashcard in the editor", async () => {
+      await renderReader();
+      pointAt("cat");
+      click(1);
+      click(2);
+      await screen.findByText("Saved the flashcard for “fressen”.");
+      expect(screen.queryByRole("form", { name: "Flashcard" })).toBeNull();
+    });
+  });
+
+  describe("with the keys while the mouse is on a word", () => {
+    it("saves a flashcard filled from the lookup on C", async () => {
+      const { client } = await renderReader();
+      pointAt("cat");
+      pointMouse();
+      fireEvent.keyDown(document.body, { key: "c" });
+      expect((await findCreatedDraft(client)).content.word).toBe("fressen");
+    });
+
+    it("opens the flashcard editor filled from the lookup on E", async () => {
+      await renderReader();
+      pointAt("cat");
+      pointMouse();
+      fireEvent.keyDown(document.body, { key: "e" });
+      await screen.findByRole("form", { name: "Flashcard" });
+      expect(
+        (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
+      ).toBe("fressen");
+    });
+
+    it("takes the flashcard's sentence from the word's sentence on E", async () => {
+      await renderReader();
+      pointAt("cat");
+      pointMouse();
+      fireEvent.keyDown(document.body, { key: "e" });
+      await screen.findByRole("form", { name: "Flashcard" });
+      expect(
+        (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
+      ).toBe("The cat is sleeping on the windowsill.");
+    });
+  });
+
+  describe("from the dictionary pop-up", () => {
+    it("saves a flashcard from the header's button at once", async () => {
+      const { client } = await renderReader();
+      pointAt("cat");
+      click();
+      const popup = await findPopup();
+      fireEvent.click(
+        await within(popup).findByRole("button", { name: "New flashcard" }),
+      );
+      expect((await findCreatedDraft(client)).content.word).toBe("fressen");
+    });
+
+    it("opens no flashcard in the editor from the header's button", async () => {
+      const { client } = await renderReader();
+      pointAt("cat");
+      click();
+      const popup = await findPopup();
+      fireEvent.click(
+        await within(popup).findByRole("button", { name: "New flashcard" }),
+      );
+      await findCreatedDraft(client);
+      expect(screen.queryByRole("form", { name: "Flashcard" })).toBeNull();
+    });
+
+    it("saves a flashcard for a word held inside it at once", async () => {
+      const { client } = await renderReader();
+      pointAt("cat");
+      click();
+      const popup = await findPopup();
+      const devour = await within(popup).findByRole("button", {
+        name: "devour",
+      });
+      // The hold is the gesture's own half-second timer, which runs in real time.
+      fireEvent.pointerDown(devour, { pointerType: "touch" });
+      const draft = await vi.waitFor(() => findCreatedDraft(client), {
+        timeout: 2000,
+      });
+      expect(draft.content.word).toBe("fressen");
+    });
   });
 });
 

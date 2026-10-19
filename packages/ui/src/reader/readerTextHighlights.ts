@@ -5,6 +5,9 @@ import { readerViewportAttribute } from "./useParagraphsNearView.ts";
 /** The name of the highlight on the text being spoken, which `styles.css` draws apart from the looked-up word's. */
 export const spokenHighlightName = "reader-spoken";
 
+/** The name of the highlight on the sentence whose translation the dictionary pop-up's sentence row shows. */
+export const translatedHighlightName = "reader-translated";
+
 /**
  * The range of the text a span covers among the paragraphs shown inside `container`,
  * or null when its paragraph is not shown, as in another chapter or section.
@@ -19,19 +22,20 @@ export function rangeOfShownSpan(
   return paragraph && rangeOfSpan(paragraph, span.start, span.end);
 }
 
-/** Highlights the ranges as the text being spoken, in place of any highlighted before. Does nothing where the browser lacks the CSS Custom Highlight API. */
-export function highlightSpoken(ranges: readonly Range[]) {
+/**
+ * Highlights the ranges under the name, in place of any highlighted under it before, below the looked-up word's highlight,
+ * which may lie inside them. Does nothing where the browser lacks the CSS Custom Highlight API.
+ */
+export function highlightRanges(name: string, ranges: readonly Range[]) {
   if (typeof CSS === "undefined" || !CSS.highlights) return;
   const highlight = new Highlight(...ranges);
-  // Below the looked-up word's highlight, which may lie inside the sentence.
   highlight.priority = -1;
-  CSS.highlights.set(spokenHighlightName, highlight);
+  CSS.highlights.set(name, highlight);
 }
 
-/** Removes the highlight from the text last spoken. */
-export function clearSpokenHighlight() {
-  if (typeof CSS !== "undefined" && CSS.highlights)
-    CSS.highlights.delete(spokenHighlightName);
+/** Removes the highlight of the name. */
+export function clearHighlight(name: string) {
+  if (typeof CSS !== "undefined" && CSS.highlights) CSS.highlights.delete(name);
 }
 
 /**

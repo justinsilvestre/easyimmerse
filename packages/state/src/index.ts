@@ -151,6 +151,10 @@ export type {
   LookupState,
   LookupWord,
 } from "./screen/lookup/lookupState.ts";
+export {
+  initialLookup,
+  isSameOccurrence,
+} from "./screen/lookup/lookupState.ts";
 export { doubleClickMs } from "./screen/lookup/lookupTiming.ts";
 export {
   reduceTextCursor,
@@ -224,15 +228,11 @@ export type {
   PageInfo,
   ReaderPanel,
   ReaderScreenState,
-  ReaderTranslationPopup,
   ReaderTranslationStatus,
   ReaderViewMode,
 } from "./screen/readerScreen/readerScreenState.ts";
 export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
-export {
-  type ReaderSentence,
-  selectReaderCurrentSentence,
-} from "./screen/readerScreen/selectReaderCurrentSentence.ts";
+export { selectReaderCurrentSentence } from "./screen/readerScreen/selectReaderCurrentSentence.ts";
 export {
   selectCuePanelSpan,
   selectCurrentTime,

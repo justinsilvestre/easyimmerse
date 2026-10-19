@@ -111,3 +111,22 @@ export function setAside(lookup: LookupState) {
 }
 
 const closedPopup = { popup: null, isPointerInside: false } as const;
+
+/**
+ * Opens the pop-up on a word held, or keeps it there when it shows the word already,
+ * and shows the sentence row's translation when the word has one to show.
+ */
+export function holdWord(
+  lookup: LookupState,
+  chosen: ChosenWord,
+  hasTranslation: boolean,
+  player: PlayerState,
+) {
+  const [shown, effects] = showsOccurrence(lookup, chosen)
+    ? updated(lookup, cancelCloseTimer)
+    : open(lookup, chosen, player);
+  return updated(
+    hasTranslation ? { ...shown, isSentenceTranslationShown: true } : shown,
+    ...effects,
+  );
+}

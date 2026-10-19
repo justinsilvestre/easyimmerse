@@ -118,6 +118,13 @@ describe("selectMediaKeyBinding", () => {
     ).toBeNull();
   });
 
+  it("shows or hides the current cue's translation on T", () => {
+    const press = exampleKeyPress("t");
+    expect(selectMediaKeyBinding(onScreen(), press)).toEqual(
+      bindCommand({ type: "toggleSentenceTranslation" }),
+    );
+  });
+
   it("leaves J alone", () => {
     const press = exampleKeyPress("j");
     expect(selectMediaKeyBinding(onScreen(), press)).toBeNull();

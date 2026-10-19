@@ -51,6 +51,11 @@ export type WordGestures = {
   lookUpMatchedLength?: (hit: WordHit) => Promise<number | null> | null;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
+  /**
+   * A mouse button held down on the word for as long as a held tap. Mouse presses are timed only while it is given,
+   * and the click that ends such a press is not reported.
+   */
+  onWordMouseHold?: (hit: WordHit) => void;
 };
 
 /**
@@ -148,15 +153,23 @@ export function useWordGestures(
       press.cancelHold();
     },
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      const isMouse = event.pointerType === "mouse";
       const hit = pointerHit(
         part,
         event.currentTarget,
         pointOf(event),
-        "touch",
+        isMouse ? "mouse" : "touch",
       );
-      press.start(event, () => {
-        if (hit.element.isConnected) latest.current.onWordHold?.(hit);
-      });
+      const timesMouse = latest.current.onWordMouseHold !== undefined;
+      press.start(
+        event,
+        () => {
+          if (!hit.element.isConnected) return;
+          const { onWordHold, onWordMouseHold } = latest.current;
+          (isMouse ? onWordMouseHold : onWordHold)?.(hit);
+        },
+        timesMouse,
+      );
     },
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
       press.move(event);

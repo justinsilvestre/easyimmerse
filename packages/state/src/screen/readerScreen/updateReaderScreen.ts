@@ -1,28 +1,12 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { ReadableState } from "../../app/feature.ts";
-import { isSameLocation } from "../../storedPlaces/readingLocation.ts";
 import {
   initialReaderScreen,
   type PageInfo,
   type ReaderScreenState,
 } from "./readerScreenState.ts";
 
-/**
- * Opens and closes the reader's panels, chrome and the translation of a sentence, keeps its search and what it measured,
- * and counts its jumps. `app` is the state before the action.
- */
+/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps. */
 export function updateReaderScreen(
-  reader: ReaderScreenState,
-  action: AppAction,
-  app: Pick<ReadableState, "storedPlaces">,
-): ReaderScreenState {
-  const next = updateReaderParts(reader, action);
-  return isTranslationPopupLeftBy(next, action, app)
-    ? { ...next, translationPopup: null }
-    : next;
-}
-
-function updateReaderParts(
   reader: ReaderScreenState,
   action: AppAction,
 ): ReaderScreenState {
@@ -61,13 +45,6 @@ function updateReaderParts(
             ? reader.jumpCount
             : reader.jumpCount + 1,
       };
-    case "readerTranslationPopupOpened":
-      return {
-        ...reader,
-        translationPopup: { location: action.location, anchor: action.anchor },
-      };
-    case "readerTranslationPopupClosed":
-      return { ...reader, translationPopup: null };
     case "readerJumped":
       return { ...reader, jumpCount: reader.jumpCount + 1 };
     case "readerMatchChosen":
@@ -106,39 +83,6 @@ function updateReaderParts(
         : { ...reader, pageInfo: action.pageInfo };
     default:
       return reader;
-  }
-}
-
-/**
- * Tells whether the action leaves the sentence whose translation is shown: the reader moves on, so that the word
- * the pop-up stood beside has moved; a press lands on the text or the chrome, which opens the dictionary, a panel or a jump;
- * or another text is shown. The translation closes then, as the dictionary pop-up closes on a press beside it.
- */
-function isTranslationPopupLeftBy(
-  reader: ReaderScreenState,
-  action: AppAction,
-  app: Pick<ReadableState, "storedPlaces">,
-): boolean {
-  if (reader.translationPopup === null) return false;
-  switch (action.type) {
-    case "readingLocationReported": {
-      const before = app.storedPlaces.reading[action.mediaFileId];
-      return before == null || !isSameLocation(before, action.location);
-    }
-    case "readerJumped":
-    case "readerMatchChosen":
-    case "readerViewModeChosen":
-    case "readerTranslationChosen":
-    case "readerPanelOpened":
-    case "readerPanelToggled":
-    case "readerChromeToggled":
-    case "lookupWordClicked":
-    case "lookupSearchOpened":
-    case "lookupCursorLookedUp":
-    case "lookupFlashcardRequested":
-      return true;
-    default:
-      return false;
   }
 }
 

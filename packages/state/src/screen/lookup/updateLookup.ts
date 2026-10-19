@@ -6,6 +6,7 @@ import {
   clickWord,
   close,
   dropPending,
+  holdWord,
   openSearch,
   setAside,
 } from "./lookupMoves.ts";
@@ -20,7 +21,8 @@ import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
  * A click on the word shown closes the pop-up after the double-click interval, so that a double-click can still stop it.
  * Keeps the lookup cursor where the mouse or the keyboard points, with the length its word's lookup matched once a hover answers;
  * that answer also moves an open pop-up to the word, unless the pointer is inside the pop-up or a flashcard waits.
- * The L key acts on the cursor's word.
+ * The L key acts on the cursor's word. A held word opens the pop-up too, and shows its sentence's translation in the sentence row,
+ * which the row's button and the T key show and hide.
  * `player` is the media screen's player before the action, which a pop-up opening while it plays pauses.
  */
 export function updateLookup(
@@ -47,14 +49,26 @@ export function updateLookup(
       return lookup.cursor === null
         ? openSearch(lookup, player)
         : clickWord(lookup, lookup.cursor.chosen, "keyboard", player);
+    case "lookupWordHeld":
+      return holdWord(lookup, action.chosen, action.hasTranslation, player);
+    case "lookupSentenceTranslationToggled":
+      return updated({
+        ...lookup,
+        isSentenceTranslationShown: !lookup.isSentenceTranslationShown,
+      });
+    case "lookupSentenceTranslationOpened": {
+      const [opened, effects] = openSearch(lookup, player);
+      return updated(
+        { ...opened, isSentenceTranslationShown: true },
+        ...effects,
+      );
+    }
     case "lookupSearchOpened":
       return openSearch(lookup, player);
     case "lookupTermSearched":
       return updated(searched(dropPending(lookup), action.word));
     case "lookupClosed":
     case "lookupCloseDue":
-    // The translation of a sentence takes the pop-up's place beside the text.
-    case "readerTranslationPopupOpened":
       return close(lookup);
     case "lookupSetAside":
       return setAside(dropPending(lookup));

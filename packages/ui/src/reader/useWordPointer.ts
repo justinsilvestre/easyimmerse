@@ -29,7 +29,7 @@ export type ReaderWordGestures = {
   onWordPointed?: (word: ReaderWord | null) => void;
   /** A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text. */
   onWordHover: (word: ReaderWord) => void;
-  /** A touch held on the word. The click that ends it is not reported. */
+  /** A touch, or the mouse button, held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
 };
 
@@ -38,11 +38,6 @@ type WordPointerCallbacks = ReaderWordGestures & {
   onBlankClick: (event: MouseEvent<HTMLElement>) => void;
   /** A mouse click on a word with Ctrl or Cmd held. Without it, such a click counts as a plain click. */
   onWordCommandClick?: (word: ReaderWord) => void;
-  /**
-   * A mouse button held down on the word for as long as a held tap. Mouse presses are timed only while it is given.
-   * It returns false when it does nothing with the press, which then ends in a click as usual; otherwise that click is not reported.
-   */
-  onWordMouseHold?: (word: ReaderWord) => boolean;
 };
 
 /** How far the pointer may travel between press and release for the press to count as a click rather than a drag. */
@@ -109,17 +104,15 @@ export function useWordPointer(
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
       if (event.pointerType === "mouse") {
         // The word is found only once the press has lasted, since most mouse presses are quick clicks.
-        const timesMouse =
-          latest.current.onWordMouseHold !== undefined && event.button === 0;
+        // A press beside the words is not held, so that the click ending it still turns the page or shows the toolbar.
         press.start(
           event,
           () => {
             const word = findWord(press.origin());
-            return (
-              word !== null && latest.current.onWordMouseHold?.(word) === true
-            );
+            if (word === null) return false;
+            latest.current.onWordHold(word);
           },
-          timesMouse,
+          event.button === 0,
         );
         return;
       }

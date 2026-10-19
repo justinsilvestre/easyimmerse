@@ -10,6 +10,7 @@ import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type PopupSize, popupHeight, popupWidth } from "./popupSize.ts";
+import { SentenceRow, type SentenceRowProps } from "./SentenceRow.tsx";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
 
@@ -22,6 +23,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * and, through `onWordHold`, from a word inside the pop-up that is held on a touch screen.
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
+ * Above the entries, `sentence` fills a thin row about the sentence or cue the word belongs to, as `SentenceRow` describes.
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
  * Pressing outside the pop-up and not on a word marked as a lookup trigger closes it.
  * Images in definitions are found through `resolveMediaUrl`.
@@ -37,6 +39,7 @@ export function DictionaryPopup({
   onToggleSize,
   onWordHold,
   pendingFlashcard = null,
+  sentence,
   onClose,
   onSetUpDictionary,
 }: {
@@ -51,6 +54,7 @@ export function DictionaryPopup({
   onToggleSize?: () => void;
   onWordHold?: (word: string) => void;
   pendingFlashcard?: string | null;
+  sentence?: SentenceRowProps;
   onClose: () => void;
   onSetUpDictionary: () => void;
 }) {
@@ -88,6 +92,7 @@ export function DictionaryPopup({
           <X className="size-4" />
         </IconButton>
       </header>
+      {sentence && <SentenceRow {...sentence} />}
       <div className="flex-1 overflow-y-auto px-3 py-2">
         {pendingFlashcard !== null && (
           <p role="status" className="pb-2 text-sm text-fg-muted">

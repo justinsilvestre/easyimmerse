@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { doubleClick } from "../testSupport/doubleClick.ts";
+import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import {
   dictionarySummary,
   findCreatedDraft,
@@ -188,6 +189,147 @@ describe("MediaScreen lookup", () => {
       expect(
         await screen.findByText("Making a flashcard for “cat”…"),
       ).toBeDefined();
+    });
+  });
+
+  describe("on a held word of the subtitles", () => {
+    async function holdInPanel(word: string, pointerType: "touch" | "mouse") {
+      const rendered = renderMediaScreen();
+      await findSubtitles();
+      // The hold is the gesture's own half-second timer, which runs in real time.
+      fireEvent.pointerDown(panelWord(word), { pointerType, button: 0 });
+      const popup = await screen.findByRole(
+        "dialog",
+        { name: "Dictionary" },
+        { timeout: 2000 },
+      );
+      return { ...rendered, popup };
+    }
+
+    it("opens the pop-up on a word held with a finger", async () => {
+      const { popup } = await holdInPanel("cat", "touch");
+      expect(shownWord(popup)).toBe("cat");
+    });
+
+    it("opens the pop-up on a word held with the mouse button", async () => {
+      const { popup } = await holdInPanel("cat", "mouse");
+      expect(shownWord(popup)).toBe("cat");
+    });
+
+    it("makes no flashcard", async () => {
+      const { client } = await holdInPanel("cat", "touch");
+      expect(
+        requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+      ).toEqual([]);
+    });
+
+    it("offers no translation while the file has no translation subtitles", async () => {
+      const { popup } = await holdInPanel("cat", "touch");
+      expect(
+        within(popup).queryByRole("button", { name: /translation/ }),
+      ).toBeNull();
+    });
+  });
+
+  describe("with translation subtitles", () => {
+    const translationTrack = {
+      id: "s2",
+      media_file_id: "m1",
+      name: "sample.en.srt",
+      format: "srt",
+      sample: "Die Katze schläft.",
+      created_at_ms: 0,
+    };
+    const translationCues = [
+      { index: 1, start_ms: 500, end_ms: 1500, text: "Die Katze schläft." },
+      {
+        index: 2,
+        start_ms: 1750,
+        end_ms: 3000,
+        text: "Der Hund will fressen.",
+      },
+    ];
+    const tracks = fixtureResponses["GET /projects/p1/media/m1/subtitles"];
+
+    function renderWithTranslation() {
+      return renderMediaScreen({
+        responses: {
+          "GET /projects/p1/media/m1/subtitles": {
+            tracks: [...tracks.tracks, translationTrack],
+            selection: { target_track_id: "s1", translation_track_id: "s2" },
+          },
+          "GET /projects/p1/media/m1/subtitles/s2/cues": {
+            format: "srt",
+            cues: translationCues,
+          },
+        },
+      });
+    }
+
+    /** Hides the translation subtitles over the video and closes the subtitles panel, so that no translation is on screen. */
+    function hideTranslations(
+      store: ReturnType<typeof renderMediaScreen>["store"],
+    ) {
+      act(() => {
+        store.dispatch(actions.subtitleDisplayCycled());
+        store.dispatch(actions.cuePanelToggled());
+      });
+    }
+
+    it("offers no translation in the sentence row while the translation subtitles are on screen", async () => {
+      renderWithTranslation();
+      const popup = await lookUpInPanel("cat");
+      await vi.waitFor(() =>
+        expect(
+          within(popup).getByRole("button", { name: /cue/ }),
+        ).toBeDefined(),
+      );
+      expect(
+        within(popup).queryByRole("button", { name: /translation/ }),
+      ).toBeNull();
+    });
+
+    it("shows the held word's cue's translation in the sentence row once the translation subtitles are hidden", async () => {
+      const { store } = renderWithTranslation();
+      await findSubtitles();
+      hideTranslations(store);
+      // With the panel closed, the only "cat" is the word over the video, where the first cue shows.
+      act(() => store.dispatch(actions.playerTimeChanged(1)));
+      fireEvent.pointerDown(screen.getByRole("button", { name: "cat" }), {
+        pointerType: "touch",
+      });
+      const popup = await screen.findByRole(
+        "dialog",
+        { name: "Dictionary" },
+        { timeout: 2000 },
+      );
+      expect(
+        await within(popup).findByText("Die Katze schläft."),
+      ).toBeDefined();
+    });
+
+    it("shows the current cue's translation in the sentence row on T with no lookup cursor", async () => {
+      const { store } = renderWithTranslation();
+      await findSubtitles();
+      hideTranslations(store);
+      act(() => store.dispatch(actions.playerTimeChanged(2)));
+      fireEvent.keyDown(document.body, { key: "t" });
+      const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+      expect(
+        await within(popup).findByText("Der Hund will fressen."),
+      ).toBeDefined();
+    });
+
+    it("hides the sentence row's translation on T again", async () => {
+      const { store } = renderWithTranslation();
+      await findSubtitles();
+      hideTranslations(store);
+      act(() => store.dispatch(actions.playerTimeChanged(2)));
+      fireEvent.keyDown(document.body, { key: "t" });
+      const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+      await within(popup).findByText("Der Hund will fressen.");
+      fireEvent.keyDown(document.body, { key: "t" });
+      expect(within(popup).queryByText("Der Hund will fressen.")).toBeNull();
     });
   });
 
