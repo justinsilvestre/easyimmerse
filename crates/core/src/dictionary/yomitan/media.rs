@@ -2,25 +2,27 @@
 
 use super::super::dictionary_media::DictionaryMedia;
 use super::super::error::DictionaryError;
-use super::super::sink::DictionarySink;
 use super::super::source::{DictionarySource, file_name};
+use super::yomitan_import::YomitanImport;
 
-/// Sends every image, audio and font file to the sink, under its path within the source.
-pub fn import_media(
-    source: &mut DictionarySource,
-    sink: &mut dyn DictionarySink,
-) -> Result<(), DictionaryError> {
-    let media: Vec<(String, &str)> = source
+/// Lists the path of every image, audio and font file, with its MIME type.
+pub fn media_files(source: &DictionarySource) -> Vec<(String, &'static str)> {
+    source
         .names()
         .filter_map(|name| Some((name.to_string(), media_type(name)?)))
-        .collect();
-    for (path, media_type) in media {
-        let bytes = source.read(&path)?;
-        sink.media(DictionaryMedia {
-            path,
+        .collect()
+}
+
+/// Sends every image, audio and font file to the sink, under its path within the source, counting each file as read once sent.
+pub fn import_media(import: &mut YomitanImport) -> Result<(), DictionaryError> {
+    for (path, media_type) in media_files(import.source) {
+        let bytes = import.source.read(&path)?;
+        import.sink.media(DictionaryMedia {
+            path: path.clone(),
             media_type: media_type.to_string(),
             bytes,
         })?;
+        import.file_read(&path)?;
     }
     Ok(())
 }
@@ -71,7 +73,12 @@ mod tests {
             read_fixture_bytes("sample-yomitan.zip"),
         )
         .unwrap();
-        import_media(&mut source, &mut collector).unwrap();
+        let names: Vec<String> = media_files(&source)
+            .into_iter()
+            .map(|(path, _)| path)
+            .collect();
+        let mut import = YomitanImport::new(&mut source, &mut collector, &names).unwrap();
+        import_media(&mut import).unwrap();
         assert_eq!(
             collector.described(),
             [("images/cat.png".to_string(), "image/png".to_string())]

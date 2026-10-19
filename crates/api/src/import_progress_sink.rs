@@ -67,6 +67,14 @@ impl DictionarySink for ImportProgressSink<'_> {
         let result = self.inner.media(media);
         self.count(result, |progress| &mut progress.media)
     }
+
+    fn progressed(&mut self, done: u64, total: u64) {
+        self.inner.progressed(done, total);
+        if total > 0 {
+            let percent = done.saturating_mul(100) / total;
+            lock(&self.progress).percent = Some(percent.min(100) as u8);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -127,6 +135,23 @@ mod tests {
         let _ = sink.term_entry(TermEntry::new("Hund", Vec::new()));
         let _ = sink.term_entry(TermEntry::new("Katze", Vec::new()));
         lock(&progress).entries
+    }
+
+    fn percent_after(done: u64, total: u64) -> Option<u8> {
+        let progress = SharedProgress::default();
+        let mut inner = FixedSink { accepts: true };
+        ImportProgressSink::new(&mut inner, Arc::clone(&progress)).progressed(done, total);
+        lock(&progress).percent
+    }
+
+    #[test]
+    fn gives_the_share_read_as_a_percentage() {
+        assert_eq!(percent_after(1, 3), Some(33));
+    }
+
+    #[test]
+    fn gives_no_percentage_for_an_empty_total() {
+        assert_eq!(percent_after(0, 0), None);
     }
 
     #[test]
