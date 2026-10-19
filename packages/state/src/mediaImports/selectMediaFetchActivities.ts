@@ -22,8 +22,8 @@ export const selectMediaFetchActivities = createSelector(
 );
 
 /**
- * Selects a project's fetch as the footer shows it: one under way, with its latest step and how much is done, one about to start
- * while the plugin answers the action that may start it, or one that failed, until its dialog is closed.
+ * Selects a project's fetch as the footer shows it: one under way, with its latest step and how much is done, the wait for the plugin's
+ * answer to an action that may start one, or one that failed, until its dialog is closed.
  * It leads to the project's overview, and names the project once it is cached.
  * The result keeps its reference while the dialog, its fetch and the cached project do.
  */
@@ -58,7 +58,14 @@ export const selectMediaFetchActivity = createSelector(
 );
 
 function statusOf(wizard: MediaImportWizard, job: JobRecord | null) {
-  if (wizard.jobId === null) return wizard.isAwaitingAnswer ? starting : null;
+  if (wizard.jobId === null)
+    return wizard.isAwaitingAnswer
+      ? ({
+          label: `Waiting for ${wizard.source.name}`,
+          status: "running",
+          percent: null,
+        } as const)
+      : null;
   if (job === null) return starting;
   if (job.kind !== "mediaSource" || job.status === "done") return null;
   if (wizard.error !== null || job.status === "failed")

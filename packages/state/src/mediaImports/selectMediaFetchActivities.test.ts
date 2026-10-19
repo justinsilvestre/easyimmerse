@@ -84,11 +84,11 @@ describe("selectMediaFetchActivities", () => {
     );
   });
 
-  it("says that a fetch is starting while the plugin answers the action", () => {
+  it("says that it waits for the plugin while the plugin answers an action", () => {
     const app = stateAfter(...sentMediaImportStep, goHome);
     expect(
       selectMediaFetchActivities({ app, backend: emptyServerCache }),
-    ).toMatchObject([{ label: "Starting the fetch", status: "running" }]);
+    ).toMatchObject([{ label: "Waiting for video-site", status: "running" }]);
   });
 
   it("keeps its reference while another job reports", () => {
