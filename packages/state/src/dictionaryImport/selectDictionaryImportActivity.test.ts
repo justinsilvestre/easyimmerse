@@ -34,4 +34,12 @@ describe("selectDictionaryImportActivity", () => {
   it("gives nothing while no dictionary is being added", () => {
     expect(selectDictionaryImportActivity({ app: stateAfter() })).toBeNull();
   });
+
+  it("keeps its reference while another job reports", () => {
+    const app = stateAfter(...startedDictionaryImport);
+    const first = selectDictionaryImportActivity({ app });
+    const jobs = { ...app.operations.jobs, "jobs/mediaSource/j9": undefined };
+    const later = { ...app, operations: { ...app.operations, jobs } };
+    expect(selectDictionaryImportActivity({ app: later })).toBe(first);
+  });
 });

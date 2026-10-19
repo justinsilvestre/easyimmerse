@@ -1,63 +1,79 @@
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
+import { haveSameItems } from "../app/haveSameItems.ts";
 import type { FooterActivity } from "../footer/footerActivity.ts";
-import { haveSameActivities } from "../footer/haveSameActivities.ts";
-import type { JobsState } from "../operations/jobs.ts";
+import type { JobRecord } from "../operations/jobs.ts";
 import { jobKey } from "../operations/jobs.ts";
-import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
 /**
- * Selects the media-source fetches as the footer shows them, one per project: each fetch under way, with its latest step and how much is done,
- * and each that failed, until its dialog is closed. Each leads to its project's overview, named after the project once it is cached.
+ * Selects the media-source fetches as the footer shows them, one per project; see `selectMediaFetchActivity`.
+ * The result keeps its reference while the activities it lists stay the same.
  */
 export const selectMediaFetchActivities = createSelector(
-  [
-    (root: RootState) => root.app.mediaImports,
-    (root: RootState) => root.app.operations.jobs,
-    (root: RootState) => root.backend,
-  ],
-  (imports, jobs, backend): readonly FooterActivity[] =>
-    Object.entries(imports).flatMap(([projectId, wizard]) => {
-      const activity = wizard && activityOf(projectId, wizard, jobs, backend);
+  [(root: RootState) => root],
+  (root): readonly FooterActivity[] =>
+    Object.keys(root.app.mediaImports).flatMap((projectId) => {
+      const activity = selectMediaFetchActivity(root, projectId);
       return activity ? [activity] : [];
     }),
-  { memoizeOptions: { resultEqualityCheck: haveSameActivities } },
+  { memoizeOptions: { resultEqualityCheck: haveSameItems } },
 );
 
-function activityOf(
-  projectId: string,
-  wizard: MediaImportWizard,
-  jobs: JobsState,
-  backend: ServerCacheSlice,
-): FooterActivity | null {
-  if (wizard.jobId === null) return null;
-  const record = jobs[jobKey("mediaSource", wizard.jobId)];
-  if (record?.kind !== "mediaSource" || record.status === "done") return null;
-  const common = {
-    id: `media-fetch/${projectId}`,
-    opens: opensProject(projectId, backend),
-  };
-  if (wizard.error !== null || record.status === "failed")
+/**
+ * Selects a project's fetch as the footer shows it: one under way, with its latest step and how much is done, one about to start
+ * while the plugin answers the action that may start it, or one that failed, until its dialog is closed.
+ * It leads to the project's overview, and names the project once it is cached.
+ * The result keeps its reference while the dialog, its fetch and the cached project do.
+ */
+export const selectMediaFetchActivity = createSelector(
+  [
+    (root: RootState, projectId: string) =>
+      root.app.mediaImports[projectId] ?? null,
+    (root: RootState, projectId: string) => {
+      const jobId = root.app.mediaImports[projectId]?.jobId ?? null;
+      return jobId === null
+        ? null
+        : (root.app.operations.jobs[jobKey("mediaSource", jobId)] ?? null);
+    },
+    (root: RootState, projectId: string) =>
+      cacheEntry(root.backend, "getProject", projectId)?.data ?? null,
+    (_root: RootState, projectId: string) => projectId,
+  ],
+  (wizard, job, project, projectId): FooterActivity | null => {
+    const status = wizard && statusOf(wizard, job);
+    if (!status) return null;
+    const name = project?.settings.name ?? null;
     return {
-      ...common,
-      label: "The media could not be added",
-      status: "failed",
+      id: `media-fetch/${projectId}`,
+      opens: {
+        step: { type: "openProject", projectId },
+        label: name === null ? "Show in the project" : `Show in ${name}`,
+      },
+      ...status,
+      label: name === null ? status.label : `${name}: ${status.label}`,
     };
-  const progress = record.report?.progress ?? null;
-  return {
-    ...common,
-    label: progress?.message ?? "Starting the fetch",
-    status: "running",
-    percent: progress === null ? null : Math.round(progress.fraction * 100),
-  };
-}
+  },
+);
 
-function opensProject(projectId: string, backend: ServerCacheSlice) {
-  const project = cacheEntry(backend, "getProject", projectId)?.data;
+function statusOf(wizard: MediaImportWizard, job: JobRecord | null) {
+  if (wizard.jobId === null) return wizard.isAwaitingAnswer ? starting : null;
+  if (job === null) return starting;
+  if (job.kind !== "mediaSource" || job.status === "done") return null;
+  if (wizard.error !== null || job.status === "failed")
+    return { label: "The media could not be added", status: "failed" } as const;
+  const progress = job.report?.progress ?? null;
+  if (progress === null) return starting;
   return {
-    step: { type: "openProject", projectId },
-    label: project ? `Show in ${project.settings.name}` : "Show in the project",
+    label: progress.message,
+    status: "running",
+    percent: Math.round(progress.fraction * 100),
   } as const;
 }
+
+const starting = {
+  label: "Starting the fetch",
+  status: "running",
+  percent: null,
+} as const;

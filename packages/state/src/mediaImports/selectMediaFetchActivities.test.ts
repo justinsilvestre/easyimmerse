@@ -9,6 +9,7 @@ import {
 import {
   mediaFetchChecked,
   openedMediaImport,
+  sentMediaImportStep,
   startedMediaFetch,
 } from "./exampleMediaFetch.ts";
 import { selectMediaFetchActivities } from "./selectMediaFetchActivities.ts";
@@ -73,5 +74,36 @@ describe("selectMediaFetchActivities", () => {
       media_files: [],
     });
     expect(selectMediaFetchActivities({ app, backend })).toBe(first);
+  });
+
+  it("puts the project's name before the label once it is cached", () => {
+    const app = stateAfter(...startedMediaFetch, mediaFetchChecked(), goHome);
+    const backend = serverCacheWith("getProject", "p1", exampleProject("p1"));
+    expect(selectMediaFetchActivities({ app, backend })[0]?.label).toBe(
+      "Korean: downloading",
+    );
+  });
+
+  it("says that a fetch is starting while the plugin answers the action", () => {
+    const app = stateAfter(...sentMediaImportStep, goHome);
+    expect(
+      selectMediaFetchActivities({ app, backend: emptyServerCache }),
+    ).toMatchObject([{ label: "Starting the fetch", status: "running" }]);
+  });
+
+  it("keeps its reference while another job reports", () => {
+    const app = stateAfter(...startedMediaFetch, goHome);
+    const first = selectMediaFetchActivities({
+      app,
+      backend: emptyServerCache,
+    });
+    const jobs = {
+      ...app.operations.jobs,
+      "jobs/dictionaryImport/x": undefined,
+    };
+    const later = { ...app, operations: { ...app.operations, jobs } };
+    expect(
+      selectMediaFetchActivities({ app: later, backend: emptyServerCache }),
+    ).toBe(first);
   });
 });
