@@ -3,7 +3,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import {
   failedDictionaryImport,
   startedDictionaryImport,
-} from "./dictionaryImportExamples.ts";
+} from "./exampleDictionaryImport.ts";
 import { selectDictionaryImportActivity } from "./selectDictionaryImportActivity.ts";
 
 describe("selectDictionaryImportActivity", () => {

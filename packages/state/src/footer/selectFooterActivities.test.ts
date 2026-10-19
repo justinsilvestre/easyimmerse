@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import { startedDictionaryImport } from "../dictionaryImport/dictionaryImportExamples.ts";
+import { startedDictionaryImport } from "../dictionaryImport/exampleDictionaryImport.ts";
 import {
   mediaFetchChecked,
   startedMediaFetch,
