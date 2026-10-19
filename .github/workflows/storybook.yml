@@ -2,6 +2,9 @@ name: storybook
 
 # Publishes a browsable Storybook for @easyimmerse/ui to GitHub Pages, one directory per
 # branch on the gh-pages branch, and posts the link on the pull request.
+# For a pull request it also screenshots every story on both sides of the change, publishes a
+# report of the stories that differ under the preview's `changes/` directory, and posts a second
+# comment with the counts. See scripts/storybook-diff/README.md.
 # The Storybook build does not import the WebAssembly module (the only import of
 # @easyimmerse/wasm it can reach is type-only), so the wasm build is not run here.
 
@@ -22,6 +25,7 @@ on:
       - "pnpm-workspace.yaml"
       - "packages/**"
       - "fixtures/**"
+      - "scripts/storybook-diff/**"
   # A manual run publishes the preview of any branch without a pull request.
   workflow_dispatch:
   push:
@@ -39,6 +43,7 @@ on:
       - "pnpm-workspace.yaml"
       - "packages/**"
       - "fixtures/**"
+      - "scripts/storybook-diff/**"
 
 # The jobs that write to the gh-pages branch or the pull request ask for more below.
 permissions:
@@ -91,6 +96,119 @@ jobs:
         with:
           name: storybook
           path: packages/ui/storybook-static
+          if-no-files-found: error
+
+  # Screenshots every story on one side of the pull request: the commit it branched from, whose
+  # Storybook this job builds itself, or the pull request's head, whose Storybook the build job made.
+  capture:
+    needs: [gate, build]
+    if: needs.gate.outputs.passed != 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        side: [base, head]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The merge base below needs the history of both branches.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          rust-cache: "false"
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Find the commit the pull request branched from
+        if: matrix.side == 'base'
+        id: base
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "commit=$(git merge-base "origin/$BASE_REF" "$HEAD_SHA")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: matrix.side == 'base'
+        with:
+          ref: ${{ steps.base.outputs.commit }}
+          path: base
+
+      - name: Build the base commit's Storybook
+        if: matrix.side == 'base'
+        working-directory: base
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @easyimmerse/ui build-storybook
+
+      - uses: actions/download-artifact@v4.1.3
+        if: matrix.side == 'head'
+        with:
+          name: storybook
+          path: packages/ui/storybook-static
+
+      - name: Capture the stories
+        env:
+          STORYBOOK_DIR: ${{ matrix.side == 'base' && 'base/packages/ui/storybook-static' || 'packages/ui/storybook-static' }}
+        run: node scripts/storybook-diff/capture.ts --storybook "$STORYBOOK_DIR" --out capture
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook-capture-${{ matrix.side }}
+          path: capture
+          retention-days: 7
+          if-no-files-found: error
+
+  # Compares the two captures into a report directory: the changes as JSON, the before, after,
+  # and diff images of every changed story, and a page that shows them.
+  compare:
+    needs: [gate, capture]
+    if: needs.gate.outputs.passed != 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    outputs:
+      summary: ${{ steps.compare.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          rust-cache: "false"
+
+      - uses: actions/download-artifact@v4.1.3
+        with:
+          name: storybook-capture-base
+          path: capture-base
+
+      - uses: actions/download-artifact@v4.1.3
+        with:
+          name: storybook-capture-head
+          path: capture-head
+
+      # The report is published under the preview's `changes/` directory, so the preview itself is one level up.
+      - name: Compare the captures
+        id: compare
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base="$(git merge-base "origin/$BASE_REF" "$HEAD_SHA")"
+          summary="$(node scripts/storybook-diff/compare.ts --before capture-base --after capture-head --out changes --storybook-url ../ --base-label "$BASE_REF (${base:0:7})")"
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+          echo "Storybook changes: $summary" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook-changes
+          path: changes
           if-no-files-found: error
 
   # This job does not run the setup action: it only moves files onto the gh-pages branch
@@ -164,8 +282,57 @@ jobs:
 
             Built from ${{ github.event.pull_request.head.sha }}. The first deployment of a branch can take a minute or two to appear. If the link still returns a 404 after that, GitHub Pages must be enabled in the repository settings with the `gh-pages` branch and the root folder as its source.
 
+
+  # Publishes the report beside the pull request's preview and posts its counts on the pull request.
+  # Like deploy, it only moves files with git and runs no toolchain, and it shares deploy's
+  # concurrency group because it pushes to the same branch.
+  deploy-changes:
+    needs: [gate, compare]
+    if: >-
+      needs.gate.outputs.passed != 'true' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: storybook-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4.1.3
+        with:
+          name: storybook-changes
+          path: changes
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: changes
+          destination_dir: storybook/pr-${{ github.event.pull_request.number }}/changes
+          keep_files: true
+          full_commit_message: "Deploy the Storybook changes for pr-${{ github.event.pull_request.number }}"
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: storybook-changes
+          message: |
+            ### Storybook changes
+
+            ${{ needs.compare.outputs.summary }}
+
+            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/storybook/pr-${{ github.event.pull_request.number }}/changes/
+
+            Before and after screenshots of the stories that differ from the commit this pull request branched from, in both themes at a phone and a desktop width. Built from ${{ github.event.pull_request.head.sha }}.
+
+  # The screenshot jobs run only on pull requests, so a skipped one must not skip the record.
+  # Deploy is still required to have passed, as it was before those jobs existed.
   record:
-    needs: [gate, build, deploy]
+    needs: [gate, build, deploy, capture, compare, deploy-changes]
+    if: >-
+      ${{ !cancelled() && !failure() &&
+          needs.gate.result == 'success' && needs.gate.outputs.passed != 'true' &&
+          needs.deploy.result == 'success' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
