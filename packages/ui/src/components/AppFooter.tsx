@@ -1,39 +1,34 @@
-import { actions, selectIsSettingsOpen } from "@easyimmerse/state";
-import { Settings } from "lucide-react";
+import {
+  actions,
+  selectFooterActivities,
+  selectIsSettingsOpen,
+} from "@easyimmerse/state";
 import type { ReactNode } from "react";
-import { DictionaryImportStatus } from "../dictionaries/DictionaryImportStatus.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { IconButton } from "./IconButton.tsx";
-import { ThemeMenu } from "./ThemeMenu.tsx";
+import { FooterBar } from "./FooterBar.tsx";
 
 /**
- * A thin bar at the bottom of the window, with the way to Settings, the theme menu and any dictionary import under way at its left edge,
- * which look the same on every screen, and the screen's own buttons, passed as children, at its right edge.
+ * The footer bar as every screen shows it, with the activities under way elsewhere in the app,
+ * and the screen's own buttons, passed as children, at its right edge.
  * While Settings is open, its control stands for the page already open and does nothing.
  */
 export function AppFooter({ children }: { children?: ReactNode }) {
   const dispatch = useAppDispatch();
   const isSettingsOpen = useAppSelector(selectIsSettingsOpen);
-  const openSettings = () =>
-    dispatch(actions.navigated({ type: "openSettings" }));
+  const activities = useAppSelector(selectFooterActivities);
   return (
-    <footer className="sticky bottom-0 border-t border-line bg-surface">
-      <div className="flex items-center justify-between gap-2 px-2 py-0.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <IconButton
-            label="Settings"
-            aria-current={isSettingsOpen ? "page" : undefined}
-            aria-disabled={isSettingsOpen || undefined}
-            onClick={isSettingsOpen ? undefined : openSettings}
-          >
-            <Settings className="size-4" />
-          </IconButton>
-          <ThemeMenu />
-          <DictionaryImportStatus />
-        </div>
-        {children && <div className="flex items-center gap-1">{children}</div>}
-      </div>
-    </footer>
+    <FooterBar
+      isSettingsOpen={isSettingsOpen}
+      onOpenSettings={() =>
+        dispatch(actions.navigated({ type: "openSettings" }))
+      }
+      activities={activities}
+      onOpenActivity={(activity) =>
+        dispatch(actions.navigated(activity.opens.step))
+      }
+    >
+      {children}
+    </FooterBar>
   );
 }

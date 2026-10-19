@@ -1,3 +1,5 @@
+import type { NavigationStep } from "../route/route.ts";
+
 /**
  * A long-running action shown in the app footer while the place it belongs to is not on top,
  * such as a dictionary import, a plugin fetch, or flashcard saves that have been pending for a while.
@@ -10,8 +12,8 @@ export type FooterActivity = {
    * or what went wrong, as a short sentence such as "A dictionary could not be added".
    */
   label: string;
-  /** What a click shows, as the tooltip says it: "Show on the dictionaries page". */
-  openLabel: string;
+  /** The step to the activity's place, with what a click does as the tooltip says it: "Show on the dictionaries page". */
+  opens: { step: NavigationStep; label: string };
 } & (
   | {
       status: "running";

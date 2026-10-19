@@ -1,5 +1,5 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import { FooterActivitiesMenu } from "./FooterActivitiesMenu.tsx";
-import type { FooterActivity } from "./FooterActivity.ts";
 import { FooterActivityButton } from "./FooterActivityButton.tsx";
 import { describeFooterActivities } from "./footerActivitiesSummary.ts";
 

@@ -112,6 +112,15 @@ describe("AppFooter", () => {
       ).toBeDefined();
     });
 
+    it("shows no import's status while the dictionaries page is on top", () => {
+      const { store } = renderFooter();
+      leaveRunningImport(store);
+      act(() => {
+        store.dispatch(actions.navigated({ type: "openDictionaries" }));
+      });
+      expect(screen.queryByText("Adding jmdict.zip")).toBeNull();
+    });
+
     it("opens the dictionaries page from the import's status", () => {
       const { store } = renderFooter();
       leaveRunningImport(store);

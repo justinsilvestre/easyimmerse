@@ -1,4 +1,4 @@
-import type { FooterActivity } from "./FooterActivity.ts";
+import type { FooterActivity } from "@easyimmerse/state";
 import { pluralize } from "./pluralize.ts";
 
 /** Counts the activities in a few words for the footer's summary button, such as "2 tasks running" or "1 failed, 2 running". */

@@ -1,6 +1,6 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import clsx from "clsx";
 import type { ComponentProps } from "react";
-import type { FooterActivity } from "./FooterActivity.ts";
 import { FooterActivityMark } from "./FooterActivityButton.tsx";
 
 /**
@@ -46,7 +46,7 @@ function FooterActivityRow({
     <button
       type="button"
       role="menuitem"
-      title={activity.openLabel}
+      title={activity.opens.label}
       className={clsx(
         "flex w-full items-center gap-2 px-3 py-1.5 text-left focus-visible:outline-none",
         isRunning

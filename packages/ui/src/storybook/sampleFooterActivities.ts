@@ -1,58 +1,73 @@
-import type { FooterActivity } from "../components/FooterActivity.ts";
+import type { FooterActivity } from "@easyimmerse/state";
+
+const dictionariesPage = {
+  step: { type: "openDictionaries" },
+  label: "Show on the dictionaries page",
+} as const;
+const tokyoStory = {
+  step: { type: "openProject", projectId: "tokyo-story" },
+  label: "Show in Tokyo Story",
+} as const;
 
 /** Activities as the footer stories show them, one of each kind the app has or plans. */
 export const sampleFooterActivities = {
   dictionaryImport: {
     id: "dictionary-import",
     label: "Adding jmdict_english.zip",
-    openLabel: "Show on the dictionaries page",
+    opens: dictionariesPage,
     status: "running",
     percent: 42,
   },
   dictionaryImportFailed: {
     id: "dictionary-import",
     label: "A dictionary could not be added",
-    openLabel: "Show on the dictionaries page",
+    opens: dictionariesPage,
     status: "failed",
   },
   mediaFetch: {
     id: "media-fetch-1",
     label: "Downloading video",
-    openLabel: "Show in Tokyo Story",
+    opens: tokyoStory,
     status: "running",
     percent: 17,
   },
   mediaFetchFailed: {
     id: "media-fetch-1",
     label: "The video could not be fetched",
-    openLabel: "Show in Tokyo Story",
+    opens: tokyoStory,
     status: "failed",
   },
   flashcardExport: {
     id: "flashcard-export",
     label: "Exporting an Anki package",
-    openLabel: "Show in Tokyo Story",
+    opens: tokyoStory,
     status: "running",
     percent: null,
   },
   bookAlignment: {
     id: "book-alignment",
     label: "Aligning Der Prozess with its translation",
-    openLabel: "Show in Der Prozess",
+    opens: {
+      step: { type: "openProject", projectId: "der-prozess" },
+      label: "Show in Der Prozess",
+    },
     status: "running",
     percent: 63,
   },
   subtitleGeneration: {
     id: "subtitle-generation",
     label: "Generating subtitles",
-    openLabel: "Show in episode 3",
+    opens: {
+      step: { type: "openProject", projectId: "episode-3" },
+      label: "Show in episode 3",
+    },
     status: "running",
     percent: null,
   },
   pendingFlashcardSaves: {
     id: "flashcard-saves",
     label: "Saving 3 flashcards…",
-    openLabel: "Show the flashcards being saved",
+    opens: tokyoStory,
     status: "running",
     percent: null,
   },

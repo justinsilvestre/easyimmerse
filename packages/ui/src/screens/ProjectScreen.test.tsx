@@ -11,7 +11,13 @@ import type {
   MediaSourceJob,
   PluginForm,
 } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
@@ -320,9 +326,9 @@ describe("ProjectScreen", () => {
     renderImport();
     await startImport();
     await vi.waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain(
-        "downloading the video and subtitles",
-      ),
+      expect(
+        within(screen.getByRole("dialog")).getByRole("status").textContent,
+      ).toContain("downloading the video and subtitles"),
     );
   });
 

@@ -78,6 +78,17 @@ export function isOnDictionariesPage(route: Route): boolean {
   );
 }
 
+/** Tells whether the place a step leads to is already on top, so that taking it would leave the app where it is. */
+export function isAlreadyAt(route: Route, step: NavigationStep): boolean {
+  const next = navigate(route, step);
+  if (next === route) return true;
+  return (
+    next.screen !== "settings" &&
+    route.screen !== "settings" &&
+    isSameMainScreen(route, next)
+  );
+}
+
 function openSettingsPage(current: Route, page: SettingsPage): Route {
   if (current.screen !== "settings")
     return { screen: "settings", beneath: current, pages: [page] };

@@ -1,6 +1,6 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import clsx from "clsx";
 import { CircleAlert } from "lucide-react";
-import type { FooterActivity } from "./FooterActivity.ts";
 import { ProgressBar } from "./ProgressBar.tsx";
 
 /** A compact button for the footer that tells of one activity under way or failed, and opens its place in the app. */
@@ -15,7 +15,7 @@ export function FooterActivityButton({
   return (
     <button
       type="button"
-      title={activity.openLabel}
+      title={activity.opens.label}
       className={clsx(
         "flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         isRunning

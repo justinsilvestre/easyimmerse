@@ -1,8 +1,8 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import clsx from "clsx";
 import { CircleAlert } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { FooterActivitiesList } from "./FooterActivitiesList.tsx";
-import type { FooterActivity } from "./FooterActivity.ts";
 import {
   meanPercentOf,
   summarizeFooterActivities,

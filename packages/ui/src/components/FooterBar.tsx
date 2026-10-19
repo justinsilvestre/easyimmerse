@@ -1,14 +1,14 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { FooterActivities } from "./FooterActivities.tsx";
-import type { FooterActivity } from "./FooterActivity.ts";
 import { IconButton } from "./IconButton.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 
 /**
  * The thin bar at the bottom of the window, given its state as props: the way to Settings, the theme menu,
  * and the activities under way at its left edge, and the screen's own buttons, passed as children, at its right edge.
- * This is the layout `AppFooter` is to take once the activities come from the store; until then it is a prototype.
+ * `AppFooter` gives it its state from the store.
  */
 export function FooterBar({
   isSettingsOpen,

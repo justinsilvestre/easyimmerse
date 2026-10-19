@@ -41,10 +41,6 @@ export type {
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
 export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
-export {
-  type DictionaryImportStatus,
-  selectDictionaryImportStatus,
-} from "./dictionaryImport/selectDictionaryImportStatus.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
 export { draftFromCue } from "./flashcards/draftFromCue.ts";
@@ -81,6 +77,8 @@ export {
   type StatusLineSave,
   selectStatusLineSaves,
 } from "./flashcards/selectStatusLineSaves.ts";
+export type { FooterActivity } from "./footer/footerActivity.ts";
+export { selectFooterActivities } from "./footer/selectFooterActivities.ts";
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";

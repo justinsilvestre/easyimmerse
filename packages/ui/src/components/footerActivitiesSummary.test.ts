@@ -1,5 +1,5 @@
+import type { FooterActivity } from "@easyimmerse/state";
 import { describe, expect, it } from "vitest";
-import type { FooterActivity } from "./FooterActivity.ts";
 import {
   describeFooterActivities,
   meanPercentOf,
@@ -10,14 +10,19 @@ function running(id: string, percent: number | null): FooterActivity {
   return {
     id,
     label: `Running ${id}`,
-    openLabel: "Show",
+    opens: { step: { type: "goHome" }, label: "Show" },
     status: "running",
     percent,
   };
 }
 
 function failed(id: string): FooterActivity {
-  return { id, label: `${id} failed`, openLabel: "Show", status: "failed" };
+  return {
+    id,
+    label: `${id} failed`,
+    opens: { step: { type: "goHome" }, label: "Show" },
+    status: "failed",
+  };
 }
 
 describe("summarizeFooterActivities", () => {
