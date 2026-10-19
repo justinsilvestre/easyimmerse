@@ -80,6 +80,53 @@ Kenji Miyazawa's 銀河鉄道の夜 (Night on the Galactic Railroad, in the publ
 curl -sL -o /tmp/456_15050.html https://www.aozora.gr.jp/cards/000081/files/456_15050.html && python3 fixtures/build-ginga-tetsudo-no-yoru.py /tmp/456_15050.html
 ```
 
+## Sample books with a translation and a narrated clip
+
+The development seed adds one such book to each placeholder project, pairs it with its translation, and aligns it with both the translation and the clip. Each book's files share its name:
+
+- `<name>.epub`: the opening chapters of the book in the project's target language.
+- `<name>.en.epub`: the same passages in a public-domain English translation.
+- `<name>.m4a`: about a minute of a public-domain LibriVox reading, as mono AAC at 20 kbps, starting where the reader begins the text.
+- `<name>-audio-alignment.json`: an `audio` alignment that times each sentence the clip reads.
+- `<name>-translation-links.txt`: hand-written pairs of sentence ids, which link every sentence of the book with the English, many-to-many where the translation splits or merges sentences.
+- `<name>-translation-alignment.json`: the `translation` alignment built from those pairs.
+
+The alignments are `AddAlignmentRequest` bodies in which the counterpart's media file id is the placeholder `"audio"` or `"translation"`, as in the alignment fixtures above.
+
+`build-<name>.py` builds the two books and the clip from the downloaded sources, writing the books with `epub_writer.py`, which puts each paragraph in a plain-text `<p>` so that the parser reads back exactly the same strings. `build-sample-alignments.py` builds both alignments; run it with no arguments for its usage. Its `audio` command transcribes the clip with faster-whisper's `small` model and matches the transcript with the book's text, so it needs a Python environment with faster-whisper, which can live in the ignored `.dev/` folder:
+
+```sh
+python3 -m venv .dev/align/venv && .dev/align/venv/bin/pip install faster-whisper
+HF_HOME=$PWD/.dev/align/hf .dev/align/venv/bin/python -I fixtures/build-sample-alignments.py audio fixtures/<name>.epub fixtures/<name>.m4a fixtures/<name>-audio-alignment.json
+python3 fixtures/build-sample-alignments.py translation fixtures/<name>.epub fixtures/<name>.en.epub fixtures/<name>-translation-links.txt fixtures/<name>-translation-alignment.json
+```
+
+`python3 fixtures/build-sample-alignments.py sentences <book.epub>` prints the sentence ids that the links file uses. If a book changes, rebuild both alignments and check the links file against the new sentence ids.
+
+### lazarillo-de-tormes
+
+The opening of the anonymous *La vida de Lazarillo de Tormes* (Burgos, 1554), for the Spanish project: the whole prologue, the first tratado up to the blind man's arrival, and the opening of the second tratado. The Spanish comes from Project Gutenberg eBook #320, with the braces around the Alcalá edition's additions removed and the text inside them kept. The English is Clements R. Markham's translation of 1908 (Project Gutenberg eBook #53489), without its sidenotes and footnotes. The clip is 23.2 s to 94.9 s of the first file of LibriVox's recording read by Tux: the prologue's first four sentences. All three are in the public domain.
+
+```sh
+mkdir -p .dev/sources/lazarillo && cd .dev/sources/lazarillo
+curl -sSLO https://www.gutenberg.org/cache/epub/320/pg320.txt
+curl -sSLO https://www.gutenberg.org/cache/epub/53489/pg53489.txt
+curl -sSLO https://archive.org/download/lazarillo_0912_librivox/Lazarillo_de_Tormes_1_anonimo.mp3
+cd ../../.. && python3 -B fixtures/build-lazarillo-de-tormes.py .dev/sources/lazarillo/pg320.txt .dev/sources/lazarillo/pg53489.txt .dev/sources/lazarillo/Lazarillo_de_Tormes_1_anonimo.mp3
+```
+
+### toshishun
+
+The opening of Akutagawa Ryūnosuke's 杜子春 (1920), for the Japanese project: sections 一 to 三 of Aozora Bunko's text (card 43015), without ruby readings, and a last chapter of Aozora's credits. The English is the same passages, Parts I to III, of "Tu Tzuchun", translated by Eric S. Bell and Yoshinobu Tada in *Eminent Authors of Contemporary Japan*, Volume 1 (Tokyo, 1930), as transcribed on Wikisource, with the misprints that Wikisource marks corrected, and a last chapter of credits. Both texts are in the public domain. The clip is 18.5 s to 83.6 s of section 一 of LibriVox's reading by ekzemplaro (CC0): the first seven sentences, starting just after the section heading, which is not a paragraph of the book.
+
+```sh
+mkdir -p .dev/sources/toshishun && cd .dev/sources/toshishun
+curl -sSLO https://www.aozora.gr.jp/cards/000879/files/43015_17432.html
+curl -sSL -o tu-tzuchun.json "https://en.wikisource.org/w/api.php?action=parse&page=Eminent_Authors_of_Contemporary_Japan/Volume_1/Tu_Tzuchun&prop=text&format=json&formatversion=2&disablelimitreport=1&disableeditsection=1"
+curl -sSLO https://archive.org/download/toshisyun_um_librivox/toshisyun_01_akutagawa.mp3
+cd ../../.. && python3 -B fixtures/build-toshishun.py .dev/sources/toshishun/43015_17432.html .dev/sources/toshishun/tu-tzuchun.json .dev/sources/toshishun/toshisyun_01_akutagawa.mp3
+```
+
 ## sample-yomitan/ and sample-yomitan.zip
 
 A Yomitan dictionary in format version 3. It holds five term entries: 猫 (cat), 犬 (dog), 食べる (to eat, word class `v1`), 本 (book, with structured content and an image), and 食べた, which points to 食べる as an inflected form. It also has a tag bank, frequency and pitch-accent rows, a kanji entry with its own metadata, a stylesheet, and the image under `images/`. The sample subtitles mention the same words.
