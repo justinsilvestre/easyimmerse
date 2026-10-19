@@ -44,10 +44,7 @@ export type Rollback = {
 };
 
 /** The slices of the app state that the flashcard rules read: the requests, the route and the open form. */
-export type FlashcardApp = Pick<
-  AppState,
-  "operations" | "route" | "screen" | "mediaImports"
->;
+export type FlashcardApp = Pick<AppState, "operations" | "route" | "screen">;
 
 /** The form as it opens on a card, editable and with no save of its own. */
 export function openedForm(

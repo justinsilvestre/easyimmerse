@@ -24,7 +24,7 @@ import { initialStoredPlaces } from "./storedPlacesState.ts";
  */
 export const updateStoredPlaces: FeatureUpdate<
   StoredPlacesState,
-  "route" | "screen" | "mediaImports" | "backend"
+  "route" | "screen" | "backend"
 > = (places, action, app) => {
   switch (action.type) {
     case "readingLocationLoaded":
@@ -81,7 +81,7 @@ export const updateStoredPlaces: FeatureUpdate<
 /** The stored places as a feature: where to resume each book and media file. */
 export const storedPlacesFeature: Feature<
   StoredPlacesState,
-  "route" | "screen" | "mediaImports" | "backend"
+  "route" | "screen" | "backend"
 > = {
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,
@@ -91,7 +91,7 @@ export const storedPlacesFeature: Feature<
 function screenMoved(
   places: StoredPlacesState,
   action: AppAction,
-  app: Pick<ReadableState, "route" | "screen" | "mediaImports" | "backend">,
+  app: Pick<ReadableState, "route" | "screen" | "backend">,
 ) {
   const left = mediaScreenLeftBy(app, action);
   const [saved, saves] =

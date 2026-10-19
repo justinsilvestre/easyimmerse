@@ -14,7 +14,7 @@ type DialogState = ScreenState["dialog"];
 /** The slices of the app state that the playback rules read: the shown media screen and the preferences. */
 export type PlaybackApp = Pick<
   ReadableState,
-  "route" | "screen" | "mediaImports" | "preferences" | "backend"
+  "route" | "screen" | "preferences" | "backend"
 >;
 
 /**

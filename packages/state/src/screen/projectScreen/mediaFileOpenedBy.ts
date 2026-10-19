@@ -6,7 +6,6 @@ import type { RouteApp } from "../../route/updateRoute.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ProjectScreenState } from "../screenState.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
-import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
 /**
  * Returns the media file that a settled request on the project overview opens:
@@ -19,10 +18,9 @@ export function mediaFileOpenedBy(
   const main = app.screen.main;
   const route = mainScreenOf(app.route);
   if (main.kind !== "project" || route.screen !== "project") return null;
-  const wizard = app.mediaImports[route.projectId] ?? null;
   return (
     openedByPick(main, action, route.projectId) ??
-    (wizard && fileFetchedBy(wizard, action)?.id) ??
+    fileFetchedBy(route.projectId, action)?.id ??
     null
   );
 }
@@ -50,14 +48,24 @@ function openedByPick(
   return null;
 }
 
-/** Returns the media file that a settled status of the wizard's fetch says the fetch added, if it says so. */
+/**
+ * Returns the media file that a settled status of one of the project's fetches says the fetch added, if it says so.
+ * Only watched fetches are polled, since a fetch no longer watched has its status request aborted.
+ */
 export function fileFetchedBy(
-  wizard: MediaImportWizard,
+  projectId: string,
   action: AppAction,
 ): MediaFile | null {
-  const { jobId } = wizard;
-  if (jobId === null) return null;
-  if (!isSettled(action, jobKey("mediaSource", jobId), "getMediaSourceJob"))
+  if (
+    action.type !== "requestSettled" ||
+    action.request.kind !== "getMediaSourceJob" ||
+    action.request.projectId !== projectId ||
+    !isSettled(
+      action,
+      jobKey("mediaSource", action.request.jobId),
+      "getMediaSourceJob",
+    )
+  )
     return null;
   if (!action.outcome.ok || action.outcome.data.status !== "done") return null;
   return action.outcome.data.media_file;

@@ -14,7 +14,7 @@ import { updateDictionaryImport } from "./updateDictionaryImport.ts";
  */
 export const dictionaryImportFeature: Feature<
   DictionaryImportWizard | null,
-  "route" | "screen" | "mediaImports"
+  "route" | "screen"
 > = {
   initialState: null,
   update: (wizard, action, app) => {

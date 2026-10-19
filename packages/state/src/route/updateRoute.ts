@@ -41,7 +41,7 @@ export function nextRoute(route: Route, action: AppAction): Route {
 }
 
 /** The part of the app state that decides where the app goes next. */
-export type RouteApp = Pick<AppState, "route" | "screen" | "mediaImports">;
+export type RouteApp = Pick<AppState, "route" | "screen">;
 
 /**
  * Returns where the app is after an action, including the media file that a settled pick or fetch opens,

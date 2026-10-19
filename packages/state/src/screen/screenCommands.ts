@@ -15,10 +15,7 @@ import { translationDocumentRequests } from "./readerScreen/translationDocumentR
  */
 export function screenCommands(
   action: AppAction,
-  app: Pick<
-    ReadableState,
-    "route" | "screen" | "mediaImports" | "server" | "backend"
-  >,
+  app: Pick<ReadableState, "route" | "screen" | "server" | "backend">,
 ) {
   return [
     ...cueSeekCommands(action, app),

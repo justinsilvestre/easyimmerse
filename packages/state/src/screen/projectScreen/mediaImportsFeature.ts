@@ -14,10 +14,7 @@ import { endImport } from "./mediaImportRequests.ts";
 import type { MediaImports, MediaImportWizard } from "./mediaImportWizard.ts";
 import { updateMediaImport } from "./updateMediaImport.ts";
 
-type MediaImportsApp = Pick<
-  ReadableState,
-  "route" | "screen" | "mediaImports" | "backend"
->;
+type MediaImportsApp = Pick<ReadableState, "route" | "screen" | "backend">;
 
 const dialogActions: readonly AppAction["type"][] = [
   "mediaImportOpened",
@@ -33,7 +30,7 @@ const dialogActions: readonly AppAction["type"][] = [
  */
 export const mediaImportsFeature: Feature<
   MediaImports,
-  "route" | "screen" | "mediaImports" | "backend"
+  "route" | "screen" | "backend"
 > = {
   initialState: {},
   update: (imports, action, app) => {
@@ -49,7 +46,7 @@ export const mediaImportsFeature: Feature<
       );
       next = withWizard(next, projectId, after);
       effects.push(...wizardEffects);
-      const fetched = wizard && fileFetchedBy(wizard, action);
+      const fetched = wizard && fileFetchedBy(projectId, action);
       if (fetched && projectId !== shown)
         effects.push(addedNotice(fetched, projectId, app));
     }

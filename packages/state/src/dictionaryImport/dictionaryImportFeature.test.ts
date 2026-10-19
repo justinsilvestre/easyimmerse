@@ -42,7 +42,6 @@ const updateOnPage = (
   dictionaryImportFeature.update(wizard, action, {
     route: dictionariesPage,
     screen: { main: { kind: "home" }, settings: null, dialog: null },
-    mediaImports: {},
   });
 
 describe("dictionaryImportFeature", () => {
