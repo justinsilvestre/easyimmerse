@@ -80,6 +80,28 @@ Kenji Miyazawa's 銀河鉄道の夜 (Night on the Galactic Railroad, in the publ
 curl -sL -o /tmp/456_15050.html https://www.aozora.gr.jp/cards/000081/files/456_15050.html && python3 fixtures/build-ginga-tetsudo-no-yoru.py /tmp/456_15050.html
 ```
 
+## Sample books with a translation and a narrated clip
+
+The development seed adds one such book to each placeholder project, pairs it with its translation, and aligns it with both the translation and the clip. Each book's files share its name:
+
+- `<name>.epub`: the opening chapters of the book in the project's target language.
+- `<name>.en.epub`: the same passages in a public-domain English translation.
+- `<name>.m4a`: about a minute of a public-domain LibriVox reading, as mono AAC at 20 kbps, starting where the reader begins the text.
+- `<name>-audio-alignment.json`: an `audio` alignment that times each sentence the clip reads.
+- `<name>-translation-alignment.json`: a `translation` alignment that links every sentence of the book with the English, many-to-many where the translation splits or merges sentences.
+
+The alignments are `AddAlignmentRequest` bodies in which the counterpart's media file id is the placeholder `"audio"` or `"translation"`, as in the alignment fixtures above.
+
+These files were built once from the sources named below, by scripts that are not kept in the repository. Each paragraph of the books is a plain-text `<p>`, so the parser reads back exactly the text that the alignments quote. The clip was cut with ffmpeg, its sentences were timed by transcribing it with faster-whisper, and the translation's sentences were paired by hand. If the text of a book changes, both of its alignments have to be rebuilt.
+
+### lazarillo-de-tormes
+
+The opening of the anonymous *La vida de Lazarillo de Tormes* (Burgos, 1554), for the Spanish project: the whole prologue, the first tratado up to the blind man's arrival, and the opening of the second tratado. The Spanish comes from [Project Gutenberg eBook #320](https://www.gutenberg.org/ebooks/320), with the braces around the Alcalá edition's additions removed and the text inside them kept. The English is Clements R. Markham's translation of 1908 ([Project Gutenberg eBook #53489](https://www.gutenberg.org/ebooks/53489)), without its sidenotes and footnotes. The clip is 23.2 s to 94.9 s of the [first file of LibriVox's recording](https://archive.org/details/lazarillo_0912_librivox) read by Tux: the prologue's first four sentences. All three are in the public domain.
+
+### toshishun
+
+The opening of Akutagawa Ryūnosuke's 杜子春 (1920), for the Japanese project: sections 一 to 三 of [Aozora Bunko's text](https://www.aozora.gr.jp/cards/000879/card43015.html) (card 43015), without ruby readings, and a last chapter of Aozora's credits. The English is the same passages, Parts I to III, of "Tu Tzuchun", translated by Eric S. Bell and Yoshinobu Tada in *Eminent Authors of Contemporary Japan*, Volume 1 (Tokyo, 1930), as [transcribed on Wikisource](https://en.wikisource.org/wiki/Eminent_Authors_of_Contemporary_Japan/Volume_1/Tu_Tzuchun), with the misprints that Wikisource marks corrected, and a last chapter of credits. Both texts are in the public domain. The clip is 18.5 s to 83.6 s of section 一 of [LibriVox's reading](https://archive.org/details/toshisyun_um_librivox) by ekzemplaro (CC0): the first seven sentences, starting just after the section heading, which is not a paragraph of the book.
+
 ## sample-yomitan/ and sample-yomitan.zip
 
 A Yomitan dictionary in format version 3. It holds five term entries: 猫 (cat), 犬 (dog), 食べる (to eat, word class `v1`), 本 (book, with structured content and an image), and 食べた, which points to 食べる as an inflected form. It also has a tag bank, frequency and pitch-accent rows, a kanji entry with its own metadata, a stylesheet, and the image under `images/`. The sample subtitles mention the same words.
