@@ -33,6 +33,15 @@
       }
     }
   ],
-  "storyCount": 326,
-  "changes": []
+  "storyCount": 327,
+  "changes": [
+    {
+      "id": "projects-mediasection--loading",
+      "title": "Projects/MediaSection",
+      "name": "Loading",
+      "importPath": "./src/projects/MediaSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    }
+  ]
 }
