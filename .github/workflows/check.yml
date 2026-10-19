@@ -67,8 +67,23 @@ jobs:
       - name: Fail when the ffmpeg license notices are stale or a build breaks the license policy
         run: node scripts/ffmpeg-notices/index.ts --check
 
-      - name: Fail when the dependency license notices are stale or a shipped license is outside the allowed list
-        run: node scripts/dependency-notices/index.ts --check
+      - name: Regenerate the dependency license notices, failing when a shipped license is outside the allowed list
+        run: mise run license-notices
+
+      - name: Fail when the dependency license notices are stale
+        id: notices-diff
+        run: |
+          git diff --exit-code -- packages/licenses/src/generated/dependencyNotices.json || {
+            echo "::error::The dependency license notices are stale. Download the dependency-notices artifact of this run into packages/licenses/src/generated/ and commit it, or run \`mise run license-notices\`."
+            exit 1
+          }
+
+      - name: Upload the regenerated dependency license notices
+        if: failure() && steps.notices-diff.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-notices
+          path: packages/licenses/src/generated/dependencyNotices.json
 
   record:
     needs: [gate, check]

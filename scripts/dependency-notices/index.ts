@@ -5,13 +5,6 @@ import { parseArgs } from "node:util";
 import type { DependencyNoticeData } from "../../packages/licenses/src/index.ts";
 import { javaScriptBundles, rustTargets } from "./artifacts.ts";
 import {
-  hashFiles,
-  hashText,
-  listInputFiles,
-  readRecordedInputs,
-  writeRecordedInputs,
-} from "./inputs.ts";
-import {
   licensesToQuote,
   readLicenseFiles,
   readStandardTexts,
@@ -29,8 +22,8 @@ import { type ShippedPackage, ShippedPackages } from "./shippedPackage.ts";
 
 /**
  * Generates the license notices of every Rust crate and npm package that ships, or with `--check` verifies,
- * without running Cargo, that the committed notices match the manifests and lockfiles and that no shipped
- * license falls outside the allowed list unless `accepted-outliers.json` accepts it.
+ * without running Cargo, that no license in the committed notices falls outside the allowed list
+ * unless `accepted-outliers.json` accepts it.
  * Generating runs `cargo metadata` for every shipped target, which downloads the crate sources that are missing.
  *
  * Usage: `node scripts/dependency-notices/index.ts [--check]`
@@ -51,10 +44,6 @@ function generate(): number {
   const data = buildNoticeData(packages.sorted(), readPackageTexts);
   const output = `${JSON.stringify(data)}\n`;
   writeFileSync(outputPath, output);
-  writeRecordedInputs({
-    inputs: hashFiles(repoRoot, listInputFiles(repoRoot)),
-    output: hashText(output),
-  });
   const counts = data.groups.map(
     (group) => `${group.packages.length} ${group.title}`,
   );
@@ -63,26 +52,8 @@ function generate(): number {
 }
 
 function check(): number {
-  const recorded = readRecordedInputs();
-  const output = readFileSync(outputPath, "utf-8");
-  const problems = [
-    ...(recorded?.inputs === hashFiles(repoRoot, listInputFiles(repoRoot))
-      ? []
-      : [
-          "The manifests, lockfiles, or generator changed since the notices were generated.",
-        ]),
-    ...(recorded?.output === hashText(output)
-      ? []
-      : [
-          "packages/licenses/src/generated/dependencyNotices.json was edited by hand.",
-        ]),
-  ];
-  for (const problem of problems) console.error(problem);
-  if (problems.length > 0) {
-    console.error("Run `mise run license-notices` and commit the result.");
-  }
-  const outliersFailed = reportOutliers(JSON.parse(output), false);
-  return problems.length > 0 || outliersFailed ? 1 : 0;
+  const data = JSON.parse(readFileSync(outputPath, "utf-8"));
+  return reportOutliers(data, false) ? 1 : 0;
 }
 
 function readPackageTexts(found: ShippedPackage): PackageTexts {
