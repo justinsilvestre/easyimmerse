@@ -1,0 +1,86 @@
+{
+  "provider": null,
+  "content": {
+    "kind": "audio",
+    "audio_media_file_id": "audio",
+    "segments": [
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 0,
+          "start": 0,
+          "end": 8,
+          "quote": "或春の日暮です。"
+        },
+        "start_ms": 0,
+        "end_ms": 1500
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 1,
+          "start": 0,
+          "end": 37,
+          "quote": "唐の都洛陽の西の門の下に、ぼんやり空を仰いでいる、一人の若者がありました。"
+        },
+        "start_ms": 2220,
+        "end_ms": 8000
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 2,
+          "start": 0,
+          "end": 62,
+          "quote": "若者は名を杜子春といって、元は金持の息子でしたが、今は財産を費い尽して、その日の暮しにも困る位、憐な身分になっているのです。"
+        },
+        "start_ms": 9000,
+        "end_ms": 19460
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 3,
+          "start": 0,
+          "end": 61,
+          "quote": "何しろその頃洛陽といえば、天下に並ぶもののない、繁昌を極めた都ですから、往来にはまだしっきりなく、人や車が通っていました。"
+        },
+        "start_ms": 20140,
+        "end_ms": 30960
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 3,
+          "start": 61,
+          "end": 149,
+          "quote": "門一ぱいに当っている、油のような夕日の光の中に、老人のかぶった紗の帽子や、土耳古の女の金の耳環や、白馬に飾った色糸の手綱が、絶えず流れて行く容子は、まるで画のような美しさです。"
+        },
+        "start_ms": 32060,
+        "end_ms": 47860
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 4,
+          "start": 0,
+          "end": 38,
+          "quote": "しかし杜子春は相変らず、門の壁に身を凭せて、ぼんやり空ばかり眺めていました。"
+        },
+        "start_ms": 48880,
+        "end_ms": 54780
+      },
+      {
+        "span": {
+          "chapter_index": 0,
+          "paragraph_index": 4,
+          "start": 38,
+          "end": 89,
+          "quote": "空には、もう細い月が、うらうらと靡いた霞の中に、まるで爪の痕かと思う程、かすかに白く浮んでいるのです。"
+        },
+        "start_ms": 55900,
+        "end_ms": 64460
+      }
+    ]
+  }
+}

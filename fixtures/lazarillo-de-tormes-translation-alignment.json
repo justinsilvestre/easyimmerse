@@ -1,0 +1,1142 @@
+{
+  "provider": null,
+  "content": {
+    "kind": "translation",
+    "translation_media_file_id": "translation",
+    "links": [
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 454,
+            "quote": "Yo por bien tengo que cosas tan señaladas, y por ventura nunca oídas ni vistas, vengan a noticia de muchos y no se entierren en la sepultura del olvido, pues podría ser que alguno que las lea halle algo que le agrade, y a los que no ahondaren tanto los deleite; y a este propósito dice Plinio que no hay libro, por malo que sea, que no tenga alguna cosa buena; mayormente que los gustos no son todos unos, mas lo que uno no come, otro se pierde por ello."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 157,
+            "quote": "I hold it to be good that such remarkable things as have happened to me, perhaps never before seen or heard of, should not be buried in the tomb of oblivion."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 158,
+            "end": 228,
+            "quote": "It may be that some one who reads may find something that pleases him."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 229,
+            "end": 385,
+            "quote": "For those who do not go very deep into the matter there is a saying of Pliny “that there is no book so bad that it does not contain something that is good.”"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 386,
+            "end": 464,
+            "quote": "Moreover, all tastes are not the same, and what one does not eat another will."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 455,
+            "end": 524,
+            "quote": "Y así vemos cosas tenidas en poco de algunos, que de otros no lo son."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 465,
+            "end": 540,
+            "quote": "Thus we see things that are thought much of by some, depreciated by others."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 525,
+            "end": 989,
+            "quote": "Y esto, para ninguna cosa se debría romper ni echar a mal, si muy detestable no fuese, sino que a todos se comunicase, mayormente siendo sin perjuicio y pudiendo sacar della algún fruto; porque si así no fuese, muy pocos escribirían para uno solo, pues no se hace sin trabajo, y quieren, ya que lo pasan, ser recompensados, no con dineros, mas con que vean y lean sus obras, y si hay de qué, se las alaben; y a este propósito dice Tulio: \"La honra cría las artes.\""
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 541,
+            "end": 709,
+            "quote": "Hence no circumstance ought to be omitted, how insignificant soever it may be, but all should be made known, especially as some fruit might be plucked from such a tree."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 90,
+            "quote": "If this were not so, very few would write at all, for it cannot be done without hard work."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 163,
+            "quote": "Authors do not wish to be recompensed with money, but by seeing that their work is known and read, and, if it contains anything that is worthy, that it is praised."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 164,
+            "end": 216,
+            "quote": "On this point Tully says: “Honour creates the arts.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 990,
+            "end": 1076,
+            "quote": "¿Quién piensa que el soldado que es primero del escala, tiene más aborrecido el vivir?"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 217,
+            "end": 311,
+            "quote": "Think you that the soldier who is first on the ladder cares less for his life than the others?"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 1077,
+            "end": 1187,
+            "quote": "No, por cierto; mas el deseo de alabanza le hace ponerse en peligro; y así, en las artes y letras es lo mesmo."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 312,
+            "end": 326,
+            "quote": "Certainly not."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 327,
+            "end": 388,
+            "quote": "It is the desire for fame that leads him to seek such danger."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 389,
+            "end": 431,
+            "quote": "It is the same in the arts and in letters."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 1188,
+            "end": 1388,
+            "quote": "Predica muy bien el presentado, y es hombre que desea mucho el provecho de las ánimas; mas pregunten a su merced si le pesa cuando le dicen: \"¡Oh, qué maravillosamente lo ha hecho vuestra reverencia!\""
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 432,
+            "end": 625,
+            "quote": "We say: “The Doctor preaches very well and he is one who desires much the welfare of souls,” but ask him whether he is much offended when they say, “How wonderfully your reverence has done it!”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 1389,
+            "end": 1517,
+            "quote": "Justó muy ruinmente el señor don Fulano, y dio el sayete de armas al truhán, porque le loaba de haber llevado muy buenas lanzas."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 626,
+            "end": 784,
+            "quote": "So also in arms, men report how such an one has jousted wretchedly, and he has given his arms to a jester because he praised him for using his lances so well."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 1518,
+            "end": 1547,
+            "quote": "¿Qué hiciera si fuera verdad?"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 785,
+            "end": 840,
+            "quote": "What would he have given if he had been told the truth?"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 293,
+            "quote": "Y todo va desta manera: que confesando yo no ser más santo que mis vecinos, desta nonada, que en este grosero estilo escribo, no me pesará que hayan parte y se huelguen con ello todos los que en ella algún gusto hallaren, y vean que vive un hombre con tantas fortunas, peligros y adversidades."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 841,
+            "end": 938,
+            "quote": "Now that all things go in this manner, I confess that I am not more righteous than my neighbours."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 939,
+            "end": 1145,
+            "quote": "I write in this rough style, and all who may find any pleasure in it will be satisfied to know that there lives a man who has met with such fortunes, encountered such dangers, and suffered such adversities."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 118,
+            "quote": "Suplico a vuestra M. reciba el pobre servicio de mano de quien lo hiciera más rico si su poder y deseo se conformaran."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 1146,
+            "end": 1270,
+            "quote": "I beseech your Honour that you will accept the poor service of one who would be richer if his power was equal to his desire."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 119,
+            "end": 513,
+            "quote": "Y pues V.M. escribe se le escriba y relate el caso por muy extenso, parecióme no tomalle por el medio, sino por el principio, porque se tenga entera noticia de mi persona, y también porque consideren los que heredaron nobles estados cuán poco se les debe, pues Fortuna fue con ellos parcial, y cuánto más hicieron los que, siéndoles contraria, con fuerza y maña remando, salieron a buen puerto."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 1271,
+            "end": 1289,
+            "quote": "Well, your Honour!"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 1290,
+            "end": 1358,
+            "quote": "This author writes what he writes, and relates his story very fully."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 399,
+            "quote": "It seemed to him that he should not begin in the middle, but quite at the beginning, so that there might be a full notice of his personality, and also that those who inherit noble estates may consider how little fortune owes them, having been so very partial to them in its gifts; and how much more those have done who, not being so favoured, have, by force and management, arrived at a good estate."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 148,
+            "quote": "Pues sepa V.M. ante todas cosas que a mí llaman Lázaro de Tormes, hijo de Tomé González y de Antona Pérez, naturales de Tejares, aldea de Salamanca."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 194,
+            "quote": "Well! your Honour must know, before anything else, that they call me Lazarillo de Tormes, and that I am the son of Thomé Gonçales and Antonia Perez, natives of Tejares, a village near Salamanca."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 149,
+            "end": 248,
+            "quote": "Mi nacimiento fue dentro del río Tormes, por la cual causa tomé el sobrenombre, y fue desta manera."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 195,
+            "end": 304,
+            "quote": "My birth was in the river Tormes, for which reason I have the river for a surname, and it was in this manner."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 249,
+            "end": 544,
+            "quote": "Mi padre, que Dios perdone, tenía cargo de proveer una molienda de una aceña, que está ribera de aquel río, en la cual fue molinero más de quince años; y estando mi madre una noche en la aceña, preñada de mí, tomóle el parto y parióme allí: de manera que con verdad puedo decir nacido en el río."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 92,
+            "quote": "My father, whom God pardon, had charge of a flour mill which was on the banks of that river."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 93,
+            "end": 226,
+            "quote": "He was the miller there for over fifteen years, and my mother, being one night taken with me in the mill, she gave birth to me there."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 227,
+            "end": 285,
+            "quote": "So that I may say with truth that I was born in the river."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 545,
+            "end": 753,
+            "quote": "Pues siendo yo niño de ocho años, achacaron a mi padre ciertas sangrías mal hechas en los costales de los que allí a moler venían, por lo que fue preso, y confesó y no negó y padeció persecución por justicia."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 144,
+            "quote": "When I was a child of eight years old, they accused my father of certain misdeeds done to the sacks of those who came to have their corn ground."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 145,
+            "end": 243,
+            "quote": "He was taken into custody, and confessed and denied not, suffering persecution for justice’s sake."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 754,
+            "end": 836,
+            "quote": "Espero en Dios que está en la Gloria, pues el Evangelio los llama bienaventurados."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 244,
+            "end": 333,
+            "quote": "So I trust in God that he is in glory, for the Evangelist tells us that such are blessed."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 837,
+            "end": 1081,
+            "quote": "En este tiempo se hizo cierta armada contra moros, entre los cuales fue mi padre, que a la sazón estaba desterrado por el desastre ya dicho, con cargo de acemilero de un caballero que allá fue, y con su señor, como leal criado, feneció su vida."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 334,
+            "end": 487,
+            "quote": "At that time there was a certain expedition against the Moors and among the adventurers was my father, who was banished for the affair already mentioned."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 488,
+            "end": 614,
+            "quote": "He went in the position of attendant on a knight who also went, and, with his master, like a loyal servant, he ended his life."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 337,
+            "quote": "Mi viuda madre, como sin marido y sin abrigo se viese, determinó arrimarse a los buenos por ser uno dellos, y vínose a vivir a la ciudad, y alquiló una casilla, y metióse a guisar de comer a ciertos estudiantes, y lavaba la ropa a ciertos mozos de caballos del Comendador de la Magdalena, de manera que fue frecuentando las caballerizas."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 338,
+            "end": 424,
+            "quote": "Ella y un hombre moreno de aquellos que las bestias curaban, vinieron en conocimiento."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 164,
+            "quote": "My widowed mother, finding herself without husband or home, determined to betake herself to the good things so as to be among them; so she went to live in the city."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 165,
+            "end": 248,
+            "quote": "She hired a small house, and was employed to prepare victuals for certain students."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 249,
+            "end": 359,
+            "quote": "She also washed the clothes of the stable-boys who had charge of the horses of the Comendador de la Magdalena."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 360,
+            "end": 474,
+            "quote": "Thus she frequented the stables, she and a dark-coloured man, who was one of those who had the care of the horses."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 475,
+            "end": 504,
+            "quote": "They came to know each other."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 425,
+            "end": 581,
+            "quote": "Éste algunas veces se venía a nuestra casa, y se iba a la mañana; otras veces de día llegaba a la puerta, en achaque de comprar huevos, y entrábase en casa."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 505,
+            "end": 571,
+            "quote": "Sometimes he came to our house late, and went away in the morning."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 572,
+            "end": 694,
+            "quote": "At other times he came to the door in the day-time, with the excuse that he wanted to buy eggs, and walked into the house."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 582,
+            "end": 849,
+            "quote": "Yo al principio de su entrada, pesábame con él y habíale miedo, viendo el color y mal gesto que tenía; mas de que vi que con su venida mejoraba el comer, fuile queriendo bien, porque siempre traía pan, pedazos de carne, y en el invierno leños, a que nos calentábamos."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 695,
+            "end": 773,
+            "quote": "At first I did not like him, for I was afraid of his colour and his ugly face."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 774,
+            "end": 937,
+            "quote": "But when I saw that his coming was the sign of better living, I began to like him, for he always brought pieces of meat, bread, and in the winter, fuel to warm us."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 850,
+            "end": 993,
+            "quote": "De manera que, continuando con la posada y conversación, mi madre vino a darme un negrito muy bonito, el cual yo brincaba y ayudaba a calentar."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 131,
+            "quote": "This intercourse went on until one day my mother gave me a pretty little brown brother, whom I played with and helped to keep warm."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 994,
+            "end": 1203,
+            "quote": "Y acuérdome que, estando el negro de mi padre trebejando con el mozuelo, como el niño vía a mi madre y a mí blancos, y a él no, huía dél con miedo para mi madre, y señalando con el dedo decía: \"¡Madre, coco!\"."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 132,
+            "end": 260,
+            "quote": "I remember once that when my stepfather was fondling the child, it noticed that my mother and I were white, and that he was not."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 261,
+            "end": 366,
+            "quote": "It frightened the child, who ran to my mother, pointing with its finger and saying, “Mother, he is ugly!”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 33,
+            "quote": "Respondió él riendo: \"¡Hideputa!\""
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 80,
+            "quote": "Yo, aunque bien mochacho, noté aquella palabra de mi hermanico, y dije entre mí:"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 85,
+            "quote": "\"¡Cuántos debe de haber en el mundo que huyen de otros porque no se ven a sí mesmos!\""
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 367,
+            "end": 579,
+            "quote": "To this he replied laughing; but I noticed the words of my little brother, and, though so young, I said to myself, “How many there are in the world who run from others because they do not see themselves in them.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 412,
+            "quote": "Quiso nuestra fortuna que la conversación del Zaide, que así se llamaba, llegó a oídos del mayordomo, y hecha pesquisa, hallóse que la mitad por medio de la cebada, que para las bestias le daban, hurtaba, y salvados, leña, almohazas, mandiles, y las mantas y sábanas de los caballos hacía perdidas, y cuando otra cosa no tenía, las bestias desherraba, y con todo esto acudía a mi madre para criar a mi hermanico."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 114,
+            "quote": "It was our fate that the intimacy of the Zayde, for so they called my stepfather, came to the ears of the steward."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 115,
+            "end": 352,
+            "quote": "On looking into the matter he found that half the corn he gave out for the horses was stolen, also that the fuel, aprons, pillions, horse-cloths, and blankets were missing, and that when nothing else was left, the horse-shoes were taken."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 353,
+            "end": 410,
+            "quote": "With all this my mother was helped to bring up the child."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 413,
+            "end": 607,
+            "quote": "No nos maravillemos de un clérigo ni fraile, porque el uno hurta de los pobres y el otro de casa para sus devotas y para ayuda de otro tanto, cuando a un pobre esclavo el amor le animaba a esto."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 411,
+            "end": 600,
+            "quote": "We need not wonder at a priest or a friar, when one robs the poor, and the other his female devotees to help a friend such as himself, when the love of a poor stable-lad brings him to this."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 608,
+            "end": 814,
+            "quote": "Y probósele cuanto digo y aun más, porque a mí con amenazas me preguntaban, y como niño respondía, y descubría cuanto sabía con miedo, hasta ciertas herraduras que pormandado de mi madre a un herrero vendí."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 221,
+            "quote": "All I have related was proved, because they cross-questioned me with threats, and being a child I answered and let out all I knew from fear, down to certain horse-shoes which, by my mother’s order, I sold to a blacksmith."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 815,
+            "end": 1030,
+            "quote": "Al triste de mi padrastro azotaron y pringaron, y a mi madre pusieron pena por justicia, sobre el acostumbrado centenario, que en casa del sobredicho Comendador no entrase, ni al lastimado Zaide en la suya acogiese."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 222,
+            "end": 318,
+            "quote": "They flogged my unhappy stepfather, and put my mother on the accustomed penance as a punishment."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 319,
+            "end": 441,
+            "quote": "An order was given that she was not to enter the stables of the Comendador, nor to receive the flogged Zayde in her house."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 402,
+            "quote": "Por no echar la soga tras el caldero, la triste se esforzó y cumplió la sentencia; y por evitar peligro y quitarse de malas lenguas, se fue a servir a los que al presente vivían en el mesón de la Solana; y allí, padeciendo mil importunidades, se acabó de criar mi hermanico hasta que supo andar, y a mí hasta ser buen mozuelo, que iba a los huéspedes por vino y candelas y por lo demás que me mandaban."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 143,
+            "quote": "The poor woman complied with the sentence that she might not lose all; and to avoid danger and silence evil tongues she went away into service."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 144,
+            "end": 281,
+            "quote": "She was employed in the open gallery of an inn, and so she contrived to rear the little brother, though suffering from many difficulties."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 282,
+            "end": 435,
+            "quote": "She raised him until he could walk, and me until I was a fine little boy, who went for wine and lights for the guests, and for anything else they wanted."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 193,
+            "quote": "Otro día, no pareciéndome estar allí seguro, fuime a un lugar que llaman Maqueda, adonde me toparon mis pecados con un clérigo que, llegando a pedir limosna, me preguntó si sabía ayudar a misa."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 156,
+            "quote": "Next day, as I did not feel that I should be quite safe at Torrijos, I stopped at a place called Maqueda, where for my sins I took service with a clergyman."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 157,
+            "end": 236,
+            "quote": "Going to him to ask for alms, he inquired whether I knew how to assist at Mass."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 194,
+            "end": 322,
+            "quote": "Yo dije que sí, como era verdad; que, aunque maltratado, mil cosas buenas me mostró el pecador del ciego, y una dellas fue ésta."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 237,
+            "end": 364,
+            "quote": "I said yes, which was true, for though the blind man ill-treated me, he taught me many useful things, and one of them was this."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 323,
+            "end": 366,
+            "quote": "Finalmente, el clérigo me recibió por suyo."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 365,
+            "end": 410,
+            "quote": "Finally the clergyman took me as his servant."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 367,
+            "end": 504,
+            "quote": "Escapé del trueno y di en el relámpago, porque era el ciego para con éste un Alejandro Magno, con ser la mesma avaricia, como he contado."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 411,
+            "end": 470,
+            "quote": "I had escaped from the thunder to fall under the lightning."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 471,
+            "end": 543,
+            "quote": "For compared with this priest, the blind man was an Alexander the Great."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 505,
+            "end": 577,
+            "quote": "No digo más sino que toda la laceria del mundo estaba encerrada en éste."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 578,
+            "end": 651,
+            "quote": "No sé si de su cosecha era, o lo había anexado con el hábito de clerecía."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 544,
+            "end": 729,
+            "quote": "I will say no more than that all the avarice in the world was combined in this man, but I know not whether it was naturally born in him or whether it was put on with the priestly habit."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 200,
+            "quote": "Él tenía un arcaz viejo y cerrado con su llave, la cual traía atada con un agujeta del paletoque, y en viniendo el bodigo de la iglesia, por su mano era luego allí lanzado, y tornada a cerrar el arca."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 201,
+            "end": 516,
+            "quote": "Y en toda la casa no había ninguna cosa de comer, como suele estar en otras: algún tocino colgado al humero, algún queso puesto en alguna tabla o en el armario, algún canastillo con algunos pedazos de pan que de la mesa sobran; que me parece a mí que aunque dello no me aprovechara, con la vista dello me consolara."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 730,
+            "end": 828,
+            "quote": "He had an old chest closed with a key which he carried with him, fastened to the belt of his gown."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 829,
+            "end": 1134,
+            "quote": "When he brought the “bodigos” from the church, they were quickly locked up in the chest, and there was nothing to eat in the house such as is to be seen in other houses, a piece of bacon, some bits of cheese on a shelf or in a cupboard, or a few pieces of bread that may have remained over from the table."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 1135,
+            "end": 1243,
+            "quote": "It seemed to me that the sight of such things, even if I could not have them, would have been a consolation."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 517,
+            "end": 608,
+            "quote": "Solamente había una horca de cebollas, y tras la llave en una cámara en lo alto de la casa."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 609,
+            "end": 1162,
+            "quote": "Destas tenía yo de ración una para cada cuatro días; y cuando le pedía la llave para ir por ella, si alguno estaba presente, echaba mano al falsopecto y con gran continencia la desataba y me la daba diciendo: \"Toma, y vuélvela luego, y no hagáis sino golosinar\", como si debajo della estuvieran todas las conservas de Valencia, con no haber en la dicha cámara, como dije, maldita la otra cosa que las cebollas colgadas de un clavo, las cuales él tenía tan bien por cuenta, que si por malos de mis pecados me desmandara a más de mi tasa, me costara caro."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 128,
+            "quote": "There was only a string of onions, and these were under lock and key in an upper chamber, one being allowed for every four days."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 129,
+            "end": 395,
+            "quote": "If I asked for the key, to fetch the allowance, and any one else was present, he put his hand in his pocket, and gave it to me with great ceremony, telling me to take it and return at once without taking anything else; as if all the conserves of Valencia were there."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 396,
+            "end": 572,
+            "quote": "Yet there was not a thing in the room but the onions hanging from a nail, and he kept such a strict account of them, that if I ever took more than my allowance it cost me dear."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1163,
+            "end": 1198,
+            "quote": "Finalmente, yo me finaba de hambre."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 573,
+            "end": 609,
+            "quote": "At last I was near dead with hunger."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1199,
+            "end": 1258,
+            "quote": "Pues, ya que conmigo tenía poca caridad, consigo usaba más."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 63,
+            "quote": "If he showed little charity to me, he treated himself as badly."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1259,
+            "end": 1318,
+            "quote": "Cinco blancas de carne era su ordinario para comer y cenar."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 64,
+            "end": 127,
+            "quote": "Small bits of meat formed his usual food for dinner and supper."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1319,
+            "end": 1454,
+            "quote": "Verdad es que partía comigo del caldo, que de la carne, ¡tan blanco el ojo!, sino un poco de pan, y ¡pluguiera a Dios que me demediara!"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 128,
+            "end": 220,
+            "quote": "It is true that he shared the gravy with me, but nothing more except a small piece of bread."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1455,
+            "end": 1557,
+            "quote": "Los sábados cómense en esta tierra cabezas de carnero, y enviábame por una que costaba tres maravedís."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 221,
+            "end": 335,
+            "quote": "On Saturdays they eat sheep’s head in those parts, and my master sent me for one that was to cost three maravedis."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 1558,
+            "end": 1730,
+            "quote": "Aquélla le cocía y comía los ojos y la lengua y el cogote y sesos y la carne que en las quijadas tenía, y dábame todos los huesos roídos, y dábamelos en el plato, diciendo:"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 46,
+            "quote": "\"Toma, come, triunfa, que para ti es el mundo."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 47,
+            "end": 78,
+            "quote": "Mejor vida tienes que el Papa.\""
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 336,
+            "end": 477,
+            "quote": "He cooked it and ate all the eyes, tongue, brains, and the meat off the cheeks, giving me the well-picked bone on a plate, and saying, “Take!"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 478,
+            "end": 482,
+            "quote": "Eat!"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 483,
+            "end": 549,
+            "quote": "Triumph! for you is the world, and you live better than the Pope.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 46,
+            "quote": "\"¡Tal te la dé Dios!\", decía yo paso entre mí."
+          }
+        ],
+        "translation_spans": []
+      }
+    ]
+  }
+}
