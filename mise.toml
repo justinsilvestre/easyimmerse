@@ -176,6 +176,21 @@ case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
 PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
 '''
 
+# Builds a debug app for a phone connected over USB, signed with the team in APPLE_DEVELOPMENT_TEAM, and installs it.
+# The generated project is created afresh, because the simulator task may have restricted it to the simulator platform.
+[tasks."ios:device"]
+description = "Build the app and install it on an iPhone connected to this Mac"
+tools = { ruby = "3.4.11" }
+run = '''
+set -e
+: "${APPLE_DEVELOPMENT_TEAM:?Set APPLE_DEVELOPMENT_TEAM to your Apple team ID.}"
+gem list --installed --exact cocoapods --version 1.17.0 > /dev/null || gem install cocoapods --version 1.17.0
+rustup target add aarch64-apple-ios
+rm -rf apps/native/src-tauri/gen/apple
+pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
+PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios run --no-watch
+'''
+
 [tasks."e2e:ios"]
 description = "Drive a debug build of the app on an iOS simulator through Appium"
 depends = ["ios:build", "appium:install:ios"]
