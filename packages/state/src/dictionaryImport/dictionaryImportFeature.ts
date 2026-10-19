@@ -1,7 +1,6 @@
 import type { Feature } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
-import type { Route } from "../route/route.ts";
-import { settingsPageOf } from "../route/route.ts";
+import { isOnDictionariesPage } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 import { updateDictionaryImport } from "./updateDictionaryImport.ts";
@@ -24,10 +23,6 @@ export const dictionaryImportFeature: Feature<
       : updated(null, ...effects);
   },
 };
-
-function isOnDictionariesPage(route: Route): boolean {
-  return route.screen === "settings" && settingsPageOf(route) === "dictionaries";
-}
 
 function outlastsThePage(wizard: DictionaryImportWizard | null): boolean {
   return (

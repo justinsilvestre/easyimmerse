@@ -40,6 +40,11 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
+export {
+  type DictionaryImportStatus,
+  selectDictionaryImportStatus,
+} from "./dictionaryImport/selectDictionaryImportStatus.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
 export { draftFromCue } from "./flashcards/draftFromCue.ts";
@@ -134,7 +139,6 @@ export {
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
-export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {

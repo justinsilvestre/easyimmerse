@@ -1,4 +1,4 @@
-import { actions, selectRoute } from "@easyimmerse/state";
+import { type AppStore, actions, selectRoute } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -80,6 +80,38 @@ describe("AppFooter", () => {
       const { dispatched } = renderFooter({ isSettingsOpen: true });
       fireEvent.click(screen.getByRole("button", { name: "Settings" }));
       expect(dispatched).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("while a dictionary is being added", () => {
+    /** Starts adding a file on the dictionaries page, then closes Settings. */
+    function leaveRunningImport(store: AppStore) {
+      act(() => {
+        store.dispatch(actions.navigated({ type: "openDictionaries" }));
+        store.dispatch(
+          actions.dictionaryFileChosen({
+            name: "jmdict.zip",
+            source: { kind: "path", path: "/d/jmdict.zip" },
+          }),
+        );
+        store.dispatch(actions.navigated({ type: "closeSettings" }));
+      });
+    }
+
+    it("tells of the import", () => {
+      const { store } = renderFooter();
+      leaveRunningImport(store);
+      expect(screen.getByText("Adding jmdict.zip")).toBeDefined();
+    });
+
+    it("opens the dictionaries page from the import's status", () => {
+      const { store } = renderFooter();
+      leaveRunningImport(store);
+      fireEvent.click(screen.getByText("Adding jmdict.zip"));
+      expect(selectRoute(store.getState())).toMatchObject({
+        screen: "settings",
+        pages: ["dictionaries"],
+      });
     });
   });
 });

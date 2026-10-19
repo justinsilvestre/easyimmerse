@@ -71,6 +71,13 @@ export function settingsPageOf(
   return route.pages[route.pages.length - 1] ?? "general";
 }
 
+/** Tells whether the route shows the dictionaries page on top of Settings. */
+export function isOnDictionariesPage(route: Route): boolean {
+  return (
+    route.screen === "settings" && settingsPageOf(route) === "dictionaries"
+  );
+}
+
 function openSettingsPage(current: Route, page: SettingsPage): Route {
   if (current.screen !== "settings")
     return { screen: "settings", beneath: current, pages: [page] };
