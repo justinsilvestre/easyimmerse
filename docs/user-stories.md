@@ -313,11 +313,10 @@ As a user:
 As a user:
 - when an ebook or text file is opened:
   - [x] I can read the text in the ebook/text reader, laid out in pages (two side by side on a wide screen) or as one scrolling column
-  - [x] I can navigate through the pages and chapters of the ebook with the arrow keys, a swipe, the scroll wheel, a tap at either side of the page, or the progress slider
+  - [x] I can navigate through the pages and chapters of the ebook with the arrow keys (while no text field/lookup text has keyboard focus), a swipe, the scroll wheel, a tap at either side of the page, or the progress slider
   - [x] I can search for specific words or phrases in the text, ignoring capitals and accents, and jump to each result
   - [x] I can open the table of contents via a button
   - [x] I can change the font size and style of the text, the line spacing and length, the justification, and the theme (light, sepia, or dark)
-  - [x] I can look up words and create flashcards from them as in the subtitles (described under "Dictionary lookup and flashcard creation")
   - [x] I can search with Ctrl+F or Cmd+F, which searches the whole book rather than only the page on screen
 - while I am reading:
   - [x] the toolbar and progress bar get out of the way when I turn a page or scroll down
@@ -328,6 +327,7 @@ As a user:
   - [x] the text looks as I last set it: theme, font, size, spacing, and layout
 - when the ebook or text file has been aligned with an audio file:
   - [x] I can Ctrl-click (Cmd-click on a Mac) on a sentence/segment to play the matching audio
+  - [x] I can also play a sentence/segment from the play button in the dictionary pop-up's sentence row, or with R while the mouse pointer is on one of its words
   - [x] the sentence/segment currently being spoken is highlighted during playback
 - when a translation is opened:
   - [x] I can switch between
@@ -335,6 +335,10 @@ As a user:
       - translation text only
 - when the ebook or text file has been aligned with a translation, and the target-language text is open:
   - [x] I can click and hold, or tap and hold, on a sentence/segment to see the matching translation
+  - [x] the translation is shown in the dictionary pop-up's sentence row, opened at the word I held, and the sentence/segment it covers is highlighted
+  - [x] I can also show or hide the matching translation from the sentence row's translation button, or with T while the mouse pointer is on one of its words
+- when the ebook or text file is shown in a bilingual view, so that the translation is already on screen:
+  - [x] the sentence row offers no translation, and holding a sentence/segment looks the word up as a tap would
 - when the ebook or text file has been aligned with a translation:
   - [x] I can switch between the single-language views and two bilingual views:
       - interlinear view
@@ -350,78 +354,124 @@ As a user:
 
 ---
 
-### Dictionary lookup and flashcard creation
-
-*this section needs some organizing.*
+### Dictionary lookup and translation
 
 As a user:
-- when I click or tap on a word in the target-language subtitles or text:
-  - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
-  - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
-- when I look up text in a language written with spaces between words, such as German or English:
-  - [x] the word I click, tap or point at is looked up, and the word is highlighted
-- when I look up text in a language written without spaces between words, such as Japanese or Chinese text:
-  - [x] the lookup starts at the character I click, tap or point at, and finds the longest word the dictionaries know from there
-  - [x] the characters the lookup matched are highlighted
-  - [x] clicking or tapping punctuation such as 、 or 。 looks nothing up
-- when I rest the mouse pointer on a word in the target-language subtitles:
-  - [x] the longest matching word the dictionaries know from that point is highlighted instantly
-- in the target-language subtitles, one lookup cursor points at what a lookup would start from:
-  - [x] the mouse and the keyboard move the same cursor, to the same places: a word in a language written with spaces, or a character in Japanese or Chinese
-  - [x] resting the mouse pointer on a word, or giving a word keyboard focus, puts the cursor there
-  - [x] the cursor is highlighted the same way however it got there, in the subtitles over the video and in the subtitles panel alike; the highlight covers what a lookup from the cursor matched
+- when I mouse over text in the target-language subtitles or reader text, or give keyboard focus to target-language subtitles or reader text:
+  - [x] text is highlighted, with the highlight limited to the word boundaries for that specific language, based on its spacing/punctuation rules, system tokenization rules, and/or the words present in active dictionaries
 - when a word in the target-language subtitles has keyboard focus:
-  - [x] Right and Left move the lookup cursor forward and backward through the cue's text by a word: in Japanese or Chinese, Right moves past the characters the lookup matched, or one character until it answers, and Left moves to the start of the word before the cursor; keyboard focus follows the cursor from word to word, and the cursor stops at either end of the cue
-  - [x] in Japanese or Chinese, Shift with Right or Left moves the cursor one character at a time; in a language written with spaces, Shift makes no difference
-  - [x] what the cursor moves to is highlighted and looked up at once, and an open pop-up moves to it when the lookup answers, as when the mouse pointer rests on a word
-  - [x] in Japanese or Chinese, the character the cursor moves to is announced
-  - [x] Up and Down skip playback to the previous or next cue, and the cursor and keyboard focus move to that cue's first word, in the subtitles over the video and in the subtitles panel alike
-  - [x] when the cue over the video changes during playback, keyboard focus moves to the first word of the new cue
-  - [x] Escape takes the cursor away
-- when a word in the target-language subtitles or text has keyboard focus:
-  - [x] pressing Enter or Space opens the dictionary pop-up for the word, starting from the lookup cursor when it lies in that word
-  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions, as a double-click on it would
-- when I press L while the lookup cursor lies in the target-language subtitles, or while the mouse pointer is on a word of an ebook or text:
-  - [x] what the cursor points at is looked up as a click there would look it up, whether the mouse or the keyboard put the cursor there, or the pop-up closes if it already shows that word
-- when I press the lookup button, or L while there is no lookup cursor and no text field has focus:
+  - [x] the first word is highlighted
+- when I click or tap on a word in the target-language subtitles or reader text, or press Enter/Space/L while a word is highlighted (and no text field has focus):
+  - [x] the dictionary pop-up opens at the highlighted word, with the word's definitions, if available
+  - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
+- when the highlight moves while the dictionary pop-up is open:
+  - [x] the pop-up moves to the new word and shows its definitions, if available
+- when the dictionary popup is open, and I click or tap on the highlighted word in the target-language subtitles or reader text or press Enter/Space/L (while no text field has focus):
+  - [x] the pop-up closes
+- when I hold a tap/a click on a word in the target-language subtitles or text, and the word's sentence/segment or cue has a translation available but not already on screen:
+  - [x] the dictionary pop-up opens at the word with its sentence/segment translation shown
+- when I press the lookup button, or L while no word is under the mouse pointer or has keyboard focus (and no text field has focus):
   - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
-- when I press C while no text field has focus on the media screen:
-  - [x] a flashcard is created and saved, as a double-click on the word at the lookup cursor would create it, or as the new-flashcard button would when there is no lookup cursor
-- when I press E while no text field has focus on the media screen, and no flashcard is open in the flashcard-editing form:
-  - [x] the same flashcard as C would create is opened in the flashcard-editing form instead of being saved, and is saved only when I save it or leave it
+
+---
+
+### Highlighting words via keyboard
+
+- when I press the Right and Left arrow keys:
+  - [x] the highlight moves forward and backward through words
+- when I hold down Shift and press the Right and Left arrow keys in a language written without spaces (such as Japanese or Chinese):
+  - [x] the start of the highlight moves one character at a time
+- when I press Escape:
+  - [x] the highlight is removed
+- when I press the Up and Down arrow keys:
+  - [x] any playback skips to the previous or next cue, and the highlight and keyboard focus move to that cue's first word
+  - [ ] the highlight moves to the last word of the previous/first of the next subtitles cue or reader text segment
+- when focus is on the cue text in the video/audio player, and the cue text changes
+  - [x] the highlight moves to the first word of the new cue
+- when I press an arrow key so as to navigate past the first/last word of the subtitles or reader text page:
+  - [x] the highlight moves to the first/last word of the next/previous subtitles cue or page, and the media skips to that cue/page
+- when the target-language subtitles or text are written from right to left:
+  - [ ] the arrow keys move the highlight in the script's own reading direction, so that Left moves it forward and Right backward
+
+---
+
+### Dictionary pop-up
+
+As a user:
+- when I double-click or double-tap a word in the pop-up's definitions, or follow an in-dictionary definition link:
+  - [x] a lookup is performed for that word
+- when I edit the word in the pop-up's search field and press Enter or the maginifier button:
+  - [x] a lookup is performed for the new word
+- when the pop-up is showing entries for the word that triggered its opening, and I click/tap the magnifier button:
+  - [x] the pop-up's search field is selected for editing, and field's text is selected so I can replace it with a new lookup query
+- when I click the thin bar at the bottom of the pop-up:
+  - [x] I can expand/shrink the pop-up
+- when the pop-up opens or moves between words:
+  - [ ] it is at its default compact size
+- when there are no results for the word in the pop-up:
+  - [x] I can see a link to the dictionary settings
+- when I click the flashard button in the pop-up's header, or on one of its entries:
+  - [x] I can create a flashcard from that word or entry
+- when the word shown in the pop-up belongs to a sentence/segment or cue with audio:
+  - [x] I can see the sentence above the entries
+  - [x] I can play the the sentence/segment/cue via a play button next to the sentence
+- when the word shown in the pop-up belongs to a sentence/segment or cue with a translation that is not already on screen:
+  - [x] I can see a translation button by the sentence
+- when I click the sentence's translation button:
+  - [x] the translation is shown/hidden
+- when I have shown or hidden the translation, and the pop-up later moves to another word or reopens on the same screen:
+  - [x] the translation is still shown or hidden as I left it
+- when I press R while no text field has focus:
+  - [x] the current subtitles cue or text audio segment is replayed
+- when I press T while no text field has focus:
+  - [x] the translation of the current subtitles cue or text audio segment is shown/hidden
+- when I press T while no text field has focus, and no word is under the mouse pointer or has keyboard focus:
+  - [x] the pop-up opens on its search field, with the translation of the sentence/segment being spoken or of the current cue
+- when I press Escape while the dictionary pop-up is expanded:
+  - [x] it returns to its compact size
+- when I press Escape while the dictionary pop-up is compact:
+  - [x] the pop-up closes
+  - [x] keyboard focus returns to where it was before the pop-up opened
+- when I click the pop-up's close button, click or tap the word it shows, or click or tap outside the pop-up and not on a word in the target-language subtitles or text:
+  - [x] the dictionary pop-up is closed
+- when I close the dictionary pop-up:
+  - [x] any audio/video playback paused or looped due to the pop-up's opening is resumed/played as normal
+
+---
+
+### Flashcard creation
+
+As a user:
+- when a flashcard for a word is created:
+  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions (unless I have already typed in the field before the definitions had a chance to load)
+  - [x] the fields are shown according to my flashcard settings
+- when I try to create a flashcard from where I am in the media/text is created, with the C or E key:
+  - [x] on the media screen, it is a flashcard for the word under the mouse pointer or with keyboard focus, or, when there is none, a flashcard with no word from the cue shown now
+  - [x] in an ebook or text, it is a flashcard for the word under the mouse pointer, with that word's sentence/segment
+  - [x] when there is no such word or cue to make it from, nothing happens
+- when a new flashcard is created and saved at once (rather than opened in the flashcard-editing form):
+  - [x] it is saved with definitions (if they are available within a few second)
+  - [x] a brief notice names the new flashcard and offers Undo
+  - [x] a flashcard already open in the flashcard-editing form stays open
+- when I double-click or double-tap on a word in the target-language subtitles or text:
+  - [x] a flashcard for the word is created and saved at once
+- when I press Shift+Enter or Shift+Space while a word in the target-language subtitles has keyboard focus:
+  - [x] a flashcard for the word is created and saved at once
+- when I press the flashcard button in the dictionary pop-up's header:
+  - [x] a flashcard for the word is created from every entry and saved at once
+- when I press the flashcard button on one of the dictionary pop-up's entries:
+  - [x] a flashcard for the word is created from that entry alone and saved at once
+- when I hold a tap on a word in the dictionary pop-up:
+  - [x] a flashcard for the word is created and saved at once
+- when I press the new-flashcard button over the subtitles:
+  - [x] a flashcard with no word is created from the cue shown now and saved at once; the button's tooltip names the C key
+- when I press C while no text field has focus:
+  - [x] a flashcard from where I am in the media/text is created and saved at once
+  - [x] in an ebook or text, nothing happens while a panel or the flashcard-editing form is open
+- when I press E while no text field has focus, and no flashcard is open in the flashcard-editing form:
+  - [x] a flashcard from where I am in the media/text is created and opened in the flashcard-editing form, where it is saved only when I save it or leave it
 - when I press E while a flashcard is open in the flashcard-editing form:
   - [x] nothing happens, and the open flashcard is left as it is
-- when I press the new-flashcard button over the subtitles:
-  - [x] a flashcard with no word is created from the cue shown now and saved at once; its tooltip names the C key
-- when the target-language subtitles or text are written from right to left, as Arabic and Hebrew are:
-  - [ ] the arrow keys move the lookup cursor in the script's own reading direction, so that Left moves it forward and Right backward
-- while the dictionary pop-up is open, when I press Escape:
-  - [x] if I have expanded the pop-up, it returns to its compact size
-  - [x] otherwise the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
-- while the dictionary pop-up is open:
-  - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text
-  - [x] when the pop-up moves to another word on the same side of the text, it glides there rather than jumping; it jumps only when it changes sides, and never on first opening
-  - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
-  - [x] on a touch screen, when I tap another word in the target-language subtitles or text, the pop-up moves to that word and shows its definitions
-  - [x] when I double-click or double-tap a word in the pop-up's definitions, or follow a link in them, the pop-up shows the definitions of that word, or of the word the link points to; a single click leaves the word alone, so an entry's own clickable elements work
-  - [x] I can edit the word in the pop-up's field and press Enter, or its magnifier button, to look up something else; while the field still holds the word shown, the magnifier selects it for editing instead
-  - [x] from the thin bar at its bottom, I can expand the pop-up to the window's height to show more of the entries, and shrink it again from the bar or with Escape; the choice lasts while the screen is open
-  - [x] a flashcard from every entry comes from the icon button in the pop-up's header, which names itself in a tooltip; on the media screen it is saved at once, as below
-  - [x] when no dictionary has an entry for the word, the pop-up offers the dictionaries settings
-  - [x] each result's frequency badges follow a "Frequency" label and explain themselves in a tooltip
-  - [x] I can hold a tap on a word in the dictionary pop-up to create a flashcard for the word, filled from that word's definitions; with a mouse, the flashcard buttons of the header and of each entry do it; on the media screen the flashcard is saved at once, as below
-- when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
-  - [x] the dictionary pop-up is closed
-  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I click the pop-up's close button, click or tap the word it shows, or press Escape while it is compact:
-  - [x] the dictionary pop-up is closed
-  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
-  - [x] a flashcard is created for the word
-  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up (unless I have already typed in the field before the definitions had a chance to load)
-  - [x] the fields are shown according to my flashcard settings
-  - [x] in the subtitles, the flashcard is saved at once, without opening the flashcard-editing form, once the definitions arrive, or as it is if they cannot be found or have not arrived within ten seconds; a brief notice names it and offers Undo, and a flashcard already open in the form stays open
-  - [x] in an ebook or text, the flashcard-editing form is opened instead of the dictionary pop-up; while the definitions are still on their way, those fields say "Looking up…"
 
 
 ---
@@ -790,12 +840,12 @@ As a standalone server user:
 ### Machine translation
 
 As a user:
-- when I tap and hold, or click and hold on a subtitle cue or a passage of text without a translation:
-  - [ ] the selected text is translated into my language
+- when I ask for the translation of a subtitle cue or a sentence/segment that has none, from the dictionary pop-up's sentence row (with T, or by holding a tap or the mouse button on a word of it):
+  - [ ] the text is translated into my language
 - when a subtitle cue has been translated:
   - [ ] the translation appears below the target-language cue, as with dual subtitles
 - when a passage of ebook/text has been translated:
-  - [ ] the translation appears in a pop-up, staying until I click or tap outside the pop-up
+  - [ ] the translation appears in the dictionary pop-up's sentence row, as an aligned translation would
 - when I have not subscribed, and have not set up a translation plugin:
   - [ ] translations use a free online service with a limited number of translations
   - [ ] when the limit is reached, I am told how to get more translations: subscribing, adding my own API key for a paid translation service, or adding a plugin
