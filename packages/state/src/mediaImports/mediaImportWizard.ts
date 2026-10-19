@@ -15,3 +15,20 @@ export type MediaImportWizard = PluginFormWizard & {
 
 /** Each project's import dialog, by the project's id, while it is open over the overview or its fetch outlasts the overview. */
 export type MediaImports = Partial<Record<string, MediaImportWizard>>;
+
+/** Returns the imports with the project's dialog set to `wizard`, or removed when it is null, keeping the same object when nothing changes. */
+export function withWizard(
+  imports: MediaImports,
+  projectId: string,
+  wizard: MediaImportWizard | null,
+): MediaImports {
+  if ((imports[projectId] ?? null) === wizard) return imports;
+  if (wizard !== null) return { ...imports, [projectId]: wizard };
+  const { [projectId]: _dropped, ...rest } = imports;
+  return rest;
+}
+
+/** Tells whether a dialog outlasts its project's overview: one whose fetch has started, or whose action may be starting one. */
+export function outlastsTheOverview(wizard: MediaImportWizard): boolean {
+  return wizard.jobId !== null || wizard.isAwaitingAnswer;
+}

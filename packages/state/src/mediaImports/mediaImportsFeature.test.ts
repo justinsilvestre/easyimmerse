@@ -11,9 +11,12 @@ import {
 } from "../server/serverCacheWith.ts";
 import {
   mediaFetchChecked,
+  mediaImportStepAnswered,
   openedMediaImport,
+  sentMediaImportStep,
   startedMediaFetch,
 } from "./exampleMediaFetch.ts";
+import { subtitlesForm } from "./exampleMediaImport.ts";
 import { mediaImportsFeature } from "./mediaImportsFeature.ts";
 
 const goHome = actions.navigated({ type: "goHome" });
@@ -104,5 +107,23 @@ describe("mediaImportsFeature", () => {
       goHome,
     ]);
     expect(imports.p1).toBeDefined();
+  });
+
+  it("keeps a dialog whose action is being answered once the project is left", () => {
+    const [imports] = apply(goHome, sentMediaImportStep);
+    expect(imports.p1?.isAwaitingAnswer).toBe(true);
+  });
+
+  it("goes on waiting for the answer to an action once the project is left", () => {
+    const [, effects] = apply(goHome, sentMediaImportStep);
+    expect(effects).toEqual([]);
+  });
+
+  it("drops a dialog whose action answers with a form while the project is not shown", () => {
+    const [imports] = apply(
+      mediaImportStepAnswered({ kind: "form", form: subtitlesForm }),
+      [...sentMediaImportStep, goHome],
+    );
+    expect(imports).toEqual({});
   });
 });
