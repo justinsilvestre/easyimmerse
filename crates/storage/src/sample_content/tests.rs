@@ -7,36 +7,36 @@ use easyimmerse_core::subtitle_track::SubtitleTrackId;
 
 use super::*;
 
-fn fixtures_dir() -> PathBuf {
+pub(super) fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures")
 }
 
-fn placeholder_storage() -> Storage {
+pub(super) fn placeholder_storage() -> Storage {
     let storage = Storage::open_in_memory().unwrap();
     storage.seed_placeholder_projects().unwrap();
     storage
 }
 
-fn seeded_storage() -> Storage {
+pub(super) fn seeded_storage() -> Storage {
     let storage = placeholder_storage();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
     storage
 }
 
-fn spanish_project() -> ProjectId {
+pub(super) fn spanish_project() -> ProjectId {
     ProjectId("placeholder-1".to_string())
 }
 
-fn japanese_project() -> ProjectId {
+pub(super) fn japanese_project() -> ProjectId {
     ProjectId("placeholder-2".to_string())
 }
 
-fn media_names(storage: &Storage, project_id: &ProjectId) -> Vec<String> {
+pub(super) fn media_names(storage: &Storage, project_id: &ProjectId) -> Vec<String> {
     let media_files = storage.list_media_files(project_id).unwrap();
     media_files.into_iter().map(|media| media.name).collect()
 }
 
-fn only_media_id(storage: &Storage, project_id: &ProjectId) -> MediaFileId {
+fn video_id(storage: &Storage, project_id: &ProjectId) -> MediaFileId {
     storage.list_media_files(project_id).unwrap()[0].id.clone()
 }
 
@@ -50,18 +50,38 @@ fn dictionary_titles(storage: &Storage) -> Vec<String> {
 }
 
 #[test]
-fn gives_the_japanese_project_the_sample_video_and_book() {
+fn gives_the_spanish_project_the_sample_video_and_book() {
+    let storage = seeded_storage();
+    assert_eq!(
+        media_names(&storage, &spanish_project()),
+        vec![
+            "sample.mp4",
+            "lazarillo-de-tormes.epub",
+            "lazarillo-de-tormes.en.epub",
+            "lazarillo-de-tormes.m4a"
+        ]
+    );
+}
+
+#[test]
+fn gives_the_japanese_project_the_sample_video_and_books() {
     let storage = seeded_storage();
     assert_eq!(
         media_names(&storage, &japanese_project()),
-        vec!["sample.mp4", "ginga-tetsudo-no-yoru.epub"]
+        vec![
+            "sample.mp4",
+            "ginga-tetsudo-no-yoru.epub",
+            "toshishun.epub",
+            "toshishun.en.epub",
+            "toshishun.m4a"
+        ]
     );
 }
 
 #[test]
 fn shows_the_spanish_subtitles_as_the_target_track() {
     let storage = seeded_storage();
-    let media_id = only_media_id(&storage, &spanish_project());
+    let media_id = video_id(&storage, &spanish_project());
     let selection = storage.get_subtitle_selection(&media_id).unwrap();
     assert_eq!(
         track_name(&storage, selection.target_track_id),
@@ -72,7 +92,7 @@ fn shows_the_spanish_subtitles_as_the_target_track() {
 #[test]
 fn shows_the_english_subtitles_as_the_translation() {
     let storage = seeded_storage();
-    let media_id = only_media_id(&storage, &spanish_project());
+    let media_id = video_id(&storage, &spanish_project());
     let selection = storage.get_subtitle_selection(&media_id).unwrap();
     assert_eq!(
         track_name(&storage, selection.translation_track_id),
@@ -101,7 +121,7 @@ fn finds_a_spanish_verb_under_an_inflected_form() {
 }
 
 #[test]
-fn leaves_a_project_that_has_media_as_it_was() {
+fn gives_no_sample_video_to_a_project_that_has_media() {
     let storage = placeholder_storage();
     let source = MediaFileSource::Path {
         path: "/videos/mine.mp4".to_string(),
@@ -110,7 +130,7 @@ fn leaves_a_project_that_has_media_as_it_was() {
         .add_media_file(&spanish_project(), "mine.mp4", &source)
         .unwrap();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
-    assert_eq!(media_names(&storage, &spanish_project()), vec!["mine.mp4"]);
+    assert!(!media_names(&storage, &spanish_project()).contains(&"sample.mp4".to_string()));
 }
 
 #[test]
@@ -127,16 +147,16 @@ fn skips_a_dictionary_whose_title_is_already_stored() {
 fn adds_nothing_when_run_again() {
     let storage = seeded_storage();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
-    assert_eq!(media_names(&storage, &spanish_project()).len(), 1);
+    assert_eq!(media_names(&storage, &spanish_project()).len(), 4);
 }
 
 #[test]
 fn leaves_removed_sample_media_removed_when_run_again() {
     let storage = seeded_storage();
-    let media_id = only_media_id(&storage, &spanish_project());
+    let media_id = video_id(&storage, &spanish_project());
     storage.remove_media_file(&media_id).unwrap();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
-    assert!(media_names(&storage, &spanish_project()).is_empty());
+    assert!(!media_names(&storage, &spanish_project()).contains(&"sample.mp4".to_string()));
 }
 
 #[test]

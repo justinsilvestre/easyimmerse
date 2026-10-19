@@ -1,4 +1,4 @@
-//! Sample media, subtitles, and dictionaries for the placeholder projects of development builds.
+//! Sample media, subtitles, books, and dictionaries for the placeholder projects of development builds.
 
 use std::path::{Path, PathBuf};
 
@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use crate::{NewSubtitleTrack, Storage, StorageError};
 
+mod books;
 mod dictionaries;
 
 /// Marks a database that already received the sample content, so that what the user removes stays removed.
@@ -46,6 +47,11 @@ pub enum SampleContentError {
         path: PathBuf,
         source: std::io::Error,
     },
+    #[error("the alignment fixture {path:?} is malformed: {source}")]
+    Alignment {
+        path: PathBuf,
+        source: serde_json::Error,
+    },
     #[error("the sample subtitles are malformed: {0}")]
     Subtitles(#[from] TimedTextError),
     #[error(transparent)]
@@ -56,25 +62,35 @@ pub fn seed_sample_content(
     storage: &Storage,
     fixtures_dir: &Path,
 ) -> Result<(), SampleContentError> {
-    if storage.get_preference(SEEDED_PREFERENCE)?.is_some() {
-        return Ok(());
-    }
     let fixtures = read_fixtures(fixtures_dir)?;
-    for project in &SAMPLE_PROJECTS {
-        add_sample_media(storage, project, &fixtures)?;
+    if storage.get_preference(SEEDED_PREFERENCE)?.is_none() {
+        add_first_sample_content(storage, &fixtures)?;
     }
-    add_sample_book(storage, &fixtures)?;
-    dictionaries::import_sample_dictionaries(storage, fixtures.dictionary)?;
+    for book in &fixtures.books {
+        books::add_sample_book_once(storage, book)?;
+    }
+    Ok(())
+}
+
+/// Adds the sample videos, the Japanese novel, and the dictionaries, which a database receives once as a whole.
+fn add_first_sample_content(
+    storage: &Storage,
+    fixtures: &Fixtures,
+) -> Result<(), SampleContentError> {
+    for project in &SAMPLE_PROJECTS {
+        add_sample_media(storage, project, fixtures)?;
+    }
+    add_sample_book(storage, fixtures)?;
+    dictionaries::import_sample_dictionaries(storage, fixtures.dictionary.clone())?;
     Ok(storage.set_preference(SEEDED_PREFERENCE, "true")?)
 }
 
 /// Adds a Japanese novel to the Japanese placeholder project, unless the project is gone.
 fn add_sample_book(storage: &Storage, fixtures: &Fixtures) -> Result<(), SampleContentError> {
     let project_id = ProjectId(BOOK_PROJECT_ID.to_string());
-    match storage.get_project(&project_id) {
-        Err(StorageError::ProjectNotFound(_)) => return Ok(()),
-        result => result?,
-    };
+    if !project_exists(storage, &project_id)? {
+        return Ok(());
+    }
     let source = MediaFileSource::Path {
         path: fixtures.book_path.clone(),
     };
@@ -89,21 +105,30 @@ struct Fixtures {
     book_path: String,
     translation: String,
     dictionary: Vec<u8>,
+    books: Vec<books::BookFixtures>,
 }
 
 fn read_fixtures(dir: &Path) -> Result<Fixtures, SampleContentError> {
     let dir = dunce::canonicalize(dir).map_err(|source| fixture_error(dir, source))?;
-    let video = dir.join(VIDEO_NAME);
-    std::fs::metadata(&video).map_err(|source| fixture_error(&video, source))?;
-    let book = dir.join(BOOK_NAME);
-    std::fs::metadata(&book).map_err(|source| fixture_error(&book, source))?;
     let translation = read_fixture(&dir.join(TRANSLATION_NAME))?;
+    let books = books::SAMPLE_BOOKS
+        .into_iter()
+        .map(|book| books::read_book_fixtures(&dir, book))
+        .collect::<Result<_, _>>()?;
     Ok(Fixtures {
-        video_path: video.to_string_lossy().into_owned(),
-        book_path: book.to_string_lossy().into_owned(),
+        video_path: fixture_path(&dir, VIDEO_NAME)?,
+        book_path: fixture_path(&dir, BOOK_NAME)?,
         translation: String::from_utf8_lossy(&translation).into_owned(),
         dictionary: read_fixture(&dir.join(dictionaries::FIXTURE_DICTIONARY))?,
+        books,
     })
+}
+
+/// The path of a fixture that is stored by its path rather than read, once it is known to exist.
+fn fixture_path(dir: &Path, name: &str) -> Result<String, SampleContentError> {
+    let path = dir.join(name);
+    std::fs::metadata(&path).map_err(|source| fixture_error(&path, source))?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 fn add_sample_media(
@@ -131,6 +156,14 @@ fn add_sample_media(
 fn is_empty_project(storage: &Storage, id: &ProjectId) -> Result<bool, StorageError> {
     match storage.get_project(id) {
         Ok(project) => Ok(project.media_count == 0),
+        Err(StorageError::ProjectNotFound(_)) => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+fn project_exists(storage: &Storage, id: &ProjectId) -> Result<bool, StorageError> {
+    match storage.get_project(id) {
+        Ok(_) => Ok(true),
         Err(StorageError::ProjectNotFound(_)) => Ok(false),
         Err(error) => Err(error),
     }
