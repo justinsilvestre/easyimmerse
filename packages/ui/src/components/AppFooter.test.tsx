@@ -104,6 +104,14 @@ describe("AppFooter", () => {
       expect(screen.getByText("Adding jmdict.zip")).toBeDefined();
     });
 
+    it("names the import's status by its text alone", () => {
+      const { store } = renderFooter();
+      leaveRunningImport(store);
+      expect(
+        screen.getByRole("button", { name: "Adding jmdict.zip" }),
+      ).toBeDefined();
+    });
+
     it("opens the dictionaries page from the import's status", () => {
       const { store } = renderFooter();
       leaveRunningImport(store);

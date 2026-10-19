@@ -66,6 +66,17 @@ describe("dictionaryImportFeature", () => {
     expect(wizard).toBe(failed);
   });
 
+  it("aborts the preview of a table once Settings close", () => {
+    const previewing: DictionaryImportWizard = {
+      stage: "previewing",
+      file: csv,
+    };
+    const [, effects] = updateOnPage(previewing, closeSettings);
+    expect(effects).toEqual([
+      { type: "abortRequest", id: "settings/dictionaryImport/preview" },
+    ]);
+  });
+
   it("drops a table whose columns are being checked once Settings close", () => {
     const [wizard] = updateOnPage(choosing, closeSettings);
     expect(wizard).toBeNull();

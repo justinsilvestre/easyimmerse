@@ -25,11 +25,13 @@ export function DictionaryImportStatusButton({
     >
       {isRunning ? (
         <>
-          <ProgressBar
-            label={`Adding ${status.fileName}`}
-            percent={status.percent}
-            className="w-12 shrink-0"
-          />
+          {/* The text beside it says the same, so the bar is hidden from screen readers to keep the button's name short. */}
+          <span aria-hidden className="w-12 shrink-0">
+            <ProgressBar
+              label={`Adding ${status.fileName}`}
+              percent={status.percent}
+            />
+          </span>
           <span className="truncate">Adding {status.fileName}</span>
           {status.percent !== null && (
             <span className="shrink-0 tabular-nums">{status.percent}%</span>
