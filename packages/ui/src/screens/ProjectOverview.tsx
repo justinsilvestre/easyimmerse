@@ -111,7 +111,7 @@ export function ProjectOverview({
       )}
       {ankiExport && (
         <AnkiExportDialog
-          mediaFiles={media.items}
+          mediaFiles={media.items ?? []}
           chosenMediaFileIds={ankiExport.mediaFileIds}
           scope={ankiExport.scope}
           newAndChangedCount={ankiExport.newAndChangedCount}
@@ -190,12 +190,14 @@ function useMediaItems(projectId: string) {
   });
   const registry = useBrowserFileRegistry();
   return {
-    items: mediaItemsOf(
-      mediaFiles.data?.media_files ?? [],
-      flashcards.data?.flashcards ?? [],
-      registry,
-      pathAvailabilitiesOf(availability.data),
-    ),
+    items:
+      mediaFiles.data &&
+      mediaItemsOf(
+        mediaFiles.data.media_files,
+        flashcards.data?.flashcards ?? [],
+        registry,
+        pathAvailabilitiesOf(availability.data),
+      ),
     error: mediaFiles.error,
   };
 }
