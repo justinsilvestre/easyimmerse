@@ -23,6 +23,10 @@ pub struct Project {
     pub last_opened_at_ms: u64,
     pub media_count: u64,
     pub flashcard_count: u64,
+    /// The flashcards whose review is due, counted at the server's clock.
+    pub due_review_count: u64,
+    /// The flashcards never answered in the review.
+    pub unreviewed_count: u64,
     /// Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
     pub uses_anki_connect: bool,
 }

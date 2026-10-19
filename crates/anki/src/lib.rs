@@ -16,13 +16,13 @@ mod note_type;
 mod package;
 mod render_note;
 mod render_notes;
+mod revlog_rows;
 mod schema;
 mod sort_field;
 
 #[cfg(test)]
 mod test_support;
 
-pub use card_scheduling::CardScheduling;
 pub use deck_spec::DeckSpec;
 pub use media_ref::AnkiMediaRef;
 pub use note_type::{AnkiNoteType, AnkiTemplate, note_type};

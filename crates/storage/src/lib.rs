@@ -16,6 +16,11 @@ mod new_row;
 mod preferences;
 mod projects;
 mod referenced_paths;
+mod review;
+mod review_answers;
+mod review_rows;
+#[cfg(test)]
+mod review_test_support;
 mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
@@ -26,6 +31,7 @@ pub use error::StorageError;
 pub use sample_content::SampleContentError;
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use easyimmerse_core::alignment::{AddAlignmentRequest, Alignment, AlignmentId};
@@ -38,10 +44,15 @@ use easyimmerse_core::lookup::{
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::review::{
+    ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
+    ReviewProgress, ReviewQueue, ReviewSummary,
+};
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
 use connections::Connections;
+use easyimmerse_srs::ReviewMoment;
 
 pub struct Storage {
     connections: Connections,
@@ -288,6 +299,65 @@ impl Storage {
         sent_at_ms: u64,
     ) -> Result<(), StorageError> {
         self.write(|conn| anki_sync::record_anki_send(conn, project_id, ids, sent_at_ms))
+    }
+
+    /// What waits in the project's review on the moment's local day.
+    pub fn review_summary(
+        &self,
+        project_id: &ProjectId,
+        moment: ReviewMoment,
+    ) -> Result<ReviewSummary, StorageError> {
+        self.read(|conn| review::review_summary(conn, project_id, moment))
+    }
+
+    /// The cards of a review session at `moment`, in the order they are shown, each with the intervals its ratings would give.
+    pub fn review_queue(
+        &self,
+        project_id: &ProjectId,
+        moment: ReviewMoment,
+    ) -> Result<ReviewQueue, StorageError> {
+        self.read(|conn| review::review_queue(conn, project_id, moment))
+    }
+
+    /// Answers a flashcard of the project in one transaction, stamping the answer at `now_ms`
+    /// or just after the project's latest answer when that is later.
+    pub fn answer_review(
+        &self,
+        project_id: &ProjectId,
+        request: &ReviewAnswerRequest,
+        now_ms: u64,
+    ) -> Result<ReviewAnswerResponse, StorageError> {
+        self.write(|conn| review_answers::answer_review(conn, project_id, request, now_ms))
+    }
+
+    /// Undoes the project's latest answer, which must have been given at `answered_at_ms`, and restores the card's previous schedule.
+    pub fn undo_review_answer(
+        &self,
+        project_id: &ProjectId,
+        answered_at_ms: u64,
+        moment: ReviewMoment,
+    ) -> Result<ReviewAnswerUndone, StorageError> {
+        self.write(|conn| {
+            review_answers::undo_review_answer(conn, project_id, answered_at_ms, moment)
+        })
+    }
+
+    /// Raises the number of new cards the project's review introduces on the local day of `now_ms`.
+    pub fn raise_review_allowance(
+        &self,
+        project_id: &ProjectId,
+        request: &ReviewAllowanceRequest,
+        now_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| review_answers::raise_review_allowance(conn, project_id, request, now_ms))
+    }
+
+    /// The schedule and the answers of each of the project's answered flashcards, for the Anki export.
+    pub fn list_review_progress(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<HashMap<FlashcardId, ReviewProgress>, StorageError> {
+        self.read(|conn| review::list_review_progress(conn, project_id))
     }
 
     pub fn list_subtitle_tracks(

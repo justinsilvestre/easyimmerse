@@ -1,12 +1,14 @@
 //! The legacy Anki deck package (.apkg): a zip of the collection database, a JSON map of the media files, and the media files.
 
+use std::collections::HashMap;
 use std::io::{Seek, Write};
 
+use easyimmerse_core::flashcard::FlashcardId;
+use easyimmerse_core::review::ReviewProgress;
 use serde_json::{Map, Value};
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
-use crate::card_scheduling::CardScheduling;
 use crate::collection::collection_bytes;
 use crate::deck_spec::DeckSpec;
 use crate::render_note::AnkiNote;
@@ -31,15 +33,16 @@ pub enum AnkiError {
 /// Writes a legacy .apkg: `collection.anki2` at schema 11, the JSON `media` map, and the media files, all stored uncompressed.
 /// Every Anki client reads this format.
 /// Every note and card is dated at `exported_at_ms`, since Anki updates a note it already has only from a newer one.
+/// A flashcard with review progress goes in with its schedule and its review log; the others go in as new cards.
 pub fn write_package(
     out: impl Write + Seek,
     spec: &DeckSpec,
     notes: &[AnkiNote],
     media: &[PackageMedia],
-    scheduling: CardScheduling,
+    review_progress: &HashMap<FlashcardId, ReviewProgress>,
     exported_at_ms: u64,
 ) -> Result<(), AnkiError> {
-    let collection = collection_bytes(spec, notes, scheduling, exported_at_ms)?;
+    let collection = collection_bytes(spec, notes, review_progress, exported_at_ms)?;
     let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
     let mut zip = ZipWriter::new(out);
     zip.start_file("collection.anki2", options)?;
@@ -69,6 +72,7 @@ mod tests {
     use std::io::{Cursor, Read};
 
     use easyimmerse_core::flashcard::FlashcardId;
+    use easyimmerse_core::review::{ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating};
     use rusqlite::Connection;
     use tempfile::NamedTempFile;
     use zip::ZipArchive;
@@ -83,6 +87,12 @@ mod tests {
 
     /// Writes two flashcards made in the same millisecond, with the first one's audio and screenshot.
     fn written_package() -> ZipArchive<Cursor<Vec<u8>>> {
+        written_package_with(&HashMap::new())
+    }
+
+    fn written_package_with(
+        review_progress: &HashMap<FlashcardId, ReviewProgress>,
+    ) -> ZipArchive<Cursor<Vec<u8>>> {
         let mut second = flashcard();
         second.id = FlashcardId(SECOND_FLASHCARD_ID.to_owned());
         second.content.word = "Tür".to_owned();
@@ -103,7 +113,7 @@ mod tests {
             &deck_spec(),
             &notes,
             &media,
-            CardScheduling::New,
+            review_progress,
             EXPORTED_AT_MS,
         )
         .expect("the package is written");
@@ -122,8 +132,12 @@ mod tests {
 
     /// Opens the package's collection from a temporary file, which lives as long as the returned file handle.
     fn collection() -> (NamedTempFile, Connection) {
+        collection_of(written_package())
+    }
+
+    fn collection_of(mut archive: ZipArchive<Cursor<Vec<u8>>>) -> (NamedTempFile, Connection) {
         let mut file = NamedTempFile::new().expect("a temporary file is made");
-        let bytes = entry_bytes(&mut written_package(), "collection.anki2");
+        let bytes = entry_bytes(&mut archive, "collection.anki2");
         file.write_all(&bytes).expect("the collection is written");
         let connection = Connection::open(file.path()).expect("the collection opens");
         (file, connection)
@@ -345,5 +359,131 @@ mod tests {
                 [created + 1, created + 1, deck, 0, 0, 0, 2]
             ]
         );
+    }
+
+    /// The first flashcard was forgotten on its first showing, then remembered ten minutes later.
+    const FIRST_ANSWER_MS: u64 = 1_760_100_100_000;
+    const SECOND_ANSWER_MS: u64 = FIRST_ANSWER_MS + 600_000;
+    const TWO_DAYS_MS: u64 = 2 * 86_400_000;
+
+    fn log_entry(answered_at_ms: u64, rating: ReviewRating, state: ReviewPhase) -> ReviewLogEntry {
+        let is_first = answered_at_ms == FIRST_ANSWER_MS;
+        ReviewLogEntry {
+            flashcard_id: FlashcardId(FLASHCARD_ID.to_owned()),
+            answered_at_ms,
+            rating,
+            kind: ReviewPhase::Learning,
+            state,
+            elapsed_ms: if is_first { 0 } else { 600_000 },
+            duration_ms: 4_000,
+            stability: 0.2,
+            difficulty: 6.4,
+            interval_ms_before: if is_first { 0 } else { 600_000 },
+            interval_ms_after: if is_first { 600_000 } else { TWO_DAYS_MS },
+            desired_retention: 0.9,
+        }
+    }
+
+    fn reviewed_collection() -> (NamedTempFile, Connection) {
+        let progress = ReviewProgress {
+            state: ReviewCardState {
+                state: ReviewPhase::Review,
+                due_at_ms: SECOND_ANSWER_MS + TWO_DAYS_MS,
+                stability: 2.4,
+                difficulty: 6.2,
+                interval_ms: TWO_DAYS_MS,
+                reps: 2,
+                lapses: 0,
+                learning_step: 0,
+                last_reviewed_at_ms: SECOND_ANSWER_MS,
+            },
+            log: vec![
+                log_entry(FIRST_ANSWER_MS, ReviewRating::Again, ReviewPhase::Learning),
+                log_entry(SECOND_ANSWER_MS, ReviewRating::Good, ReviewPhase::Review),
+            ],
+        };
+        let progress = HashMap::from([(FlashcardId(FLASHCARD_ID.to_owned()), progress)]);
+        collection_of(written_package_with(&progress))
+    }
+
+    #[test]
+    fn writes_a_reviewed_card_with_its_schedule() {
+        let (_file, connection) = reviewed_collection();
+        let row: [i64; 8] = connection
+            .query_row(
+                "SELECT type, queue, due, ivl, factor, reps, lapses, left FROM cards ORDER BY id LIMIT 1",
+                [],
+                |row| {
+                    Ok([
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                        row.get(5)?,
+                        row.get(6)?,
+                        row.get(7)?,
+                    ])
+                },
+            )
+            .expect("the card row exists");
+        assert_eq!(row, [2, 2, 3, 2, 2500, 2, 0, 0]);
+    }
+
+    #[test]
+    fn writes_a_reviewed_card_with_its_memory_state() {
+        let (_file, connection) = reviewed_collection();
+        let data: String = connection
+            .query_row("SELECT data FROM cards ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the card row exists");
+        assert_eq!(data, r#"{"d":6.2,"dr":0.9,"s":2.4}"#);
+    }
+
+    #[test]
+    fn writes_the_review_log_of_a_reviewed_card() {
+        let (_file, connection) = reviewed_collection();
+        let mut statement = connection
+            .prepare("SELECT id, cid, usn, ease, ivl, lastIvl, factor, time, type FROM revlog ORDER BY id")
+            .expect("the query is valid");
+        let rows: Vec<[i64; 9]> = statement
+            .query_map([], |row| {
+                Ok([
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                ])
+            })
+            .expect("the review log is read")
+            .collect::<Result<_, _>>()
+            .expect("every row is read");
+        let card = 1_760_100_000_000;
+        assert_eq!(
+            rows,
+            [
+                [FIRST_ANSWER_MS as i64, card, -1, 1, -600, 0, 2500, 4000, 0],
+                [SECOND_ANSWER_MS as i64, card, -1, 3, 2, -600, 2500, 4000, 0],
+            ]
+        );
+    }
+
+    #[test]
+    fn writes_a_card_without_progress_as_new_beside_a_reviewed_one() {
+        let (_file, connection) = reviewed_collection();
+        let row: (i64, i64) = connection
+            .query_row(
+                "SELECT type, due FROM cards ORDER BY id LIMIT 1 OFFSET 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("the card row exists");
+        assert_eq!(row, (0, 2));
     }
 }

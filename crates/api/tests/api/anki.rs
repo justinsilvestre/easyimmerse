@@ -184,6 +184,28 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn carries_the_review_log_of_an_answered_flashcard() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        let response = server
+            .post_json(
+                &format!("/projects/{PROJECT}/review/answers"),
+                &json!({ "flashcard_id": ids[0], "rating": "good", "utc_offset_min": 0, "duration_ms": 2000 }),
+            )
+            .await;
+        assert_eq!(response.status, 200, "{}", response.text());
+        let package = export_ids(&server, &ids).await.bytes;
+        let ratings: Vec<i64> = open_collection(&package)
+            .prepare("SELECT ease FROM revlog")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(ratings, [3]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn names_the_package_after_the_project() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;

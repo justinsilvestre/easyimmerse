@@ -1055,6 +1055,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/review/allowance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Raises the number of new cards the project's review introduces today, as "Learn 20 more" does. */
+        post: operations["raiseReviewAllowance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/review/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Records the user's rating of a card, stamped with the server's time, and schedules the card's next review. */
+        post: operations["answerReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/review/answers/{answered_at_ms}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undoes the project's latest answer and restores the card's schedule from before it. */
+        delete: operations["undoReviewAnswer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/review/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the cards of a review session in the order they are shown: reviews due today, most overdue first;
+         *     then learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.
+         */
+        get: operations["getReviewQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timed-text/parse": {
         parameters: {
             query?: never;
@@ -2061,6 +2148,11 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             created_at_ms: number;
+            /**
+             * Format: int64
+             * @description The flashcards whose review is due, counted at the server's clock.
+             */
+            due_review_count: number;
             /** Format: int64 */
             flashcard_count: number;
             id: components["schemas"]["ProjectId"];
@@ -2072,6 +2164,11 @@ export interface components {
             /** Format: int64 */
             media_count: number;
             settings: components["schemas"]["ProjectSettings"];
+            /**
+             * Format: int64
+             * @description The flashcards never answered in the review.
+             */
+            unreviewed_count: number;
             /** @description Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off. */
             uses_anki_connect: boolean;
         };
@@ -2105,6 +2202,195 @@ export interface components {
             den: number;
             /** Format: int64 */
             num: number;
+        };
+        /** @description Raises the number of new cards the project's review introduces today. */
+        ReviewAllowanceRequest: {
+            /** Format: int32 */
+            extra_new_cards: number;
+            /**
+             * Format: int32
+             * @description Local time minus UTC, in minutes, as on the user's device.
+             */
+            utc_offset_min: number;
+        };
+        /** @description What the review screen sends when the user rates a card. */
+        ReviewAnswerRequest: {
+            /**
+             * Format: int64
+             * @description The time from the card appearing to the answer, as measured by the client.
+             */
+            duration_ms: number;
+            flashcard_id: components["schemas"]["FlashcardId"];
+            rating: components["schemas"]["ReviewRating"];
+            /**
+             * Format: int32
+             * @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.
+             */
+            utc_offset_min: number;
+        };
+        /** @description A card after an answer. */
+        ReviewAnswerResponse: {
+            entry: components["schemas"]["ReviewLogEntry"];
+            /** @description The intervals of the card's next answer, were it given now. */
+            intervals: components["schemas"]["ReviewIntervals"];
+            state: components["schemas"]["ReviewCardState"];
+        };
+        /** @description A card after its latest answer was undone. */
+        ReviewAnswerUndone: {
+            flashcard_id: components["schemas"]["FlashcardId"];
+            intervals: components["schemas"]["ReviewIntervals"];
+            state?: components["schemas"]["ReviewCardState"] | null;
+        };
+        /** @description The schedule of a card that has been answered at least once. */
+        ReviewCardState: {
+            /**
+             * Format: double
+             * @description The FSRS difficulty, from 1 to 10.
+             */
+            difficulty: number;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            due_at_ms: number;
+            /**
+             * Format: int64
+             * @description The time from the latest answer to `due_at_ms`.
+             */
+            interval_ms: number;
+            /**
+             * Format: int32
+             * @description The number of times the user forgot the card under review.
+             */
+            lapses: number;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            last_reviewed_at_ms: number;
+            /**
+             * Format: int32
+             * @description The number of learning or relearning steps passed in the current phase. Zero under review.
+             */
+            learning_step: number;
+            /**
+             * Format: int32
+             * @description The number of answers given.
+             */
+            reps: number;
+            /**
+             * Format: double
+             * @description The FSRS stability in days: how long until the chance of remembering the card falls to 90%.
+             */
+            stability: number;
+            state: components["schemas"]["ReviewPhase"];
+        };
+        /** @description The interval each rating would give a card if it were answered now. */
+        ReviewIntervals: {
+            /** Format: int64 */
+            again_ms: number;
+            /** Format: int64 */
+            easy_ms: number;
+            /** Format: int64 */
+            good_ms: number;
+            /** Format: int64 */
+            hard_ms: number;
+        };
+        /** @description One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across. */
+        ReviewLogEntry: {
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.
+             */
+            answered_at_ms: number;
+            /**
+             * Format: double
+             * @description The chance of remembering the card when it comes due that its interval was chosen for, from 0 to 1.
+             */
+            desired_retention: number;
+            /**
+             * Format: double
+             * @description The FSRS difficulty after the answer, from 1 to 10.
+             */
+            difficulty: number;
+            /**
+             * Format: int64
+             * @description The time from the card appearing to the answer, at most one minute.
+             */
+            duration_ms: number;
+            /**
+             * Format: int64
+             * @description The time since the card's previous answer. Zero for its first answer.
+             */
+            elapsed_ms: number;
+            flashcard_id: components["schemas"]["FlashcardId"];
+            /**
+             * Format: int64
+             * @description The interval the answer gave the card.
+             */
+            interval_ms_after: number;
+            /**
+             * Format: int64
+             * @description The interval the card had before the answer. Zero for its first answer.
+             */
+            interval_ms_before: number;
+            /** @description The phase the card was in when answered. A new card's first answer is a learning answer. */
+            kind: components["schemas"]["ReviewPhase"];
+            rating: components["schemas"]["ReviewRating"];
+            /**
+             * Format: double
+             * @description The FSRS stability after the answer, in days.
+             */
+            stability: number;
+            /** @description The phase the answer put the card in. */
+            state: components["schemas"]["ReviewPhase"];
+        };
+        /**
+         * @description Where a card stands in its schedule.
+         *     A card is learning from its first answer until it graduates, under review once it has graduated,
+         *     and relearning after the user forgot it under review, until it graduates again.
+         * @enum {string}
+         */
+        ReviewPhase: "learning" | "review" | "relearning";
+        /** @description The cards of a review session, in the order they are shown. */
+        ReviewQueue: {
+            cards: components["schemas"]["ReviewQueueCard"][];
+        };
+        ReviewQueueCard: {
+            flashcard: components["schemas"]["Flashcard"];
+            intervals: components["schemas"]["ReviewIntervals"];
+            state?: components["schemas"]["ReviewCardState"] | null;
+        };
+        /**
+         * @description The button the user pressed after seeing the answer.
+         * @enum {string}
+         */
+        ReviewRating: "again" | "hard" | "good" | "easy";
+        /** @description What waits in a project's review, as the flashcards panel shows it. */
+        ReviewSummary: {
+            /**
+             * Format: int64
+             * @description Cards under review that are due today.
+             */
+            due_count: number;
+            /** @description Whether any flashcard of the project has been answered. */
+            has_progress: boolean;
+            /**
+             * Format: int64
+             * @description Cards in learning or relearning that are due now or within the learn-ahead time.
+             */
+            learning_count: number;
+            /**
+             * Format: int64
+             * @description New cards that may still be introduced today.
+             */
+            new_count: number;
+            next_card?: components["schemas"]["Flashcard"] | null;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch at which the earliest answered card is due. Null when no card has been answered.
+             */
+            next_due_at_ms?: number | null;
         };
         /** @description A still frame of the video, named by the time it is taken at. The image itself is read from the media file. */
         Screenshot: {
@@ -6412,6 +6698,282 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getReviewSummary: {
+        parameters: {
+            query: {
+                /** @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time. */
+                utc_offset_min: number;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What waits in the project's review today */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummary"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    raiseReviewAllowance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAllowanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Today's allowance of new cards was raised */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    answerReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description The card's new schedule, the log entry of the answer, and the intervals of its next answer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewAnswerResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no such flashcard in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    undoReviewAnswer: {
+        parameters: {
+            query: {
+                /** @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time. */
+                utc_offset_min: number;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The time of the answer, as its log entry gives it */
+                answered_at_ms: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The card as it stood before the answer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewAnswerUndone"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no answer at that time in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The answer is not the project's latest */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getReviewQueue: {
+        parameters: {
+            query: {
+                /** @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time. */
+                utc_offset_min: number;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session's cards, each with the intervals its ratings would give */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueue"];
+                };
             };
             /** @description Missing or invalid token */
             401: {

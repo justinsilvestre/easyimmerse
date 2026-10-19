@@ -1,5 +1,6 @@
 //! Exporting a project's flashcards as a legacy Anki deck package (.apkg), saved at a path or sent for download.
 
+use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path as FilePath;
 
@@ -7,9 +8,10 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Response;
 use axum::{Extension, Json};
-use easyimmerse_anki::{AnkiNote, CardScheduling, PackageMedia, render_note, write_package};
+use easyimmerse_anki::{AnkiNote, PackageMedia, render_note, write_package};
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::{Project, ProjectId};
+use easyimmerse_core::review::ReviewProgress;
 use easyimmerse_storage::DeliveredPackage;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -110,7 +112,8 @@ pub async fn export_anki_package(
     }
 }
 
-/// Builds the package, dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
+/// Builds the package with the review progress of its flashcards,
+/// dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
 async fn build_package(
     state: &AppState,
     token: TokenKind,
@@ -128,8 +131,12 @@ async fn build_package(
     }
     let notes = without_skipped_media(notes, &media.skipped);
     let project = &selection.project;
+    let project_id = project.id.clone();
+    let review_progress = state
+        .with_storage(move |storage| storage.list_review_progress(&project_id))
+        .await?;
     Ok(BuiltPackage {
-        bytes: write_package_bytes(project, notes, media.files, now_ms()).await?,
+        bytes: write_package_bytes(project, notes, media.files, review_progress).await?,
         file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
         skipped_media_count: media.skipped.len() as u64,
         read_at_ms: selection.read_at_ms,
@@ -145,14 +152,15 @@ async fn build_package(
     })
 }
 
-/// Writes the package in memory on a blocking thread; 500 `package_failed` when it cannot be written.
+/// Writes the package in memory on a blocking thread, dated now; 500 `package_failed` when it cannot be written.
 async fn write_package_bytes(
     project: &Project,
     notes: Vec<AnkiNote>,
     media: Vec<PackageMedia>,
-    exported_at_ms: u64,
+    review_progress: HashMap<FlashcardId, ReviewProgress>,
 ) -> Result<Vec<u8>, ApiFailure> {
     let project = project.clone();
+    let exported_at_ms = now_ms();
     let written = tokio::task::spawn_blocking(move || {
         let mut out = Cursor::new(Vec::new());
         write_package(
@@ -160,7 +168,7 @@ async fn write_package_bytes(
             &deck_spec(&project),
             &notes,
             &media,
-            CardScheduling::New,
+            &review_progress,
             exported_at_ms,
         )
         .map(|()| out.into_inner())

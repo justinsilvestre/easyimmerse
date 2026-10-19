@@ -15,6 +15,14 @@ created_at_ms: number,
  */
 last_opened_at_ms: number, media_count: number, flashcard_count: number, 
 /**
+ * The flashcards whose review is due, counted at the server's clock.
+ */
+due_review_count: number, 
+/**
+ * The flashcards never answered in the review.
+ */
+unreviewed_count: number, 
+/**
  * Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
  */
 uses_anki_connect: boolean, };

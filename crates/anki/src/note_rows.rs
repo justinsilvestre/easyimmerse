@@ -1,7 +1,9 @@
 //! The rows of the `notes` and `cards` tables, one note and one card for each flashcard.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
+use easyimmerse_core::flashcard::FlashcardId;
+use easyimmerse_core::review::ReviewProgress;
 use rusqlite::{Connection, Statement, params};
 
 use crate::anki_field::FIELD_SEPARATOR;
@@ -10,6 +12,7 @@ use crate::deck_spec::DeckSpec;
 use crate::derived_id::deck_id;
 use crate::note_type::AnkiNoteType;
 use crate::render_note::AnkiNote;
+use crate::revlog_rows::insert_revlog_rows;
 use crate::sort_field::{field_checksum, strip_html};
 
 const INSERT_NOTE_SQL: &str =
@@ -21,29 +24,34 @@ pub(crate) struct RowStamp {
     modified_secs: i64,
     note_type_id: i64,
     deck_id: i64,
+    collection_created_secs: u64,
 }
 
 impl RowStamp {
     /// Dates every row at the export, so that importing the package again updates the notes Anki already has.
+    /// Review cards are due on days counted from `collection_created_secs`.
     pub(crate) fn new(
         spec: &DeckSpec,
         note_type: &AnkiNoteType,
         exported_at_ms: u64,
+        collection_created_secs: u64,
     ) -> rusqlite::Result<Self> {
         Ok(Self {
             modified_secs: sql_int(exported_at_ms / 1000)?,
             note_type_id: sql_int(note_type.id)?,
             deck_id: sql_int(deck_id(spec.project_id))?,
+            collection_created_secs,
         })
     }
 }
 
-/// Inserts a note and its card for each rendered note, the cards in export order.
+/// Inserts a note and its card for each rendered note, the cards in export order,
+/// with the review progress of each flashcard that has some, and its review log.
 pub(crate) fn insert_notes_and_cards(
     connection: &Connection,
     stamp: &RowStamp,
     notes: &[AnkiNote],
-    scheduling: CardScheduling,
+    review_progress: &HashMap<FlashcardId, ReviewProgress>,
 ) -> rusqlite::Result<()> {
     let note_ids = unique_ids(notes.iter().map(|note| note.note_id));
     let mut insert_note = connection.prepare(INSERT_NOTE_SQL)?;
@@ -51,8 +59,13 @@ pub(crate) fn insert_notes_and_cards(
     for (position, (note, note_id)) in (1..).zip(notes.iter().zip(note_ids)) {
         let row_id = sql_int(note_id)?;
         insert_note_row(&mut insert_note, stamp, note, row_id)?;
-        let card = scheduling.columns(position);
+        let progress = review_progress.get(&note.flashcard_id);
+        let scheduling = progress.map_or(CardScheduling::New, CardScheduling::Reviewed);
+        let card = scheduling.columns(position, stamp.collection_created_secs);
         insert_card_row(&mut insert_card, stamp, &card, row_id)?;
+        if let Some(progress) = progress {
+            insert_revlog_rows(connection, row_id, &progress.log)?;
+        }
     }
     Ok(())
 }

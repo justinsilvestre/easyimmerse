@@ -1,8 +1,11 @@
 //! The SQLite database of a package, `collection.anki2`, at Anki's schema version 11.
 
+use std::collections::HashMap;
+
+use easyimmerse_core::flashcard::FlashcardId;
+use easyimmerse_core::review::ReviewProgress;
 use rusqlite::{Connection, MAIN_DB, params};
 
-use crate::card_scheduling::CardScheduling;
 use crate::collection_json::{conf_json, dconf_json, decks_json, models_json};
 use crate::deck_spec::DeckSpec;
 use crate::derived_id::deck_id;
@@ -18,17 +21,18 @@ const MILLIS_PER_DAY: u64 = 86_400_000;
 pub(crate) fn collection_bytes(
     spec: &DeckSpec,
     notes: &[AnkiNote],
-    scheduling: CardScheduling,
+    review_progress: &HashMap<FlashcardId, ReviewProgress>,
     exported_at_ms: u64,
 ) -> rusqlite::Result<Vec<u8>> {
     let note_type = note_type(spec);
     let collection_row = collection_row(spec, &note_type, notes, exported_at_ms)?;
-    let stamp = RowStamp::new(spec, &note_type, exported_at_ms)?;
+    let created_secs = u64::try_from(collection_row.created_secs).unwrap_or(0);
+    let stamp = RowStamp::new(spec, &note_type, exported_at_ms, created_secs)?;
     let connection = Connection::open_in_memory()?;
     connection.execute_batch(SCHEMA_11)?;
     let transaction = connection.unchecked_transaction()?;
     insert_collection_row(&transaction, &collection_row)?;
-    insert_notes_and_cards(&transaction, &stamp, notes, scheduling)?;
+    insert_notes_and_cards(&transaction, &stamp, notes, review_progress)?;
     transaction.commit()?;
     Ok(connection.serialize(MAIN_DB)?.to_vec())
 }

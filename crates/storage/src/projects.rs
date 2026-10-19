@@ -6,13 +6,18 @@ use crate::error::StorageError;
 use crate::new_row::{generate_id, now_ms};
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
-/// The project columns followed by the two counts, as every project query selects them.
+/// The project columns followed by the counts, as every project query selects them.
+/// Cards count as due by the database's clock, which is the server's.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
      p.flashcard_front_fields_json, p.lists_anki_deletions, p.created_at_ms, p.last_opened_at_ms, \
      p.uses_anki_connect, \
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
-     (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id)";
+     (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id), \
+     (SELECT COUNT(*) FROM review_cards r WHERE r.project_id = p.id \
+      AND r.due_at_ms <= CAST(unixepoch('subsec') * 1000 AS INTEGER)), \
+     (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id \
+      AND NOT EXISTS (SELECT 1 FROM review_cards r WHERE r.flashcard_id = f.id))";
 
 /// Lists every project, most recently opened first.
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, StorageError> {
@@ -228,6 +233,8 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
         uses_anki_connect: row.get(12)?,
         media_count: read_unsigned(row, 13)?,
         flashcard_count: read_unsigned(row, 14)?,
+        due_review_count: read_unsigned(row, 15)?,
+        unreviewed_count: read_unsigned(row, 16)?,
     })
 }
 
@@ -407,5 +414,40 @@ mod tests {
     fn deleting_an_unknown_project_fails() {
         let result = seeded_storage().delete_project(&ProjectId("missing".to_string()));
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    }
+
+    mod review_counts {
+        use easyimmerse_core::review::ReviewRating;
+
+        use crate::new_row::now_ms;
+        use crate::review_test_support::{DAY_MS, make_flashcards, project, rate, seeded_storage};
+
+        #[test]
+        fn counts_a_card_whose_review_is_due() {
+            let storage = seeded_storage();
+            let ids = make_flashcards(&storage, 1);
+            rate(&storage, &ids[0], ReviewRating::Good, now_ms() - 3 * DAY_MS);
+            let project = storage.get_project(&project()).unwrap();
+            assert_eq!(project.due_review_count, 1);
+        }
+
+        #[test]
+        fn leaves_out_a_card_due_later() {
+            let storage = seeded_storage();
+            let ids = make_flashcards(&storage, 1);
+            rate(&storage, &ids[0], ReviewRating::Again, now_ms());
+            let project = storage.get_project(&project()).unwrap();
+            assert_eq!(project.due_review_count, 0);
+        }
+
+        #[test]
+        fn counts_the_flashcards_never_answered() {
+            let storage = seeded_storage();
+            let ids = make_flashcards(&storage, 3);
+            rate(&storage, &ids[0], ReviewRating::Good, now_ms());
+            let listed = storage.list_projects().unwrap();
+            let project = listed.iter().find(|listed| listed.id == project()).unwrap();
+            assert_eq!(project.unreviewed_count, 2);
+        }
     }
 }
