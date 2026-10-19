@@ -1,7 +1,7 @@
 //! The FSRS parameters fitted to the user's answers across every project, which schedule every review once there are some.
 
 use easyimmerse_core::review::ReviewLogEntry;
-use easyimmerse_srs::{ReviewMoment, Scheduler, has_enough_to_fit, is_fit_due};
+use easyimmerse_srs::{MIN_FIT_ANSWERS, ReviewMoment, Scheduler, has_enough_to_fit, is_fit_due};
 use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::StorageError;
@@ -10,47 +10,48 @@ use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 /// The scheduler of every review: the fitted parameters, or the defaults until a fit has given some.
 pub fn load_scheduler(conn: &Connection) -> Result<Scheduler, StorageError> {
-    let weights: Option<Option<String>> = conn
+    let weights: Option<String> = conn
         .query_row(
             "SELECT weights_json FROM review_parameters WHERE id = 1",
             [],
             |row| row.get(0),
         )
         .optional()?;
-    match weights.flatten() {
+    match weights {
         Some(json) => Ok(Scheduler::new(&serde_json::from_str::<Vec<f32>>(&json)?)?),
         None => Ok(Scheduler::default()),
     }
 }
 
-/// Claims the next fit when one is due at `moment` and the log holds enough answers for it, and returns the log to fit to.
-/// The claim dates the fit at `moment`, so that no other fit starts in the next thirty days, even when this one fails.
-pub fn claim_parameter_fit(
+/// Every answer to fit the parameters to, when a fit is due at `moment` and the log holds enough answers for one.
+/// A count of the log decides first whether it could, so that the log is read only when a fit may follow.
+pub fn log_to_fit(
     conn: &Connection,
     moment: ReviewMoment,
 ) -> Result<Option<Vec<ReviewLogEntry>>, StorageError> {
-    if !is_fit_due(fitted_at_ms(conn)?, moment.at_ms) {
+    if !is_fit_due(fitted_at_ms(conn)?, moment.at_ms) || log_length(conn)? < MIN_FIT_ANSWERS {
         return Ok(None);
     }
     let log = list_all_log_entries(conn)?;
-    if !has_enough_to_fit(&log, moment) {
-        return Ok(None);
-    }
-    conn.execute(
-        "INSERT INTO review_parameters (id, weights_json, fitted_at_ms) VALUES (1, NULL, ?1) \
-         ON CONFLICT (id) DO UPDATE SET fitted_at_ms = excluded.fitted_at_ms",
-        params![to_stored_integer(moment.at_ms)],
-    )?;
-    Ok(Some(log))
+    Ok(has_enough_to_fit(&log, moment).then_some(log))
 }
 
-/// Keeps the parameters a fit gave, which schedule every review from now on.
-pub fn save_review_parameters(conn: &Connection, weights: &[f32]) -> Result<(), StorageError> {
+/// Keeps the parameters of a fit begun at `fitted_at_ms`, which schedule every review from now on.
+pub fn save_review_parameters(
+    conn: &Connection,
+    weights: &[f32],
+    fitted_at_ms: u64,
+) -> Result<(), StorageError> {
     conn.execute(
-        "UPDATE review_parameters SET weights_json = ?1 WHERE id = 1",
-        params![serde_json::to_string(weights)?],
+        "INSERT OR REPLACE INTO review_parameters (id, weights_json, fitted_at_ms) VALUES (1, ?1, ?2)",
+        params![serde_json::to_string(weights)?, to_stored_integer(fitted_at_ms)],
     )?;
     Ok(())
+}
+
+fn log_length(conn: &Connection) -> Result<usize, StorageError> {
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM review_log", [], |row| row.get(0))?;
+    Ok(usize::try_from(count).unwrap_or(0))
 }
 
 fn fitted_at_ms(conn: &Connection) -> Result<Option<u64>, StorageError> {
@@ -68,7 +69,6 @@ fn fitted_at_ms(conn: &Connection) -> Result<Option<u64>, StorageError> {
 mod tests {
     use easyimmerse_core::review::ReviewRating;
 
-    use super::*;
     use crate::review_test_support::*;
 
     /// Answers 32 cards on three days each, which gives the 64 answers on later days a fit needs.
@@ -83,36 +83,49 @@ mod tests {
         storage
     }
 
-    fn claim(storage: &crate::Storage, at_ms: u64) -> bool {
-        storage.claim_parameter_fit(at(at_ms)).unwrap().is_some()
+    fn is_fit_due_at(storage: &crate::Storage, at_ms: u64) -> bool {
+        storage.log_to_fit(at(at_ms)).unwrap().is_some()
+    }
+
+    fn save_fit(storage: &crate::Storage, at_ms: u64) {
+        storage
+            .save_review_parameters(&easyimmerse_srs::DEFAULT_WEIGHTS, at_ms)
+            .unwrap();
     }
 
     #[test]
-    fn claims_no_fit_with_too_few_answers() {
+    fn no_fit_is_due_with_too_few_answers() {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 1);
         rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
-        assert!(!claim(&storage, NOON_MS + 10 * DAY_MS));
+        assert!(!is_fit_due_at(&storage, NOON_MS + 10 * DAY_MS));
     }
 
     #[test]
-    fn claims_the_first_fit_once_there_are_enough_answers() {
+    fn the_first_fit_is_due_once_there_are_enough_answers() {
         let storage = storage_with_enough_answers();
-        assert!(claim(&storage, NOON_MS + 10 * DAY_MS));
+        assert!(is_fit_due_at(&storage, NOON_MS + 10 * DAY_MS));
     }
 
     #[test]
-    fn claims_no_second_fit_within_thirty_days() {
+    fn a_fit_stays_due_until_one_is_saved() {
         let storage = storage_with_enough_answers();
-        claim(&storage, NOON_MS + 10 * DAY_MS);
-        assert!(!claim(&storage, NOON_MS + 20 * DAY_MS));
+        is_fit_due_at(&storage, NOON_MS + 10 * DAY_MS);
+        assert!(is_fit_due_at(&storage, NOON_MS + 11 * DAY_MS));
     }
 
     #[test]
-    fn claims_a_fit_again_after_thirty_days() {
+    fn no_second_fit_is_due_within_thirty_days() {
         let storage = storage_with_enough_answers();
-        claim(&storage, NOON_MS + 10 * DAY_MS);
-        assert!(claim(&storage, NOON_MS + 40 * DAY_MS));
+        save_fit(&storage, NOON_MS + 10 * DAY_MS);
+        assert!(!is_fit_due_at(&storage, NOON_MS + 20 * DAY_MS));
+    }
+
+    #[test]
+    fn a_fit_is_due_again_after_thirty_days() {
+        let storage = storage_with_enough_answers();
+        save_fit(&storage, NOON_MS + 10 * DAY_MS);
+        assert!(is_fit_due_at(&storage, NOON_MS + 40 * DAY_MS));
     }
 
     fn first_good_ms(storage: &crate::Storage) -> u64 {
@@ -133,14 +146,6 @@ mod tests {
     }
 
     fn save_parameters(storage: &crate::Storage, weights: &[f32]) {
-        storage
-            .write(|conn| {
-                conn.execute(
-                    "INSERT OR REPLACE INTO review_parameters (id, weights_json, fitted_at_ms) VALUES (1, NULL, 0)",
-                    [],
-                )?;
-                save_review_parameters(conn, weights)
-            })
-            .unwrap();
+        storage.save_review_parameters(weights, NOON_MS).unwrap();
     }
 }

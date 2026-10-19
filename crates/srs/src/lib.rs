@@ -14,7 +14,7 @@ mod settings;
 pub use error::SrsError;
 /// The FSRS-6 parameters that fit the average learner, which schedule reviews until a fit gives the user's own.
 pub use fsrs::DEFAULT_PARAMETERS as DEFAULT_WEIGHTS;
-pub use parameter_fit::{fit_parameters, has_enough_to_fit, is_fit_due};
+pub use parameter_fit::{MIN_FIT_ANSWERS, fit_parameters, has_enough_to_fit, is_fit_due};
 pub use queue_limits::{learn_ahead_cutoff_ms, new_cards_available, reviews_available};
 pub use review_moment::ReviewMoment;
 pub use schedule::{Answered, ReviewedCard, Scheduler, is_leech};

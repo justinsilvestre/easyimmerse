@@ -17,5 +17,4 @@ pub const NEW_CARDS_PER_DAY: u64 = 20;
 pub const REVIEWS_PER_DAY: u64 = 200;
 /// The number of times the user forgets a card under review that makes it a leech, as in Anki.
 pub const LEECH_LAPSES: u32 = 8;
-/// Answer durations are capped as Anki caps them, since a longer one means the user stepped away.
-pub const MAX_ANSWER_DURATION_MS: u64 = 60_000;
+pub use easyimmerse_core::review::MAX_ANSWER_DURATION_MS;

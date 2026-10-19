@@ -7,6 +7,10 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::flashcard::{Flashcard, FlashcardId};
+use crate::project::ProjectId;
+
+/// The longest time an answer is logged as taking, as Anki caps it, since a longer one means the user stepped away.
+pub const MAX_ANSWER_DURATION_MS: u64 = 60_000;
 
 /// The button the user pressed after seeing the answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
@@ -134,6 +138,25 @@ pub struct ReviewSummary {
     pub next_card: Option<Flashcard>,
     /// Whether any flashcard of the project has been answered.
     pub has_progress: bool,
+}
+
+/// What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ReviewCounts {
+    pub project_id: ProjectId,
+    /// Cards under review that are due today, up to the day's limit.
+    pub due_count: u64,
+    /// Cards in learning or relearning that are due now or within the learn-ahead time.
+    pub learning_count: u64,
+    /// New cards that may still be introduced today.
+    pub new_count: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ListReviewCountsResponse {
+    pub projects: Vec<ReviewCounts>,
 }
 
 /// The cards of a review session, in the order they are shown.

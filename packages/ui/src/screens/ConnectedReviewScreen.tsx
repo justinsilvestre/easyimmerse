@@ -88,7 +88,9 @@ export function ConnectedReviewScreen({
         onUndo={() => dispatch(actions.reviewUndoRequested())}
         onBack={onBack}
         onLearnMore={() => dispatch(actions.reviewAllowanceRaised())}
-        onReviewMore={() => dispatch(actions.reviewMoreReviewsRequested())}
+        onReviewMore={(reviewCount) =>
+          dispatch(actions.reviewMoreReviewsRequested(reviewCount))
+        }
         onRetry={() => dispatch(actions.reviewQueueRetried())}
         onEditFlashcard={
           shown?.flashcard.media_file_id

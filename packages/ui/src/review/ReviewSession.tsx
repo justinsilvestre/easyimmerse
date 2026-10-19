@@ -53,7 +53,7 @@ export function ReviewSession({
   onSuspend: () => void;
   onBack: () => void;
   onLearnMore: () => void;
-  onReviewMore: () => void;
+  onReviewMore: (reviewCount: number) => void;
   onRetry: () => void;
 }) {
   if (card === null)

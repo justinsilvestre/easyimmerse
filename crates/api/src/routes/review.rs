@@ -3,14 +3,17 @@
 //! Every route takes the client's UTC offset, which places the current time in the user's local day:
 //! a day ends at 4 a.m. local time, and new cards are counted per day.
 
+use std::sync::Arc;
+use std::sync::atomic::Ordering;
+
 use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
-    ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewHoldRequest, ReviewQueue, ReviewSummary,
+    ListReviewCountsResponse, ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse,
+    ReviewAnswerUndone, ReviewHoldRequest, ReviewQueue, ReviewSummary,
 };
 use easyimmerse_srs::{ReviewMoment, fit_parameters};
 use serde::Deserialize;
@@ -62,6 +65,31 @@ pub async fn get_review_summary(
     Ok(Json(summary))
 }
 
+/// What waits in each project's review today, counted as the queue counts it, as the list of projects shows it.
+#[utoipa::path(
+    get,
+    path = "/review/counts",
+    tag = "review",
+    operation_id = "listReviewCounts",
+    security(("bearer_token" = [])),
+    params(ReviewMomentQuery),
+    responses(
+        (status = 200, description = "The counts of each project's review today", body = ListReviewCountsResponse),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn list_review_counts(
+    State(state): State<AppState>,
+    Query(query): Query<ReviewMomentQuery>,
+) -> Result<Json<ListReviewCountsResponse>, ApiFailure> {
+    let moment = query.now();
+    let projects = state
+        .with_storage(move |storage| storage.list_review_counts(moment))
+        .await?;
+    Ok(Json(ListReviewCountsResponse { projects }))
+}
+
 /// Lists the cards of a review session in the order they are shown: reviews due today, most overdue first, up to two hundred a day;
 /// then learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.
 /// Cards the user buried or suspended are left out.
@@ -93,30 +121,41 @@ pub async fn get_review_queue(
     Ok(Json(queue))
 }
 
-/// Fits the FSRS parameters on a blocking thread when a fit is due, without holding up the response.
+/// Fits the FSRS parameters on a blocking thread when a fit is due and none is running, without holding up the response.
 /// The fit takes seconds, so it reads the log and keeps its result in two short calls to the database rather than one long one.
+/// A fit that fails leaves the fit due, so that the next session tries again.
 fn fit_parameters_when_due(state: &AppState, moment: ReviewMoment) {
+    let is_fitting = Arc::clone(&state.is_fitting_review_parameters);
+    if is_fitting.swap(true, Ordering::AcqRel) {
+        return;
+    }
     let state = state.clone();
     tokio::spawn(async move {
-        let claimed = state
-            .with_storage(move |storage| storage.claim_parameter_fit(moment))
-            .await;
-        let Ok(Some(log)) = claimed else { return };
-        let fitted = tokio::task::spawn_blocking(move || fit_parameters(&log, moment)).await;
-        match fitted {
-            Ok(Ok(Some(weights))) => {
-                let saved = state
-                    .with_storage(move |storage| storage.save_review_parameters(&weights))
-                    .await;
-                if saved.is_err() {
-                    tracing::warn!("the fitted review parameters could not be saved");
-                }
-            }
-            Ok(Ok(None)) => {}
-            Ok(Err(error)) => tracing::warn!("the review parameters could not be fitted: {error}"),
-            Err(error) => tracing::warn!("the review parameter fit stopped: {error}"),
-        }
+        fit_and_save(&state, moment).await;
+        is_fitting.store(false, Ordering::Release);
     });
+}
+
+async fn fit_and_save(state: &AppState, moment: ReviewMoment) {
+    let log = state
+        .with_storage(move |storage| storage.log_to_fit(moment))
+        .await;
+    let Ok(Some(log)) = log else { return };
+    let fitted = tokio::task::spawn_blocking(move || fit_parameters(&log, moment)).await;
+    let weights = match fitted {
+        Ok(Ok(Some(weights))) => weights,
+        Ok(Ok(None)) => return,
+        Ok(Err(error)) => {
+            return tracing::warn!("the review parameters could not be fitted: {error}");
+        }
+        Err(error) => return tracing::warn!("the review parameter fit stopped: {error}"),
+    };
+    let saved = state
+        .with_storage(move |storage| storage.save_review_parameters(&weights, moment.at_ms))
+        .await;
+    if saved.is_err() {
+        tracing::warn!("the fitted review parameters could not be saved");
+    }
 }
 
 /// Records the user's rating of a card, stamped with the server's time, and schedules the card's next review.

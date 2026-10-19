@@ -84,6 +84,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::delete_flashcard
         ))
         .routes(routes!(review::get_review_summary))
+        .routes(routes!(review::list_review_counts))
         .routes(routes!(review::get_review_queue))
         .routes(routes!(review::answer_review))
         .routes(routes!(review::undo_review_answer))

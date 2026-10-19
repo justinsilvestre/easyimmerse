@@ -38,6 +38,7 @@ import type {
   ListMediaFilesResponse,
   ListPluginsResponse,
   ListProjectsResponse,
+  ListReviewCountsResponse,
   LookupQuery,
   LookupResponse,
   MediaAvailabilityResponse,
@@ -453,6 +454,21 @@ export const backendApi = createApi({
       }),
       providesTags: (_result, _error, projectId) => [
         { type: "Review", id: projectId },
+      ],
+    }),
+    /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+    listReviewCounts: build.query<ListReviewCountsResponse, void>({
+      query: () => ({
+        method: "GET",
+        path: "/review/counts",
+        query: utcOffsetQuery(),
+      }),
+      providesTags: (result) => [
+        "Review",
+        ...(result?.projects ?? []).map(({ project_id }) => ({
+          type: "Review" as const,
+          id: project_id,
+        })),
       ],
     }),
     /**
@@ -1087,6 +1103,7 @@ export const {
   useLazyLookupTextQuery,
   useListAnkiPendingDeletionsQuery,
   useGetReviewSummaryQuery,
+  useListReviewCountsQuery,
 } = backendApi;
 
 type BackendState = Parameters<

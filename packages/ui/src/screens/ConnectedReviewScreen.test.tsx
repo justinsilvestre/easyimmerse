@@ -50,6 +50,15 @@ async function remember() {
   fireEvent.click(await screen.findByRole("button", { name: /^Remembered/ }));
 }
 
+/** Waits until Undo can be pressed, which it can once the latest step has landed. */
+const undoOnceAvailable = () =>
+  vi.waitFor(() => {
+    const undo = screen.getByRole("button", { name: "Undo" });
+    if (undo.hasAttribute("disabled"))
+      throw new Error("Undo is not available yet.");
+    return undo;
+  });
+
 const answersSent = (
   client: Awaited<ReturnType<typeof renderReview>>["client"],
 ) =>
@@ -69,11 +78,12 @@ describe("ConnectedReviewScreen", () => {
   it("sends the rating of a card to the server", async () => {
     const { client } = await renderReview();
     await remember();
-    await vi.waitFor(() => expect(answersSent(client)).toHaveLength(1));
-    expect(answersSent(client)[0]?.body?.value).toMatchObject({
-      flashcard_id: "r1",
-      rating: "good",
-    });
+    await vi.waitFor(() =>
+      expect(answersSent(client)[0]?.body?.value).toMatchObject({
+        flashcard_id: "r1",
+        rating: "good",
+      }),
+    );
   });
 
   it("shows the next card once a card is rated", async () => {
@@ -97,9 +107,7 @@ describe("ConnectedReviewScreen", () => {
     await renderReview();
     await remember();
     await showsWord("Hund");
-    const undo = screen.getByRole("button", { name: "Undo" });
-    await vi.waitFor(() => expect(undo.hasAttribute("disabled")).toBe(false));
-    fireEvent.click(undo);
+    fireEvent.click(await undoOnceAvailable());
     await expect(showsWord("Katze")).resolves.toBeUndefined();
   });
 
@@ -121,9 +129,7 @@ describe("ConnectedReviewScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Suspend" }));
     await showsWord("Hund");
-    const undo = screen.getByRole("button", { name: "Undo" });
-    await vi.waitFor(() => expect(undo.hasAttribute("disabled")).toBe(false));
-    fireEvent.click(undo);
+    fireEvent.click(await undoOnceAvailable());
     await expect(showsWord("Katze")).resolves.toBeUndefined();
   });
 

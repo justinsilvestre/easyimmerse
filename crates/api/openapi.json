@@ -6051,6 +6051,64 @@
         ]
       }
     },
+    "/review/counts": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "What waits in each project's review today, counted as the queue counts it, as the list of projects shows it.",
+        "operationId": "listReviewCounts",
+        "parameters": [
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts of each project's review today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewCountsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/timed-text/parse": {
       "post": {
         "tags": [
@@ -6580,7 +6638,8 @@
         "type": "object",
         "required": [
           "flashcard_ids",
-          "marks_exported"
+          "marks_exported",
+          "utc_offset_min"
         ],
         "properties": {
           "flashcard_ids": {
@@ -6604,6 +6663,11 @@
           "staged": {
             "type": "boolean",
             "description": "Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.\nA staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.\nRequires a save path."
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on."
           }
         }
       },
@@ -8443,6 +8507,20 @@
           }
         }
       },
+      "ListReviewCountsResponse": {
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCounts"
+            }
+          }
+        }
+      },
       "LookupResponse": {
         "type": "object",
         "required": [
@@ -9275,7 +9353,6 @@
           "last_opened_at_ms",
           "media_count",
           "flashcard_count",
-          "due_review_count",
           "unreviewed_count",
           "uses_anki_connect"
         ],
@@ -9284,12 +9361,6 @@
             "type": "integer",
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
-            "minimum": 0
-          },
-          "due_review_count": {
-            "type": "integer",
-            "format": "int64",
-            "description": "The flashcards whose review is due, counted at the server's clock.",
             "minimum": 0
           },
           "flashcard_count": {
@@ -9317,7 +9388,7 @@
           "unreviewed_count": {
             "type": "integer",
             "format": "int64",
-            "description": "The flashcards never answered in the review.",
+            "description": "The flashcards never answered in the review, less those the user buried or suspended.",
             "minimum": 0
           },
           "uses_anki_connect": {
@@ -9581,6 +9652,39 @@
           },
           "state": {
             "$ref": "#/components/schemas/ReviewPhase"
+          }
+        }
+      },
+      "ReviewCounts": {
+        "type": "object",
+        "description": "What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show.",
+        "required": [
+          "project_id",
+          "due_count",
+          "learning_count",
+          "new_count"
+        ],
+        "properties": {
+          "due_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today, up to the day's limit.",
+            "minimum": 0
+          },
+          "learning_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards in learning or relearning that are due now or within the learn-ahead time.",
+            "minimum": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "New cards that may still be introduced today.",
+            "minimum": 0
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
           }
         }
       },

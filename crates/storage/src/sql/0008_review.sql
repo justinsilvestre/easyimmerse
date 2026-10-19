@@ -61,14 +61,15 @@ CREATE TABLE review_holds (
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     -- buried or suspended.
     kind TEXT NOT NULL,
-    -- When a buried card's local day ends, after which the row no longer holds it. Null for a suspended card.
+    -- When a buried card's local day ends, after which the row no longer holds it and the next write removes it. Null for a suspended card.
     until_ms INTEGER
 );
 
 -- The FSRS parameters fitted to the user's answers across every project. At most one row; without it the defaults schedule.
 CREATE TABLE review_parameters (
     id INTEGER PRIMARY KEY CHECK (id = 1),
-    -- A JSON array of numbers. Null while the first fit runs, or when it failed.
-    weights_json TEXT,
+    -- A JSON array of numbers.
+    weights_json TEXT NOT NULL,
+    -- When the fit that gave them began.
     fitted_at_ms INTEGER NOT NULL
 );

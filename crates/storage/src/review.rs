@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use easyimmerse_core::flashcard::{Flashcard, FlashcardId};
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
-    ReviewCardState, ReviewPhase, ReviewProgress, ReviewQueue, ReviewQueueCard, ReviewSummary,
+    ReviewCardState, ReviewCounts, ReviewPhase, ReviewProgress, ReviewQueue, ReviewQueueCard,
+    ReviewSummary,
 };
 use easyimmerse_srs::{
     ReviewMoment, ReviewedCard, Scheduler, learn_ahead_cutoff_ms, new_cards_available,
@@ -59,6 +60,30 @@ pub fn review_summary(
             .map(|(flashcard, _)| flashcard),
         has_progress,
     })
+}
+
+/// What waits in each project's review on the moment's local day, counted as the queue counts it.
+pub fn list_review_counts(
+    conn: &Connection,
+    moment: ReviewMoment,
+) -> Result<Vec<ReviewCounts>, StorageError> {
+    let mut statement = conn.prepare("SELECT id FROM projects ORDER BY rowid")?;
+    let project_ids: Vec<String> = statement
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<_, _>>()?;
+    project_ids
+        .into_iter()
+        .map(|id| {
+            let project_id = ProjectId(id);
+            let sections = queue_sections(conn, &project_id, moment)?;
+            Ok(ReviewCounts {
+                project_id,
+                due_count: sections.reviews.len() as u64,
+                learning_count: sections.learning.len() as u64,
+                new_count: sections.new.len() as u64,
+            })
+        })
+        .collect()
 }
 
 /// The schedule, the answers and the hold at `at_ms` of each of the project's flashcards that has been answered or set aside.
@@ -377,6 +402,48 @@ mod tests {
             .raise_review_allowance(&project(), &request, NOON_MS)
             .unwrap();
         assert_eq!(queue_at(&storage, NOON_MS).cards.len(), 205);
+    }
+
+    fn counts_at(storage: &crate::Storage, at_ms: u64) -> ReviewCounts {
+        storage
+            .list_review_counts(at(at_ms))
+            .unwrap()
+            .into_iter()
+            .find(|counts| counts.project_id == project())
+            .unwrap()
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_cap_reviews_as_the_queue_does() {
+        let storage = storage_with_due_reviews(300, 0);
+        assert_eq!(counts_at(&storage, NOON_MS).due_count, 200);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_a_review_due_later_today() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let morning_of_due_day = NOON_MS + 2 * DAY_MS - 7 * 60 * MINUTE_MS;
+        assert_eq!(counts_at(&storage, morning_of_due_day).due_count, 1);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_only_the_new_cards_left_today() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 25);
+        for id in &ids[..20] {
+            rate(&storage, id, ReviewRating::Good, NOON_MS);
+        }
+        assert_eq!(counts_at(&storage, NOON_MS).new_count, 0);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_a_learning_card_within_the_learn_ahead_time() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        rate(&storage, &ids[0], ReviewRating::Again, NOON_MS);
+        assert_eq!(counts_at(&storage, NOON_MS + MINUTE_MS).learning_count, 1);
     }
 
     #[test]

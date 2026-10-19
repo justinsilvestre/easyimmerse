@@ -146,6 +146,9 @@ export function ProjectOverview({
         onStartReview={() =>
           navigate({ type: "openReview", projectId: project.id })
         }
+        onReviewMore={(reviewCount) =>
+          dispatch(actions.projectReviewMoreRequested(project.id, reviewCount))
+        }
         onCheckConnection={() =>
           dispatch(actions.ankiConnectionCheckRequested())
         }

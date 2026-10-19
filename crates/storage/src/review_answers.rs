@@ -12,6 +12,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use crate::error::StorageError;
 use crate::flashcards::get_flashcard;
 use crate::projects::ensure_project_exists;
+use crate::review_holds::forget_ended_burials;
 use crate::review_parameters::load_scheduler;
 use crate::review_rows::{get_review_card, insert_log_row, latest_log_row, save_review_card};
 use crate::stored_integer::to_stored_integer;
@@ -27,6 +28,7 @@ pub fn answer_review(
 ) -> Result<ReviewAnswerResponse, StorageError> {
     let transaction = conn.transaction()?;
     ensure_flashcard_in_project(&transaction, project_id, &request.flashcard_id)?;
+    forget_ended_burials(&transaction, now_ms)?;
     let moment = ReviewMoment {
         at_ms: now_ms.max(after_latest_answer_ms(&transaction, project_id)?),
         utc_offset_min: request.utc_offset_min,

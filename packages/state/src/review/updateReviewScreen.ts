@@ -6,7 +6,6 @@ import { flashcardActions } from "../flashcards/flashcardActions.ts";
 import type { ReviewAction } from "./reviewActions.ts";
 import {
   extraNewCardCount,
-  extraReviewCount,
   fetchQueue,
   raiseAllowance,
   sendAnswer,
@@ -50,7 +49,7 @@ export function updateReviewScreen(
     case "reviewMoreReviewsRequested":
       return reload(
         session,
-        raiseAllowance(projectId, { newCards: 0, reviews: extraReviewCount }),
+        raiseAllowance(projectId, { newCards: 0, reviews: action.reviewCount }),
         fetchQueue(projectId),
       );
     case "reviewCardHeld":

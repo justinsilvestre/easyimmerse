@@ -11,6 +11,7 @@ use zip::{CompressionMethod, ZipWriter};
 
 use crate::collection::collection_bytes;
 use crate::deck_spec::DeckSpec;
+use crate::export_time::ExportTime;
 use crate::render_note::AnkiNote;
 
 /// A media file to put in the package, named as an `AnkiMediaRef` names it.
@@ -32,7 +33,7 @@ pub enum AnkiError {
 
 /// Writes a legacy .apkg: `collection.anki2` at schema 11, the JSON `media` map, and the media files, all stored uncompressed.
 /// Every Anki client reads this format.
-/// Every note and card is dated at `exported_at_ms`, since Anki updates a note it already has only from a newer one.
+/// Every note and card is dated at the export, since Anki updates a note it already has only from a newer one.
 /// A flashcard with review progress goes in with its schedule and its review log; the others go in as new cards.
 pub fn write_package(
     out: impl Write + Seek,
@@ -40,9 +41,9 @@ pub fn write_package(
     notes: &[AnkiNote],
     media: &[PackageMedia],
     review_progress: &HashMap<FlashcardId, ReviewProgress>,
-    exported_at_ms: u64,
+    exported_at: ExportTime,
 ) -> Result<(), AnkiError> {
-    let collection = collection_bytes(spec, notes, review_progress, exported_at_ms)?;
+    let collection = collection_bytes(spec, notes, review_progress, exported_at)?;
     let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
     let mut zip = ZipWriter::new(out);
     zip.start_file("collection.anki2", options)?;
@@ -116,7 +117,10 @@ mod tests {
             &notes,
             &media,
             review_progress,
-            EXPORTED_AT_MS,
+            ExportTime {
+                at_ms: EXPORTED_AT_MS,
+                utc_offset_min: 0,
+            },
         )
         .expect("the package is written");
         ZipArchive::new(Cursor::new(out.into_inner())).expect("the package is a zip")
@@ -191,14 +195,24 @@ mod tests {
     }
 
     #[test]
-    fn writes_the_collection_row_at_schema_11_created_at_a_midnight() {
+    fn writes_the_collection_row_at_schema_11_created_at_4_am_local_time() {
         let (_file, connection) = collection();
         let row: (i64, i64) = connection
             .query_row("SELECT ver, crt FROM col", [], |row| {
                 Ok((row.get(0)?, row.get(1)?))
             })
             .expect("the collection row exists");
-        assert_eq!(row, (11, 1_759_968_000));
+        assert_eq!(row, (11, 1_759_982_400));
+    }
+
+    #[test]
+    fn tells_anki_the_creation_offset_in_minutes_west() {
+        assert_eq!(collection_json("conf")["creationOffset"], 0);
+    }
+
+    #[test]
+    fn tells_anki_that_days_begin_at_4_am() {
+        assert_eq!(collection_json("conf")["rollover"], 4);
     }
 
     #[test]

@@ -196,20 +196,20 @@ async fn the_project_counts_the_flashcards_never_answered() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn the_project_counts_no_card_due_right_after_an_answer() {
+async fn the_review_counts_count_a_card_coming_back_as_learning() {
     let server = spawn_test_server(false).await;
     let id = create_flashcard(&server, PROJECT, "Haus").await;
     answer(&server, &id, "again").await;
-    let response = server.get("/projects").await;
+    let response = server.get(&format!("/review/counts?{OFFSET}")).await;
     let listed = response.json();
-    let project = listed["projects"]
+    let counts = listed["projects"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|project| project["id"] == PROJECT)
+        .find(|counts| counts["project_id"] == PROJECT)
         .unwrap()
         .clone();
-    assert_eq!(project["due_review_count"], 0);
+    assert_eq!(counts["learning_count"], 1);
 }
 
 async fn hold(server: &TestServer, flashcard_id: &str, kind: &str) {

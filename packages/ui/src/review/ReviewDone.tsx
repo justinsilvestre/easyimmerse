@@ -17,7 +17,8 @@ export function ReviewDone({
   end: ReviewEnd;
   onBack: () => void;
   onLearnMore: () => void;
-  onReviewMore: () => void;
+  /** Raises today's allowance by as many reviews of those the day's limit left for later days. */
+  onReviewMore: (reviewCount: number) => void;
   onRetry: () => void;
 }) {
   const back = <Button onClick={onBack}>Back to project</Button>;
@@ -40,7 +41,10 @@ export function ReviewDone({
         >
           {back}
           {end.moreReviewCount > 0 && (
-            <Button variant="subtle" onClick={onReviewMore}>
+            <Button
+              variant="subtle"
+              onClick={() => onReviewMore(end.moreReviewCount)}
+            >
               Review {end.moreReviewCount} more now
             </Button>
           )}
@@ -108,7 +112,7 @@ export function ReviewDone({
 function heldBackLine(count: number) {
   const verb = count === 1 ? "is" : "are";
   const pronoun = count === 1 ? "It comes" : "They come";
-  return `Another ${pluralize(count, "review")} ${verb} due, beyond a day's limit. ${pronoun} up over the next few days, and new cards are paused until you have caught up.`;
+  return `Another ${pluralize(count, "review")} ${verb} due, more than the daily limit. ${pronoun} up over the next few days, and new cards are paused until you have caught up.`;
 }
 
 function comesBackLine({ count, atMs }: { count: number; atMs: number }) {

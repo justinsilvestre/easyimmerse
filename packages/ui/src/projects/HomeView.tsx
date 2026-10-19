@@ -1,4 +1,4 @@
-import type { Project } from "@easyimmerse/types";
+import type { Project, ReviewCounts } from "@easyimmerse/types";
 import { BookOpen, FolderOpen, Plus } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
@@ -14,6 +14,7 @@ export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 export function HomeView({
   status,
   projects,
+  reviewCounts,
   onOpenProject,
   onReviewProject,
   onCreateProject,
@@ -22,6 +23,8 @@ export function HomeView({
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
+  /** What waits in each project's review today. A project left out shows no way to review it. */
+  reviewCounts: readonly ReviewCounts[];
   onOpenProject: (projectId: string) => void;
   /** Opens a project's review directly, without its screen. */
   onReviewProject: (projectId: string) => void;
@@ -57,6 +60,7 @@ export function HomeView({
       <Projects
         status={status}
         projects={projects}
+        reviewCounts={reviewCounts}
         onOpenProject={onOpenProject}
         onReviewProject={onReviewProject}
         onCreateProject={onCreateProject}
@@ -69,6 +73,7 @@ export function HomeView({
 function Projects({
   status,
   projects,
+  reviewCounts,
   onOpenProject,
   onReviewProject,
   onCreateProject,
@@ -76,6 +81,7 @@ function Projects({
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
+  reviewCounts: readonly ReviewCounts[];
   onOpenProject: (projectId: string) => void;
   onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
@@ -123,6 +129,11 @@ function Projects({
             <li key={project.id}>
               <ProjectCard
                 project={project}
+                review={
+                  reviewCounts.find(
+                    ({ project_id }) => project_id === project.id,
+                  ) ?? null
+                }
                 onOpen={onOpenProject}
                 onReview={onReviewProject}
               />

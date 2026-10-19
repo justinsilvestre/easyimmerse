@@ -18,9 +18,12 @@ export const reviewActions = {
   reviewAudioReplayed: () => ({ type: "reviewAudioReplayed" }) as const,
   /** The user asked for twenty more new cards today, from the end of the session. */
   reviewAllowanceRaised: () => ({ type: "reviewAllowanceRaised" }) as const,
-  /** The user asked to review today some of the reviews the day's limit left for later days, from the end of the session. */
-  reviewMoreReviewsRequested: () =>
-    ({ type: "reviewMoreReviewsRequested" }) as const,
+  /** The user asked, at the end of the session, to review today as many of the reviews the day's limit left for later days. */
+  reviewMoreReviewsRequested: (reviewCount: number) =>
+    ({ type: "reviewMoreReviewsRequested", reviewCount }) as const,
+  /** The user asked, from the project, to review today as many of the reviews the day's limit left for later days. */
+  projectReviewMoreRequested: (projectId: string, reviewCount: number) =>
+    ({ type: "projectReviewMoreRequested", projectId, reviewCount }) as const,
   /** The user set the card shown aside: buried it until tomorrow, or suspended it. */
   reviewCardHeld: (hold: ReviewHoldKind, atMs: number) =>
     ({ type: "reviewCardHeld", hold, atMs }) as const,

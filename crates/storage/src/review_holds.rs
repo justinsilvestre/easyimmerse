@@ -21,6 +21,7 @@ pub fn hold_review_card(
     now_ms: u64,
 ) -> Result<(), StorageError> {
     ensure_flashcard_in_project(conn, project_id, flashcard_id)?;
+    forget_ended_burials(conn, now_ms)?;
     let moment = ReviewMoment {
         at_ms: now_ms,
         utc_offset_min: request.utc_offset_min,
@@ -52,6 +53,15 @@ pub fn lift_review_hold(
     conn.execute(
         "DELETE FROM review_holds WHERE flashcard_id = ?1",
         params![flashcard_id.0],
+    )?;
+    Ok(())
+}
+
+/// Removes the rows of buried cards whose day ended by `now_ms`, which no longer hold them.
+pub fn forget_ended_burials(conn: &Connection, now_ms: u64) -> Result<(), StorageError> {
+    conn.execute(
+        "DELETE FROM review_holds WHERE until_ms IS NOT NULL AND until_ms <= ?1",
+        params![to_stored_integer(now_ms)],
     )?;
     Ok(())
 }
@@ -185,6 +195,20 @@ mod tests {
         hold(&storage, &ids[0], ReviewHoldKind::Suspended);
         let summary = storage.review_summary(&project(), at(NOON_MS)).unwrap();
         assert_eq!(summary.next_due_at_ms, None);
+    }
+
+    #[test]
+    fn a_later_write_removes_the_row_of_a_burial_that_ended() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 2);
+        hold(&storage, &ids[0], ReviewHoldKind::Buried);
+        rate(&storage, &ids[1], ReviewRating::Good, NOON_MS + 2 * DAY_MS);
+        let rows: i64 = storage
+            .read(|conn| {
+                Ok(conn.query_row("SELECT COUNT(*) FROM review_holds", [], |row| row.get(0))?)
+            })
+            .unwrap();
+        assert_eq!(rows, 0);
     }
 
     #[test]

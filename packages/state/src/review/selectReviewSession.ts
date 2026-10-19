@@ -104,7 +104,11 @@ function endOf(
       kind: "doneForToday",
       reviewedCount,
       comesBack: comesBackOf(session.comingBack),
-      moreNewCount: Math.min(extraNewCardCount, project?.unreviewed_count ?? 0),
+      // New cards are paused while reviews are held back, so none are offered then.
+      moreNewCount:
+        heldBackCount > 0
+          ? 0
+          : Math.min(extraNewCardCount, project?.unreviewed_count ?? 0),
       heldBackCount,
       moreReviewCount: Math.min(extraReviewCount, heldBackCount),
     };

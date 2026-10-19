@@ -35,6 +35,8 @@ const neverDelivered: FlashcardSync = {
   review: {
     dueCount: 0,
     newCount: 0,
+    heldBackCount: 0,
+    moreReviewCount: 0,
     nextDueAtMs: null,
     nextCard: null,
     hasProgress: false,
@@ -47,6 +49,8 @@ const reviewing: FlashcardSync = {
   review: {
     dueCount: 3,
     newCount: 2,
+    heldBackCount: 0,
+    moreReviewCount: 0,
     nextDueAtMs: null,
     nextCard: exampleFlashcard,
     hasProgress: true,
@@ -83,6 +87,7 @@ function renderPanel(sync: FlashcardSync) {
       onSetUpAnkiConnect={call("setUp")}
       onTurnOffAnkiConnect={call("turnOff")}
       onStartReview={call("review")}
+      onReviewMore={call("reviewMore")}
       onCheckConnection={call("check")}
       onTryAnkiSyncAgain={call("tryAgain")}
       onCopyAnkiSearch={call("copy")}
@@ -404,6 +409,32 @@ describe("ProjectFlashcardsPanel", () => {
         review: { ...reviewing.review, dueCount: 0, newCount: 0 },
       });
       expect(screen.getByText("Done for today")).toBeDefined();
+    });
+
+    describe("once the day's limit holds reviews back", () => {
+      const limitReached: FlashcardSync = {
+        ...reviewing,
+        review: {
+          ...reviewing.review,
+          dueCount: 0,
+          newCount: 0,
+          heldBackCount: 140,
+          moreReviewCount: 100,
+        },
+      };
+
+      it("says that the daily limit is reached", () => {
+        renderPanel(limitReached);
+        expect(screen.getByText("Daily limit reached")).toBeDefined();
+      });
+
+      it("reviews more on request", () => {
+        const calls = renderPanel(limitReached);
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review 100 more now" }),
+        );
+        expect(calls).toEqual(["reviewMore"]);
+      });
     });
 
     it("keeps the Anki ways in the More options menu", () => {

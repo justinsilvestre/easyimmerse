@@ -1,4 +1,4 @@
-import type { Project } from "@easyimmerse/types";
+import type { Project, ReviewCounts } from "@easyimmerse/types";
 import { ChevronRight, Film, GraduationCap, Layers } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
@@ -13,10 +13,13 @@ import { languageName } from "./languages.ts";
  */
 export function ProjectCard({
   project,
+  review,
   onOpen,
   onReview,
 }: {
   project: Project;
+  /** What waits in the project's review today, or null while that is not known. */
+  review: ReviewCounts | null;
   onOpen: (projectId: string) => void;
   onReview: (projectId: string) => void;
 }) {
@@ -54,27 +57,38 @@ export function ProjectCard({
           aria-hidden
         />
       </button>
-      <ReviewButton project={project} onReview={onReview} />
+      {review && (
+        <ReviewButton
+          projectId={project.id}
+          review={review}
+          onReview={onReview}
+        />
+      )}
     </div>
   );
 }
 
-/** Opens the project's review: with the count of cards due while any is, or to learn new cards while none is due. Nothing shows otherwise. */
+/**
+ * Opens the project's review: with the count of cards due while any is, those being learned included,
+ * or to learn new cards while none is due and some are left for today. Nothing shows otherwise.
+ */
 function ReviewButton({
-  project,
+  projectId,
+  review,
   onReview,
 }: {
-  project: Project;
+  projectId: string;
+  review: ReviewCounts;
   onReview: (projectId: string) => void;
 }) {
-  const dueCount = project.due_review_count;
-  if (dueCount === 0 && project.unreviewed_count === 0) return null;
+  const dueCount = review.due_count + review.learning_count;
+  if (dueCount === 0 && review.new_count === 0) return null;
   return (
     <Button
       size="sm"
       variant={dueCount > 0 ? "primary" : "secondary"}
       className="mr-3 shrink-0"
-      onClick={() => onReview(project.id)}
+      onClick={() => onReview(projectId)}
     >
       <GraduationCap className="size-3.5" aria-hidden />
       {dueCount > 0 ? (

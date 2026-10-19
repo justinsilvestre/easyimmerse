@@ -3,10 +3,7 @@ import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
-import {
-  fixtureProject,
-  fixtureResponses,
-} from "../testSupport/fixtureResponses.ts";
+import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreen } from "./HomeScreen.tsx";
 
@@ -59,8 +56,10 @@ describe("HomeScreen", () => {
       const reviewed: string[] = [];
       const client = createFakeBackendClient({
         ...fixtureResponses,
-        "GET /projects": {
-          projects: [{ ...fixtureProject, due_review_count: 8 }],
+        "GET /review/counts": {
+          projects: [
+            { project_id: "p1", due_count: 8, learning_count: 0, new_count: 0 },
+          ],
         },
       });
       renderHome({ onReviewProject: (id) => reviewed.push(id) }, client);

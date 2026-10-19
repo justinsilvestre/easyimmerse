@@ -58,6 +58,7 @@ pub(crate) fn insert_notes_and_cards(
     let note_ids = unique_ids(notes.iter().map(|note| note.note_id));
     let mut insert_note = connection.prepare(INSERT_NOTE_SQL)?;
     let mut insert_card = connection.prepare(INSERT_CARD_SQL)?;
+    let mut answers = Vec::new();
     for (position, (note, note_id)) in (1..).zip(notes.iter().zip(note_ids)) {
         let row_id = sql_int(note_id)?;
         let progress = review_progress.get(&note.flashcard_id);
@@ -66,10 +67,10 @@ pub(crate) fn insert_notes_and_cards(
         let card = card_columns(progress, position, stamp.collection_created_secs);
         insert_card_row(&mut insert_card, stamp, &card, row_id)?;
         if let Some(progress) = progress {
-            insert_revlog_rows(connection, row_id, &progress.log)?;
+            answers.extend(progress.log.iter().map(|entry| (row_id, entry)));
         }
     }
-    Ok(())
+    insert_revlog_rows(connection, &answers)
 }
 
 /// The columns of a card as the review left it, in the queue of a card the user set aside when they did.
@@ -155,7 +156,7 @@ fn insert_card_row(
 }
 
 /// Keeps ids unique within a table by raising each id that is already taken until it is free, as Anki does on insert.
-fn unique_ids(wanted: impl Iterator<Item = u64>) -> Vec<u64> {
+pub(crate) fn unique_ids(wanted: impl Iterator<Item = u64>) -> Vec<u64> {
     let mut taken = HashSet::new();
     wanted
         .map(|id| {

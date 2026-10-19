@@ -15,11 +15,7 @@ created_at_ms: number,
  */
 last_opened_at_ms: number, media_count: number, flashcard_count: number, 
 /**
- * The flashcards whose review is due, counted at the server's clock.
- */
-due_review_count: number, 
-/**
- * The flashcards never answered in the review.
+ * The flashcards never answered in the review, less those the user buried or suspended.
  */
 unreviewed_count: number, 
 /**

@@ -48,7 +48,7 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, Medi
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::review::{
     ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewHoldRequest, ReviewLogEntry, ReviewProgress, ReviewQueue, ReviewSummary,
+    ReviewCounts, ReviewHoldRequest, ReviewLogEntry, ReviewProgress, ReviewQueue, ReviewSummary,
 };
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
@@ -312,6 +312,14 @@ impl Storage {
         self.read(|conn| review::review_summary(conn, project_id, moment))
     }
 
+    /// What waits in each project's review on the moment's local day, counted as the queue counts it.
+    pub fn list_review_counts(
+        &self,
+        moment: ReviewMoment,
+    ) -> Result<Vec<ReviewCounts>, StorageError> {
+        self.read(|conn| review::list_review_counts(conn, moment))
+    }
+
     /// The cards of a review session at `moment`, in the order they are shown, each with the intervals its ratings would give.
     pub fn review_queue(
         &self,
@@ -366,18 +374,22 @@ impl Storage {
         self.write(|conn| review_holds::lift_review_hold(conn, project_id, flashcard_id))
     }
 
-    /// Claims the next fit of the FSRS parameters when one is due at `moment` and there are enough answers for it,
-    /// and returns every answer of every project to fit to. The fit runs outside the database, and `save_review_parameters` keeps its result.
-    pub fn claim_parameter_fit(
+    /// Every answer of every project to fit the FSRS parameters to, when a fit is due at `moment` and there are enough answers for it.
+    /// The fit runs outside the database, and `save_review_parameters` keeps its result.
+    pub fn log_to_fit(
         &self,
         moment: ReviewMoment,
     ) -> Result<Option<Vec<ReviewLogEntry>>, StorageError> {
-        self.write(|conn| review_parameters::claim_parameter_fit(conn, moment))
+        self.read(|conn| review_parameters::log_to_fit(conn, moment))
     }
 
-    /// Keeps the FSRS parameters a fit gave, which schedule every review from now on.
-    pub fn save_review_parameters(&self, weights: &[f32]) -> Result<(), StorageError> {
-        self.write(|conn| review_parameters::save_review_parameters(conn, weights))
+    /// Keeps the FSRS parameters of a fit begun at `fitted_at_ms`, which schedule every review from now on.
+    pub fn save_review_parameters(
+        &self,
+        weights: &[f32],
+        fitted_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| review_parameters::save_review_parameters(conn, weights, fitted_at_ms))
     }
 
     /// Raises the number of new cards and of reviews the project's review shows on the local day of `now_ms`.

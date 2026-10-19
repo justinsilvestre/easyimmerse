@@ -1162,6 +1162,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/review/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+        get: operations["listReviewCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timed-text/parse": {
         parameters: {
             query?: never;
@@ -1338,6 +1355,11 @@ export interface components {
              *     Requires a save path.
              */
             staged?: boolean;
+            /**
+             * Format: int32
+             * @description Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on.
+             */
+            utc_offset_min: number;
         };
         /** @description What the server wrote to the save path. */
         AnkiPackageSaved: {
@@ -1922,6 +1944,9 @@ export interface components {
         ListProjectsResponse: {
             projects: components["schemas"]["Project"][];
         };
+        ListReviewCountsResponse: {
+            projects: components["schemas"]["ReviewCounts"][];
+        };
         LookupResponse: {
             /** @description The kanji dictionary entries for the first character, when it is a kanji. */
             kanji: components["schemas"]["KanjiResult"][];
@@ -2175,11 +2200,6 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             created_at_ms: number;
-            /**
-             * Format: int64
-             * @description The flashcards whose review is due, counted at the server's clock.
-             */
-            due_review_count: number;
             /** Format: int64 */
             flashcard_count: number;
             id: components["schemas"]["ProjectId"];
@@ -2193,7 +2213,7 @@ export interface components {
             settings: components["schemas"]["ProjectSettings"];
             /**
              * Format: int64
-             * @description The flashcards never answered in the review.
+             * @description The flashcards never answered in the review, less those the user buried or suspended.
              */
             unreviewed_count: number;
             /** @description Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off. */
@@ -2315,6 +2335,25 @@ export interface components {
              */
             stability: number;
             state: components["schemas"]["ReviewPhase"];
+        };
+        /** @description What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show. */
+        ReviewCounts: {
+            /**
+             * Format: int64
+             * @description Cards under review that are due today, up to the day's limit.
+             */
+            due_count: number;
+            /**
+             * Format: int64
+             * @description Cards in learning or relearning that are due now or within the learn-ahead time.
+             */
+            learning_count: number;
+            /**
+             * Format: int64
+             * @description New cards that may still be introduced today.
+             */
+            new_count: number;
+            project_id: components["schemas"]["ProjectId"];
         };
         /**
          * @description How the user set a card aside from the review.
@@ -7141,6 +7180,47 @@ export interface operations {
             };
             /** @description No such project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listReviewCounts: {
+        parameters: {
+            query: {
+                /** @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time. */
+                utc_offset_min: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts of each project's review today */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListReviewCountsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

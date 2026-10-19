@@ -14,7 +14,10 @@ const doneWithBacklog: ReviewEnd = {
   moreReviewCount: 100,
 };
 
-const renderDone = (end: ReviewEnd, onReviewMore = () => {}) =>
+const renderDone = (
+  end: ReviewEnd,
+  onReviewMore: (count: number) => void = () => {},
+) =>
   render(
     <ReviewDone
       end={end}
@@ -31,18 +34,18 @@ describe("ReviewDone", () => {
       renderDone(doneWithBacklog);
       expect(
         screen.getByText(
-          "Another 340 reviews are due, beyond a day's limit. They come up over the next few days, and new cards are paused until you have caught up.",
+          "Another 340 reviews are due, more than the daily limit. They come up over the next few days, and new cards are paused until you have caught up.",
         ),
       ).toBeTruthy();
     });
 
-    it("reviews more on request", () => {
+    it("reviews as many more as it offers", () => {
       const onReviewMore = vi.fn();
       renderDone(doneWithBacklog, onReviewMore);
       fireEvent.click(
         screen.getByRole("button", { name: "Review 100 more now" }),
       );
-      expect(onReviewMore).toHaveBeenCalled();
+      expect(onReviewMore).toHaveBeenCalledWith(100);
     });
   });
 

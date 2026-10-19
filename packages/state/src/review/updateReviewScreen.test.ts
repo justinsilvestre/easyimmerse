@@ -273,9 +273,9 @@ describe("updateReviewScreen", () => {
 
   it("raises today's allowance of reviews and fetches the queue again", () => {
     expect(
-      effectsOf(actions.reviewMoreReviewsRequested(), queueArrived()),
+      effectsOf(actions.reviewMoreReviewsRequested(40), queueArrived()),
     ).toEqual([
-      raiseAllowance("p1", { newCards: 0, reviews: 100 }),
+      raiseAllowance("p1", { newCards: 0, reviews: 40 }),
       fetchQueue("p1"),
     ]);
   });
