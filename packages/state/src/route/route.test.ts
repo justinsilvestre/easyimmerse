@@ -5,6 +5,13 @@ import { initialRoute, isAlreadyAt, mainScreenOf, navigate } from "./route.ts";
 const project: Route = { screen: "project", projectId: "p1" };
 
 describe("navigate", () => {
+  it("keeps the route itself when the step leads where the app already is", () => {
+    const project: Route = { screen: "project", projectId: "p1" };
+    expect(navigate(project, { type: "openProject", projectId: "p1" })).toBe(
+      project,
+    );
+  });
+
   it("opens settings over the current screen", () => {
     expect(navigate(project, { type: "openSettings" })).toEqual({
       screen: "settings",
