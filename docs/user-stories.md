@@ -114,6 +114,13 @@ As a user:
   - [x] I can see a button tagged with the plugin name button beside "Add media", which opens the plugin's media-import interface
 - when I submit within the plugin's media-adding interface:
   - [x] I see progress for the operation of adding resources
+- when I leave the project while a plugin is adding media to it:
+  - [x] the footer shows its progress
+  - [x] clicking it in the footer brings me back to the project
+- when a plugin fails to add media while I am outside the project:
+  - [x] the footer says so until I close the plugin's window
+- when a plugin finishes adding media while I am outside the project:
+  - [x] a notice tells me
 - when I add a media file to the project:
   - [x] I see the new media file in the list of media files
   - [x] the new media file is opened
@@ -125,6 +132,8 @@ As a user:
   - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
 - when I try to close the app while a flashcard has unsaved changes or is still being saved:
   - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
+- when a flashcard has waited more than about two seconds to be saved, as when the server is slow or unreachable:
+  - [x] the footer says how many flashcards are being saved, until their saves land or fail
 - when I open the app after it closed unexpectedly:
   - [ ] the last automatically saved state of my project is reloaded
 - when the last automatically saved state cannot be loaded:
