@@ -332,6 +332,42 @@ describe("ProjectScreen", () => {
     );
   });
 
+  /** Starts a fetch, waits for its progress in the dialog, and goes to the home screen. */
+  async function leaveRunningImport() {
+    const rendered = renderImport();
+    await startImport();
+    await vi.waitFor(() =>
+      expect(
+        within(screen.getByRole("dialog")).getByRole("status").textContent,
+      ).toContain("downloading the video and subtitles"),
+    );
+    act(() => rendered.store.dispatch(actions.navigated({ type: "goHome" })));
+    return rendered;
+  }
+
+  it("tells of a running fetch in the footer once the project is left", async () => {
+    await leaveRunningImport();
+    expect(
+      screen.getByRole("button", {
+        name: /downloading the video and subtitles/,
+      }),
+    ).toBeDefined();
+  });
+
+  it("shows the fetch's progress again when its footer activity is opened", async () => {
+    await leaveRunningImport();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /downloading the video and subtitles/,
+      }),
+    );
+    expect(
+      within(screen.getByRole("dialog")).getByRole("progressbar", {
+        name: "Fetch progress",
+      }),
+    ).toBeDefined();
+  });
+
   it("starts one import when its action is pressed again before the fetch shows", async () => {
     const { client } = renderImport({}, undefined, {
       "GET /projects/p1/media/from-source/j1": () => new Promise(() => {}),

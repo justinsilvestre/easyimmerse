@@ -5,6 +5,7 @@ export type ScreenApp = Pick<
   ReadableState,
   | "route"
   | "screen"
+  | "mediaImports"
   | "server"
   | "storedPlaces"
   | "preferences"

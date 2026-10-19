@@ -12,3 +12,6 @@ export type MediaImportWizard = PluginFormWizard & {
   /** The fetch the last action started, watched under the operations' jobs. */
   jobId: string | null;
 };
+
+/** Each project's import dialog, by the project's id, while it is open over the overview or its fetch outlasts the overview. */
+export type MediaImports = Partial<Record<string, MediaImportWizard>>;

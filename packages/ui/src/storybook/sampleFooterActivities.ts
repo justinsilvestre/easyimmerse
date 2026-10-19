@@ -33,7 +33,7 @@ export const sampleFooterActivities = {
   },
   mediaFetchFailed: {
     id: "media-fetch-1",
-    label: "The video could not be fetched",
+    label: "The media could not be added",
     opens: tokyoStory,
     status: "failed",
   },

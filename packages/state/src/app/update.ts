@@ -7,6 +7,7 @@ import { trackOperations } from "../operations/trackOperations.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
+import { mediaImportsFeature } from "../screen/projectScreen/mediaImportsFeature.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
@@ -42,6 +43,7 @@ const features = {
   notices: noticesFeature,
   operations: operationsFeature,
   dictionaryImport: dictionaryImportFeature,
+  mediaImports: mediaImportsFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];

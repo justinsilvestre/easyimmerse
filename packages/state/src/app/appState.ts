@@ -3,6 +3,7 @@ import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
 import type { Route } from "../route/route.ts";
+import type { MediaImports } from "../screen/projectScreen/mediaImportWizard.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
@@ -22,4 +23,6 @@ export type AppState = {
   operations: OperationsState;
   /** The adding of a dictionary from a file, which lasts across screens while it runs or its failure waits to be seen. */
   dictionaryImport: DictionaryImportWizard | null;
+  /** Each project's media import dialog, which lasts across screens while its fetch runs or its failure waits to be seen. */
+  mediaImports: MediaImports;
 };

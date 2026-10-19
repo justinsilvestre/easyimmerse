@@ -157,17 +157,27 @@ describe("updateMediaImport", () => {
       }),
       "p1",
     );
-    expect(effects).toEqual([
-      {
-        type: "dispatch",
-        action: actions.noticeRequested(
-          transientNotice(
-            "danger",
-            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
-          ),
+    expect(effects).toContainEqual({
+      type: "dispatch",
+      action: actions.noticeRequested(
+        transientNotice(
+          "danger",
+          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
         ),
-      },
-    ]);
+      ),
+    });
+  });
+
+  it("ends the dialog once the fetch has added its file", () => {
+    const done = fetchChecked({ status: "done", media_file: pilot });
+    const [wizard] = updateMediaImport(fetching, done, "p1");
+    expect(wizard).toBeNull();
+  });
+
+  it("stops watching a fetch that has added its file", () => {
+    const done = fetchChecked({ status: "done", media_file: pilot });
+    const [, effects] = updateMediaImport(fetching, done, "p1");
+    expect(effects).toContainEqual({ type: "unwatchJob", key: jobKey });
   });
 
   it("names no skipped subtitles when the fetch added no file", () => {

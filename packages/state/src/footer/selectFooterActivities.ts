@@ -1,8 +1,9 @@
 import { createSelector } from "reselect";
-import type { AppRoot } from "../app/createAppStore.ts";
+import type { RootState } from "../app/createAppStore.ts";
 import { haveSameItems } from "../app/haveSameItems.ts";
 import { selectDictionaryImportActivity } from "../dictionaryImport/selectDictionaryImportActivity.ts";
 import { isAlreadyAt } from "../route/route.ts";
+import { selectMediaFetchActivities } from "../screen/projectScreen/selectMediaFetchActivities.ts";
 import type { FooterActivity } from "./footerActivity.ts";
 
 /**
@@ -10,9 +11,13 @@ import type { FooterActivity } from "./footerActivity.ts";
  * The result keeps its reference while the activities it lists stay the same.
  */
 export const selectFooterActivities = createSelector(
-  [selectDictionaryImportActivity, (state: AppRoot) => state.app.route],
-  (dictionaryImport, route): readonly FooterActivity[] =>
-    [dictionaryImport].filter(
+  [
+    selectDictionaryImportActivity,
+    selectMediaFetchActivities,
+    (root: RootState) => root.app.route,
+  ],
+  (dictionaryImport, mediaFetches, route): readonly FooterActivity[] =>
+    [dictionaryImport, ...mediaFetches].filter(
       (activity): activity is FooterActivity =>
         activity !== null && !isAlreadyAt(route, activity.opens.step),
     ),

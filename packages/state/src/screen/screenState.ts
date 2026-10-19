@@ -16,7 +16,6 @@ import type { PlayingState } from "./mediaScreen/playingState.ts";
 import type { WaveformState } from "./mediaScreen/waveformState.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import type { PluginFormWizard } from "./pluginForm/pluginFormWizard.ts";
-import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 import type { ReaderScreenState } from "./readerScreen/readerScreenState.ts";
 import { initialReaderScreen } from "./readerScreen/readerScreenState.ts";
 
@@ -52,11 +51,10 @@ export type OfflineScreenState = {
   hasFailed: boolean;
 };
 
-/** The project overview's state: a picked media file, held while its requests run, and the overview's dialogs. */
+/** The project overview's state: a picked media file, held while its requests run, and the overview's dialogs other than the media import's. */
 export type ProjectScreenState = {
   kind: "project";
   pendingMediaFile: PickedMediaFile | null;
-  mediaImport: MediaImportWizard | null;
   ankiExport: AnkiExportDialog | null;
   isAnkiConnectSetupOpen: boolean;
 };
@@ -119,7 +117,6 @@ export function initialMainScreen(
       return {
         kind: "project",
         pendingMediaFile: null,
-        mediaImport: null,
         ankiExport: null,
         isAnkiConnectSetupOpen: false,
       };

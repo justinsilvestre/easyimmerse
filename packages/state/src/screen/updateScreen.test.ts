@@ -4,7 +4,6 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
-import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProjectSettings } from "../server/exampleProject.ts";
@@ -41,20 +40,6 @@ const leftProject: AppAction[] = [
 ];
 
 describe("updateScreen", () => {
-  it("aborts the media import's requests when the project is left", () => {
-    const [, effects] = apply(
-      actions.navigated({ type: "goHome" }),
-      actions.navigated({ type: "openProject", projectId: "p1" }),
-      actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
-    );
-    expect(effects).toEqual(
-      expect.arrayContaining([
-        { type: "abortRequest", id: "project/p1/mediaImport/form" },
-        { type: "abortRequest", id: "project/p1/mediaImport/step" },
-      ]),
-    );
-  });
-
   it("aborts the parse of a subtitles file when the offline screen is left", () => {
     const [, effects] = apply(
       actions.navigated({ type: "goHome" }),
@@ -63,28 +48,6 @@ describe("updateScreen", () => {
     expect(effects).toContainEqual({
       type: "abortRequest",
       id: "offline/parseTimedText",
-    });
-  });
-
-  it("stops watching a media-source fetch when the project is left", () => {
-    const [, effects] = apply(
-      actions.navigated({ type: "goHome" }),
-      actions.navigated({ type: "openProject", projectId: "p1" }),
-      actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
-      actions.mediaImportStepTaken("add", []),
-      actions.requestSettled(
-        "project/p1/mediaImport/step",
-        {
-          kind: "submitImportStep",
-          projectId: "p1",
-          request: { plugin: "video-site", action: "add", input: [] },
-        },
-        { ok: true, data: { kind: "job", job: runningMediaSourceJob } },
-      ),
-    );
-    expect(effects).toContainEqual({
-      type: "unwatchJob",
-      key: "jobs/mediaSource/j1",
     });
   });
 
@@ -148,7 +111,6 @@ describe("updateScreen", () => {
     expect(screen.main).toEqual({
       kind: "project",
       pendingMediaFile: null,
-      mediaImport: null,
       ankiExport: null,
       isAnkiConnectSetupOpen: false,
     });
