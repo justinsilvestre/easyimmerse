@@ -7,7 +7,7 @@ use easyimmerse_core::review::ReviewProgress;
 use rusqlite::{Connection, Statement, params};
 
 use crate::anki_field::FIELD_SEPARATOR;
-use crate::card_scheduling::{CardColumns, CardScheduling};
+use crate::card_scheduling::{CardColumns, CardScheduling, held_queue};
 use crate::deck_spec::DeckSpec;
 use crate::derived_id::deck_id;
 use crate::note_type::AnkiNoteType;
@@ -15,6 +15,8 @@ use crate::render_note::AnkiNote;
 use crate::revlog_rows::insert_revlog_rows;
 use crate::sort_field::{field_checksum, strip_html};
 
+/// The tag Anki gives a leech, which its browser searches by.
+const LEECH_TAG: &str = "leech";
 const INSERT_NOTE_SQL: &str =
     "INSERT INTO notes VALUES (?1, ?2, ?3, ?4, -1, ?5, ?6, ?7, ?8, 0, '')";
 const INSERT_CARD_SQL: &str = "INSERT INTO cards VALUES (?1, ?2, ?3, 0, ?4, -1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, 0, 0, ?13)";
@@ -58,10 +60,10 @@ pub(crate) fn insert_notes_and_cards(
     let mut insert_card = connection.prepare(INSERT_CARD_SQL)?;
     for (position, (note, note_id)) in (1..).zip(notes.iter().zip(note_ids)) {
         let row_id = sql_int(note_id)?;
-        insert_note_row(&mut insert_note, stamp, note, row_id)?;
         let progress = review_progress.get(&note.flashcard_id);
-        let scheduling = progress.map_or(CardScheduling::New, CardScheduling::Reviewed);
-        let card = scheduling.columns(position, stamp.collection_created_secs);
+        let tags = tags_with_leech(&note.tags, progress);
+        insert_note_row(&mut insert_note, stamp, note, &tags, row_id)?;
+        let card = card_columns(progress, position, stamp.collection_created_secs);
         insert_card_row(&mut insert_card, stamp, &card, row_id)?;
         if let Some(progress) = progress {
             insert_revlog_rows(connection, row_id, &progress.log)?;
@@ -70,10 +72,47 @@ pub(crate) fn insert_notes_and_cards(
     Ok(())
 }
 
+/// The columns of a card as the review left it, in the queue of a card the user set aside when they did.
+fn card_columns(
+    progress: Option<&ReviewProgress>,
+    position: i64,
+    collection_created_secs: u64,
+) -> CardColumns {
+    let scheduling = match progress {
+        Some(ReviewProgress {
+            state: Some(state),
+            log,
+            ..
+        }) => CardScheduling::Reviewed(state, log),
+        _ => CardScheduling::New,
+    };
+    let columns = scheduling.columns(position, collection_created_secs);
+    match progress.and_then(|progress| progress.hold) {
+        Some(hold) => CardColumns {
+            queue: held_queue(hold),
+            ..columns
+        },
+        None => columns,
+    }
+}
+
+/// The note's tags, with Anki's "leech" tag added when the review found the card a leech.
+fn tags_with_leech(tags: &[String], progress: Option<&ReviewProgress>) -> Vec<String> {
+    let is_leech = progress
+        .and_then(|progress| progress.state.as_ref())
+        .is_some_and(|state| state.is_leech);
+    let mut tags = tags.to_vec();
+    if is_leech && !tags.iter().any(|tag| tag == LEECH_TAG) {
+        tags.push(LEECH_TAG.to_owned());
+    }
+    tags
+}
+
 fn insert_note_row(
     statement: &mut Statement,
     stamp: &RowStamp,
     note: &AnkiNote,
+    tags: &[String],
     row_id: i64,
 ) -> rusqlite::Result<()> {
     let sort_field = strip_html(note.fields.first().map_or("", String::as_str));
@@ -82,7 +121,7 @@ fn insert_note_row(
         note.guid,
         stamp.note_type_id,
         stamp.modified_secs,
-        tags_column(&note.tags),
+        tags_column(tags),
         note.fields.join(&String::from(FIELD_SEPARATOR)),
         sort_field,
         field_checksum(&sort_field),

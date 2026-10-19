@@ -88,6 +88,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(review::answer_review))
         .routes(routes!(review::undo_review_answer))
         .routes(routes!(review::raise_review_allowance))
+        .routes(routes!(review::hold_review_card, review::lift_review_hold))
         .routes(routes!(anki_package::export_anki_package))
         .routes(routes!(anki_exported::record_anki_exported))
         .routes(routes!(anki::render_anki_notes))

@@ -7,7 +7,7 @@ use crate::new_row::{generate_id, now_ms};
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
 /// The project columns followed by the counts, as every project query selects them.
-/// Cards count as due by the database's clock, which is the server's.
+/// Cards count as due by the database's clock, which is the server's. Cards the user set aside from the review are not counted.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
      p.flashcard_front_fields_json, p.lists_anki_deletions, p.created_at_ms, p.last_opened_at_ms, \
@@ -15,9 +15,13 @@ const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_la
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id), \
      (SELECT COUNT(*) FROM review_cards r WHERE r.project_id = p.id \
-      AND r.due_at_ms <= CAST(unixepoch('subsec') * 1000 AS INTEGER)), \
+      AND r.due_at_ms <= CAST(unixepoch('subsec') * 1000 AS INTEGER) \
+      AND NOT EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = r.flashcard_id \
+      AND (h.until_ms IS NULL OR h.until_ms > CAST(unixepoch('subsec') * 1000 AS INTEGER)))), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id \
-      AND NOT EXISTS (SELECT 1 FROM review_cards r WHERE r.flashcard_id = f.id))";
+      AND NOT EXISTS (SELECT 1 FROM review_cards r WHERE r.flashcard_id = f.id) \
+      AND NOT EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = f.id \
+      AND (h.until_ms IS NULL OR h.until_ms > CAST(unixepoch('subsec') * 1000 AS INTEGER))))";
 
 /// Lists every project, most recently opened first.
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, StorageError> {

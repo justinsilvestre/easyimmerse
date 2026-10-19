@@ -47,4 +47,8 @@ was_packaged: boolean,
  * Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
  * The flashcard has changed since then when `updated_at_ms` is later.
  */
-sent_at_ms: number | null, };
+sent_at_ms: number | null, 
+/**
+ * Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it.
+ */
+is_suspended: boolean, };

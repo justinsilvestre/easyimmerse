@@ -6,12 +6,13 @@ use easyimmerse_core::review::{
     ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
     ReviewCardState,
 };
-use easyimmerse_srs::{ReviewMoment, ReviewedCard, answer, candidate_intervals};
+use easyimmerse_srs::{ReviewMoment, ReviewedCard, Scheduler};
 use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::StorageError;
 use crate::flashcards::get_flashcard;
 use crate::projects::ensure_project_exists;
+use crate::review_parameters::load_scheduler;
 use crate::review_rows::{get_review_card, insert_log_row, latest_log_row, save_review_card};
 use crate::stored_integer::to_stored_integer;
 
@@ -35,7 +36,8 @@ pub fn answer_review(
         flashcard_id: &request.flashcard_id,
         state: previous.as_ref(),
     };
-    let answered = answer(card, request.rating, moment, request.duration_ms)?;
+    let scheduler = load_scheduler(&transaction)?;
+    let answered = scheduler.answer(card, request.rating, moment, request.duration_ms)?;
     insert_log_row(&transaction, project_id, &answered.entry, &answered.state)?;
     save_review_card(
         &transaction,
@@ -44,7 +46,12 @@ pub fn answer_review(
         &answered.state,
     )?;
     transaction.commit()?;
-    let intervals = intervals_at(&request.flashcard_id, Some(&answered.state), moment)?;
+    let intervals = intervals_at(
+        &scheduler,
+        &request.flashcard_id,
+        Some(&answered.state),
+        moment,
+    )?;
     Ok(ReviewAnswerResponse {
         state: answered.state,
         entry: answered.entry,
@@ -68,8 +75,9 @@ pub fn undo_review_answer(
     )?;
     let restored = latest_log_row(&transaction, &flashcard_id)?.map(|(_, state)| state);
     restore_review_card(&transaction, project_id, &flashcard_id, restored.as_ref())?;
+    let scheduler = load_scheduler(&transaction)?;
     transaction.commit()?;
-    let intervals = intervals_at(&flashcard_id, restored.as_ref(), moment)?;
+    let intervals = intervals_at(&scheduler, &flashcard_id, restored.as_ref(), moment)?;
     Ok(ReviewAnswerUndone {
         flashcard_id,
         state: restored,
@@ -77,7 +85,7 @@ pub fn undo_review_answer(
     })
 }
 
-/// Raises the number of new cards the project's review introduces on the request's local day.
+/// Raises the number of new cards and of reviews the project's review shows on the request's local day.
 pub fn raise_review_allowance(
     conn: &Connection,
     project_id: &ProjectId,
@@ -90,15 +98,21 @@ pub fn raise_review_allowance(
         utc_offset_min: request.utc_offset_min,
     };
     conn.execute(
-        "INSERT INTO review_day_allowances (project_id, day_key, extra_new_cards) VALUES (?1, ?2, ?3) \
-         ON CONFLICT (project_id, day_key) DO UPDATE \
-         SET extra_new_cards = extra_new_cards + excluded.extra_new_cards",
-        params![project_id.0, moment.day(), request.extra_new_cards],
+        "INSERT INTO review_day_allowances (project_id, day_key, extra_new_cards, extra_reviews) \
+         VALUES (?1, ?2, ?3, ?4) ON CONFLICT (project_id, day_key) DO UPDATE \
+         SET extra_new_cards = extra_new_cards + excluded.extra_new_cards, \
+         extra_reviews = extra_reviews + excluded.extra_reviews",
+        params![
+            project_id.0,
+            moment.day(),
+            request.extra_new_cards,
+            request.extra_reviews
+        ],
     )?;
     Ok(())
 }
 
-fn ensure_flashcard_in_project(
+pub(crate) fn ensure_flashcard_in_project(
     conn: &Connection,
     project_id: &ProjectId,
     flashcard_id: &FlashcardId,
@@ -185,6 +199,7 @@ fn restore_review_card(
 }
 
 fn intervals_at(
+    scheduler: &Scheduler,
     flashcard_id: &FlashcardId,
     state: Option<&ReviewCardState>,
     moment: ReviewMoment,
@@ -193,7 +208,7 @@ fn intervals_at(
         flashcard_id,
         state,
     };
-    Ok(candidate_intervals(card, moment)?)
+    Ok(scheduler.candidate_intervals(card, moment)?)
 }
 
 #[cfg(test)]
@@ -344,6 +359,7 @@ mod tests {
         let request = ReviewAllowanceRequest {
             utc_offset_min: 0,
             extra_new_cards: 20,
+            extra_reviews: 0,
         };
         for _ in 0..2 {
             storage

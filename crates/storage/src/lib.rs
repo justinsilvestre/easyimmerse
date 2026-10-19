@@ -18,6 +18,8 @@ mod projects;
 mod referenced_paths;
 mod review;
 mod review_answers;
+mod review_holds;
+mod review_parameters;
 mod review_rows;
 #[cfg(test)]
 mod review_test_support;
@@ -46,7 +48,7 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, Medi
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::review::{
     ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewProgress, ReviewQueue, ReviewSummary,
+    ReviewHoldRequest, ReviewLogEntry, ReviewProgress, ReviewQueue, ReviewSummary,
 };
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
@@ -342,7 +344,43 @@ impl Storage {
         })
     }
 
-    /// Raises the number of new cards the project's review introduces on the local day of `now_ms`.
+    /// Sets a flashcard of the project aside from the review: buries it until the local day of `now_ms` ends, or suspends it.
+    pub fn hold_review_card(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+        request: &ReviewHoldRequest,
+        now_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            review_holds::hold_review_card(conn, project_id, flashcard_id, request, now_ms)
+        })
+    }
+
+    /// Brings a flashcard of the project back into the review, as unburying or unsuspending it does.
+    pub fn lift_review_hold(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| review_holds::lift_review_hold(conn, project_id, flashcard_id))
+    }
+
+    /// Claims the next fit of the FSRS parameters when one is due at `moment` and there are enough answers for it,
+    /// and returns every answer of every project to fit to. The fit runs outside the database, and `save_review_parameters` keeps its result.
+    pub fn claim_parameter_fit(
+        &self,
+        moment: ReviewMoment,
+    ) -> Result<Option<Vec<ReviewLogEntry>>, StorageError> {
+        self.write(|conn| review_parameters::claim_parameter_fit(conn, moment))
+    }
+
+    /// Keeps the FSRS parameters a fit gave, which schedule every review from now on.
+    pub fn save_review_parameters(&self, weights: &[f32]) -> Result<(), StorageError> {
+        self.write(|conn| review_parameters::save_review_parameters(conn, weights))
+    }
+
+    /// Raises the number of new cards and of reviews the project's review shows on the local day of `now_ms`.
     pub fn raise_review_allowance(
         &self,
         project_id: &ProjectId,
@@ -352,12 +390,13 @@ impl Storage {
         self.write(|conn| review_answers::raise_review_allowance(conn, project_id, request, now_ms))
     }
 
-    /// The schedule and the answers of each of the project's answered flashcards, for the Anki export.
+    /// The schedule, the answers and the hold at `at_ms` of each of the project's flashcards that has been answered or set aside, for the Anki export.
     pub fn list_review_progress(
         &self,
         project_id: &ProjectId,
+        at_ms: u64,
     ) -> Result<HashMap<FlashcardId, ReviewProgress>, StorageError> {
-        self.read(|conn| review::list_review_progress(conn, project_id))
+        self.read(|conn| review::list_review_progress(conn, project_id, at_ms))
     }
 
     pub fn list_subtitle_tracks(

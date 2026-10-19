@@ -72,7 +72,9 @@ mod tests {
     use std::io::{Cursor, Read};
 
     use easyimmerse_core::flashcard::FlashcardId;
-    use easyimmerse_core::review::{ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating};
+    use easyimmerse_core::review::{
+        ReviewCardState, ReviewHoldKind, ReviewLogEntry, ReviewPhase, ReviewRating,
+    };
     use rusqlite::Connection;
     use tempfile::NamedTempFile;
     use zip::ZipArchive;
@@ -384,9 +386,9 @@ mod tests {
         }
     }
 
-    fn reviewed_collection() -> (NamedTempFile, Connection) {
-        let progress = ReviewProgress {
-            state: ReviewCardState {
+    fn reviewed_progress() -> ReviewProgress {
+        ReviewProgress {
+            state: Some(ReviewCardState {
                 state: ReviewPhase::Review,
                 due_at_ms: SECOND_ANSWER_MS + TWO_DAYS_MS,
                 stability: 2.4,
@@ -396,14 +398,65 @@ mod tests {
                 lapses: 0,
                 learning_step: 0,
                 last_reviewed_at_ms: SECOND_ANSWER_MS,
-            },
+                is_leech: false,
+            }),
             log: vec![
                 log_entry(FIRST_ANSWER_MS, ReviewRating::Again, ReviewPhase::Learning),
                 log_entry(SECOND_ANSWER_MS, ReviewRating::Good, ReviewPhase::Review),
             ],
-        };
+            hold: None,
+        }
+    }
+
+    fn collection_with_progress(progress: ReviewProgress) -> (NamedTempFile, Connection) {
         let progress = HashMap::from([(FlashcardId(FLASHCARD_ID.to_owned()), progress)]);
         collection_of(written_package_with(&progress))
+    }
+
+    fn reviewed_collection() -> (NamedTempFile, Connection) {
+        collection_with_progress(reviewed_progress())
+    }
+
+    fn first_card_queue(connection: &Connection) -> i64 {
+        connection
+            .query_row("SELECT queue FROM cards ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the card row exists")
+    }
+
+    #[test]
+    fn writes_a_suspended_card_in_queue_minus_one() {
+        let (_file, connection) = collection_with_progress(ReviewProgress {
+            hold: Some(ReviewHoldKind::Suspended),
+            ..reviewed_progress()
+        });
+        assert_eq!(first_card_queue(&connection), -1);
+    }
+
+    #[test]
+    fn writes_a_buried_new_card_in_queue_minus_three() {
+        let (_file, connection) = collection_with_progress(ReviewProgress {
+            state: None,
+            log: Vec::new(),
+            hold: Some(ReviewHoldKind::Buried),
+        });
+        assert_eq!(first_card_queue(&connection), -3);
+    }
+
+    #[test]
+    fn tags_a_leech() {
+        let mut progress = reviewed_progress();
+        if let Some(state) = progress.state.as_mut() {
+            state.is_leech = true;
+        }
+        let (_file, connection) = collection_with_progress(progress);
+        let tags: String = connection
+            .query_row("SELECT tags FROM notes ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the note row exists");
+        assert!(tags.split_whitespace().any(|tag| tag == "leech"));
     }
 
     #[test]

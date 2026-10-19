@@ -45,11 +45,30 @@ CREATE TABLE review_log (
 
 CREATE INDEX review_log_by_flashcard ON review_log (flashcard_id, answered_at_ms);
 
--- The new cards a project's review introduces on a local day beyond the daily twenty, as the user asked for.
+-- The new cards and the reviews a project's review shows on a local day beyond the daily limits, as the user asked for.
 CREATE TABLE review_day_allowances (
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     -- The local day, counted from the day that began at 4 a.m. on 1 January 1970.
     day_key INTEGER NOT NULL,
     extra_new_cards INTEGER NOT NULL,
+    extra_reviews INTEGER NOT NULL,
     PRIMARY KEY (project_id, day_key)
+);
+
+-- The flashcards the user set aside from the review. A flashcard without a row is reviewed as its schedule says.
+CREATE TABLE review_holds (
+    flashcard_id TEXT PRIMARY KEY REFERENCES flashcards(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    -- buried or suspended.
+    kind TEXT NOT NULL,
+    -- When a buried card's local day ends, after which the row no longer holds it. Null for a suspended card.
+    until_ms INTEGER
+);
+
+-- The FSRS parameters fitted to the user's answers across every project. At most one row; without it the defaults schedule.
+CREATE TABLE review_parameters (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    -- A JSON array of numbers. Null while the first fit runs, or when it failed.
+    weights_json TEXT,
+    fitted_at_ms INTEGER NOT NULL
 );

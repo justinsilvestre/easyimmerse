@@ -133,7 +133,7 @@ async fn build_package(
     let project = &selection.project;
     let project_id = project.id.clone();
     let review_progress = state
-        .with_storage(move |storage| storage.list_review_progress(&project_id))
+        .with_storage(move |storage| storage.list_review_progress(&project_id, now_ms()))
         .await?;
     Ok(BuiltPackage {
         bytes: write_package_bytes(project, notes, media.files, review_progress).await?,

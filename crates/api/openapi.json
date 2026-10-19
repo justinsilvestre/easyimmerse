@@ -5588,7 +5588,7 @@
         "tags": [
           "review"
         ],
-        "summary": "Raises the number of new cards the project's review introduces today, as \"Learn 20 more\" does.",
+        "summary": "Raises the number of new cards, or of reviews, the project's review shows today, as \"Learn 20 more\" and \"Review 100 more\" do.",
         "operationId": "raiseReviewAllowance",
         "parameters": [
           {
@@ -5613,7 +5613,7 @@
         },
         "responses": {
           "204": {
-            "description": "Today's allowance of new cards was raised"
+            "description": "Today's allowance of new cards or reviews was raised"
           },
           "401": {
             "description": "Missing or invalid token",
@@ -5828,12 +5828,158 @@
         ]
       }
     },
+    "/projects/{id}/review/holds/{flashcard_id}": {
+      "put": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Sets a card aside from the review: buries it until the user's next day begins at 4 a.m., or suspends it until they unsuspend it.",
+        "operationId": "holdReviewCard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewHoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The card was set aside"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Brings a card back into the review, as unburying or unsuspending it does. A card that was not set aside stays as it is.",
+        "operationId": "liftReviewHold",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The card is back in the review"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/review/queue": {
       "get": {
         "tags": [
           "review"
         ],
-        "summary": "Lists the cards of a review session in the order they are shown: reviews due today, most overdue first;\nthen learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.",
+        "summary": "Lists the cards of a review session in the order they are shown: reviews due today, most overdue first, up to two hundred a day;\nthen learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.\nCards the user buried or suspended are left out.\nStarting a session also fits the FSRS parameters to the user's answers in the background, when the last fit is thirty days old.",
         "operationId": "getReviewQueue",
         "parameters": [
           {
@@ -7358,7 +7504,8 @@
           "included_fields",
           "created_at_ms",
           "updated_at_ms",
-          "was_packaged"
+          "was_packaged",
+          "is_suspended"
         ],
         "properties": {
           "content": {
@@ -7397,6 +7544,10 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields the card shows, in no particular order."
+          },
+          "is_suspended": {
+            "type": "boolean",
+            "description": "Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it."
           },
           "media_file_id": {
             "oneOf": [
@@ -9261,13 +9412,19 @@
       },
       "ReviewAllowanceRequest": {
         "type": "object",
-        "description": "Raises the number of new cards the project's review introduces today.",
+        "description": "Raises the number of new cards, or of reviews, the project's review shows today.",
         "required": [
           "utc_offset_min",
-          "extra_new_cards"
+          "extra_new_cards",
+          "extra_reviews"
         ],
         "properties": {
           "extra_new_cards": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "extra_reviews": {
             "type": "integer",
             "format": "int32",
             "minimum": 0
@@ -9368,7 +9525,8 @@
           "reps",
           "lapses",
           "learning_step",
-          "last_reviewed_at_ms"
+          "last_reviewed_at_ms",
+          "is_leech"
         ],
         "properties": {
           "difficulty": {
@@ -9387,6 +9545,10 @@
             "format": "int64",
             "description": "The time from the latest answer to `due_at_ms`.",
             "minimum": 0
+          },
+          "is_leech": {
+            "type": "boolean",
+            "description": "Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending."
           },
           "lapses": {
             "type": "integer",
@@ -9419,6 +9581,32 @@
           },
           "state": {
             "$ref": "#/components/schemas/ReviewPhase"
+          }
+        }
+      },
+      "ReviewHoldKind": {
+        "type": "string",
+        "description": "How the user set a card aside from the review.",
+        "enum": [
+          "buried",
+          "suspended"
+        ]
+      },
+      "ReviewHoldRequest": {
+        "type": "object",
+        "description": "Sets a card aside from the review: buries it until the next local day, or suspends it.",
+        "required": [
+          "kind",
+          "utc_offset_min"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ReviewHoldKind"
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the end of a buried card's day."
           }
         }
       },
@@ -9600,6 +9788,7 @@
           "due_count",
           "learning_count",
           "new_count",
+          "held_back_count",
           "has_progress"
         ],
         "properties": {
@@ -9612,6 +9801,12 @@
           "has_progress": {
             "type": "boolean",
             "description": "Whether any flashcard of the project has been answered."
+          },
+          "held_back_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today but left for later days, because more are due than a day's limit.\nWhile any are, no new cards are introduced.",
+            "minimum": 0
           },
           "learning_count": {
             "type": "integer",

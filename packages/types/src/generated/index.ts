@@ -141,6 +141,8 @@ export type * from "./ReviewAnswerRequest";
 export type * from "./ReviewAnswerResponse";
 export type * from "./ReviewAnswerUndone";
 export type * from "./ReviewCardState";
+export type * from "./ReviewHoldKind";
+export type * from "./ReviewHoldRequest";
 export type * from "./ReviewIntervals";
 export type * from "./ReviewLogEntry";
 export type * from "./ReviewPhase";

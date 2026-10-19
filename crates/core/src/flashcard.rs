@@ -51,6 +51,8 @@ pub struct Flashcard {
     /// Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
     /// The flashcard has changed since then when `updated_at_ms` is later.
     pub sent_at_ms: Option<u64>,
+    /// Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it.
+    pub is_suspended: bool,
 }
 
 /// What the editor sends to create or replace a flashcard.

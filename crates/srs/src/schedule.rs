@@ -13,7 +13,7 @@ use crate::error::SrsError;
 use crate::fuzz::{fuzz_fraction, fuzzed_days};
 use crate::review_moment::ReviewMoment;
 use crate::settings::{
-    DAY_MS, DESIRED_RETENTION, MAX_ANSWER_DURATION_MS, MAX_INTERVAL_DAYS, STEP_MS,
+    DAY_MS, DESIRED_RETENTION, LEECH_LAPSES, MAX_ANSWER_DURATION_MS, MAX_INTERVAL_DAYS, STEP_MS,
 };
 
 /// A flashcard as it stands before an answer.
@@ -31,32 +31,69 @@ pub struct Answered {
     pub entry: ReviewLogEntry,
 }
 
-/// Answers the card at `moment`, which the caller stamps.
-pub fn answer(
-    card: ReviewedCard,
-    rating: ReviewRating,
-    moment: ReviewMoment,
-    duration_ms: u64,
-) -> Result<Answered, SrsError> {
-    let outcome = outcome(card, rating, &next_states(card, moment)?);
-    let state = next_state(card, rating, moment, &outcome);
-    let entry = log_entry(card, rating, &state, duration_ms);
-    Ok(Answered { state, entry })
+/// Schedules cards with a set of FSRS parameters: the defaults, or those fitted to the user's own answers.
+#[derive(Debug, Clone, Default)]
+pub struct Scheduler {
+    fsrs: FSRS,
 }
 
-/// The interval each rating would give the card if it were answered at `moment`.
-pub fn candidate_intervals(
-    card: ReviewedCard,
-    moment: ReviewMoment,
-) -> Result<ReviewIntervals, SrsError> {
-    let states = next_states(card, moment)?;
-    let interval_ms = |rating| outcome(card, rating, &states).interval_ms;
-    Ok(ReviewIntervals {
-        again_ms: interval_ms(ReviewRating::Again),
-        hard_ms: interval_ms(ReviewRating::Hard),
-        good_ms: interval_ms(ReviewRating::Good),
-        easy_ms: interval_ms(ReviewRating::Easy),
-    })
+impl Scheduler {
+    /// A scheduler with fitted parameters, or the default ones when `weights` is empty.
+    pub fn new(weights: &[f32]) -> Result<Self, SrsError> {
+        Ok(Self {
+            fsrs: FSRS::new(weights)?,
+        })
+    }
+
+    /// Answers the card at `moment`, which the caller stamps.
+    pub fn answer(
+        &self,
+        card: ReviewedCard,
+        rating: ReviewRating,
+        moment: ReviewMoment,
+        duration_ms: u64,
+    ) -> Result<Answered, SrsError> {
+        let outcome = outcome(card, rating, &self.next_states(card, moment)?);
+        let state = next_state(card, rating, moment, &outcome);
+        let entry = log_entry(card, rating, &state, duration_ms);
+        Ok(Answered { state, entry })
+    }
+
+    /// The interval each rating would give the card if it were answered at `moment`.
+    pub fn candidate_intervals(
+        &self,
+        card: ReviewedCard,
+        moment: ReviewMoment,
+    ) -> Result<ReviewIntervals, SrsError> {
+        let states = self.next_states(card, moment)?;
+        let interval_ms = |rating| outcome(card, rating, &states).interval_ms;
+        Ok(ReviewIntervals {
+            again_ms: interval_ms(ReviewRating::Again),
+            hard_ms: interval_ms(ReviewRating::Hard),
+            good_ms: interval_ms(ReviewRating::Good),
+            easy_ms: interval_ms(ReviewRating::Easy),
+        })
+    }
+
+    fn next_states(
+        &self,
+        card: ReviewedCard,
+        moment: ReviewMoment,
+    ) -> Result<NextStates, SrsError> {
+        let memory = card.state.map(|state| MemoryState {
+            stability: state.stability as f32,
+            difficulty: state.difficulty as f32,
+        });
+        let states =
+            self.fsrs
+                .next_states(memory, DESIRED_RETENTION as f32, elapsed_days(card, moment))?;
+        Ok(states)
+    }
+}
+
+/// Whether a card forgotten under review this many times is a leech.
+pub fn is_leech(lapses: u32) -> bool {
+    lapses >= LEECH_LAPSES
 }
 
 /// What an answer changes in the schedule.
@@ -104,24 +141,10 @@ fn review_days(card: ReviewedCard, rating: ReviewRating, states: &NextStates) ->
     chosen.min(MAX_INTERVAL_DAYS)
 }
 
-fn next_states(card: ReviewedCard, moment: ReviewMoment) -> Result<NextStates, SrsError> {
-    let memory = card.state.map(|state| MemoryState {
-        stability: state.stability as f32,
-        difficulty: state.difficulty as f32,
-    });
-    let states = FSRS::default().next_states(
-        memory,
-        DESIRED_RETENTION as f32,
-        elapsed_days(card, moment),
-    )?;
-    Ok(states)
-}
-
 /// The number of local days between the card's previous answer and `moment`. Answers on the same day are zero days apart.
 fn elapsed_days(card: ReviewedCard, moment: ReviewMoment) -> u32 {
-    let Some(state) = card.state else { return 0 };
-    let days = moment.day() - moment.at(state.last_reviewed_at_ms).day();
-    u32::try_from(days).unwrap_or(0)
+    card.state
+        .map_or(0, |state| moment.days_since(state.last_reviewed_at_ms))
 }
 
 fn chosen(states: &NextStates, rating: ReviewRating) -> &fsrs::ItemState {
@@ -140,6 +163,7 @@ fn next_state(
     outcome: &Outcome,
 ) -> ReviewCardState {
     let is_lapse = phase_of(card) == Some(ReviewPhase::Review) && rating == ReviewRating::Again;
+    let lapses = card.state.map_or(0, |state| state.lapses) + u32::from(is_lapse);
     ReviewCardState {
         state: outcome.phase,
         due_at_ms: moment.at_ms + outcome.interval_ms,
@@ -147,10 +171,11 @@ fn next_state(
         difficulty: f64::from(outcome.memory.difficulty),
         interval_ms: outcome.interval_ms,
         reps: reps_of(card) + 1,
-        lapses: card.state.map_or(0, |state| state.lapses) + u32::from(is_lapse),
+        lapses,
         // With one step, a card in learning or relearning has passed none.
         learning_step: 0,
         last_reviewed_at_ms: moment.at_ms,
+        is_leech: is_leech(lapses),
     }
 }
 
@@ -216,7 +241,18 @@ mod tests {
     }
 
     fn first_intervals() -> ReviewIntervals {
-        candidate_intervals(new_card(&id()), at(NOON_MS)).unwrap()
+        Scheduler::default()
+            .candidate_intervals(new_card(&id()), at(NOON_MS))
+            .unwrap()
+    }
+
+    fn answer(
+        card: ReviewedCard,
+        rating: ReviewRating,
+        moment: ReviewMoment,
+        duration_ms: u64,
+    ) -> Result<Answered, SrsError> {
+        Scheduler::default().answer(card, rating, moment, duration_ms)
     }
 
     /// Answers a new card at noon, then answers it again `later_ms` after.
@@ -362,6 +398,42 @@ mod tests {
         )
         .unwrap();
         assert_eq!(answered.entry.duration_ms, MINUTE_MS);
+    }
+
+    #[test]
+    fn a_card_is_no_leech_before_its_eighth_lapse() {
+        assert!(!is_leech(7));
+    }
+
+    #[test]
+    fn the_eighth_lapse_makes_a_card_a_leech() {
+        assert!(is_leech(8));
+    }
+
+    #[test]
+    fn an_answer_flags_a_card_forgotten_eight_times_as_a_leech() {
+        let id = id();
+        let mut state = answer(new_card(&id), ReviewRating::Good, at(NOON_MS), 0)
+            .unwrap()
+            .state;
+        state.lapses = 7;
+        let card = ReviewedCard {
+            flashcard_id: &id,
+            state: Some(&state),
+        };
+        let answered = answer(card, ReviewRating::Again, at(NOON_MS + 2 * DAY_MS), 0).unwrap();
+        assert!(answered.state.is_leech);
+    }
+
+    #[test]
+    fn fitted_parameters_change_the_intervals() {
+        let mut weights = fsrs::DEFAULT_PARAMETERS.to_vec();
+        weights[2] = 10.0;
+        let fitted = Scheduler::new(&weights)
+            .unwrap()
+            .candidate_intervals(new_card(&id()), at(NOON_MS))
+            .unwrap();
+        assert_ne!(fitted.good_ms, first_intervals().good_ms);
     }
 
     #[test]

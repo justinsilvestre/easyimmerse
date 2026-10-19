@@ -170,7 +170,7 @@ async fn raising_the_allowance_answers_no_content() {
     let response = server
         .post_json(
             &format!("/projects/{PROJECT}/review/allowance"),
-            &json!({ "utc_offset_min": 120, "extra_new_cards": 20 }),
+            &json!({ "utc_offset_min": 120, "extra_new_cards": 20, "extra_reviews": 0 }),
         )
         .await;
     assert_eq!(response.status, 204);
@@ -210,4 +210,55 @@ async fn the_project_counts_no_card_due_right_after_an_answer() {
         .unwrap()
         .clone();
     assert_eq!(project["due_review_count"], 0);
+}
+
+async fn hold(server: &TestServer, flashcard_id: &str, kind: &str) {
+    let response = server
+        .put_json(
+            &format!("/projects/{PROJECT}/review/holds/{flashcard_id}"),
+            &json!({ "kind": kind, "utc_offset_min": 120 }),
+        )
+        .await;
+    assert_eq!(response.status, 204, "{}", response.text());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_suspended_card_leaves_the_queue() {
+    let server = spawn_test_server(false).await;
+    let id = create_flashcard(&server, PROJECT, "Haus").await;
+    hold(&server, &id, "suspended").await;
+    assert_eq!(queue(&server).await["cards"], json!([]));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn unsuspending_a_card_brings_it_back_into_the_queue() {
+    let server = spawn_test_server(false).await;
+    let id = create_flashcard(&server, PROJECT, "Haus").await;
+    hold(&server, &id, "suspended").await;
+    let response = server
+        .delete(&format!("/projects/{PROJECT}/review/holds/{id}"))
+        .await;
+    assert_eq!(response.status, 204, "{}", response.text());
+    assert_eq!(queue(&server).await["cards"][0]["flashcard"]["id"], id);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_suspended_flashcard_is_listed_as_suspended() {
+    let server = spawn_test_server(false).await;
+    let id = create_flashcard(&server, PROJECT, "Haus").await;
+    hold(&server, &id, "suspended").await;
+    let listed: Value = server
+        .get(&format!("/projects/{PROJECT}/flashcards"))
+        .await
+        .json();
+    assert_eq!(listed["flashcards"][0]["is_suspended"], true);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_buried_card_is_not_counted_as_unreviewed() {
+    let server = spawn_test_server(false).await;
+    let id = create_flashcard(&server, PROJECT, "Haus").await;
+    hold(&server, &id, "buried").await;
+    let project: Value = server.get(&format!("/projects/{PROJECT}")).await.json();
+    assert_eq!(project["unreviewed_count"], 0);
 }

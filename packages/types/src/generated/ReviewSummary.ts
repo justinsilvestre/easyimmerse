@@ -18,6 +18,11 @@ learning_count: number,
  */
 new_count: number, 
 /**
+ * Cards under review that are due today but left for later days, because more are due than a day's limit.
+ * While any are, no new cards are introduced.
+ */
+held_back_count: number, 
+/**
  * Milliseconds since the Unix epoch at which the earliest answered card is due. Null when no card has been answered.
  */
 next_due_at_ms: number | null, 
