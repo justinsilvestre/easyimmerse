@@ -1,9 +1,11 @@
+import type { ReviewSessionProgress } from "@easyimmerse/state";
 import type { ComponentProps } from "react";
-import { RatingBar, type ReviewGrade } from "../review/RatingBar.tsx";
 import {
-  ReviewControlRow,
-  type ReviewSessionProgress,
-} from "../review/ReviewControlRow.tsx";
+  RatingBar,
+  type ReviewButtons,
+  type ReviewGrade,
+} from "../review/RatingBar.tsx";
+import { ReviewControlRow } from "../review/ReviewControlRow.tsx";
 import { ReviewSession } from "../review/ReviewSession.tsx";
 
 /**
@@ -15,6 +17,11 @@ export function ReviewScreen({
   projectName,
   progress,
   intervals,
+  buttons,
+  canUndo,
+  onShowAnswer,
+  onRate,
+  onUndo,
   onEditFlashcard,
   onDeleteFlashcard,
   ...session
@@ -23,7 +30,13 @@ export function ReviewScreen({
   progress: ReviewSessionProgress;
   /** The time until the next review each grade would schedule, already written out. */
   intervals: Record<ReviewGrade, string>;
-  onEditFlashcard: () => void;
+  buttons: ReviewButtons;
+  canUndo: boolean;
+  onShowAnswer: () => void;
+  onRate: (grade: ReviewGrade) => void;
+  onUndo: () => void;
+  /** Opens the card in the editor. Null leaves the item out of the More menu. */
+  onEditFlashcard: (() => void) | null;
   onDeleteFlashcard: () => void;
 }) {
   return (
@@ -31,10 +44,10 @@ export function ReviewScreen({
       <ReviewControlRow
         projectName={projectName}
         progress={progress}
-        canUndo={session.canUndo}
+        canUndo={canUndo}
         hasCard={session.card !== null}
         onBack={session.onBack}
-        onUndo={session.onUndo}
+        onUndo={onUndo}
         onEditFlashcard={onEditFlashcard}
         onDeleteFlashcard={onDeleteFlashcard}
       />
@@ -44,10 +57,10 @@ export function ReviewScreen({
       {session.card && (
         <RatingBar
           stage={session.stage}
-          buttons={session.buttons}
+          buttons={buttons}
           intervals={intervals}
-          onShowAnswer={session.onShowAnswer}
-          onRate={session.onRate}
+          onShowAnswer={onShowAnswer}
+          onRate={onRate}
         />
       )}
     </div>

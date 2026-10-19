@@ -1,76 +1,58 @@
+import type { ReviewEnd } from "@easyimmerse/state";
 import type { FlashcardFieldKey } from "@easyimmerse/types";
-import { useEffect, useEffectEvent } from "react";
 import type { FlashcardLanguages } from "../flashcards/flashcardFields.ts";
-import { keyPressOf } from "../hooks/keyPressOf.ts";
-import type { ReviewButtons, ReviewGrade } from "./RatingBar.tsx";
 import { ReviewCard, type ReviewCardView } from "./ReviewCard.tsx";
-import { ReviewDone, type ReviewEnd } from "./ReviewDone.tsx";
-import {
-  type ReviewKeyCommand,
-  reviewKeyCommandOf,
-} from "./reviewKeyCommandOf.ts";
+import { ReviewDone } from "./ReviewDone.tsx";
 
 /**
  * The body of the review screen: the card being reviewed, near the top so that it stays in place when its back appears,
- * or how the session ended.
- * It answers the screen's keys: Space or Enter shows the answer and then rates the card as remembered,
- * the number keys rate it, R replays its audio, Z undoes the last rating, and Escape goes back to the project.
+ * or how the session ended. The card's audio plays by itself as the side holding it is shown,
+ * and again from its start whenever `audioPlayKey` changes.
  * The screen places the `ReviewControlRow` above it and the `RatingBar` below it.
  */
 export function ReviewSession({
   card,
   stage,
-  buttons,
   end,
-  canUndo,
   includedFields,
   frontFields,
   languages,
-  onShowAnswer,
-  onRate,
+  audioPlayKey,
   onReplayAudio,
-  onUndo,
   onBack,
   onLearnMore,
+  onRetry,
 }: {
   card: ReviewCardView | null;
   stage: "front" | "back";
-  buttons: ReviewButtons;
   /** Why there is no card to show, while there is none. */
   end: ReviewEnd | null;
-  canUndo: boolean;
   includedFields: readonly FlashcardFieldKey[];
   frontFields: readonly FlashcardFieldKey[];
   languages: FlashcardLanguages;
-  onShowAnswer: () => void;
-  onRate: (grade: ReviewGrade) => void;
+  /** Changes whenever the card's audio is to play again from its start, as for another card or a replay. */
+  audioPlayKey: string;
   onReplayAudio: () => void;
-  onUndo: () => void;
   onBack: () => void;
   onLearnMore: () => void;
+  onRetry: () => void;
 }) {
-  const run = (command: ReviewKeyCommand) => {
-    if (command.type === "showAnswer") onShowAnswer();
-    else if (command.type === "rate") onRate(command.grade);
-    else if (command.type === "replayAudio") onReplayAudio();
-    else if (command.type === "undo") onUndo();
-    else onBack();
-  };
-  const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    const context = { stage, buttons, hasCard: card !== null, canUndo };
-    const command = reviewKeyCommandOf(keyPressOf(event), context);
-    if (command === null) return;
-    event.preventDefault();
-    run(command);
-  });
-  useEffect(() => {
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
   if (card === null)
     return (
-      end && <ReviewDone end={end} onBack={onBack} onLearnMore={onLearnMore} />
+      end && (
+        <ReviewDone
+          end={end}
+          onBack={onBack}
+          onLearnMore={onLearnMore}
+          onRetry={onRetry}
+        />
+      )
     );
+  const isAudioHeard =
+    card.audioUrl !== null &&
+    !card.isMediaUnavailable &&
+    includedFields.includes("audio_context") &&
+    (stage === "back" || frontFields.includes("audio_context"));
   return (
     <div className="flex flex-col px-4 pt-4 pb-10 sm:pt-8">
       <ReviewCard
@@ -84,6 +66,11 @@ export function ReviewSession({
         isMediaUnavailable={card.isMediaUnavailable}
         onPlayAudio={onReplayAudio}
       />
+      {/* Mounted as the side holding the audio is shown, so that it plays once per card, and mounted anew for each replay. */}
+      {isAudioHeard && (
+        // biome-ignore lint/a11y/useMediaCaption: the clip speaks the sentence the card was made from, which has no captions of its own to give.
+        <audio key={audioPlayKey} src={card.audioUrl ?? undefined} autoPlay />
+      )}
     </div>
   );
 }

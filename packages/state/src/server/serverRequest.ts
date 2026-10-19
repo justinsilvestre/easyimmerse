@@ -23,6 +23,10 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  ReviewAnswerResponse,
+  ReviewAnswerUndone,
+  ReviewQueue,
+  ReviewRating,
   SourceStepRequest,
   SourceStepResponse,
   SubtitleSelection,
@@ -193,7 +197,21 @@ export type ServerRequest =
       kind: "setAnkiConnect";
       projectId: string;
       usesAnkiConnect: boolean;
-    };
+    }
+  /** Lists the cards of a review session of the project, in the order they are shown. */
+  | { kind: "getReviewQueue"; projectId: string }
+  /** Records the user's rating of a card, with the time from the card appearing to the rating. */
+  | {
+      kind: "answerReview";
+      projectId: string;
+      flashcardId: string;
+      rating: ReviewRating;
+      durationMs: number;
+    }
+  /** Undoes the project's latest answer, which the time of its log entry names. */
+  | { kind: "undoReviewAnswer"; projectId: string; answeredAtMs: number }
+  /** Raises the number of new cards the project's review introduces today. */
+  | { kind: "raiseReviewAllowance"; projectId: string; extraNewCards: number };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -248,6 +266,11 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;
+  getReviewQueue: ReviewQueue;
+  answerReview: ReviewAnswerResponse;
+  undoReviewAnswer: ReviewAnswerUndone;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  raiseReviewAllowance: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */

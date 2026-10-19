@@ -51,6 +51,8 @@ const meta = {
     onUndo: fn(),
     onBack: fn(),
     onLearnMore: fn(),
+    onRetry: fn(),
+    audioPlayKey: "f1",
     onEditFlashcard: fn(),
     onDeleteFlashcard: fn(),
   },
@@ -128,4 +130,14 @@ export const NothingToReview: Story = {
 
 export const NoFlashcardsYet: Story = {
   args: { card: null, end: { kind: "noFlashcards" } },
+};
+
+/** The session's cards could not be loaded. */
+export const FailedToLoad: Story = {
+  args: { card: null, end: { kind: "failed" } },
+};
+
+/** The card's media file is gone from the project, so the More menu offers no way to edit it. */
+export const WithoutEdit: StoryObj<typeof ReviewScreen> = {
+  args: { onEditFlashcard: null, card: ebookReviewCard },
 };

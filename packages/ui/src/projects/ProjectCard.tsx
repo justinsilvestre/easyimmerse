@@ -1,52 +1,91 @@
 import type { Project } from "@easyimmerse/types";
-import { ChevronRight, Film, Layers } from "lucide-react";
+import { ChevronRight, Film, GraduationCap, Layers } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
+import { Button } from "../components/Button.tsx";
 import { pluralize } from "../components/pluralize.ts";
 import { Skeleton } from "../components/Skeleton.tsx";
 import { formatRelativeDate } from "./formatRelativeDate.ts";
 import { languageName } from "./languages.ts";
 
-/** One project on the home screen, with its language, size, and when it was last opened. */
+/**
+ * One project on the home screen, with its language, size, and when it was last opened.
+ * Beside it, a button opens its review directly: to review the cards due, with their count, or to learn new cards when none is due.
+ */
 export function ProjectCard({
   project,
   onOpen,
+  onReview,
 }: {
   project: Project;
   onOpen: (projectId: string) => void;
+  onReview: (projectId: string) => void;
 }) {
   const { name, target_language: language } = project.settings;
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(project.id)}
-      className="group flex w-full items-center gap-4 rounded-lg border border-line bg-surface px-4 py-3 text-left hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-    >
-      <span
-        aria-hidden
-        className="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-sm font-semibold text-accent-fg uppercase"
+    <div className="flex items-center rounded-lg border border-line bg-surface has-[button:hover]:border-line-strong">
+      <button
+        type="button"
+        onClick={() => onOpen(project.id)}
+        className="group flex min-w-0 flex-1 items-center gap-4 rounded-lg px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        {language}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate font-medium">{name}</span>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
-          <Badge>{languageName(language)}</Badge>
-          <span className="flex items-center gap-1">
-            <Film className="size-3" aria-hidden />
-            {pluralize(project.media_count, "media file")}
-          </span>
-          <span className="flex items-center gap-1">
-            <Layers className="size-3" aria-hidden />
-            {pluralize(project.flashcard_count, "flashcard")}
-          </span>
-          <span>Opened {formatRelativeDate(project.last_opened_at_ms)}</span>
+        <span
+          aria-hidden
+          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-sm font-semibold text-accent-fg uppercase"
+        >
+          {language}
         </span>
-      </span>
-      <ChevronRight
-        className="size-4 shrink-0 text-fg-faint group-hover:text-fg"
-        aria-hidden
-      />
-    </button>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="truncate font-medium">{name}</span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
+            <Badge>{languageName(language)}</Badge>
+            <span className="flex items-center gap-1">
+              <Film className="size-3" aria-hidden />
+              {pluralize(project.media_count, "media file")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Layers className="size-3" aria-hidden />
+              {pluralize(project.flashcard_count, "flashcard")}
+            </span>
+            <span>Opened {formatRelativeDate(project.last_opened_at_ms)}</span>
+          </span>
+        </span>
+        <ChevronRight
+          className="size-4 shrink-0 text-fg-faint group-hover:text-fg"
+          aria-hidden
+        />
+      </button>
+      <ReviewButton project={project} onReview={onReview} />
+    </div>
+  );
+}
+
+/** Opens the project's review: with the count of cards due while any is, or to learn new cards while none is due. Nothing shows otherwise. */
+function ReviewButton({
+  project,
+  onReview,
+}: {
+  project: Project;
+  onReview: (projectId: string) => void;
+}) {
+  const dueCount = project.due_review_count;
+  if (dueCount === 0 && project.unreviewed_count === 0) return null;
+  return (
+    <Button
+      size="sm"
+      variant={dueCount > 0 ? "primary" : "secondary"}
+      className="mr-3 shrink-0"
+      onClick={() => onReview(project.id)}
+    >
+      <GraduationCap className="size-3.5" aria-hidden />
+      {dueCount > 0 ? (
+        <>
+          Review
+          <span className="tabular-nums opacity-80">{dueCount} due</span>
+        </>
+      ) : (
+        "Learn"
+      )}
+    </Button>
   );
 }
 

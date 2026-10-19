@@ -62,6 +62,32 @@ const withDeletions = (usesAnkiConnect: boolean) =>
   );
 
 describe("selectFlashcardSync", () => {
+  describe("about the review", () => {
+    const summary = {
+      due_count: 3,
+      learning_count: 2,
+      new_count: 5,
+      next_due_at_ms: 9,
+      next_card: null,
+      has_progress: true,
+    };
+    const reviewOf = (backend: ServerCacheSlice) => syncOf(backend).review;
+
+    it("counts the cards due, those being learned included", () => {
+      const backend = serverCacheWith("getReviewSummary", "p1", summary);
+      expect(reviewOf(backend).dueCount).toBe(5);
+    });
+
+    it("tells that the review has progress", () => {
+      const backend = serverCacheWith("getReviewSummary", "p1", summary);
+      expect(reviewOf(backend).hasProgress).toBe(true);
+    });
+
+    it("tells of no progress while the summary is not cached", () => {
+      expect(reviewOf(ankiCache(false)).hasProgress).toBe(false);
+    });
+  });
+
   it("tells that no card was sent through AnkiConnect while cards were only exported", () => {
     const backend = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { exportedAtMs: 5 }),

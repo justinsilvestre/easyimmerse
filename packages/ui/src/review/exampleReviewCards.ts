@@ -9,6 +9,7 @@ export const exampleReviewCard: ReviewCardView = {
   flashcardId: "f1",
   content: exampleFlashcard,
   screenshotUrl: exampleScreenshotUrl,
+  audioUrl: null,
   isMediaUnavailable: false,
 };
 

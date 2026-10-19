@@ -7,6 +7,7 @@ import type {
   AlignmentsResponse,
   ListMediaFilesResponse,
   MediaFile,
+  ReviewAnswerUndone,
   TranslationDocumentSelection,
 } from "@easyimmerse/types";
 
@@ -38,8 +39,9 @@ export type FakeRoute = [
  * The routes are tried first, then the exact `METHOD /path` keys, then the defaults below.
  * Anything else gets a 404.
  *
- * By default a media file has no alignments, and saving its translation document answers the
- * media file as the canned `GET /projects/{id}/media` lists it, with the translation set.
+ * By default a media file has no alignments, saving its translation document answers the
+ * media file as the canned `GET /projects/{id}/media` lists it, with the translation set,
+ * and undoing a review answer makes its card new again.
  */
 export function createFakeBackendClient(
   responses: Record<string, FakeResponse>,
@@ -81,6 +83,12 @@ function findResponse(
 
 const noAlignments: AlignmentsResponse = { alignments: [] };
 
+const newAgain: ReviewAnswerUndone = {
+  flashcard_id: "",
+  state: null,
+  intervals: { again_ms: 0, hard_ms: 0, good_ms: 0, easy_ms: 0 },
+};
+
 function defaultRoutes(
   responses: Record<string, FakeResponse>,
 ): readonly FakeRoute[] {
@@ -91,6 +99,7 @@ function defaultRoutes(
       /^\/projects\/[^/]+\/media\/[^/]+\/translation-document$/,
       (request: BackendRequest) => withTranslationDocument(responses, request),
     ],
+    ["DELETE", /^\/projects\/[^/]+\/review\/answers\/\d+$/, newAgain],
   ];
 }
 

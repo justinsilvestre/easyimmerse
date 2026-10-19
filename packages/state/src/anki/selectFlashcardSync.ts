@@ -2,6 +2,7 @@ import type {
   AnkiPendingDeletion,
   Flashcard,
   FlashcardContent,
+  ReviewSummary,
 } from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
@@ -68,7 +69,7 @@ export type AnkiConnectSync = {
 
 /** What the project overview's flashcards panel shows about the review in easyImmerse. */
 export type ReviewSync = {
-  /** The cards due for review now, not counting new cards. */
+  /** The cards due for review now, those being learned included, not counting new cards. */
   dueCount: number;
   /** The new cards left to learn today. */
   newCount: number;
@@ -94,7 +95,8 @@ export type FlashcardSync = {
 
 /**
  * Selects how the project's flashcards reach Anki, from the cached project, flashcards and pending deletions from Anki,
- * the last check of the connection to Anki, and the last failed send and deletion.
+ * the last check of the connection to Anki, and the last failed send and deletion;
+ * and what waits in its review, from the cached summary of the review.
  * The result keeps its reference while those do.
  */
 export const selectFlashcardSync = createSelector(
@@ -111,6 +113,8 @@ export const selectFlashcardSync = createSelector(
       cachedDeletions(root.backend, projectId),
     (root: RootState, projectId: string) =>
       hasSyncFailed(root.app.operations.failedRequests, projectId),
+    (root: RootState, projectId: string) =>
+      cacheEntry(root.backend, "getReviewSummary", projectId)?.data,
   ],
   (
     usesAnkiConnect,
@@ -119,6 +123,7 @@ export const selectFlashcardSync = createSelector(
     isSyncing,
     deletions,
     hasFailed,
+    reviewSummary,
   ): FlashcardSync => ({
     flashcardCount: flashcards.length,
     queue: queueOf(flashcards),
@@ -136,18 +141,20 @@ export const selectFlashcardSync = createSelector(
         statusOf(connection) === "connected",
     },
     nextCard: firstMadeContent(flashcards.filter(isQueued)),
-    review: noReview,
+    review: reviewSyncOf(reviewSummary),
   }),
 );
 
-/** The review has no backend yet, so no project has review progress. */
-const noReview: ReviewSync = {
-  dueCount: 0,
-  newCount: 0,
-  nextDueAtMs: null,
-  nextCard: null,
-  hasProgress: false,
-};
+/** What waits in the review, from its summary, or nothing while the summary is not cached. */
+function reviewSyncOf(summary: ReviewSummary | undefined): ReviewSync {
+  return {
+    dueCount: (summary?.due_count ?? 0) + (summary?.learning_count ?? 0),
+    newCount: summary?.new_count ?? 0,
+    nextDueAtMs: summary?.next_due_at_ms ?? null,
+    nextCard: summary?.next_card?.content ?? null,
+    hasProgress: summary?.has_progress ?? false,
+  };
+}
 
 const noDeletions: readonly AnkiPendingDeletion[] = [];
 

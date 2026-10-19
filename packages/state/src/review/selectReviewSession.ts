@@ -1,0 +1,106 @@
+import type {
+  Project,
+  ReviewQueueCard,
+  ReviewSummary,
+} from "@easyimmerse/types";
+import { createSelector } from "reselect";
+import type { AppState } from "../app/appState.ts";
+import type { RootState } from "../app/createAppStore.ts";
+import { mainScreenOf } from "../route/route.ts";
+import { cacheEntry } from "../server/cacheEntry.ts";
+import { extraNewCardCount } from "./reviewRequests.ts";
+import type { ReviewScreenState } from "./reviewScreenState.ts";
+import { canUndo } from "./reviewSession.ts";
+import type { ReviewEnd, ReviewSessionProgress } from "./reviewSessionView.ts";
+
+/** Returns the review screen's state, or null while the review is not the main screen. */
+export function selectReviewScreen(
+  app: Pick<AppState, "screen">,
+): ReviewScreenState | null {
+  const { main } = app.screen;
+  return main.kind === "review" ? main : null;
+}
+
+/** Returns the project whose review is the main screen, or null. */
+export function selectReviewProjectId(root: Pick<RootState, "app">) {
+  const main = mainScreenOf(root.app.route);
+  return main.screen === "review" ? main.projectId : null;
+}
+
+/**
+ * Selects what the review screen shows: the card and its side, the cards left by kind, how the session ended,
+ * whether Undo can take a rating back, and a key that changes whenever the card's audio is to play from its start.
+ * The end reads the cached project and the cached summary of its review. Null while the review is not the main screen.
+ */
+export const selectReviewSession = createSelector(
+  [
+    (root: RootState) => selectReviewScreen(root.app),
+    (root: RootState) => cachedOfReview(root, "getProject"),
+    (root: RootState) => cachedOfReview(root, "getReviewSummary"),
+  ],
+  (session, project, summary) =>
+    session && {
+      card: session.shown,
+      stage: session.stage,
+      progress: progressOf(session),
+      end: endOf(session, project, summary),
+      canUndo: canUndo(session),
+      isConfirmingDelete: session.isConfirmingDelete,
+      audioPlayKey: [
+        session.shown?.flashcard.id,
+        session.answers.length,
+        session.replayCount,
+      ].join("/"),
+    },
+);
+
+function cachedOfReview<K extends "getProject" | "getReviewSummary">(
+  root: RootState,
+  endpointName: K,
+) {
+  const projectId = selectReviewProjectId(root);
+  return projectId === null
+    ? undefined
+    : cacheEntry(root.backend, endpointName, projectId)?.data;
+}
+
+function progressOf(session: ReviewScreenState): ReviewSessionProgress {
+  const left = [
+    ...(session.shown ? [session.shown] : []),
+    ...session.queue,
+    ...session.comingBack,
+  ];
+  const finished = session.answers.length;
+  return {
+    finished,
+    total: finished + left.length,
+    newCount: left.filter(({ state }) => state === null).length,
+    learningCount: left.filter(
+      ({ state }) => state !== null && state.state !== "review",
+    ).length,
+    dueCount: left.filter(({ state }) => state?.state === "review").length,
+  };
+}
+
+function endOf(
+  session: ReviewScreenState,
+  project: Project | undefined,
+  summary: ReviewSummary | undefined,
+): ReviewEnd | null {
+  if (session.shown !== null || session.queueStatus === "loading") return null;
+  if (session.queueStatus === "failed") return { kind: "failed" };
+  if (session.answers.length > 0)
+    return {
+      kind: "doneForToday",
+      reviewedCount: session.answers.length,
+      comesBack: comesBackOf(session.comingBack),
+      moreNewCount: Math.min(extraNewCardCount, project?.unreviewed_count ?? 0),
+    };
+  if (project?.flashcard_count === 0) return { kind: "noFlashcards" };
+  return { kind: "nothingDue", nextDueAtMs: summary?.next_due_at_ms ?? null };
+}
+
+function comesBackOf(comingBack: readonly ReviewQueueCard[]) {
+  const atMs = comingBack[0]?.state?.due_at_ms;
+  return atMs === undefined ? null : { count: comingBack.length, atMs };
+}

@@ -16,6 +16,7 @@ const meta = {
     },
     onBack: fn(),
     onLearnMore: fn(),
+    onRetry: fn(),
   },
 } satisfies Meta<typeof ReviewDone>;
 
@@ -42,4 +43,9 @@ export const NothingToReview: Story = {
 
 export const NoFlashcardsYet: Story = {
   args: { end: { kind: "noFlashcards" } },
+};
+
+/** The session's cards could not be loaded, as when the server cannot be reached. */
+export const FailedToLoad: Story = {
+  args: { end: { kind: "failed" } },
 };

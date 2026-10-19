@@ -1,3 +1,4 @@
+import type { BackendRequest } from "@easyimmerse/backend";
 import type {
   InstalledPlugin,
   ListFlashcardsResponse,
@@ -5,9 +6,15 @@ import type {
   ListProjectsResponse,
   Project,
   ProjectSettings,
+  ReviewAnswerRequest,
   SubtitleTracksResponse,
   TimedTextTrack,
 } from "@easyimmerse/types";
+import {
+  answerReviewFixture,
+  fixtureReviewQueue,
+  fixtureReviewSummary,
+} from "./reviewFixtures.ts";
 
 /** The cues of `fixtures/sample.srt`, as the backend returns them. */
 export const fixtureTrack: TimedTextTrack = {
@@ -55,6 +62,8 @@ export const fixtureProject: Project = {
   last_opened_at_ms: 1767398400000,
   media_count: 2,
   flashcard_count: 0,
+  due_review_count: 0,
+  unreviewed_count: 0,
   uses_anki_connect: false,
 };
 
@@ -68,6 +77,8 @@ const fixtureProjects: ListProjectsResponse = {
       last_opened_at_ms: 1767312000000,
       media_count: 0,
       flashcard_count: 0,
+      due_review_count: 0,
+      unreviewed_count: 0,
       uses_anki_connect: false,
     },
   ],
@@ -159,4 +170,9 @@ export const fixtureResponses = {
     selection: { target_track_id: null, translation_track_id: null },
   } satisfies SubtitleTracksResponse,
   "POST /timed-text/parse": fixtureTrack,
+  "GET /projects/p1/review": fixtureReviewSummary,
+  "GET /projects/p1/review/queue": fixtureReviewQueue,
+  "POST /projects/p1/review/answers": (request: BackendRequest) =>
+    answerReviewFixture(request.body?.value as ReviewAnswerRequest, Date.now()),
+  "POST /projects/p1/review/allowance": undefined,
 };

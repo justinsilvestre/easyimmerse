@@ -14,6 +14,7 @@ import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
 import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
+import { utcOffsetMinOf } from "./utcOffsetMinOf.ts";
 
 function createRecordingClient(): BackendClient & {
   requests: BackendRequest[];
@@ -459,6 +460,50 @@ describe("backendApi", () => {
     });
   });
 
+  it("puts the client's UTC offset in the query string for getReviewSummary", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getReviewSummary.initiate("p1"),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "GET",
+      path: "/projects/p1/review",
+      query: { utc_offset_min: String(utcOffsetMinOf(new Date())) },
+    });
+  });
+
+  it("posts the rating, its duration and the client's UTC offset for answerReview", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.answerReview.initiate({
+        projectId: "p1",
+        flashcardId: "f1",
+        rating: "good",
+        durationMs: 3000,
+      }),
+    );
+    expect(client.requests[0]?.body).toEqual({
+      kind: "json",
+      value: {
+        flashcard_id: "f1",
+        rating: "good",
+        utc_offset_min: utcOffsetMinOf(new Date()),
+        duration_ms: 3000,
+      },
+    });
+  });
+
+  it("sends DELETE .../review/answers/{answered_at_ms} for undoReviewAnswer", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.undoReviewAnswer.initiate({
+        projectId: "p1",
+        answeredAtMs: 1234,
+      }),
+    );
+    expect(client.requests[0]?.path).toBe("/projects/p1/review/answers/1234");
+  });
+
   it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
@@ -732,6 +777,8 @@ describe("setAnkiConnect", () => {
       last_opened_at_ms: 0,
       media_count: 0,
       flashcard_count: 0,
+      due_review_count: 0,
+      unreviewed_count: 0,
       uses_anki_connect: true,
     };
     const store = createStore({

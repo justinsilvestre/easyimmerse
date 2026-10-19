@@ -1,18 +1,10 @@
+import type { ReviewSessionProgress } from "@easyimmerse/state";
 import clsx from "clsx";
 import { ArrowLeft, Pencil, Trash2, Undo2 } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
-
-/** How far a review session has come, and what is left in it by kind of card. */
-export type ReviewSessionProgress = {
-  finished: number;
-  total: number;
-  newCount: number;
-  /** The cards still being learned, which come back within the session until they graduate. */
-  learningCount: number;
-  dueCount: number;
-};
+import type { MenuItem } from "../components/MenuItemButton.tsx";
 
 /**
  * The slim row at the top of the review screen: the way back to the project, the cards left by kind,
@@ -36,9 +28,19 @@ export function ReviewControlRow({
   hasCard: boolean;
   onBack: () => void;
   onUndo: () => void;
-  onEditFlashcard: () => void;
+  /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone. */
+  onEditFlashcard: (() => void) | null;
   onDeleteFlashcard: () => void;
 }) {
+  const editItem: MenuItem[] = onEditFlashcard
+    ? [
+        {
+          label: "Edit flashcard",
+          icon: <Pencil className="size-4" aria-hidden />,
+          onSelect: onEditFlashcard,
+        },
+      ]
+    : [];
   return (
     <div className="flex items-center justify-between gap-2 px-2 py-1.5 sm:px-3">
       <IconButton label={`Back to ${projectName}`} onClick={onBack}>
@@ -67,11 +69,7 @@ export function ReviewControlRow({
           label="More"
           isUnavailable={!hasCard}
           items={[
-            {
-              label: "Edit flashcard",
-              icon: <Pencil className="size-4" aria-hidden />,
-              onSelect: onEditFlashcard,
-            },
+            ...editItem,
             {
               label: "Delete flashcard",
               icon: <Trash2 className="size-4" aria-hidden />,

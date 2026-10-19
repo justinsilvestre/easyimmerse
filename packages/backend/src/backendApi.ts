@@ -50,6 +50,13 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  ReviewAllowanceRequest,
+  ReviewAnswerRequest,
+  ReviewAnswerResponse,
+  ReviewAnswerUndone,
+  ReviewQueue,
+  ReviewRating,
+  ReviewSummary,
   SourceStepRequest,
   SourceStepResponse,
   SubtitleSelection,
@@ -100,6 +107,7 @@ import {
   type ServerQuery,
   sendFlashcardsToAnki,
 } from "./sendToAnki.ts";
+import { utcOffsetMinOf } from "./utcOffsetMinOf.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -147,6 +155,17 @@ type AnkiDeletionsClearArgs = {
   projectId: string;
   flashcardIds: readonly string[];
 };
+
+type ReviewAnswerArgs = {
+  projectId: string;
+  flashcardId: string;
+  rating: ReviewRating;
+  durationMs: number;
+};
+
+type ReviewUndoArgs = { projectId: string; answeredAtMs: number };
+
+type ReviewAllowanceArgs = { projectId: string; extraNewCards: number };
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -253,14 +272,31 @@ function reportAnkiConnection(
   return connection.connected && last?.connected !== true;
 }
 
-/** The data an export or a send to Anki changes: which flashcards went where, the deletions it records or clears, and the project's counts. */
+/**
+ * The data an export or a send to Anki changes: which flashcards went where, the deletions it records or clears, the project's counts,
+ * and what waits in its review.
+ */
 const flashcardsSentTags = (projectId: string) =>
   [
     { type: "Flashcards", id: projectId },
     { type: "AnkiPendingDeletions", id: projectId },
     { type: "Projects", id: projectId },
     "Projects",
+    { type: "Review", id: projectId },
   ] as const;
+
+/** The data an answer or its undo changes: what waits in the project's review, and the counts of due and unreviewed cards in the project list. */
+const reviewAnsweredTags = (projectId: string) =>
+  [
+    { type: "Review", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
+
+/** The client's UTC offset now, as a query parameter of the review routes, which place the current time in the user's local day. */
+const utcOffsetQuery = () => ({
+  utc_offset_min: String(utcOffsetMinOf(new Date())),
+});
 
 const mediaFileAddedTags = (projectId: string) =>
   [
@@ -285,6 +321,7 @@ export const backendApi = createApi({
     "Alignments",
     "Dictionaries",
     "ConversionCache",
+    "Review",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -355,6 +392,7 @@ export const backendApi = createApi({
         { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
+        { type: "Review", id: projectId },
       ],
     }),
     updateFlashcard: build.mutation<
@@ -371,6 +409,7 @@ export const backendApi = createApi({
       },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "Review", id: projectId },
       ],
     }),
     deleteFlashcard: build.mutation<void, FlashcardArgs>({
@@ -383,6 +422,72 @@ export const backendApi = createApi({
         { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
+        { type: "Review", id: projectId },
+      ],
+    }),
+    /** What waits in a project's review today, as the flashcards panel shows it. */
+    getReviewSummary: build.query<ReviewSummary, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/review`,
+        query: utcOffsetQuery(),
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "Review", id: projectId },
+      ],
+    }),
+    /**
+     * The cards of a review session, in the order they are shown. The answer is not cached,
+     * since the review screen keeps the session's cards and fetches the queue again only when it runs out.
+     */
+    getReviewQueue: build.mutation<ReviewQueue, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/review/queue`,
+        query: utcOffsetQuery(),
+      }),
+    }),
+    answerReview: build.mutation<ReviewAnswerResponse, ReviewAnswerArgs>({
+      query: ({ projectId, flashcardId, rating, durationMs }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/review/answers`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_id: flashcardId,
+            rating,
+            utc_offset_min: utcOffsetMinOf(new Date()),
+            duration_ms: durationMs,
+          } satisfies ReviewAnswerRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewAnsweredTags(projectId),
+    }),
+    /** Undoes the project's latest answer, which the time of its log entry names. The server refuses any other with a 409. */
+    undoReviewAnswer: build.mutation<ReviewAnswerUndone, ReviewUndoArgs>({
+      query: ({ projectId, answeredAtMs }) => ({
+        method: "DELETE",
+        path: `/projects/${projectId}/review/answers/${answeredAtMs}`,
+        query: utcOffsetQuery(),
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewAnsweredTags(projectId),
+    }),
+    raiseReviewAllowance: build.mutation<void, ReviewAllowanceArgs>({
+      query: ({ projectId, extraNewCards }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/review/allowance`,
+        body: {
+          kind: "json",
+          value: {
+            utc_offset_min: utcOffsetMinOf(new Date()),
+            extra_new_cards: extraNewCards,
+          } satisfies ReviewAllowanceRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "Review", id: projectId },
       ],
     }),
     listPlugins: build.query<ListPluginsResponse, void>({
@@ -936,6 +1041,7 @@ export const {
   useLookupTextQuery,
   useLazyLookupTextQuery,
   useListAnkiPendingDeletionsQuery,
+  useGetReviewSummaryQuery,
 } = backendApi;
 
 type BackendState = Parameters<

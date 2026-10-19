@@ -12,6 +12,8 @@ export type ReviewCardView = {
   content: FlashcardContent;
   /** The image of the card's screenshot. Null when none can be shown. */
   screenshotUrl: string | null;
+  /** Where the card's audio clip plays from, limited to the clip. Null when it cannot be played. */
+  audioUrl: string | null;
   /** Whether the card's media file cannot be read on this device, so that its audio and screenshot are left out. */
   isMediaUnavailable: boolean;
 };

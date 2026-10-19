@@ -15,6 +15,7 @@ export function HomeView({
   status,
   projects,
   onOpenProject,
+  onReviewProject,
   onCreateProject,
   onContinueOffline,
   onOpenDictionaries,
@@ -22,6 +23,8 @@ export function HomeView({
   status: ProjectListStatus;
   projects: readonly Project[];
   onOpenProject: (projectId: string) => void;
+  /** Opens a project's review directly, without its screen. */
+  onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
   onOpenDictionaries: () => void;
@@ -55,6 +58,7 @@ export function HomeView({
         status={status}
         projects={projects}
         onOpenProject={onOpenProject}
+        onReviewProject={onReviewProject}
         onCreateProject={onCreateProject}
         onContinueOffline={onContinueOffline}
       />
@@ -66,12 +70,14 @@ function Projects({
   status,
   projects,
   onOpenProject,
+  onReviewProject,
   onCreateProject,
   onContinueOffline,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
   onOpenProject: (projectId: string) => void;
+  onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
 }) {
@@ -115,7 +121,11 @@ function Projects({
         <ul aria-label="Projects" className="flex flex-col gap-2">
           {projects.map((project) => (
             <li key={project.id}>
-              <ProjectCard project={project} onOpen={onOpenProject} />
+              <ProjectCard
+                project={project}
+                onOpen={onOpenProject}
+                onReview={onReviewProject}
+              />
             </li>
           ))}
         </ul>

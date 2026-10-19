@@ -1,32 +1,22 @@
+import type { ReviewEnd } from "@easyimmerse/state";
 import clsx from "clsx";
-import { CalendarCheck, CircleCheck, Layers } from "lucide-react";
+import { CalendarCheck, CircleAlert, CircleCheck, Layers } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { pluralize } from "../components/pluralize.ts";
 import { nextReviewPhrase, timeOfDay } from "./nextReviewPhrase.ts";
 
-/** Why a review session has no card to show. */
-export type ReviewEnd =
-  | {
-      kind: "doneForToday";
-      reviewedCount: number;
-      /** The cards still being learned that fall due later today, and when the first of them does. */
-      comesBack: { count: number; atMs: number } | null;
-      /** The new cards that "Learn more" would add to today's, beyond the day's allowance. None hides the button. */
-      moreNewCount: number;
-    }
-  | { kind: "nothingDue"; nextDueAtMs: number | null }
-  | { kind: "noFlashcards" };
-
-/** Says that the review session is over, or that it has nothing to show, with the way back to the project. */
+/** Says that the review session is over, that it has nothing to show, or that its cards could not be loaded, with the way back to the project. */
 export function ReviewDone({
   end,
   onBack,
   onLearnMore,
+  onRetry,
 }: {
   end: ReviewEnd;
   onBack: () => void;
   onLearnMore: () => void;
+  onRetry: () => void;
 }) {
   const back = <Button onClick={onBack}>Back to project</Button>;
   switch (end.kind) {
@@ -83,6 +73,23 @@ export function ReviewDone({
           ]}
         >
           {back}
+        </Ending>
+      );
+    case "failed":
+      return (
+        <Ending
+          icon={
+            <IconDisc className="bg-danger-soft text-danger-fg">
+              <CircleAlert className="size-7" aria-hidden />
+            </IconDisc>
+          }
+          title="Could not load the cards"
+          lines={["Check the connection to the server, then try again."]}
+        >
+          {back}
+          <Button variant="primary" onClick={onRetry}>
+            Try again
+          </Button>
         </Ending>
       );
   }

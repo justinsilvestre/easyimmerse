@@ -80,6 +80,7 @@ export {
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
+export { selectReviewKeyBinding } from "./keys/selectReviewKeyBinding.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -122,6 +123,14 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
+export type {
+  ReviewEnd,
+  ReviewSessionProgress,
+} from "./review/reviewSessionView.ts";
+export {
+  selectReviewProjectId,
+  selectReviewSession,
+} from "./review/selectReviewSession.ts";
 export type {
   MainRoute,
   NavigationStep,

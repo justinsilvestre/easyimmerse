@@ -12,6 +12,7 @@ export {
   useGetMediaAvailabilityQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
+  useGetReviewSummaryQuery,
   useGetSubtitleCuesQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,

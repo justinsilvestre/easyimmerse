@@ -6,10 +6,12 @@ import { isOfflineError } from "./isOfflineError.ts";
 /** The home screen with the projects the server lists, most recently opened first. */
 export function HomeScreen({
   onOpenProject,
+  onReviewProject,
   onCreateProject,
   onContinueOffline,
 }: {
   onOpenProject: (projectId: string) => void;
+  onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
 }) {
@@ -21,6 +23,7 @@ export function HomeScreen({
       status={statusOf(isLoading, error)}
       projects={data?.projects ?? []}
       onOpenProject={onOpenProject}
+      onReviewProject={onReviewProject}
       onCreateProject={onCreateProject}
       onContinueOffline={onContinueOffline}
       onOpenDictionaries={openDictionaries}

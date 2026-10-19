@@ -1,5 +1,6 @@
 import {
   useGetMediaAvailabilityQuery,
+  useGetReviewSummaryQuery,
   useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
@@ -13,9 +14,8 @@ import {
   selectFlashcardSync,
   selectIsAnkiConnectSetupOpen,
   selectMediaImport,
-  transientNotice,
 } from "@easyimmerse/state";
-import type { MediaAvailabilityResponse, Project } from "@easyimmerse/types";
+import type { Project } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -26,15 +26,14 @@ import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { MediaSection } from "../projects/MediaSection.tsx";
-import type { PathAvailabilities } from "../projects/mediaIssueOf.ts";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectFlashcardsPanel } from "../projects/ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "../projects/ProjectView.tsx";
+import { pathAvailabilitiesOf } from "../projects/pathAvailabilitiesOf.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
  * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
- * The review is not wired up yet, so choosing it says that it is not available.
  */
 export function ProjectOverview({
   project,
@@ -46,12 +45,6 @@ export function ProjectOverview({
   onEditSettings: () => void;
 }) {
   const dispatch = useAppDispatch();
-  const notYet = () =>
-    dispatch(
-      actions.noticeRequested(
-        transientNotice("info", "Reviewing flashcards is not available yet."),
-      ),
-    );
   const media = useMediaItems(project.id);
   const importSources = useImportSources();
   const importMedia = useAppSelector(selectMediaImport);
@@ -62,6 +55,8 @@ export function ProjectOverview({
   );
   // The panel lists or counts the deleted flashcards still to be deleted from Anki from this query's cached answer.
   useListAnkiPendingDeletionsQuery(project.id);
+  // The panel shows what waits in the review from this query's cached answer, which depends on the time of day.
+  useGetReviewSummaryQuery(project.id, { refetchOnMountOrArgChange: true });
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
   const openDictionaries = () => navigate({ type: "openDictionaries" });
@@ -148,7 +143,9 @@ export function ProjectOverview({
         }}
         onExportPackage={() => dispatch(actions.ankiExportOpened())}
         onSetUpAnkiConnect={() => dispatch(actions.ankiConnectSetupOpened())}
-        onStartReview={notYet}
+        onStartReview={() =>
+          navigate({ type: "openReview", projectId: project.id })
+        }
         onCheckConnection={() =>
           dispatch(actions.ankiConnectionCheckRequested())
         }
@@ -205,16 +202,4 @@ function useMediaItems(projectId: string) {
         : undefined,
     error: mediaFiles.error,
   };
-}
-
-/** What the server reported for each media file at a path, empty until its answer arrives. */
-function pathAvailabilitiesOf(
-  response: MediaAvailabilityResponse | undefined,
-): PathAvailabilities {
-  return new Map(
-    response?.media_files.map(({ media_id, availability }) => [
-      media_id,
-      availability,
-    ]),
-  );
 }

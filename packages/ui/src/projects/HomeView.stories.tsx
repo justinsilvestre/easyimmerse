@@ -13,6 +13,7 @@ const meta = {
     status: "ready",
     projects: exampleProjects,
     onOpenProject: fn(),
+    onReviewProject: fn(),
     onCreateProject: fn(),
     onContinueOffline: fn(),
     onOpenDictionaries: fn(),

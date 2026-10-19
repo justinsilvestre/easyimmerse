@@ -21,18 +21,15 @@ const meta = {
   args: {
     card: exampleReviewCard,
     stage: "front",
-    buttons: "two",
     end: null,
-    canUndo: false,
     includedFields: fieldsOfPreset("intermediate"),
     frontFields: frontFieldsOfPreset("intermediate"),
     languages: exampleLanguages,
-    onShowAnswer: fn(),
-    onRate: fn(),
+    audioPlayKey: "f1",
     onReplayAudio: fn(),
-    onUndo: fn(),
     onBack: fn(),
     onLearnMore: fn(),
+    onRetry: fn(),
   },
 } satisfies Meta<typeof ReviewSession>;
 
