@@ -187,6 +187,7 @@ Fixed from the findings left for later and from a review of the media screen:
 - [x] The theme is chosen from a menu in the footer, system, light or dark, and the choice is stored as a preference instead of lasting until the system theme next changes.
 - [x] Importing a large dictionary took minutes, and the desktop webview's request gave up after about a minute while the server finished the import, so a retry imported the dictionary twice. Imports are now jobs the screen polls, with the entries stored so far, and a failure stays on the screen; a dictionary with the title of one already imported is refused.
 - [x] Definitions on a flashcard are taken as Markdown from the entries, so that lists stay lists rather than running together.
+- [x] Leaving the dictionaries page while a dictionary was being added dropped its progress and stopped watching its job, so the new dictionary appeared only after a restart and it was unclear whether the import had finished. The import now lasts across screens, the footer shows it with a link back to the page, and a Yomitan import shows a percentage of its files read.
 - [x] The footer is thin and stays at the bottom of the window; while Settings is open, its Settings control stands for the open page. Menus close on a press outside them, also where a clicked button gets no focus.
 - [x] The "Converted videos" section is the "Media cache", with a line on what the cache holds, the usage as "The cache is using 90 MB of 100 GB", a maximum size to choose, and a "Clear media cache" button. The conversion notice's "Don't show this again" starts ticked. The project's media heading narrows the list by kind.
 
@@ -276,7 +277,7 @@ Fixed from the next round of the user's notes:
   - [x] cue text remains active after the playhead leaves its corresponding end time. (but manual seeking into a gap between cues/cards highlights no cue)
   - [ ] when a card overlaps a cue, but not exactly, tiny non-overlapped parts shouldn't briefly fill the active cue text slot and cause flashing of the cue text
 - footer:
-  - [x] the footer is the same on every screen: a thin bar at the bottom of the window with the Settings gear and the theme menu at its left edge, and the open screen's own buttons, such as the media screen's panel toggles, at its right; the gear stands for the page already open while Settings is open; on the media screen in fullscreen, it shows and hides with the player controls. though some buttons may change, their place should always be the same when they are there.
+  - [x] the footer is the same on every screen: a thin bar at the bottom of the window with the Settings gear, the theme menu and any dictionary import under way at its left edge, and the open screen's own buttons, such as the media screen's panel toggles, at its right; the gear stands for the page already open while Settings is open; on the media screen in fullscreen, it shows and hides with the player controls. though some buttons may change, their place should always be the same when they are there.
 - removing a dictionary:
   - [x] the row's buttons are disabled until it is gone; if the removal fails, the row returns to normal and I am told
 - looking up words via the pop-up:
