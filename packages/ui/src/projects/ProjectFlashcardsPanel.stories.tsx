@@ -11,6 +11,7 @@ import {
   deletionsListedSync,
   exportedSync,
   neverExportedSync,
+  reviewSync,
 } from "./exampleFlashcardSyncs.ts";
 import { ProjectFlashcardsPanel } from "./ProjectFlashcardsPanel.tsx";
 
@@ -157,5 +158,24 @@ export const AnkiConnectOffAfterSendingEveryFlashcard: Story = {
       package: { deletions: [], ankiSearch: "" },
       nextCard: null,
     },
+  },
+};
+
+export const ReviewsDue: Story = {
+  args: { sync: reviewSync() },
+};
+
+export const OnlyNewCardsLeftToReview: Story = {
+  args: { sync: reviewSync({ dueCount: 0 }) },
+};
+
+export const ReviewDoneForToday: Story = {
+  args: {
+    sync: reviewSync({
+      dueCount: 0,
+      newCount: 0,
+      nextCard: null,
+      nextDueAtMs: Date.now() + 24 * 60 * 60 * 1000,
+    }),
   },
 };

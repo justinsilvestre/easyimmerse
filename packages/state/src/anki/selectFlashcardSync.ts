@@ -66,7 +66,21 @@ export type AnkiConnectSync = {
   hasSyncFailed: boolean;
 };
 
-/** What the project overview's flashcards panel shows about each way the project's flashcards reach Anki. */
+/** What the project overview's flashcards panel shows about the review in easyImmerse. */
+export type ReviewSync = {
+  /** The cards due for review now, not counting new cards. */
+  dueCount: number;
+  /** The new cards left to learn today. */
+  newCount: number;
+  /** When the next review falls due, while nothing is due now, or null when none is scheduled. */
+  nextDueAtMs: number | null;
+  /** The card the review would show first. */
+  nextCard: FlashcardContent | null;
+  /** Whether any flashcard of the project has been rated, or has a review scheduled. */
+  hasProgress: boolean;
+};
+
+/** What the project overview's flashcards panel shows about each way to use the project's flashcards. */
 export type FlashcardSync = {
   /** Every flashcard of the project. */
   flashcardCount: number;
@@ -75,6 +89,7 @@ export type FlashcardSync = {
   ankiConnect: AnkiConnectSync;
   /** The first-made flashcard in the Anki updates queue. */
   nextCard: FlashcardContent | null;
+  review: ReviewSync;
 };
 
 /**
@@ -121,8 +136,18 @@ export const selectFlashcardSync = createSelector(
         statusOf(connection) === "connected",
     },
     nextCard: firstMadeContent(flashcards.filter(isQueued)),
+    review: noReview,
   }),
 );
+
+/** The review has no backend yet, so no project has review progress. */
+const noReview: ReviewSync = {
+  dueCount: 0,
+  newCount: 0,
+  nextDueAtMs: null,
+  nextCard: null,
+  hasProgress: false,
+};
 
 const noDeletions: readonly AnkiPendingDeletion[] = [];
 

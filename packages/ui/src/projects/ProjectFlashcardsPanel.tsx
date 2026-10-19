@@ -6,7 +6,6 @@ import {
 import type { FlashcardFieldKey } from "@easyimmerse/types";
 import { Download, GraduationCap, Plug } from "lucide-react";
 import type { ReactNode } from "react";
-import { Badge } from "../components/Badge.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import type { MenuItem } from "../components/MenuItemButton.tsx";
 import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
@@ -16,13 +15,14 @@ import { AnkiPackageChannel } from "./AnkiPackageChannel.tsx";
 import { DeletedInAnki } from "./DeletedInAnki.tsx";
 import { FlashcardsColumns } from "./FlashcardsColumns.tsx";
 import { QueueSummary } from "./QueueSummary.tsx";
+import { ReviewChannel } from "./ReviewChannel.tsx";
 
 /**
- * Shows the ways to use the project's flashcards: the review in easyImmerse, which is not available yet, AnkiConnect, and the Anki deck package.
- * Until one is in use, all three are offered alike. Once AnkiConnect is on or has sent flashcards, or flashcards have been exported in a package,
- * that way fills the panel and a "More options" menu holds the others.
- * On the left is the next card waiting to reach Anki, the first in the Anki updates queue that both the package and AnkiConnect count,
- * with the main button of the way in use under it.
+ * Shows the ways to use the project's flashcards: the review in easyImmerse, AnkiConnect, and the Anki deck package.
+ * Until one is in use, all three are offered alike. Once AnkiConnect is on or has sent flashcards, the review has progress,
+ * or flashcards have been exported in a package, that way fills the panel and a "More options" menu holds the others.
+ * Beside it is the next card: the first in the Anki updates queue, which both the package and AnkiConnect count,
+ * or the front of the next card to review, with the main button of the way in use under it.
  * While the project has no flashcards, that column is left out and the way in use takes the whole width.
  */
 export function ProjectFlashcardsPanel({
@@ -51,7 +51,6 @@ export function ProjectFlashcardsPanel({
   onTryAnkiSyncAgain: () => void;
   onCopyAnkiSearch: () => void;
   onMarkDeletionsDone: () => void;
-  /** Called by the review option, which is marked as coming soon; it can explain. */
   onStartReview: () => void;
 }) {
   const { flashcardCount } = sync;
@@ -66,29 +65,36 @@ export function ProjectFlashcardsPanel({
       compact
     />
   );
+  const reviewPreview = sync.review.nextCard && (
+    <FlashcardPreview
+      content={sync.review.nextCard}
+      includedFields={includedFields}
+      frontFields={frontFields}
+      languages={languages}
+      compact
+      frontOnly
+    />
+  );
+  const exportItem: MenuItem = {
+    label: "Export an Anki deck package",
+    icon: <Download className="size-4" aria-hidden />,
+    onSelect: onExportPackage,
+  };
+  const setUpAnkiConnectItem: MenuItem = {
+    label: "Set up AnkiConnect",
+    icon: <Plug className="size-4" aria-hidden />,
+    onSelect: onSetUpAnkiConnect,
+  };
   const reviewItem: MenuItem = {
-    label: "Review in easyImmerse (coming soon)",
+    label: "Review in easyImmerse",
     icon: <GraduationCap className="size-4" aria-hidden />,
     onSelect: onStartReview,
   };
   const moreOptions: Record<ProjectFlashcardsMode, readonly MenuItem[]> = {
     fresh: [],
-    ankiConnect: [
-      {
-        label: "Export an Anki deck package",
-        icon: <Download className="size-4" aria-hidden />,
-        onSelect: onExportPackage,
-      },
-      reviewItem,
-    ],
-    package: [
-      {
-        label: "Set up AnkiConnect",
-        icon: <Plug className="size-4" aria-hidden />,
-        onSelect: onSetUpAnkiConnect,
-      },
-      reviewItem,
-    ],
+    ankiConnect: [exportItem, reviewItem],
+    review: [exportItem, setUpAnkiConnectItem],
+    package: [setUpAnkiConnectItem, reviewItem],
   };
   return (
     <section
@@ -118,7 +124,6 @@ export function ProjectFlashcardsPanel({
               icon={<GraduationCap className="size-5" aria-hidden />}
               title="Review in easyImmerse"
               description="Study the flashcards here, with spaced repetition."
-              badge={<Badge>Coming soon</Badge>}
               onClick={onStartReview}
             />
             <Option
@@ -135,6 +140,13 @@ export function ProjectFlashcardsPanel({
             />
           </div>
         </FlashcardsColumns>
+      )}
+      {mode === "review" && (
+        <ReviewChannel
+          review={sync.review}
+          preview={reviewPreview}
+          onStartReview={onStartReview}
+        />
       )}
       {mode === "package" && (
         <AnkiPackageChannel
@@ -181,6 +193,10 @@ const headings: Record<
     title: "Export flashcards in an Anki deck package",
     icon: <Download className="size-5 text-fg-muted" aria-hidden />,
   },
+  review: {
+    title: "Reviewing flashcards in easyImmerse",
+    icon: <GraduationCap className="size-5 text-fg-muted" aria-hidden />,
+  },
   ankiConnect: {
     title: "Making flashcards with AnkiConnect",
     icon: <Plug className="size-5 text-fg-muted" aria-hidden />,
@@ -192,13 +208,11 @@ function Option({
   icon,
   title,
   description,
-  badge,
   onClick,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
-  badge?: ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -213,7 +227,6 @@ function Option({
           <span className="font-medium">{title}</span>
           <span className="text-xs text-fg-muted">{description}</span>
         </span>
-        {badge}
       </button>
     </div>
   );

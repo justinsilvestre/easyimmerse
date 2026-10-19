@@ -1,38 +1,16 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
-import { Play, Volume2 } from "lucide-react";
-import type { ReactNode } from "react";
-import { Badge } from "../components/Badge.tsx";
-import { splitIntoWords } from "../components/ClickableText.tsx";
 import { cardSidesOf } from "./cardSidesOf.ts";
-import { DefinitionMarkdown } from "./DefinitionMarkdown.tsx";
 import {
-  type FlashcardLanguages,
-  findFlashcardField,
-} from "./flashcardFields.ts";
-
-type Side = "front" | "back";
-
-/** What every field of the preview needs to draw itself. */
-type FieldContext = {
-  content: FlashcardContent;
-  languages: FlashcardLanguages;
-  side: Side;
-  compact: boolean;
-  screenshotUrl: string | null;
-  onPlayAudio: (() => void) | undefined;
-};
-
-/** The fields drawn together in one block under the sentence, set off by a coloured edge. */
-const sentenceNoteFields: readonly FlashcardFieldKey[] = [
-  "text_context_translation",
-  "text_context_pronunciation",
-];
+  type FlashcardFieldContext,
+  FlashcardSideFields,
+} from "./FlashcardSideFields.tsx";
+import type { FlashcardLanguages } from "./flashcardFields.ts";
 
 /**
  * Shows a flashcard as it would look when reviewed, with the included fields split between the front and the back.
  * The front holds the included `frontFields`; when none of them has a value, it shows the word and the sentence instead.
- * Fields outside `includedFields` are left out.
+ * Fields outside `includedFields` are left out, and so is the whole back when `frontOnly` is set.
  */
 export function FlashcardPreview({
   content,
@@ -40,6 +18,7 @@ export function FlashcardPreview({
   frontFields,
   languages,
   compact = false,
+  frontOnly = false,
   screenshotUrl = null,
   onPlayAudio,
 }: {
@@ -48,13 +27,20 @@ export function FlashcardPreview({
   frontFields: readonly FlashcardFieldKey[];
   languages: FlashcardLanguages;
   compact?: boolean;
+  frontOnly?: boolean;
   /** The image of the card's screenshot. Null when none can be shown. */
   screenshotUrl?: string | null;
   /** Plays the sentence audio. Without it, the preview only marks that the card has audio. */
   onPlayAudio?: () => void;
 }) {
   const sides = cardSidesOf(content, includedFields, frontFields);
-  const context = { content, languages, compact, screenshotUrl, onPlayAudio };
+  const context = {
+    content,
+    languages,
+    size: compact ? "compact" : "regular",
+    screenshotUrl,
+    onPlayAudio,
+  } satisfies Omit<FlashcardFieldContext, "side">;
   return (
     <article
       aria-label="Flashcard preview"
@@ -70,173 +56,26 @@ export function FlashcardPreview({
         )}
       >
         <SideLabel>Front</SideLabel>
-        <SideFields
+        <FlashcardSideFields
           fields={sides.front}
           context={{ ...context, side: "front" }}
         />
       </section>
-      <section
-        className={clsx(
-          "flex flex-col border-t border-dashed border-line-strong bg-surface-muted",
-          compact ? "gap-1 px-3 py-2" : "gap-2 px-4 py-3",
-        )}
-      >
-        <SideLabel>Back</SideLabel>
-        <SideFields
-          fields={sides.back}
-          context={{ ...context, side: "back" }}
-        />
-      </section>
-    </article>
-  );
-}
-
-/** Draws a side's fields in order, with the sentence's translation and pronunciation in one block. */
-function SideFields({
-  fields,
-  context,
-}: {
-  fields: readonly FlashcardFieldKey[];
-  context: FieldContext;
-}) {
-  const notes = fields.filter((key) => sentenceNoteFields.includes(key));
-  return fields.map((key) => {
-    if (!notes.includes(key)) {
-      return <Field key={key} fieldKey={key} context={context} />;
-    }
-    if (key !== notes[0]) return null;
-    return (
-      <div
-        key="sentence-notes"
-        className={clsx(
-          "flex flex-col gap-0.5 border-l-2 border-accent pl-3 text-fg-muted",
-          context.side === "front" && "self-stretch text-left",
-        )}
-      >
-        {notes.map((note) => (
-          <Field key={note} fieldKey={note} context={context} />
-        ))}
-      </div>
-    );
-  });
-}
-
-function Field({
-  fieldKey,
-  context,
-}: {
-  fieldKey: FlashcardFieldKey;
-  context: FieldContext;
-}) {
-  const { content, languages, side, compact } = context;
-  const label = findFlashcardField(fieldKey).label(languages);
-  switch (fieldKey) {
-    case "word":
-      return (
-        <p
+      {!frontOnly && (
+        <section
           className={clsx(
-            "font-semibold",
-            side === "front" && (compact ? "text-sm" : "text-2xl"),
-            side === "back" && !compact && "text-base",
+            "flex flex-col border-t border-dashed border-line-strong bg-surface-muted",
+            compact ? "gap-1 px-3 py-2" : "gap-2 px-4 py-3",
           )}
         >
-          <ValueOrLabel value={content.word} label={label} />
-        </p>
-      );
-    case "text_context":
-      return (
-        <p
-          className={clsx(side === "front" && "mt-1", !compact && "text-base")}
-        >
-          <HighlightedWord
-            text={content.text_context}
-            word={content.word}
-            label={label}
+          <SideLabel>Back</SideLabel>
+          <FlashcardSideFields
+            fields={sides.back}
+            context={{ ...context, side: "back" }}
           />
-        </p>
-      );
-    case "word_pronunciation":
-    case "text_context_pronunciation":
-    case "text_context_translation":
-      return (
-        <p className="text-fg-muted">
-          <ValueOrLabel value={content[fieldKey]} label={label} />
-        </p>
-      );
-    case "l1_definition":
-    case "l2_definition":
-      return (
-        <DefinitionField
-          markdown={content[fieldKey]}
-          label={label}
-          className={clsx(fieldKey === "l2_definition" && "text-fg-soft")}
-        />
-      );
-    case "audio_context":
-      return (
-        content.audio_context &&
-        (context.onPlayAudio ? (
-          <PlayButton onPlay={context.onPlayAudio} compact={compact} />
-        ) : (
-          <AudioMark compact={compact} />
-        ))
-      );
-    case "screenshot":
-      return (
-        context.screenshotUrl !== null && (
-          <img
-            src={context.screenshotUrl}
-            alt="Screenshot from the video"
-            className={clsx(
-              "rounded-md object-cover",
-              compact ? "max-h-16" : "max-h-40",
-            )}
-          />
-        )
-      );
-    case "tags":
-      return (
-        content.tags.length > 0 && (
-          <ul aria-label="Tags" className="flex flex-wrap gap-1">
-            {content.tags.map((tag) => (
-              <li key={tag}>
-                <Badge>{tag}</Badge>
-              </li>
-            ))}
-          </ul>
-        )
-      );
-  }
-}
-
-function PlayButton({
-  onPlay,
-  compact,
-}: {
-  onPlay: () => void;
-  compact: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label="Play the sentence audio"
-      onClick={onPlay}
-      className={clsx(
-        "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        compact ? "size-6" : "size-8",
+        </section>
       )}
-    >
-      <Play className={compact ? "size-3" : "size-4"} aria-hidden />
-    </button>
-  );
-}
-
-/** Marks where the sentence audio plays on the card, when the preview has no way to play it. */
-function AudioMark({ compact }: { compact: boolean }) {
-  return (
-    <span role="img" aria-label="Sentence audio" className="mt-1 text-fg-muted">
-      <Volume2 className={compact ? "size-3" : "size-4"} aria-hidden />
-    </span>
+    </article>
   );
 }
 
@@ -245,67 +84,5 @@ function SideLabel({ children }: { children: string }) {
     <span className="self-start text-[0.65rem] font-medium tracking-wider text-fg-faint uppercase">
       {children}
     </span>
-  );
-}
-
-/** Shows a definition's Markdown as Anki renders it, or the field's name as a placeholder when it is empty. */
-function DefinitionField({
-  markdown,
-  label,
-  className,
-}: {
-  markdown: string;
-  label: string;
-  className?: string;
-}) {
-  if (!markdown.trim())
-    return (
-      <p className={className}>
-        <ValueOrLabel value="" label={label} />
-      </p>
-    );
-  return <DefinitionMarkdown markdown={markdown} className={className} />;
-}
-
-/** Shows the value, or the field's name as a placeholder when it is empty. */
-function ValueOrLabel({ value, label }: { value: string; label: string }) {
-  const text = value.trim();
-  if (text) return <TextWithLineBreaks text={text} />;
-  return <span className="text-fg-faint italic">{label}</span>;
-}
-
-/** Shows plain text with each of its line breaks kept, as the exported Anki card does. */
-function TextWithLineBreaks({ text }: { text: string }) {
-  const parts: ReactNode[] = [];
-  let lineStart = 0;
-  for (const line of text.split("\n")) {
-    if (lineStart > 0) parts.push(<br key={lineStart} />);
-    parts.push(line.replaceAll("\r", ""));
-    lineStart += line.length + 1;
-  }
-  return parts;
-}
-
-function HighlightedWord({
-  text,
-  word,
-  label,
-}: {
-  text: string;
-  word: string;
-  label: string;
-}) {
-  if (!text.trim()) return <ValueOrLabel value="" label={label} />;
-  return splitIntoWords(text.trim()).map((part) =>
-    part.isWord && part.text === word ? (
-      <mark
-        key={part.start}
-        className="rounded bg-accent-soft px-0.5 text-accent-fg"
-      >
-        {part.text}
-      </mark>
-    ) : (
-      <TextWithLineBreaks key={part.start} text={part.text} />
-    ),
   );
 }

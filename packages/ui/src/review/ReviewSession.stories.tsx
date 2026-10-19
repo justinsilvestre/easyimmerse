@@ -1,0 +1,58 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
+import { exampleReviewCard } from "./exampleReviewCards.ts";
+import { ReviewSession } from "./ReviewSession.tsx";
+
+const meta = {
+  title: "Review/ReviewSession",
+  component: ReviewSession,
+  decorators: [
+    (Story) => (
+      <div className="flex w-[min(48rem,calc(100vw-2rem))] flex-col">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    card: exampleReviewCard,
+    stage: "front",
+    buttons: "two",
+    end: null,
+    canUndo: false,
+    includedFields: fieldsOfPreset("intermediate"),
+    frontFields: frontFieldsOfPreset("intermediate"),
+    languages: exampleLanguages,
+    onShowAnswer: fn(),
+    onRate: fn(),
+    onReplayAudio: fn(),
+    onUndo: fn(),
+    onBack: fn(),
+    onLearnMore: fn(),
+  },
+} satisfies Meta<typeof ReviewSession>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Front: Story = {};
+
+export const Revealed: Story = {
+  args: { stage: "back" },
+};
+
+export const Ended: Story = {
+  args: {
+    card: null,
+    end: {
+      kind: "doneForToday",
+      reviewedCount: 13,
+      comesBack: null,
+      moreNewCount: 0,
+    },
+  },
+};

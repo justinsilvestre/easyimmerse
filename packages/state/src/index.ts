@@ -26,6 +26,7 @@ export {
   type AnkiUpdatesQueue,
   type FlashcardSync,
   type PackageSync,
+  type ReviewSync,
   selectFlashcardSync,
 } from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";

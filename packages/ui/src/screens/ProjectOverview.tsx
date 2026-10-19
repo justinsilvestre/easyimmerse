@@ -34,7 +34,7 @@ import { ProjectView } from "../projects/ProjectView.tsx";
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
  * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
- * The review is not built yet, so it is marked as coming soon and explains so when chosen.
+ * The review is not wired up yet, so choosing it says that it is not available.
  */
 export function ProjectOverview({
   project,
