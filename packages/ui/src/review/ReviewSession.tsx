@@ -72,7 +72,7 @@ export function ReviewSession({
       end && <ReviewDone end={end} onBack={onBack} onLearnMore={onLearnMore} />
     );
   return (
-    <div className="flex flex-col px-4 pt-6 pb-6">
+    <div className="flex flex-col px-4 pt-4 pb-10 sm:pt-8">
       <ReviewCard
         key={card.flashcardId}
         content={card.content}

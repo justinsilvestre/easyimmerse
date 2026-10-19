@@ -32,13 +32,20 @@ const sentenceNoteFields: readonly FlashcardFieldKey[] = [
 const wordSizes: Record<FlashcardFieldSize, string> = {
   compact: "text-sm",
   regular: "text-2xl",
-  large: "text-2xl sm:text-3xl",
+  large: "text-2xl leading-tight tracking-tight sm:text-3xl",
 };
 
 const screenshotSizes: Record<FlashcardFieldSize, string> = {
   compact: "max-h-16",
   regular: "max-h-40",
-  large: "max-h-40",
+  large: "max-h-40 rounded-lg",
+};
+
+/* On the review screen the sentence's translation is set off by a quiet edge, so that it reads as a note beside the sentence rather than as part of it. */
+const sentenceNoteEdges: Record<FlashcardFieldSize, string> = {
+  compact: "border-accent",
+  regular: "border-accent",
+  large: "border-line-strong text-sm sm:text-base",
 };
 
 // The large button keeps to the 44 px that touch guidelines ask for.
@@ -66,7 +73,8 @@ export function FlashcardSideFields({
       <div
         key="sentence-notes"
         className={clsx(
-          "flex flex-col gap-0.5 border-l-2 border-accent pl-3 text-fg-muted",
+          "flex flex-col gap-0.5 border-l-2 pl-3 text-fg-muted",
+          sentenceNoteEdges[context.size],
           context.side === "front" && "self-stretch text-left",
         )}
       >
@@ -96,7 +104,9 @@ function Field({
             "font-semibold",
             side === "front" && wordSizes[size],
             side === "back" && size === "regular" && "text-base",
-            side === "back" && size === "large" && "text-lg",
+            side === "back" &&
+              size === "large" &&
+              "text-xl leading-tight tracking-tight",
           )}
         >
           <ValueOrLabel value={content.word} label={label} />
@@ -108,7 +118,8 @@ function Field({
           className={clsx(
             side === "front" && "mt-1",
             size === "regular" && "text-base",
-            size === "large" && "text-base sm:text-lg",
+            size === "large" && "text-base leading-relaxed sm:text-lg",
+            size === "large" && side === "front" && "max-w-prose text-balance",
           )}
         >
           <HighlightedWord
@@ -132,7 +143,10 @@ function Field({
         <DefinitionField
           markdown={content[fieldKey]}
           label={label}
-          className={clsx(fieldKey === "l2_definition" && "text-fg-soft")}
+          className={clsx(
+            fieldKey === "l2_definition" && "text-fg-soft",
+            size === "large" && "leading-relaxed",
+          )}
         />
       );
     case "audio_context":
@@ -182,7 +196,7 @@ function PlayButton({
       aria-label="Play the sentence audio"
       onClick={onPlay}
       className={clsx(
-        "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         playButtonSizes[size],
       )}
     >

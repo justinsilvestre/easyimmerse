@@ -49,11 +49,11 @@ export function RatingBar({
 }) {
   return (
     <div className="border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-xl flex-col items-center gap-1 px-4 py-2">
+      <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-3">
         {stage === "front" ? (
           <Button
             variant="primary"
-            className="min-h-11 w-full sm:max-w-xs"
+            className="min-h-12 w-full sm:max-w-xs"
             aria-keyshortcuts="Space"
             onClick={onShowAnswer}
           >
@@ -63,26 +63,17 @@ export function RatingBar({
         ) : (
           <div
             className={clsx(
-              "grid w-full gap-2",
+              "grid w-full gap-2 sm:gap-3",
               buttons === "two" ? "grid-cols-2" : "grid-cols-4",
             )}
           >
             {gradeButtons[buttons].map((button) => (
-              <Button
+              <GradeButtonView
                 key={button.grade}
-                variant={button.variant}
-                className="min-h-11 flex-col gap-0 px-1 py-1"
-                aria-keyshortcuts={button.keyHint}
-                onClick={() => onRate(button.grade)}
-              >
-                <span className="flex items-center gap-1.5">
-                  {button.label}
-                  <KeyHint>{button.keyHint}</KeyHint>
-                </span>
-                <span className="text-xs font-normal opacity-80">
-                  {intervals[button.grade]}
-                </span>
-              </Button>
+                button={button}
+                interval={intervals[button.grade]}
+                onRate={onRate}
+              />
             ))}
           </div>
         )}
@@ -90,6 +81,51 @@ export function RatingBar({
     </div>
   );
 }
+
+/** A grade as a comfortable target: its name, its key where a keyboard is likely, and under them the interval it gives. */
+function GradeButtonView({
+  button,
+  interval,
+  onRate,
+}: {
+  button: GradeButton;
+  interval: string;
+  onRate: (grade: ReviewGrade) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-keyshortcuts={button.keyHint}
+      onClick={() => onRate(button.grade)}
+      className={clsx(
+        "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 text-sm font-semibold whitespace-nowrap transition-[background-color,transform] duration-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98]",
+        gradeStyles[button.variant],
+      )}
+    >
+      <span className="flex items-center gap-1.5">
+        {button.label}
+        <KeyHint>{button.keyHint}</KeyHint>
+      </span>
+      <span
+        className={clsx(
+          "text-xs font-normal tabular-nums",
+          button.variant === "primary" ? "opacity-75" : "text-fg-muted",
+        )}
+      >
+        {interval}
+      </span>
+    </button>
+  );
+}
+
+/* The colours of `Button`'s variants of the same names; the grade for a forgotten card is set apart by its edge and name alone. */
+const gradeStyles: Record<GradeButton["variant"], string> = {
+  primary: "bg-accent text-on-accent hover:bg-accent-hover",
+  secondary:
+    "border border-line-strong bg-surface text-fg hover:bg-surface-muted",
+  danger:
+    "border border-danger-line bg-surface text-danger-fg hover:bg-danger-soft",
+};
 
 /** Shows a button's key, only where a keyboard is likely, under a fine pointer such as a mouse. */
 function KeyHint({ children }: { children: ReactNode }) {

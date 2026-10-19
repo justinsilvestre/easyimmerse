@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { CalendarCheck, CircleCheck, Layers } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
@@ -32,7 +33,11 @@ export function ReviewDone({
     case "doneForToday":
       return (
         <Ending
-          icon={<CircleCheck className="size-8 text-success-fg" aria-hidden />}
+          icon={
+            <IconDisc className="bg-success-soft text-success-fg">
+              <CircleCheck className="size-7" aria-hidden />
+            </IconDisc>
+          }
           title="Done for today"
           lines={[
             `You reviewed ${pluralize(end.reviewedCount, "card")}.`,
@@ -50,7 +55,11 @@ export function ReviewDone({
     case "nothingDue":
       return (
         <Ending
-          icon={<CalendarCheck className="size-8 text-fg-faint" aria-hidden />}
+          icon={
+            <IconDisc className="bg-surface-muted text-fg-faint">
+              <CalendarCheck className="size-7" aria-hidden />
+            </IconDisc>
+          }
           title="Nothing to review"
           lines={[
             end.nextDueAtMs !== null &&
@@ -63,7 +72,11 @@ export function ReviewDone({
     case "noFlashcards":
       return (
         <Ending
-          icon={<Layers className="size-8 text-fg-faint" aria-hidden />}
+          icon={
+            <IconDisc className="bg-surface-muted text-fg-faint">
+              <Layers className="size-7" aria-hidden />
+            </IconDisc>
+          }
           title="No flashcards yet"
           lines={[
             "Make flashcards while you watch or read, and review them here.",
@@ -80,7 +93,27 @@ function comesBackLine({ count, atMs }: { count: number; atMs: number }) {
   return `${pluralize(count, "card")} ${verb} back at ${timeOfDay(atMs)}.`;
 }
 
-/** Lays out an end state as `EmptyState` does, without its dashed border. */
+/** Sets an end state's icon in a soft disc, so that it carries the same weight as the card did. */
+function IconDisc({
+  className,
+  children,
+}: {
+  className: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={clsx(
+        "mb-1 flex size-14 items-center justify-center rounded-full",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Lays out an end state as `EmptyState` does, without its dashed border, entering as a card does. */
 function Ending({
   icon,
   title,
@@ -93,9 +126,9 @@ function Ending({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+    <div className="flex animate-card-in flex-col items-center gap-3 px-6 py-16 text-center sm:py-24">
       {icon}
-      <h1 className="text-lg font-semibold">{title}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
       {lines.map(
         (line) =>
           line && (
@@ -104,7 +137,7 @@ function Ending({
             </p>
           ),
       )}
-      <div className="mt-2 flex flex-wrap justify-center gap-2">{children}</div>
+      <div className="mt-3 flex flex-wrap justify-center gap-2">{children}</div>
     </div>
   );
 }

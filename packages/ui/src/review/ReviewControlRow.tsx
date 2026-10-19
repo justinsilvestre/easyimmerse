@@ -40,11 +40,11 @@ export function ReviewControlRow({
   onDeleteFlashcard: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 px-2 py-1">
+    <div className="flex items-center justify-between gap-2 px-2 py-1.5 sm:px-3">
       <IconButton label={`Back to ${projectName}`} onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
       </IconButton>
-      <p className="text-xs text-fg-muted">
+      <p className="text-xs text-fg-muted tabular-nums">
         <CountOf count={progress.newCount} className="text-review-new" /> new ·{" "}
         <CountOf
           count={progress.learningCount}
@@ -86,9 +86,5 @@ export function ReviewControlRow({
 }
 
 function CountOf({ count, className }: { count: number; className: string }) {
-  return (
-    <span className={clsx("font-semibold tabular-nums", className)}>
-      {count}
-    </span>
-  );
+  return <span className={clsx("font-medium", className)}>{count}</span>;
 }

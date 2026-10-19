@@ -55,15 +55,17 @@
   --color-review-due: var(--color-green-700);
 }
 
-/* A card on the review screen fades in when it appears. */
+/* A card on the review screen fades in with a slight rise when it appears. */
 @theme {
-  --animate-card-in: card-in 150ms ease-out;
+  --animate-card-in: card-in 180ms ease-out;
   @keyframes card-in {
     from {
       opacity: 0;
+      transform: translateY(0.5rem);
     }
     to {
       opacity: 1;
+      transform: none;
     }
   }
 }

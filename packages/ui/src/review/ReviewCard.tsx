@@ -56,12 +56,12 @@ export function ReviewCard({
     onPlayAudio,
   } satisfies Omit<FlashcardFieldContext, "side">;
   return (
-    <div className="flex w-full max-w-xl animate-card-in flex-col gap-2 self-center">
+    <div className="flex w-full max-w-xl animate-card-in flex-col gap-3 self-center">
       <article
         aria-label="Flashcard"
-        className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-sm"
+        className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-sm"
       >
-        <section className="flex flex-col items-center gap-2 px-6 py-8 text-center">
+        <section className="flex flex-col items-center gap-3 px-6 py-10 text-center sm:px-10">
           <FlashcardSideFields
             fields={sides.front}
             context={{ ...context, side: "front" }}
@@ -70,7 +70,7 @@ export function ReviewCard({
         {isRevealed && (
           <section
             aria-label="Answer"
-            className="flex flex-col gap-3 border-t border-dashed border-line-strong bg-surface-muted px-6 py-5 text-base"
+            className="flex flex-col gap-3 border-t border-dashed border-line-strong bg-surface-muted px-6 py-6 text-base sm:px-10"
           >
             <FlashcardSideFields
               fields={sides.back}
