@@ -1,0 +1,47 @@
+{
+  "variants": [
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "storyCount": 327,
+  "changes": [
+    {
+      "id": "projects-mediasection--loading",
+      "title": "Projects/MediaSection",
+      "name": "Loading",
+      "importPath": "./src/projects/MediaSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    }
+  ]
+}
