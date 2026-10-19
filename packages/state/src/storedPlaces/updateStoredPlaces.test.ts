@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { updateStoredPlaces } from "./updateStoredPlaces.ts";
 
@@ -29,10 +30,33 @@ const playedTo14: AppAction[] = [
   actions.playerTimeChanged(14),
 ];
 
+/** A book picked on the project overview, and the settled request that adds it, which opens it. */
+const pickedBook = {
+  name: "novel.epub",
+  source: { kind: "path", path: "/books/novel.epub" },
+} as const;
+const pickBook: AppAction[] = [
+  actions.navigated({ type: "openProject", projectId: "p1" }),
+  actions.mediaFileChosen(pickedBook),
+];
+const bookAdded = actions.requestSettled(
+  "project/p1/addMediaFile",
+  { kind: "addMediaFile", projectId: "p1", request: pickedBook },
+  { ok: true, data: exampleMediaFile("b1", "novel.epub") },
+);
+
 describe("updateStoredPlaces", () => {
   describe("for the reading location", () => {
     it("loads the reading place of a media file when it opens", () => {
       const [, effects] = apply(actions.openMediaFileRequested("p1", "b1"));
+      expect(effects).toContainEqual({
+        type: "loadReadingLocation",
+        mediaFileId: "b1",
+      });
+    });
+
+    it("loads the reading place of a media file that an added pick opens", () => {
+      const [, effects] = apply(bookAdded, ...pickBook);
       expect(effects).toContainEqual({
         type: "loadReadingLocation",
         mediaFileId: "b1",

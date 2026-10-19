@@ -1,13 +1,6 @@
-/** Which way the lookup cursor moves along a line of text: on in the reading direction, or back. */
-export type TextDirection = "forward" | "backward";
+import type { TextStep } from "@easyimmerse/state";
 
-/**
- * How far the lookup cursor moves along a line of text: by a word,
- * or by a character within a run of a script written without spaces, whose every character can begin a word.
- */
-export type TextUnit = "word" | "character";
-
-export type TextStep = { direction: TextDirection; unit: TextUnit };
+export type { TextDirection, TextStep, TextUnit } from "@easyimmerse/state";
 
 /** Which way the lookup cursor moves between lines of text, such as subtitle cues. */
 export type LineStep = "previous" | "next";

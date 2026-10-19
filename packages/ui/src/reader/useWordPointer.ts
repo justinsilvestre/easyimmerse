@@ -25,10 +25,27 @@ export type ReaderWordGestures = {
   onWordClick: (word: ReaderWord, input: "mouse" | "touch") => void;
   /** The second click of a double-click or the second tap of a double tap, reported for the word of the first. */
   onWordDoubleClick: (word: ReaderWord) => void;
-  /** The word the mouse pointer is over, reported at once each time it changes, and as null when it leaves the words. */
-  onWordPointed?: (word: ReaderWord | null) => void;
-  /** A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text. */
+  /**
+   * The word the mouse pointer is over, or the keyboard has moved to, reported at once each time it changes,
+   * and as null, with the input, when the mouse leaves the words or the keyboard's cursor leaves the text.
+   */
+  onWordPointed?: (
+    word: ReaderWord | null,
+    input: "mouse" | "keyboard",
+  ) => void;
+  /**
+   * A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text,
+   * or the keyboard moving there, at once.
+   */
   onWordHover: (word: ReaderWord) => void;
+  /**
+   * Looks up from a word without pointing at it, for the characters of a run that the keyboard steps back over,
+   * to find where the run's words begin. It resolves to the length of the text, in UTF-16 code units from the word's start,
+   * that the lookup matched, or null when nothing matched; or returns null at once when nothing is looked up.
+   */
+  lookUpMatchedLength?: (
+    word: Pick<ReaderWord, "text" | "lookup">,
+  ) => Promise<number | null> | null;
   /** A touch, or the mouse button, held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
 };
@@ -127,12 +144,13 @@ export function useWordPointer(
       const word = findWord(pointOf(event));
       if (isSameWord(word, hovered.current)) return;
       hovered.current = word;
-      latest.current.onWordPointed?.(word);
+      latest.current.onWordPointed?.(word, "mouse");
       if (!word) return hoverTimer.cancel();
       hoverTimer.restart(hoverMs, () => latest.current.onWordHover(word));
     },
     onPointerLeave: () => {
-      if (hovered.current !== null) latest.current.onWordPointed?.(null);
+      if (hovered.current !== null)
+        latest.current.onWordPointed?.(null, "mouse");
       hovered.current = null;
       hoverTimer.cancel();
       press.cancelHold();

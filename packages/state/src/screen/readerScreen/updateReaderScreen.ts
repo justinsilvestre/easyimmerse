@@ -2,19 +2,34 @@ import type { AppAction } from "../../app/appAction.ts";
 import {
   initialReaderScreen,
   type PageInfo,
+  type PendingReaderCursor,
   type ReaderScreenState,
 } from "./readerScreenState.ts";
 
-/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps. */
+/**
+ * Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps.
+ * Decides where the keyboard places the lookup cursor, as `updatePendingCursor` describes;
+ * `isPlaying` tells whether the audio the book is aligned with plays, which the cursor then follows.
+ */
 export function updateReaderScreen(
   reader: ReaderScreenState,
   action: AppAction,
+  isPlaying = false,
 ): ReaderScreenState {
+  const pendingCursor = updatePendingCursor(
+    reader.pendingCursor,
+    action,
+    isPlaying,
+  );
+  const next =
+    pendingCursor === reader.pendingCursor
+      ? reader
+      : { ...reader, pendingCursor };
   switch (action.type) {
     // A change of view counts as a jump, so that the text now shown opens at the reader's place.
     case "readerViewModeChosen":
       return {
-        ...reader,
+        ...next,
         viewMode: action.viewMode,
         translationLocation:
           action.translationLocation ?? reader.translationLocation,
@@ -24,7 +39,7 @@ export function updateReaderScreen(
       };
     case "readerTranslationJumped":
       return {
-        ...reader,
+        ...next,
         translationLocation: action.location,
         jumpCount: reader.jumpCount + 1,
         search:
@@ -33,11 +48,11 @@ export function updateReaderScreen(
             : { ...reader.search, activeMatchIndex: action.matchIndex },
       };
     case "readerTranslationLocationReported":
-      return { ...reader, translationLocation: action.location };
+      return { ...next, translationLocation: action.location };
     // The views that show the translation, and the place in the translation-only view, belonged to the one paired before.
     case "readerTranslationChosen":
       return {
-        ...reader,
+        ...next,
         viewMode: "target",
         translationLocation: initialReaderScreen.translationLocation,
         jumpCount:
@@ -46,43 +61,41 @@ export function updateReaderScreen(
             : reader.jumpCount + 1,
       };
     case "readerJumped":
-      return { ...reader, jumpCount: reader.jumpCount + 1 };
+      return { ...next, jumpCount: reader.jumpCount + 1 };
     case "readerMatchChosen":
       return {
-        ...reader,
+        ...next,
         jumpCount: reader.jumpCount + 1,
         search: { ...reader.search, activeMatchIndex: action.index },
       };
     case "readerPanelOpened":
-      return { ...reader, panel: action.panel };
+      return { ...next, panel: action.panel };
     case "readerPanelToggled":
       return {
-        ...reader,
+        ...next,
         panel: reader.panel === action.panel ? null : action.panel,
       };
     case "readerPanelClosed":
-      return { ...reader, panel: null };
+      return { ...next, panel: null };
     case "readerChromeToggled":
-      return { ...reader, isChromeVisible: !reader.isChromeVisible };
+      return { ...next, isChromeVisible: !reader.isChromeVisible };
     case "readerChromeShown":
-      return { ...reader, isChromeVisible: true };
+      return { ...next, isChromeVisible: true };
     case "readerChromeHidden":
-      return reader.panel === null
-        ? { ...reader, isChromeVisible: false }
-        : reader;
+      return reader.panel === null ? { ...next, isChromeVisible: false } : next;
     case "readerSearchChanged":
       return {
-        ...reader,
+        ...next,
         search: { query: action.query, activeMatchIndex: null },
       };
     case "readerNearSpanMeasured":
-      return { ...reader, nearSpan: action.span };
+      return { ...next, nearSpan: action.span };
     case "readerPageMeasured":
       return isSamePage(reader.pageInfo, action.pageInfo)
-        ? reader
-        : { ...reader, pageInfo: action.pageInfo };
+        ? next
+        : { ...next, pageInfo: action.pageInfo };
     default:
-      return reader;
+      return next;
   }
 }
 
@@ -90,4 +103,31 @@ function isSamePage(shown: PageInfo | null, measured: PageInfo) {
   return (
     shown?.page === measured.page && shown.pageCount === measured.pageCount
   );
+}
+
+/**
+ * Where the keyboard is to place the lookup cursor next. When the text gains focus, the cursor goes to the sentence being spoken
+ * while the book's audio plays, and otherwise to the first word of the page in view. A step lands where it stepped to;
+ * a step past the end of the chapter or section shown lands on the first word of the next one, or the last word of the one before.
+ * The placement settles once the keyboard places the cursor, and is dropped when the keyboard's cursor leaves the text,
+ * as when focus leaves it or Escape is pressed.
+ */
+function updatePendingCursor(
+  pending: PendingReaderCursor | null,
+  action: AppAction,
+  isPlaying: boolean,
+): PendingReaderCursor | null {
+  switch (action.type) {
+    case "readerTextFocused":
+      return { kind: isPlaying ? "spoken" : "pageStart" };
+    case "readerCursorStepped":
+      if (action.landing !== null)
+        return { kind: "at", location: action.landing };
+      return { kind: action.direction === "forward" ? "pageStart" : "pageEnd" };
+    case "lookupCursorMoved":
+    case "lookupCursorLeft":
+      return action.input === "keyboard" ? null : pending;
+    default:
+      return pending;
+  }
 }

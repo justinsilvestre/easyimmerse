@@ -1,5 +1,6 @@
+import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
-import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import type { Feature, FeatureUpdate, ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import { selectMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import {
@@ -37,8 +38,14 @@ export const updateStoredPlaces: FeatureUpdate<
     case "readerMatchChosen":
       return readingMoved(places, action.mediaFileId, action.location);
     case "requestSettled": {
+      // A settled request can also open a media file, such as one a pick added.
+      const [moved, effects] = screenMoved(places, action, app);
       const audio = alignedAudioSettledBy(action, app);
-      return updated(places, ...(audio ? playbackLoads(places, audio.id) : []));
+      return updated(
+        moved,
+        ...effects,
+        ...(audio ? playbackLoads(moved, audio.id) : []),
+      );
     }
     case "playbackPositionLoaded":
       return updated({
@@ -66,16 +73,8 @@ export const updateStoredPlaces: FeatureUpdate<
           )
         : updated(places);
     }
-    default: {
-      const left = mediaScreenLeftBy(app, action);
-      const [saved, saves] =
-        left === null
-          ? updated(places)
-          : saveOnLeaving(places, left, app.backend);
-      const entered = mediaScreenEnteredBy(app, action);
-      if (entered === null) return updated(saved, ...saves);
-      return updated(saved, ...saves, ...placeLoads(places, entered));
-    }
+    default:
+      return screenMoved(places, action, app);
   }
 };
 
@@ -87,6 +86,20 @@ export const storedPlacesFeature: Feature<
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,
 };
+
+/** Saves the places of the media file the action's route change leaves, and loads those of the one it enters. */
+function screenMoved(
+  places: StoredPlacesState,
+  action: AppAction,
+  app: Pick<ReadableState, "route" | "screen" | "backend">,
+) {
+  const left = mediaScreenLeftBy(app, action);
+  const [saved, saves] =
+    left === null ? updated(places) : saveOnLeaving(places, left, app.backend);
+  const entered = mediaScreenEnteredBy(app, action);
+  if (entered === null) return updated(saved, ...saves);
+  return updated(saved, ...saves, ...placeLoads(places, entered));
+}
 
 /** Records the new reading place, and saves it when it lies in another paragraph. */
 function readingMoved(

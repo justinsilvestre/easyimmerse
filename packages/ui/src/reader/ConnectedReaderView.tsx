@@ -6,13 +6,14 @@ import type { ComponentProps } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ReaderView } from "./ReaderView.tsx";
+import { selectReaderCursor } from "./readerCursor.ts";
 import { selectReaderLocation } from "./selectReaderLocation.ts";
 
-/** The reader view, with its place, its state and the view it shows read from the store. */
+/** The reader view, with its place, its state, the view it shows and the lookup cursor read from the store. */
 export function ConnectedReaderView(
   props: Omit<
     ComponentProps<typeof ReaderView>,
-    "location" | "reader" | "viewMode" | "dispatch"
+    "location" | "reader" | "viewMode" | "cursor" | "dispatch"
   >,
 ) {
   const dispatch = useAppDispatch();
@@ -21,12 +22,14 @@ export function ConnectedReaderView(
   );
   const reader = useAppSelector(selectReaderScreen);
   const viewMode = useAppSelector(selectShownReaderViewMode);
+  const cursor = useAppSelector(selectReaderCursor);
   return (
     <ReaderView
       {...props}
       location={location}
       reader={reader}
       viewMode={viewMode}
+      cursor={cursor}
       dispatch={dispatch}
     />
   );

@@ -33,6 +33,7 @@ import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
 import type { ReaderAudio } from "./readerAudio.ts";
 import { type ReaderControls, useReaderControls } from "./readerControls.ts";
+import type { ReaderCursor } from "./readerCursor.ts";
 import {
   fontFamilies,
   fontSizesRem,
@@ -57,6 +58,7 @@ import {
   useLookedUpHighlight,
 } from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
+import { useReaderKeyboardCursor } from "./useReaderKeyboardCursor.ts";
 import { useSpokenHighlight } from "./useSpokenHighlight.ts";
 import { useTextHighlight } from "./useTextHighlight.ts";
 import { useTranslationView } from "./useTranslationView.ts";
@@ -92,6 +94,8 @@ type ReaderViewProps = {
   reader: ReaderScreenState;
   /** The view shown: the one chosen once the translation it needs is ready, as `selectShownReaderViewMode` decides. */
   viewMode: ReaderViewMode;
+  /** The lookup cursor's place in the text, which the keyboard steps through the text when it placed the cursor there. */
+  cursor?: ReaderCursor | null;
   dispatch: (action: ReaderViewAction) => void;
   /** The book's title, or the file's name when the book has none. */
   title: string;
@@ -145,6 +149,8 @@ const sectionCharacterLimit = 250_000;
  * and the text follows it, as `useSpokenHighlight` describes. In a book aligned with its translation, a held word opens the dictionary pop-up
  * with its sentence's translation, and the sentence is highlighted while the translation shows.
  * The keys do the same for the current sentence, as `selectReaderKeyBinding` in the state package describes.
+ * The text is one region the keyboard reaches with Tab, through which the arrow keys move the lookup cursor,
+ * as `useReaderKeyboardCursor` describes.
  */
 export function ReaderView(props: ReaderViewProps) {
   const { reader, dispatch, translation } = props;
@@ -154,7 +160,11 @@ export function ReaderView(props: ReaderViewProps) {
   const { document, location, language } = shown;
   const { viewMode } = props;
   const ownControls = useReaderControls();
-  const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
+  const {
+    pageTurner: turner,
+    searchInput,
+    cursorStepper,
+  } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = isReaderPaged(preferences.layout, viewMode);
 
@@ -173,6 +183,17 @@ export function ReaderView(props: ReaderViewProps) {
     [chapter],
   );
   const sectionIndex = sectionIndexAt(sections, location.paragraphIndex);
+  const shownSection = isPaged ? sections[sectionIndex] : undefined;
+  /** The text the lookup cursor moves through: the section shown, or the whole chapter in the scrolling layout. */
+  const chapterText = useMemo(
+    () => ({
+      chapterIndex,
+      paragraphs: chapter.paragraphs,
+      section: shownSection ?? { start: 0, end: chapter.paragraphs.length },
+      language,
+    }),
+    [chapterIndex, chapter, shownSection, language],
+  );
   const marks = useMemo(
     () =>
       matches.flatMap((match, index) =>
@@ -256,6 +277,33 @@ export function ReaderView(props: ReaderViewProps) {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
+  const keyboard = useReaderKeyboardCursor({
+    container: textContainer,
+    text: chapterText,
+    location,
+    cursor: props.cursor ?? null,
+    pending: reader.pendingCursor,
+    spokenSpan: spoken,
+    layoutVersion: `${reader.jumpCount}:${reader.pageInfo?.page}:${reader.pageInfo?.pageCount}`,
+    isPaged,
+    isDisabled: shown.isTranslationShown,
+    stepper: cursorStepper,
+    gestures: callbacks,
+    dispatch,
+    jumpTo,
+    movePast: (direction) => {
+      const step = direction === "forward" ? 1 : -1;
+      const edge = direction === "forward" ? "start" : "end";
+      const next = sectionIndex + step;
+      if (isPaged && sections[next]) {
+        goToSection(next, edge);
+        return true;
+      }
+      if (!document.chapters[chapterIndex + step]) return false;
+      goToChapter(chapterIndex + step, edge);
+      return true;
+    },
+  });
 
   const onBlankClick = (event: MouseEvent<HTMLElement>) => {
     if (hasLookup) return callbacks.onDismissLookup();
@@ -282,7 +330,7 @@ export function ReaderView(props: ReaderViewProps) {
   const text = (
     <ChapterText
       chapter={chapter}
-      section={isPaged ? sections[sectionIndex] : undefined}
+      section={shownSection}
       language={language}
       isJustified={preferences.isJustified}
       skipsOffscreenLayout={!isPaged}
@@ -324,7 +372,10 @@ export function ReaderView(props: ReaderViewProps) {
       <main
         ref={textContainer}
         key={`${viewMode}:${chapterIndex}`}
-        className="absolute inset-0 touch-manipulation transition-opacity duration-300 starting:opacity-0"
+        aria-label="Text"
+        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Enter Escape"
+        className="absolute inset-0 touch-manipulation outline-none transition-opacity duration-300 starting:opacity-0"
+        {...keyboard.textProps}
         style={{
           fontFamily: fontFamilies[preferences.font],
           fontSize: `${fontSizesRem[preferences.fontSizeStep] ?? 1}rem`,
@@ -389,6 +440,10 @@ export function ReaderView(props: ReaderViewProps) {
           </ScrolledChapter>
         )}
       </main>
+      {/* One region outside the text, where screen readers announce the cursor's place reliably. */}
+      <span aria-live="polite" className="sr-only">
+        {keyboard.announcement}
+      </span>
       <ReaderFooter
         progress={progress}
         pageInfo={isPaged && sections.length === 1 ? reader.pageInfo : null}
