@@ -61,7 +61,7 @@ function statusOf(wizard: MediaImportWizard, job: JobRecord | null) {
   if (wizard.jobId === null)
     return wizard.isAwaitingAnswer
       ? ({
-          label: `Waiting for ${wizard.source.name}`,
+          label: "Waiting for the plugin",
           status: "running",
           percent: null,
         } as const)

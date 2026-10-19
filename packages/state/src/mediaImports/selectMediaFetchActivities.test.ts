@@ -88,7 +88,7 @@ describe("selectMediaFetchActivities", () => {
     const app = stateAfter(...sentMediaImportStep, goHome);
     expect(
       selectMediaFetchActivities({ app, backend: emptyServerCache }),
-    ).toMatchObject([{ label: "Waiting for video-site", status: "running" }]);
+    ).toMatchObject([{ label: "Waiting for the plugin", status: "running" }]);
   });
 
   it("keeps its reference while another job reports", () => {
