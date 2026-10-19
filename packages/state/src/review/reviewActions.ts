@@ -33,9 +33,9 @@ export const reviewActions = {
   reviewScreenshotClosed: () => ({ type: "reviewScreenshotClosed" }) as const,
   /** The user asked to load the session's cards again after they failed to load. */
   reviewQueueRetried: () => ({ type: "reviewQueueRetried" }) as const,
-  /** The user asked to edit the card shown, which opens it in the editor on its media file's screen. */
-  reviewFlashcardEditRequested: () =>
-    ({ type: "reviewFlashcardEditRequested" }) as const,
+  /** The user asked to edit the card shown, which opens it in the editor on the screen of the media file it was made from. */
+  reviewFlashcardEditRequested: (mediaFileId: string) =>
+    ({ type: "reviewFlashcardEditRequested", mediaFileId }) as const,
   /** The user asked to delete the card shown, which asks first. */
   reviewFlashcardDeleteRequested: () =>
     ({ type: "reviewFlashcardDeleteRequested" }) as const,

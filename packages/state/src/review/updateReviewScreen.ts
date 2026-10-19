@@ -4,6 +4,7 @@ import type { Effect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import { flashcardActions } from "../flashcards/flashcardActions.ts";
 import type { ReviewAction } from "./reviewActions.ts";
+import type { ReviewFlashcards } from "./reviewFlashcards.ts";
 import {
   extraNewCardCount,
   fetchQueue,
@@ -17,6 +18,7 @@ import {
 import type { ReviewScreenState, SessionStep } from "./reviewScreenState.ts";
 import { canUndo, showNext } from "./reviewSession.ts";
 import { settleReviewRequest } from "./settleReviewRequest.ts";
+import { skipDeletedCards } from "./skipDeletedCards.ts";
 
 type Rated = Extract<ReviewAction, { type: "reviewRated" }>;
 type Held = Extract<ReviewAction, { type: "reviewCardHeld" }>;
@@ -30,6 +32,21 @@ export function updateReviewScreen(
   session: ReviewScreenState,
   action: AppAction,
   projectId: string,
+  flashcards: ReviewFlashcards | null,
+) {
+  const current = skipDeletedCards(session, flashcards);
+  const [next, effects] = updateSession(current, action, projectId, flashcards);
+  const hasRunOut = session.shown !== null && current.shown === null;
+  return hasRunOut && next.queueStatus !== "loading"
+    ? reload(next, ...effects, fetchQueue(projectId))
+    : updated(next, ...effects);
+}
+
+function updateSession(
+  session: ReviewScreenState,
+  action: AppAction,
+  projectId: string,
+  flashcards: ReviewFlashcards | null,
 ) {
   switch (action.type) {
     case "reviewAnswerShown":
@@ -64,7 +81,7 @@ export function updateReviewScreen(
     case "reviewQueueRetried":
       return reload(session, fetchQueue(projectId));
     case "reviewFlashcardEditRequested":
-      return updated(session, ...openInEditor(session));
+      return updated(session, ...openInEditor(session, flashcards));
     case "reviewFlashcardDeleteRequested":
       return updated({
         ...session,
@@ -75,7 +92,7 @@ export function updateReviewScreen(
     case "reviewFlashcardDeleteConfirmed":
       return deleteShown(session, action.atMs, projectId);
     case "requestSettled":
-      return settleReviewRequest(session, action, projectId);
+      return settleReviewRequest(session, action, projectId, flashcards);
     default:
       return updated(session);
   }
@@ -104,7 +121,7 @@ function rate(
     { ...session, steps: [...session.steps, step] },
     atMs,
     projectId,
-    sendAnswer(projectId, card.flashcard.id, rating, durationMs),
+    sendAnswer(projectId, card.flashcardId, rating, durationMs),
   );
 }
 
@@ -121,7 +138,7 @@ function hold(
     { ...session, steps: [...session.steps, step] },
     atMs,
     projectId,
-    sendHold(projectId, card.flashcard.id, hold),
+    sendHold(projectId, card.flashcardId, hold),
   );
 }
 
@@ -133,7 +150,7 @@ function requestUndo(session: ReviewScreenState, projectId: string) {
     { ...session, undoing: latest },
     latest.kind === "answer"
       ? sendUndo(projectId, latest.answeredAtMs ?? 0)
-      : sendLift(projectId, latest.card.flashcard.id),
+      : sendLift(projectId, latest.card.flashcardId),
   );
 }
 
@@ -146,24 +163,24 @@ function deleteShown(
   const card = session.shown;
   if (card === null) return updated({ ...session, isConfirmingDelete: false });
   const steps = session.steps.filter(
-    (step) => step.card.flashcard.id !== card.flashcard.id,
+    (step) => step.card.flashcardId !== card.flashcardId,
   );
   return moveOn(
     { ...session, steps, isConfirmingDelete: false },
     atMs,
     projectId,
-    sendDeletion(projectId, card.flashcard.id),
+    sendDeletion(projectId, card.flashcardId),
   );
 }
 
 /** Opens the shown card in the editor of its media file's screen, to which the route moves. */
-function openInEditor({ shown }: ReviewScreenState) {
-  if (shown?.flashcard.media_file_id == null) return [];
-  return [
-    dispatch(
-      flashcardActions.flashcardOpened(shown.flashcard.id, shown.flashcard),
-    ),
-  ];
+function openInEditor(
+  { shown }: ReviewScreenState,
+  flashcards: ReviewFlashcards | null,
+) {
+  const flashcard = shown && flashcards?.byId.get(shown.flashcardId);
+  if (flashcard?.media_file_id == null) return [];
+  return [dispatch(flashcardActions.flashcardOpened(flashcard.id, flashcard))];
 }
 
 /** Shows the next card at a moment, or fetches the queue again once the session has run out of cards. */

@@ -474,6 +474,7 @@ export const backendApi = createApi({
     /**
      * The cards of a review session, in the order they are shown. The answer is not cached,
      * since the review screen keeps the session's cards and fetches the queue again only when it runs out.
+     * The screen keeps only each card's id and schedule, and reads its content from the flashcards list.
      */
     getReviewQueue: build.mutation<ReviewQueue, string>({
       query: (projectId) => ({
@@ -481,6 +482,10 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/review/queue`,
         query: utcOffsetQuery(),
       }),
+      // The review takes each card's content from the flashcards list, which a fetch after the queue's brings up to date with it.
+      invalidatesTags: (_result, _error, projectId) => [
+        { type: "Flashcards", id: projectId },
+      ],
     }),
     answerReview: build.mutation<ReviewAnswerResponse, ReviewAnswerArgs>({
       query: ({ projectId, flashcardId, rating, durationMs }) => ({

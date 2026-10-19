@@ -42,7 +42,7 @@ export function ConnectedReviewScreen({
   const project = useGetProjectQuery(projectId).data;
   // The end of the session reads when the next review is due from this query's cached answer.
   useGetReviewSummaryQuery(projectId, { refetchOnMountOrArgChange: true });
-  // The deletion's confirmation tells what becomes of the card in Anki from the cached flashcards.
+  // The cards' content comes from the cached flashcards, and so does what the deletion's confirmation tells of Anki.
   useListFlashcardsQuery(projectId);
   const session = useAppSelector(selectReviewSession);
   const shown = session?.card ?? null;
@@ -59,6 +59,7 @@ export function ConnectedReviewScreen({
     rate: ({ rating }) => rate(rating),
   });
   if (session === null || project === undefined) return null;
+  const mediaFileId = shown?.flashcard.media_file_id ?? null;
   const { settings } = project;
   return (
     <>
@@ -93,9 +94,9 @@ export function ConnectedReviewScreen({
         }
         onRetry={() => dispatch(actions.reviewQueueRetried())}
         onEditFlashcard={
-          shown?.flashcard.media_file_id
-            ? () => dispatch(actions.reviewFlashcardEditRequested())
-            : null
+          mediaFileId === null
+            ? null
+            : () => dispatch(actions.reviewFlashcardEditRequested(mediaFileId))
         }
         onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
         onSuspend={() =>

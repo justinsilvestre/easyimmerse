@@ -1,4 +1,29 @@
-import type { ReviewHoldKind, ReviewQueueCard } from "@easyimmerse/types";
+import type {
+  ReviewCardState,
+  ReviewHoldKind,
+  ReviewIntervals,
+  ReviewQueueCard,
+} from "@easyimmerse/types";
+
+/**
+ * A card of the session: the id of its flashcard, with the schedule and the intervals the server gave it.
+ * The flashcard's content is read from the project's cached flashcards, so that an edit shows at once.
+ */
+export type SessionCard = {
+  flashcardId: string;
+  /** Null for a new card. */
+  state: ReviewCardState | null;
+  intervals: ReviewIntervals;
+};
+
+/** Keeps of a card the server gave what only the session holds. */
+export function sessionCardOf({
+  flashcard,
+  state,
+  intervals,
+}: ReviewQueueCard): SessionCard {
+  return { flashcardId: flashcard.id, state, intervals };
+}
 
 /**
  * A step the user took in the session, kept so that Undo can take it back and show the card again as it was:
@@ -8,14 +33,14 @@ export type SessionStep =
   | {
       kind: "answer";
       /** The card as it was shown when rated. */
-      card: ReviewQueueCard;
+      card: SessionCard;
       /** The time of the answer's log entry, which names it to the server; null until the answer has landed. */
       answeredAtMs: number | null;
     }
   | {
       kind: "hold";
       /** The card as it was shown when set aside. */
-      card: ReviewQueueCard;
+      card: SessionCard;
       hold: ReviewHoldKind;
       hasLanded: boolean;
     };
@@ -27,11 +52,11 @@ export type SessionStep =
 export type ReviewScreenState = {
   kind: "review";
   /** The cards of the queue the server gave that are still to be shown, in its order. */
-  queue: readonly ReviewQueueCard[];
+  queue: readonly SessionCard[];
   /** The cards a rating left due again within the session, as the answer returned them, the earliest due first. */
-  comingBack: readonly ReviewQueueCard[];
+  comingBack: readonly SessionCard[];
   /** The card shown, taken from the queue or from the cards coming back; null while the queue loads or the session is over. */
-  shown: ReviewQueueCard | null;
+  shown: SessionCard | null;
   stage: "front" | "back";
   /** When the shown card appeared, as the user's last action dates it; null when it appeared without one, as when the queue first arrives. */
   shownAtMs: number | null;
@@ -45,6 +70,11 @@ export type ReviewScreenState = {
   isConfirmingDelete: boolean;
   /** Whether the shown card's screenshot is shown at full size over the screen. */
   isScreenshotExpanded: boolean;
+  /**
+   * When the cached flashcards list was fetched as the queue last arrived, or 0 when it had not loaded.
+   * A flashcard missing from a list fetched later was deleted elsewhere, rather than made after the list.
+   */
+  listFetchedAtQueueMs: number;
   /** How many times the user asked to hear the shown cards' audio again, which plays it from its start each time. */
   replayCount: number;
 };
@@ -62,5 +92,6 @@ export const initialReviewScreen: ReviewScreenState = {
   undoing: null,
   isConfirmingDelete: false,
   isScreenshotExpanded: false,
+  listFetchedAtQueueMs: 0,
   replayCount: 0,
 };

@@ -17,7 +17,16 @@ export const serverCachePath = "backend";
 /** The part of the server cache's slice that state code reads: every query's entry by its key. */
 export type ServerCacheSlice = {
   queries: Partial<
-    Record<string, { status: string; data?: unknown; error?: unknown }>
+    Record<
+      string,
+      {
+        status: string;
+        data?: unknown;
+        error?: unknown;
+        /** When the query last succeeded, in milliseconds since the Unix epoch. */
+        fulfilledTimeStamp?: number;
+      }
+    >
   >;
 };
 
@@ -59,6 +68,8 @@ export type CacheEntry<K extends keyof CachedQueries> =
       status: string;
       data?: CachedResponses[K];
       error?: { code?: string; message?: string };
+      /** When the query last succeeded, in milliseconds since the Unix epoch. */
+      fulfilledTimeStamp?: number;
     }
   | undefined;
 

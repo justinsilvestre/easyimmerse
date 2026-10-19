@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { stateAfterWithCache } from "../app/stateAfter.ts";
+import { exampleListedFlashcard } from "../flashcards/exampleFlashcards.ts";
 import {
   fetchQueue,
   raiseAllowance,
@@ -8,17 +9,20 @@ import {
   sendLift,
   sendUndo,
 } from "./reviewRequests.ts";
+import { sessionCardOf } from "./reviewScreenState.ts";
 import {
   answerFailed,
   answerLanded,
   exampleQueueCard,
   holdSettled,
   liftSettled,
+  listedCache,
   openReview,
   queueArrived,
   queueFailed,
   rated,
   reviewAfter,
+  reviewAfterWithCache,
   undoSettled,
 } from "./reviewTestSupport.ts";
 import { updateReviewScreen } from "./updateReviewScreen.ts";
@@ -30,12 +34,12 @@ const c = exampleQueueCard("c");
 const arrived = queueArrived(a, b, c);
 
 const shownId = (...given: Parameters<typeof reviewAfter>) =>
-  reviewAfter(...given).shown?.flashcard.id ?? null;
+  reviewAfter(...given).shown?.flashcardId ?? null;
 
 const effectsOf = (
   action: Parameters<typeof updateReviewScreen>[1],
   ...before: Parameters<typeof reviewAfter>
-) => updateReviewScreen(reviewAfter(...before), action, "p1")[1];
+) => updateReviewScreen(reviewAfter(...before), action, "p1", null)[1];
 
 describe("updateReviewScreen", () => {
   describe("when the queue arrives", () => {
@@ -45,7 +49,7 @@ describe("updateReviewScreen", () => {
 
     it("keeps the rest of it to show next", () => {
       const queue = reviewAfter(arrived).queue.map(
-        ({ flashcard }) => flashcard.id,
+        ({ flashcardId }) => flashcardId,
       );
       expect(queue).toEqual(["b", "c"]);
     });
@@ -81,7 +85,7 @@ describe("updateReviewScreen", () => {
 
   it("keeps the rating for Undo", () => {
     expect(reviewAfter(arrived, ...rated("good")).steps).toEqual([
-      { kind: "answer", card: a, answeredAtMs: null },
+      { kind: "answer", card: sessionCardOf(a), answeredAtMs: null },
     ]);
   });
 
@@ -144,7 +148,7 @@ describe("updateReviewScreen", () => {
         ...rated("again"),
         answerLanded("a", 7, "relearning", 10 * minuteMs),
       );
-      expect(review.comingBack.map(({ flashcard }) => flashcard.id)).toEqual([
+      expect(review.comingBack.map(({ flashcardId }) => flashcardId)).toEqual([
         "a",
       ]);
     });
@@ -160,7 +164,7 @@ describe("updateReviewScreen", () => {
 
     it("puts the card of a failed answer back in the queue", () => {
       const review = reviewAfter(arrived, ...rated("good"), answerFailed("a"));
-      expect(review.queue[0]?.flashcard.id).toBe("a");
+      expect(review.queue[0]?.flashcardId).toBe("a");
     });
   });
 
@@ -236,7 +240,7 @@ describe("updateReviewScreen", () => {
         actions.reviewUndoRequested(),
         undoSettled(7),
       );
-      expect(review.queue[0]?.flashcard.id).toBe("b");
+      expect(review.queue[0]?.flashcardId).toBe("b");
     });
 
     it("forgets the undone rating", () => {
@@ -295,7 +299,12 @@ describe("updateReviewScreen", () => {
 
     it("keeps the bury for Undo", () => {
       expect(reviewAfter(arrived, buried).steps).toEqual([
-        { kind: "hold", card: a, hold: "buried", hasLanded: false },
+        {
+          kind: "hold",
+          card: sessionCardOf(a),
+          hold: "buried",
+          hasLanded: false,
+        },
       ]);
     });
 
@@ -305,7 +314,7 @@ describe("updateReviewScreen", () => {
         buried,
         holdSettled("a", "buried", false),
       );
-      expect(review.queue[0]?.flashcard.id).toBe("a");
+      expect(review.queue[0]?.flashcardId).toBe("a");
     });
   });
 
@@ -408,7 +417,12 @@ describe("updateReviewScreen", () => {
 
   describe("on editing the shown card", () => {
     const editing = () =>
-      stateAfter(openReview, arrived, actions.reviewFlashcardEditRequested());
+      stateAfterWithCache(
+        listedCache(),
+        openReview,
+        arrived,
+        actions.reviewFlashcardEditRequested("m1"),
+      );
 
     it("goes to the screen of its media file", () => {
       expect(editing().route).toEqual({
@@ -424,6 +438,43 @@ describe("updateReviewScreen", () => {
         kind: "existing",
         flashcard: { id: "a" },
       });
+    });
+  });
+  describe("when a card's flashcard is deleted elsewhere", () => {
+    const listedAtQueue = listedCache(["a", "b", "c"], 1);
+    const withoutA = listedCache(["b", "c"], 2);
+    const afterDeletion = (...given: Parameters<typeof reviewAfter>) =>
+      reviewAfterWithCache(withoutA, ...given);
+
+    it("keeps the shown card while the list is being fetched again", () => {
+      const queued = reviewAfterWithCache(listedAtQueue, arrived);
+      const [next] = updateReviewScreen(
+        queued,
+        actions.reviewAudioReplayed(),
+        "p1",
+        { byId: new Map(), fetchedAtMs: null },
+      );
+      expect(next.shown?.flashcardId).toBe("a");
+    });
+
+    it("skips the shown card once a later list lacks it", () => {
+      const queued = reviewAfterWithCache(listedAtQueue, arrived);
+      const [next] = updateReviewScreen(
+        queued,
+        actions.reviewAudioReplayed(),
+        "p1",
+        {
+          byId: new Map(
+            ["b", "c"].map((id) => [id, exampleListedFlashcard(id, id)]),
+          ),
+          fetchedAtMs: 2,
+        },
+      );
+      expect(next.shown?.flashcardId).toBe("b");
+    });
+
+    it("keeps a card that a list fetched before the queue lacks", () => {
+      expect(afterDeletion(arrived).shown?.flashcardId).toBe("a");
     });
   });
 });

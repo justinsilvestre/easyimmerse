@@ -9,17 +9,22 @@ import { fixtureReviewQueue } from "../testSupport/reviewFixtures.ts";
 
 afterEach(cleanup);
 
+/** The flashcards of the review's cards, as the server lists them. */
+const listedFlashcards = () =>
+  fixtureReviewQueue.cards.map(({ flashcard }) => flashcard);
+
 /**
  * Opens the review of p1 over the fixture backend, whose queue holds three new cards the first time it is fetched,
- * and none after, as once those cards are rated.
+ * and none after, as once those cards are rated. The project's flashcards are listed as `listed` returns them when asked.
  */
-async function renderReview() {
+async function renderReview(listed = listedFlashcards) {
   let fetchCount = 0;
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
       "GET /projects/p1/review/queue": () =>
         fetchCount++ === 0 ? fixtureReviewQueue : { cards: [] },
+      "GET /projects/p1/flashcards": () => ({ flashcards: listed() }),
     },
     [
       ["PUT", /^\/projects\/p1\/review\/holds\/\w+$/, null],
@@ -149,5 +154,21 @@ describe("ConnectedReviewScreen", () => {
       await remember();
     }
     expect(await screen.findByText("Done for today")).toBeTruthy();
+  });
+  it("shows a card's new content once its flashcard is edited elsewhere", async () => {
+    let word = "Katze";
+    const listed = () =>
+      listedFlashcards().map((flashcard) =>
+        flashcard.id === "r1"
+          ? { ...flashcard, content: { ...flashcard.content, word } }
+          : flashcard,
+      );
+    await renderReview(listed);
+    word = "Kater";
+    // Suspending the card fetches the flashcards again, and Undo shows the card once more.
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Suspend" }));
+    fireEvent.click(await undoOnceAvailable());
+    await expect(showsWord("Kater")).resolves.toBeUndefined();
   });
 });

@@ -12,6 +12,7 @@ import {
   answerLanded,
   exampleCardState,
   exampleQueueCard,
+  listedCache,
   openReview,
   queueArrived,
   queueFailed,
@@ -168,5 +169,24 @@ describe("selectReviewSession", () => {
       viewOf(queueArrived(a, b), ...rated("good"), answerLanded("a", 7))
         ?.canUndo,
     ).toBe(true);
+  });
+  describe("when the shown card's flashcard is edited", () => {
+    const edited = () => {
+      const app = stateAfterWithCache(
+        listedCache(["a"], 1),
+        openReview,
+        queueArrived(a),
+      );
+      const backend = listedCache(["a"], 2, { a: "Katze" });
+      return selectReviewSession({ app, backend });
+    };
+
+    it("shows its new content at once", () => {
+      expect(edited()?.card?.flashcard.content.word).toBe("Katze");
+    });
+  });
+
+  it("shows no card while the flashcards list loads", () => {
+    expect(viewOf(queueArrived(a))?.card).toBeNull();
   });
 });

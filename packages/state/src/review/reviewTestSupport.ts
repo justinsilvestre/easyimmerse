@@ -8,8 +8,11 @@ import type {
 } from "@easyimmerse/types";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { stateAfter, stateAfterWithCache } from "../app/stateAfter.ts";
 import { exampleListedFlashcard } from "../flashcards/exampleFlashcards.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
+import { cacheKey } from "../server/cacheKey.ts";
+import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { reviewRequestIds } from "./reviewRequests.ts";
 import { selectReviewScreen } from "./selectReviewSession.ts";
 
@@ -148,6 +151,39 @@ export function liftSettled(flashcardId: string) {
     { kind: "liftReviewHold", projectId: "p1", flashcardId },
     { ok: true, data: undefined },
   );
+}
+
+/**
+ * A server cache whose list of p1's flashcards holds the named ones, each worded as its id unless `words` says otherwise,
+ * as fetched at `fetchedAtMs`.
+ */
+export function listedCache(
+  ids: readonly string[] = ["a", "b", "c"],
+  fetchedAtMs = 1,
+  words: Record<string, string> = {},
+): ServerCacheSlice {
+  const listed = serverCacheWith("listFlashcards", "p1", {
+    flashcards: ids.map((id) => exampleListedFlashcard(id, words[id] ?? id)),
+  });
+  const key = cacheKey("listFlashcards", "p1");
+  const entry = listed.queries[key];
+  return {
+    queries: {
+      [key]: { ...entry, status: "fulfilled", fulfilledTimeStamp: fetchedAtMs },
+    },
+  };
+}
+
+/** The review screen's state after opening p1's review and the given actions, with a server cache. */
+export function reviewAfterWithCache(
+  backend: ServerCacheSlice,
+  ...given: AppAction[]
+) {
+  const review = selectReviewScreen(
+    stateAfterWithCache(backend, openReview, ...given),
+  );
+  if (review === null) throw new Error("The review is not open.");
+  return review;
 }
 
 /** The review screen's state after opening p1's review and the given actions. */
