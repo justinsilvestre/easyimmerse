@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
-import { exampleProject } from "../../server/exampleProject.ts";
+import { actions } from "../app/appAction.ts";
+import { stateAfter } from "../app/stateAfter.ts";
+import { exampleProject } from "../server/exampleProject.ts";
 import {
   emptyServerCache,
   serverCacheWith,
-} from "../../server/serverCacheWith.ts";
+} from "../server/serverCacheWith.ts";
 import {
   mediaFetchChecked,
   openedMediaImport,

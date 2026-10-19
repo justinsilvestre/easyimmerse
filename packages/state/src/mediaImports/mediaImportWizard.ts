@@ -1,4 +1,4 @@
-import type { PluginFormWizard } from "../pluginForm/pluginFormWizard.ts";
+import type { PluginFormWizard } from "../screen/pluginForm/pluginFormWizard.ts";
 
 /** A media-source plugin to import through, with the label of its import button. */
 export type MediaImportSource = { name: string; label: string };

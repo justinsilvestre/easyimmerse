@@ -1,11 +1,11 @@
 import { createSelector } from "reselect";
-import type { RootState } from "../../app/createAppStore.ts";
-import type { FooterActivity } from "../../footer/footerActivity.ts";
-import { haveSameActivities } from "../../footer/haveSameActivities.ts";
-import type { JobsState } from "../../operations/jobs.ts";
-import { jobKey } from "../../operations/jobs.ts";
-import type { ServerCacheSlice } from "../../server/cacheEntry.ts";
-import { cacheEntry } from "../../server/cacheEntry.ts";
+import type { RootState } from "../app/createAppStore.ts";
+import type { FooterActivity } from "../footer/footerActivity.ts";
+import { haveSameActivities } from "../footer/haveSameActivities.ts";
+import type { JobsState } from "../operations/jobs.ts";
+import { jobKey } from "../operations/jobs.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
+import { cacheEntry } from "../server/cacheEntry.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
 /**

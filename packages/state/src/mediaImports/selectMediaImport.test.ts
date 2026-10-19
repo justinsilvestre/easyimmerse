@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
-import { runningMediaSourceJob } from "../../operations/exampleJobReports.ts";
+import { actions } from "../app/appAction.ts";
+import { stateAfter } from "../app/stateAfter.ts";
+import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import { selectMediaImport } from "./selectMediaImport.ts";
 
 const source = { name: "video-site", label: "Add from a video site" };

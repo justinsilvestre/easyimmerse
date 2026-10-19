@@ -1,6 +1,6 @@
 import type { MediaSourceJob } from "@easyimmerse/types";
-import { actions } from "../../app/appAction.ts";
-import { runningMediaSourceJob } from "../../operations/exampleJobReports.ts";
+import { actions } from "../app/appAction.ts";
+import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 
 const source = { name: "video-site", label: "Video site" };
 

@@ -1,9 +1,12 @@
-import { updated } from "../../app/updated.ts";
-import { jobKey } from "../../operations/jobs.ts";
-import { isSettled } from "../../server/isSettled.ts";
-import type { RequestSettled } from "../../server/serverRequest.ts";
-import { formShown, requestFailed } from "../pluginForm/pluginFormWizard.ts";
-import { skippedSubtitlesNotice } from "../pluginForm/skippedSubtitlesMessage.ts";
+import { updated } from "../app/updated.ts";
+import { jobKey } from "../operations/jobs.ts";
+import {
+  formShown,
+  requestFailed,
+} from "../screen/pluginForm/pluginFormWizard.ts";
+import { skippedSubtitlesNotice } from "../screen/pluginForm/skippedSubtitlesMessage.ts";
+import { isSettled } from "../server/isSettled.ts";
+import type { RequestSettled } from "../server/serverRequest.ts";
 import {
   mediaImportIds,
   unwatchFetch,

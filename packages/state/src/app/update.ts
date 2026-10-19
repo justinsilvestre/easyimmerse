@@ -1,13 +1,13 @@
 import { ankiCommands } from "../anki/ankiCommands.ts";
 import { dictionaryImportFeature } from "../dictionaryImport/dictionaryImportFeature.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
+import { mediaImportsFeature } from "../mediaImports/mediaImportsFeature.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
-import { mediaImportsFeature } from "../screen/projectScreen/mediaImportsFeature.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";

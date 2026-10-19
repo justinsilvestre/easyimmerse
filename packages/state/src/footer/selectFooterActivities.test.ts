@@ -5,7 +5,7 @@ import { startedDictionaryImport } from "../dictionaryImport/dictionaryImportExa
 import {
   mediaFetchChecked,
   startedMediaFetch,
-} from "../screen/projectScreen/exampleMediaFetch.ts";
+} from "../mediaImports/exampleMediaFetch.ts";
 import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { selectFooterActivities } from "./selectFooterActivities.ts";
 

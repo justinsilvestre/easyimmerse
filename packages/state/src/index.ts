@@ -82,6 +82,8 @@ export { selectFooterActivities } from "./footer/selectFooterActivities.ts";
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
+export type { MediaImportSource } from "./mediaImports/mediaImportWizard.ts";
+export { selectMediaImport } from "./mediaImports/selectMediaImport.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -216,8 +218,6 @@ export {
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
-export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
-export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { latestAlignments } from "./screen/readerScreen/latestAlignments.ts";
 export {
   type AlignedAudio,

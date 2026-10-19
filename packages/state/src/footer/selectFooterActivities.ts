@@ -3,8 +3,8 @@ import type { RootState } from "../app/createAppStore.ts";
 import { haveSameItems } from "../app/haveSameItems.ts";
 import { selectDictionaryImportActivity } from "../dictionaryImport/selectDictionaryImportActivity.ts";
 import { selectPendingSavesActivity } from "../flashcards/selectPendingSavesActivity.ts";
+import { selectMediaFetchActivities } from "../mediaImports/selectMediaFetchActivities.ts";
 import { isAlreadyAt } from "../route/route.ts";
-import { selectMediaFetchActivities } from "../screen/projectScreen/selectMediaFetchActivities.ts";
 import type { FooterActivity } from "./footerActivity.ts";
 
 /**

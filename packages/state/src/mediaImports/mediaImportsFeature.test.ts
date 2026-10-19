@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { AppAction } from "../../app/appAction.ts";
-import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
-import { transientNotice } from "../../notices/transientNotice.ts";
-import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
-import { exampleProject } from "../../server/exampleProject.ts";
+import type { AppAction } from "../app/appAction.ts";
+import { actions } from "../app/appAction.ts";
+import { stateAfter } from "../app/stateAfter.ts";
+import { transientNotice } from "../notices/transientNotice.ts";
+import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleProject } from "../server/exampleProject.ts";
 import {
   emptyServerCache,
   serverCacheWith,
-} from "../../server/serverCacheWith.ts";
+} from "../server/serverCacheWith.ts";
 import {
   mediaFetchChecked,
   openedMediaImport,
