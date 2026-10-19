@@ -16,7 +16,10 @@ runs:
 
     - uses: Swatinem/rust-cache@v2
       if: inputs.rust-cache == 'true'
+      # Only main saves, because a cache saved by a pull request is readable only by that pull request,
+      # and those copies push main's caches past the repository's 10 GB limit, which evicts them.
       with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}
         workspaces: |
           . -> target
           plugins -> target
