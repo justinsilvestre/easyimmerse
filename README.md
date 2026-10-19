@@ -166,7 +166,21 @@ On Linux the Tauri runtime initializes GTK before the check runs, so the command
 
 #### One-off CI runs
 
-To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` job never runs on pull requests, so a bundle tag is how to check a branch's installers before it merges.
+To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `apk`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` and `apk` jobs never run on pull requests, so a tag is how to check a branch's installers before it merges.
+
+#### Test builds
+
+CI keeps the builds it makes as artifacts of each workflow run for 14 days, so prerelease versions can be tested without a GitHub release. Open a run of the workflow on the Actions tab and download from the Artifacts list at the bottom of its summary page. Downloading needs a GitHub sign-in.
+
+- `easyimmerse-desktop-<runner>`: the installers from the `native` workflow's `bundle` job, one artifact per platform (`.dmg` on macOS; `.deb`, `.rpm`, and `.AppImage` on Linux; `.msi` and `-setup.exe` on Windows).
+- `easyimmerse-android-arm64`: a debug APK from the `native` workflow's `apk` job, for 64-bit ARM phones. Allow installs from unknown sources on the phone to open it.
+- `easyimmerse-extension`: the Chrome and Firefox zips from the `extension` workflow. Unzip one and load it unpacked as described under Browser extension.
+
+The desktop installers and the APK are built only on pushes to main and on tags, and a run that touches none of a workflow's paths builds nothing new. The installers are unsigned: macOS refuses to open the app until `xattr -dr com.apple.quarantine /Applications/easyImmerse.app` clears its quarantine flag, and Windows shows a SmartScreen warning that "More info" then "Run anyway" passes.
+
+For a link that needs no sign-in, [nightly.link](https://nightly.link) serves the newest artifact of a branch, for example `https://nightly.link/justinsilvestre/easyimmerse/workflows/native/main/easyimmerse-android-arm64.zip`.
+
+iOS has no CI build for devices, because installing on an iPhone needs code signing; see the native app's README to build and install one from a Mac.
 
 ## Repository structure
 
