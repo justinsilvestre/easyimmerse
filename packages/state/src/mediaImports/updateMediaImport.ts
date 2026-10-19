@@ -1,7 +1,10 @@
-import type { AppAction } from "../../app/appAction.ts";
-import { updated } from "../../app/updated.ts";
-import { isAborted } from "../../server/isAborted.ts";
-import { openedPluginForm, stepSent } from "../pluginForm/pluginFormWizard.ts";
+import type { AppAction } from "../app/appAction.ts";
+import { updated } from "../app/updated.ts";
+import {
+  openedPluginForm,
+  stepSent,
+} from "../screen/pluginForm/pluginFormWizard.ts";
+import { isAborted } from "../server/isAborted.ts";
 import { mediaImportAnswered } from "./mediaImportAnswered.ts";
 import {
   endImport,

@@ -3,4 +3,8 @@
 /**
  * How many items of each kind the import has stored so far.
  */
-export type ImportProgress = { entries: number, term_meta: number, kanji: number, kanji_meta: number, tags: number, media: number, };
+export type ImportProgress = { entries: number, term_meta: number, kanji: number, kanji_meta: number, tags: number, media: number, 
+/**
+ * How much of the dictionary's files the import has read, from 0 to 100, when its format can tell.
+ */
+percent: number | null, };

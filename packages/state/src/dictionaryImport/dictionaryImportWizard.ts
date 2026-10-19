@@ -1,5 +1,5 @@
 import type { TableLayout, TablePreview } from "@easyimmerse/types";
-import type { PickedDictionaryFile } from "../../platform/effects.ts";
+import type { PickedDictionaryFile } from "../platform/effects.ts";
 
 /** Where adding a dictionary from a picked file stands. Absent while nothing is being added or reported. */
 export type DictionaryImportWizard =

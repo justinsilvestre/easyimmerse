@@ -1,7 +1,10 @@
 //! Finding bank files and reading their rows one at a time.
 
+use std::cell::Cell;
 use std::fmt;
+use std::io::{self, Read};
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 use serde::de::{self, DeserializeOwned, Deserializer, SeqAccess, Visitor};
 
@@ -32,7 +35,14 @@ fn bank_number(file_name: &str, kind: &str) -> Option<u32> {
     digits.parse().ok()
 }
 
-/// Reads a bank and passes each row to `on_row` with its index, deserializing one row at a time.
+/// Where a row sits in its bank: its index, and how many bytes of the bank had been read once it was.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RowPlace {
+    pub index: usize,
+    pub bytes_read: u64,
+}
+
+/// Reads a bank and passes each row to `on_row` with its place, deserializing one row at a time.
 /// The first error from `on_row` stops the reading and is returned.
 pub fn read_rows<Row, OnRow>(
     source: &mut DictionarySource,
@@ -41,15 +51,21 @@ pub fn read_rows<Row, OnRow>(
 ) -> Result<(), DictionaryError>
 where
     Row: DeserializeOwned,
-    OnRow: FnMut(usize, Row) -> Result<(), DictionaryError>,
+    OnRow: FnMut(RowPlace, Row) -> Result<(), DictionaryError>,
 {
     let bytes = source.read(name)?;
+    let bytes_read = Rc::new(Cell::new(0));
     let mut visitor = RowVisitor {
         on_row,
+        bytes_read: Rc::clone(&bytes_read),
         failure: None,
         row: PhantomData,
     };
-    let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
+    let reader = CountingReader {
+        bytes: &bytes,
+        bytes_read,
+    };
+    let mut deserializer = serde_json::Deserializer::from_reader(reader);
     let result = deserializer
         .deserialize_seq(&mut visitor)
         .and_then(|()| deserializer.end());
@@ -68,8 +84,23 @@ pub fn json_error(name: &str, source: serde_json::Error) -> DictionaryError {
     .into()
 }
 
+/// Reads a bank's bytes while counting how many have been read, so that each row can tell how far into the bank it is.
+struct CountingReader<'a> {
+    bytes: &'a [u8],
+    bytes_read: Rc<Cell<u64>>,
+}
+
+impl Read for CountingReader<'_> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let count = self.bytes.read(buffer)?;
+        self.bytes_read.set(self.bytes_read.get() + count as u64);
+        Ok(count)
+    }
+}
+
 struct RowVisitor<Row, OnRow> {
     on_row: OnRow,
+    bytes_read: Rc<Cell<u64>>,
     failure: Option<DictionaryError>,
     row: PhantomData<Row>,
 }
@@ -77,7 +108,7 @@ struct RowVisitor<Row, OnRow> {
 impl<'de, Row, OnRow> Visitor<'de> for &mut RowVisitor<Row, OnRow>
 where
     Row: DeserializeOwned,
-    OnRow: FnMut(usize, Row) -> Result<(), DictionaryError>,
+    OnRow: FnMut(RowPlace, Row) -> Result<(), DictionaryError>,
 {
     type Value = ();
 
@@ -88,7 +119,11 @@ where
     fn visit_seq<Rows: SeqAccess<'de>>(self, mut rows: Rows) -> Result<(), Rows::Error> {
         let mut index = 0;
         while let Some(row) = rows.next_element::<Row>()? {
-            if let Err(failure) = (self.on_row)(index, row) {
+            let place = RowPlace {
+                index,
+                bytes_read: self.bytes_read.get(),
+            };
+            if let Err(failure) = (self.on_row)(place, row) {
                 self.failure = Some(failure);
                 return Err(de::Error::custom("stopped reading after an error"));
             }
@@ -108,8 +143,8 @@ mod tests {
         read_rows(
             &mut source_of(&[("bank.json", text)]),
             "bank.json",
-            |index, row| {
-                rows.push((index, row));
+            |place, row| {
+                rows.push((place.index, row));
                 Ok(())
             },
         )?;
@@ -149,6 +184,21 @@ mod tests {
     #[test]
     fn reads_each_row_with_its_index() {
         assert_eq!(read_all("[7, 8]").unwrap(), vec![(0, 7), (1, 8)]);
+    }
+
+    #[test]
+    fn tells_each_row_how_much_of_the_bank_has_been_read() {
+        let mut places = Vec::new();
+        read_rows(
+            &mut source_of(&[("bank.json", "[7, 8]")]),
+            "bank.json",
+            |place, _: u32| {
+                places.push(place.bytes_read);
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert!(places[0] < places[1]);
     }
 
     #[test]

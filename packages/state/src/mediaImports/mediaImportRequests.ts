@@ -1,6 +1,6 @@
 import type { FormInput } from "@easyimmerse/types";
-import type { Effect } from "../../app/effect.ts";
-import { jobKey } from "../../operations/jobs.ts";
+import type { Effect } from "../app/effect.ts";
+import { jobKey } from "../operations/jobs.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
 /** The ids of the requests that a project's media import dialog sends. */

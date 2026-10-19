@@ -4,9 +4,9 @@ import type {
   TablePreview,
 } from "@easyimmerse/types";
 import { createSelector } from "reselect";
-import type { AppRoot } from "../../app/createAppStore.ts";
-import type { JobsState } from "../../operations/jobs.ts";
-import { jobKey } from "../../operations/jobs.ts";
+import type { AppRoot } from "../app/createAppStore.ts";
+import type { JobsState } from "../operations/jobs.ts";
+import { jobKey } from "../operations/jobs.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 import { termHint } from "./tableLayout.ts";
 
@@ -43,7 +43,7 @@ const nothingShown: DictionaryImportView = {
  */
 export const selectDictionaryImport = createSelector(
   [
-    (state: AppRoot) => state.app.screen.settings?.dictionaryImport ?? null,
+    (state: AppRoot) => state.app.dictionaryImport,
     (state: AppRoot) => state.app.operations.jobs,
   ],
   (wizard, jobs): DictionaryImportView =>

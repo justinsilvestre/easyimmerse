@@ -204,11 +204,11 @@ describe("createAppStore", () => {
       expect(statusRequests(server)).toHaveLength(1);
     });
 
-    it("stops asking once the dictionaries page closes", async () => {
+    it("goes on asking once the dictionaries page closes", async () => {
       const { effects, server, store } = await startRunningImport();
       store.dispatch(actions.navigated({ type: "closeSettings" }));
       effects.clock.advanceBy(500);
-      expect(statusRequests(server)).toHaveLength(1);
+      expect(statusRequests(server)).toHaveLength(2);
     });
   });
 

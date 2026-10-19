@@ -1712,6 +1712,11 @@ export interface components {
             kanji_meta: number;
             /** Format: int64 */
             media: number;
+            /**
+             * Format: int32
+             * @description How much of the dictionary's files the import has read, from 0 to 100, when its format can tell.
+             */
+            percent?: number | null;
             /** Format: int64 */
             tags: number;
             /** Format: int64 */

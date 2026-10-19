@@ -8,6 +8,7 @@ import type {
   SubtitleSelection,
   TrackSelection,
 } from "@easyimmerse/types";
+import type { MediaImportSource } from "../mediaImports/mediaImportWizard.ts";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -16,7 +17,6 @@ import type {
 import type { ItemSpan } from "./itemSpan.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
 import type { WaveformViewName } from "./mediaScreen/waveformState.ts";
-import type { MediaImportSource } from "./projectScreen/mediaImportWizard.ts";
 
 /** The action creators of the screens: the player's requests and reports, and the file picks and their outcomes. */
 export const screenActions = {

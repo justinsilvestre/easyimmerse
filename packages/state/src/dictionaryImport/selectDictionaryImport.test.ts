@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
-import { runningImportStatus } from "../../operations/exampleJobReports.ts";
-import type { PickedDictionaryFile } from "../../platform/effects.ts";
+import { actions } from "../app/appAction.ts";
+import { stateAfter } from "../app/stateAfter.ts";
+import { runningImportStatus } from "../operations/exampleJobReports.ts";
+import type { PickedDictionaryFile } from "../platform/effects.ts";
 import { selectDictionaryImport } from "./selectDictionaryImport.ts";
 
 const zip: PickedDictionaryFile = {

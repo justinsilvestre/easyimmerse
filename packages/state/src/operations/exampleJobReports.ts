@@ -10,6 +10,7 @@ export const runningImportStatus: ImportJobStatus = {
     kanji_meta: 0,
     tags: 0,
     media: 0,
+    percent: 40,
   },
   dictionary: null,
   error: null,

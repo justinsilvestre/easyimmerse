@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
-import type { PickedDictionaryFile } from "../platform/effects.ts";
 import type { Route } from "../route/route.ts";
 import { updateSettings } from "./updateSettings.ts";
-
-const zip: PickedDictionaryFile = {
-  name: "jmdict.zip",
-  source: { kind: "path", path: "/dictionaries/jmdict.zip" },
-};
 
 const dictionariesPage: Route = {
   screen: "settings",
@@ -21,69 +15,30 @@ const generalPage: Route = {
   pages: ["general"],
 };
 
-const importing = {
-  dictionaryImport: { stage: "importing", file: zip, jobId: "job1" },
-  conversionCacheReport: null,
-} as const;
-
-const closeSettings = actions.navigated({ type: "closeSettings" });
-const unwatch = { type: "unwatchJob", key: "jobs/dictionaryImport/job1" };
+const report = { conversionCacheReport: "Cleared." };
 
 describe("updateSettings", () => {
-  it("starts with no import when Settings open", () => {
+  it("starts with no report when Settings open", () => {
     const [settings] = updateSettings(
       null,
       actions.settingsRequested(),
-      dictionariesPage,
+      generalPage,
     );
-    expect(settings).toEqual({
-      dictionaryImport: null,
-      conversionCacheReport: null,
-    });
-  });
-
-  it("starts adding a chosen dictionary file", () => {
-    const [settings] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
-      actions.dictionaryFileChosen(zip),
-      dictionariesPage,
-    );
-    expect(settings?.dictionaryImport).toEqual({
-      stage: "starting",
-      file: zip,
-    });
-  });
-
-  it("drops the import when the dictionaries page closes", () => {
-    const [settings] = updateSettings(importing, closeSettings, generalPage);
-    expect(settings).toEqual({
-      dictionaryImport: null,
-      conversionCacheReport: null,
-    });
-  });
-
-  it("stops watching the import's job when the dictionaries page closes", () => {
-    const [, effects] = updateSettings(importing, closeSettings, generalPage);
-    expect(effects).toEqual([unwatch]);
+    expect(settings).toEqual({ conversionCacheReport: null });
   });
 
   it("drops its state once Settings close", () => {
-    const [settings] = updateSettings(importing, closeSettings, {
-      screen: "home",
-    });
+    const [settings] = updateSettings(
+      report,
+      actions.navigated({ type: "closeSettings" }),
+      { screen: "home" },
+    );
     expect(settings).toBeNull();
-  });
-
-  it("stops watching the import's job once Settings close", () => {
-    const [, effects] = updateSettings(importing, closeSettings, {
-      screen: "home",
-    });
-    expect(effects).toEqual([unwatch]);
   });
 
   it("keeps the media cache's report while the general page is on top", () => {
     const [settings] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
+      { conversionCacheReport: null },
       actions.requestSettled(
         "settings/conversionCache/clear",
         { kind: "clearConversionCache" },
@@ -96,7 +51,7 @@ describe("updateSettings", () => {
 
   it("drops the media cache's report when the dictionaries page opens over the general page", () => {
     const [settings] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: "Cleared." },
+      report,
       actions.navigated({ type: "openDictionaries" }),
       dictionariesPage,
     );
