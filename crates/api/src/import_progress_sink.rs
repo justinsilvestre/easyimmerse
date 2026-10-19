@@ -70,8 +70,7 @@ impl DictionarySink for ImportProgressSink<'_> {
 
     fn progressed(&mut self, done: u64, total: u64) {
         self.inner.progressed(done, total);
-        if total > 0 {
-            let percent = done.saturating_mul(100) / total;
+        if let Some(percent) = done.saturating_mul(100).checked_div(total) {
             lock(&self.progress).percent = Some(percent.min(100) as u8);
         }
     }
