@@ -5,6 +5,8 @@ export const operationsActions = {
   /** The request with this id has gone unanswered for its time limit, so it is aborted. */
   requestTimeLimitPassed: (id: string) =>
     ({ type: "requestTimeLimitPassed", id }) as const,
+  /** The request with this id has gone unanswered long enough to count as slow. */
+  requestWentSlow: (id: string) => ({ type: "requestWentSlow", id }) as const,
 };
 
 /** An action of the operations. */

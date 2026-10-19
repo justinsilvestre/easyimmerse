@@ -9,7 +9,6 @@ import {
 import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
-import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { ItemSpan } from "./itemSpan.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
@@ -21,7 +20,6 @@ import type { PlayingState } from "./mediaScreen/playingState.ts";
 import type { WaveformState } from "./mediaScreen/waveformState.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import type { PluginFormWizard } from "./pluginForm/pluginFormWizard.ts";
-import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 import type { ReaderScreenState } from "./readerScreen/readerScreenState.ts";
 import { initialReaderScreen } from "./readerScreen/readerScreenState.ts";
 
@@ -57,11 +55,10 @@ export type OfflineScreenState = {
   hasFailed: boolean;
 };
 
-/** The project overview's state: a picked media file, held while its requests run, and the overview's dialogs. */
+/** The project overview's state: a picked media file, held while its requests run, and the overview's dialogs other than the media import's. */
 export type ProjectScreenState = {
   kind: "project";
   pendingMediaFile: PickedMediaFile | null;
-  mediaImport: MediaImportWizard | null;
   ankiExport: AnkiExportDialog | null;
   isAnkiConnectSetupOpen: boolean;
 };
@@ -82,8 +79,6 @@ export type ScreenState = {
   main: MainScreenState;
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
   settings: {
-    /** The adding of a dictionary from a file, which lasts while the dictionaries page is on top. */
-    dictionaryImport: DictionaryImportWizard | null;
     /** How the last clearing of the media cache, or a failed change of its size, went, while the general page is on top. */
     conversionCacheReport: string | null;
   } | null;
@@ -127,7 +122,6 @@ export function initialMainScreen(
       return {
         kind: "project",
         pendingMediaFile: null,
-        mediaImport: null,
         ankiExport: null,
         isAnkiConnectSetupOpen: false,
       };

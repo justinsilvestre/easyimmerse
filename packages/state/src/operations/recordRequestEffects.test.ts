@@ -8,11 +8,23 @@ const first: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };
 const second: ServerRequest = { kind: "listMediaFiles", projectId: "p2" };
 
 function sent(id: string, request: ServerRequest, scope?: string) {
-  return { id, request, scope, isWaiting: false } satisfies RequestRecord;
+  return {
+    id,
+    request,
+    scope,
+    isWaiting: false,
+    isSlow: false,
+  } satisfies RequestRecord;
 }
 
 function waiting(id: string, request: ServerRequest, scope: string) {
-  return { id, request, scope, isWaiting: true } satisfies RequestRecord;
+  return {
+    id,
+    request,
+    scope,
+    isWaiting: true,
+    isSlow: false,
+  } satisfies RequestRecord;
 }
 
 function send(
@@ -35,7 +47,9 @@ describe("recordRequestEffects", () => {
 
   it("records a request without a scope as sent", () => {
     const [requests] = recordRequestEffects(requestsOf(), [send("a", first)]);
-    expect(requests).toEqual([{ id: "a", request: first, isWaiting: false }]);
+    expect(requests).toEqual([
+      { id: "a", request: first, isWaiting: false, isSlow: false },
+    ]);
   });
 
   it("sends a request without a scope while another one is in flight", () => {

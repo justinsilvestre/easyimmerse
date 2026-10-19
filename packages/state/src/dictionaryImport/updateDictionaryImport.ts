@@ -1,6 +1,6 @@
-import type { AppAction } from "../../app/appAction.ts";
-import { updated } from "../../app/updated.ts";
-import { isAborted } from "../../server/isAborted.ts";
+import type { AppAction } from "../app/appAction.ts";
+import { updated } from "../app/updated.ts";
+import { isAborted } from "../server/isAborted.ts";
 import { dictionaryImportAnswered } from "./dictionaryImportAnswered.ts";
 import {
   importRequest,

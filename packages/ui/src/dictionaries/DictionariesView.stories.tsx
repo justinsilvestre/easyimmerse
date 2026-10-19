@@ -70,6 +70,7 @@ export const AddingWithProgress: Story = {
       kanji_meta: 0,
       tags: 12,
       media: 0,
+      percent: 42,
     },
   },
 };

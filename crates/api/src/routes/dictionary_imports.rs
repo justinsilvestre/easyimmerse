@@ -43,6 +43,8 @@ pub struct ImportProgress {
     pub kanji_meta: u64,
     pub tags: u64,
     pub media: u64,
+    /// How much of the dictionary's files the import has read, from 0 to 100, when its format can tell.
+    pub percent: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]

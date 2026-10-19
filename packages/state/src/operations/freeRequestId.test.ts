@@ -6,6 +6,7 @@ const recorded = (id: string): RequestRecord => ({
   id,
   request: { kind: "lookupText", query: { text: "cat", language: "de" } },
   isWaiting: false,
+  isSlow: false,
 });
 
 describe("freeRequestId", () => {

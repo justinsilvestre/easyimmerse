@@ -3,10 +3,11 @@ use super::{
     TagDefinition, TermEntry, TermMeta,
 };
 
-/// A sink for tests that keeps only the media it receives.
+/// A sink for tests that keeps only the media it receives and the last progress reported.
 #[derive(Default)]
 pub struct MediaCollector {
     pub media: Vec<DictionaryMedia>,
+    pub last_progress: Option<(u64, u64)>,
 }
 
 impl MediaCollector {
@@ -51,5 +52,9 @@ impl DictionarySink for MediaCollector {
     fn media(&mut self, media: DictionaryMedia) -> SinkResult {
         self.media.push(media);
         Ok(())
+    }
+
+    fn progressed(&mut self, done: u64, total: u64) {
+        self.last_progress = Some((done, total));
     }
 }

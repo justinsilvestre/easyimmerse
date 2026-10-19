@@ -7971,6 +7971,15 @@
             "format": "int64",
             "minimum": 0
           },
+          "percent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How much of the dictionary's files the import has read, from 0 to 100, when its format can tell.",
+            "minimum": 0
+          },
           "tags": {
             "type": "integer",
             "format": "int64",

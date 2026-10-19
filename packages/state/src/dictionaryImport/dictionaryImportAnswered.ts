@@ -1,13 +1,13 @@
-import { actions } from "../../app/appAction.ts";
-import { dispatch } from "../../app/dispatchEffect.ts";
-import { updated } from "../../app/updated.ts";
-import { transientNotice } from "../../notices/transientNotice.ts";
-import { jobKey } from "../../operations/jobs.ts";
-import { isSettled } from "../../server/isSettled.ts";
+import { actions } from "../app/appAction.ts";
+import { dispatch } from "../app/dispatchEffect.ts";
+import { updated } from "../app/updated.ts";
+import { transientNotice } from "../notices/transientNotice.ts";
+import { jobKey } from "../operations/jobs.ts";
+import { isSettled } from "../server/isSettled.ts";
 import type {
   RequestOutcome,
   RequestSettled,
-} from "../../server/serverRequest.ts";
+} from "../server/serverRequest.ts";
 import {
   dictionaryImportIds,
   stopWatching,

@@ -106,8 +106,20 @@ describe("update", () => {
   describe("when a request settles", () => {
     it("sends the next waiting request of its scope", () => {
       const state = withRequests(
-        { id: "a", request: first, scope: "s", isWaiting: false },
-        { id: "b", request: second, scope: "s", isWaiting: true },
+        {
+          id: "a",
+          request: first,
+          scope: "s",
+          isWaiting: false,
+          isSlow: false,
+        },
+        {
+          id: "b",
+          request: second,
+          scope: "s",
+          isWaiting: true,
+          isSlow: false,
+        },
       );
       const [, effects] = update(state, settledFirst);
       expect(effects).toEqual([

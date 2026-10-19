@@ -1,7 +1,7 @@
 import type { TableLayout } from "@easyimmerse/types";
-import type { Effect } from "../../app/effect.ts";
-import { jobKey } from "../../operations/jobs.ts";
-import type { PickedDictionaryFile } from "../../platform/effects.ts";
+import type { Effect } from "../app/effect.ts";
+import { jobKey } from "../operations/jobs.ts";
+import type { PickedDictionaryFile } from "../platform/effects.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 
 /** The ids of the requests that adding a dictionary sends. */

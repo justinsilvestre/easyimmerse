@@ -41,6 +41,7 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
 export { draftFromCue } from "./flashcards/draftFromCue.ts";
@@ -77,10 +78,14 @@ export {
   type StatusLineSave,
   selectStatusLineSaves,
 } from "./flashcards/selectStatusLineSaves.ts";
+export type { FooterActivity } from "./footer/footerActivity.ts";
+export { selectFooterActivities } from "./footer/selectFooterActivities.ts";
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
 export { selectReviewKeyBinding } from "./keys/selectReviewKeyBinding.ts";
+export type { MediaImportSource } from "./mediaImports/mediaImportWizard.ts";
+export { selectMediaImport } from "./mediaImports/selectMediaImport.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -144,7 +149,6 @@ export {
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
-export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {
@@ -224,8 +228,6 @@ export {
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
-export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
-export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { latestAlignments } from "./screen/readerScreen/latestAlignments.ts";
 export {
   type AlignedAudio,

@@ -1,13 +1,23 @@
-import { updated } from "../../app/updated.ts";
-import { jobKey } from "../../operations/jobs.ts";
-import { isSettled } from "../../server/isSettled.ts";
-import type { RequestSettled } from "../../server/serverRequest.ts";
-import { formShown, requestFailed } from "../pluginForm/pluginFormWizard.ts";
-import { skippedSubtitlesNotice } from "../pluginForm/skippedSubtitlesMessage.ts";
-import { mediaImportIds, watchFetch } from "./mediaImportRequests.ts";
+import { updated } from "../app/updated.ts";
+import { jobKey } from "../operations/jobs.ts";
+import {
+  formShown,
+  requestFailed,
+} from "../screen/pluginForm/pluginFormWizard.ts";
+import { skippedSubtitlesNotice } from "../screen/pluginForm/skippedSubtitlesMessage.ts";
+import { isSettled } from "../server/isSettled.ts";
+import type { RequestSettled } from "../server/serverRequest.ts";
+import {
+  mediaImportIds,
+  unwatchFetch,
+  watchFetch,
+} from "./mediaImportRequests.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
-/** Applies the answer to one of the dialog's requests, or a status of its fetch; answers to other requests change nothing. */
+/**
+ * Applies the answer to one of the dialog's requests, or a status of its fetch; answers to other requests change nothing.
+ * A fetch that has added its file ends the dialog and is no longer watched.
+ */
 export function mediaImportAnswered(
   wizard: MediaImportWizard,
   action: RequestSettled,
@@ -53,10 +63,11 @@ export function mediaImportAnswered(
           "The media could not be added.",
         ),
       );
-    return updated(
-      wizard,
-      ...skippedSubtitlesNotice(action.outcome.data, wizard.form),
-    );
+    const job = action.outcome.data;
+    const notices = skippedSubtitlesNotice(job, wizard.form);
+    return job.status === "done" && job.media_file !== null
+      ? updated(null, ...unwatchFetch(wizard), ...notices)
+      : updated(wizard, ...notices);
   }
   return updated(wizard);
 }

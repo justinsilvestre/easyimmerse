@@ -21,7 +21,6 @@ import {
   updateOfflineScreen,
 } from "./offlineScreen/updateOfflineScreen.ts";
 import { updateProjectForm } from "./projectForm/updateProjectForm.ts";
-import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
 import type { ScreenApp } from "./screenApp.ts";
 import type {
@@ -84,10 +83,7 @@ function updateShownScreen(
 /** Stops the work that belongs to a main screen being replaced. */
 function leavingEffects(main: MainScreenState, route: MainRoute) {
   if (main.kind === "project" && route.screen === "project")
-    return [
-      ...endImport(route.projectId, main.mediaImport),
-      ...abortExport(main.ankiExport, route.projectId),
-    ];
+    return abortExport(main.ankiExport, route.projectId);
   if (main.kind === "offline") return [abortParse];
   if (main.kind === "media" && route.screen === "media")
     return leaveMediaScreen(main, route);
