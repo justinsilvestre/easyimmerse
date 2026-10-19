@@ -31,6 +31,7 @@ mise run desktop        # desktop app with its embedded server
 mise run web:desktop    # web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data
 mise run dev            # desktop app, with the web app served to this machine and the local network against its server
 mise run storybook      # UI component stories at http://localhost:6006
+mise run storybook-diff # before and after screenshots of the stories the working tree changes against main
 ```
 
 #### Web app against a local server (`web-dev`)
@@ -89,6 +90,7 @@ mise run storybook      # UI component stories at http://localhost:6006
 - The `storybook` **GitHub Actions workflow** publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request.
 - To **preview a branch without a pull request**, run the workflow by hand from the Actions tab. The stories appear at `storybook/<branch>/`.
 - The repository's **Pages setting** must serve the `gh-pages` branch.
+- The workflow also **screenshots every story on both sides of a pull request**, in both themes at a phone and a desktop width, and publishes a report of the stories that differ at `storybook/pr-<number>/changes/` with a second comment. `mise run storybook-diff` produces the same report locally for the working tree against `main`. See [scripts/storybook-diff/README.md](scripts/storybook-diff/README.md).
 
 #### Browser extension
 
@@ -221,7 +223,7 @@ The remaining directories are mostly for testing, scripts, and documentation.
 ```
 plugins/              example plugins, used only by tests; plugin-manifest.md describes their plugin.toml
 fixtures/ *           small sample files shared by every layer's tests
-scripts/              setup and build scripts, including the ffmpeg fetcher, the ffmpeg build scripts, and the ffmpeg licence-notice generator
+scripts/ *            setup and build scripts, including the ffmpeg fetcher, the ffmpeg build scripts, the ffmpeg licence-notice generator, and the Storybook screenshot diff
 docs/                 product documentation: overview, user stories, UX refinements, bug reports
 .github/workflows/    CI, one workflow per layer, plus the ffmpeg workflow that builds the desktop sidecars
 .claude/rules/        conventions that apply to a whole directory
@@ -237,6 +239,7 @@ Notes on the internals of individual parts live beside them:
 - [packages/state/README.md](packages/state/README.md): the state package's pipeline, folders, and test helpers.
 - [packages/wasm/README.md](packages/wasm/README.md): the offline WebAssembly package and its build.
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
+- [scripts/storybook-diff/README.md](scripts/storybook-diff/README.md): the Storybook screenshot diff, locally and on pull requests, and how its captures stay deterministic.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
 - [docs/](docs/): the product documentation: overview, user stories, UX refinements, bug reports, and the [alignment data](docs/alignment-data.md) format.
 
