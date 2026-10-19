@@ -40,8 +40,17 @@ export type NavigationStep =
 
 export const initialRoute: Route = { screen: "home" };
 
-/** Returns where the app is after taking a step from the current place. */
+/** Returns where the app is after taking a step from the current place, which is `current` itself when the step leads where the app already is. */
 export function navigate(current: Route, step: NavigationStep): Route {
+  const next = stepTarget(current, step);
+  const isSameMain =
+    next.screen !== "settings" &&
+    current.screen !== "settings" &&
+    isSameMainScreen(current, next);
+  return isSameMain ? current : next;
+}
+
+function stepTarget(current: Route, step: NavigationStep): Route {
   switch (step.type) {
     case "openProject":
       return { screen: "project", projectId: step.projectId };
@@ -76,6 +85,11 @@ export function isOnDictionariesPage(route: Route): boolean {
   return (
     route.screen === "settings" && settingsPageOf(route) === "dictionaries"
   );
+}
+
+/** Tells whether the place a step leads to is already on top, so that taking it would leave the app where it is. */
+export function isAlreadyAt(route: Route, step: NavigationStep): boolean {
+  return navigate(route, step) === route;
 }
 
 function openSettingsPage(current: Route, page: SettingsPage): Route {

@@ -24,7 +24,6 @@ const picked: PickedMediaFile = {
 const idle: ProjectScreenState = {
   kind: "project",
   pendingMediaFile: null,
-  mediaImport: null,
   ankiExport: null,
   isAnkiConnectSetupOpen: false,
 };
@@ -32,7 +31,6 @@ const idle: ProjectScreenState = {
 const chosen: ProjectScreenState = {
   kind: "project",
   pendingMediaFile: picked,
-  mediaImport: null,
   ankiExport: null,
   isAnkiConnectSetupOpen: false,
 };

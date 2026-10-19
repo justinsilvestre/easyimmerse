@@ -2,6 +2,10 @@ import type { PerformedEffect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { RequestRecord } from "./operations.ts";
+import {
+  firstRecordedSlownessTimers,
+  withdrawnSlownessCancels,
+} from "./requestSlowness.ts";
 
 type Requests = readonly RequestRecord[];
 
@@ -13,6 +17,7 @@ type AbortRequest = Extract<ServerEffect, { type: "abortRequest" }>;
  * Records the requests that the effects send and abort, and returns the effects to perform in their place.
  * A scoped send is recorded as waiting and held back unless its id is the one in flight. A held send is recorded as waiting.
  * The abort of a waiting request forgets it and settles it as aborted, unless the same effects send its id again.
+ * A request that can go slow starts its slowness timer as it is first recorded, whether it goes out or waits, and a withdrawn one cancels it.
  * Sending one id twice, with no abort between, throws: it is a mistake in the update that asked for it.
  */
 export function recordRequestEffects(
@@ -43,7 +48,11 @@ export function recordRequestEffects(
   const withdrawn = performed.filter(
     ({ type }) => type === "settleWithdrawnRequest",
   );
-  return updated(forgetWithdrawn(recorded, withdrawn), ...performed);
+  return updated(
+    forgetWithdrawn(recorded, withdrawn),
+    ...performed,
+    ...withdrawnSlownessCancels(recorded, withdrawn),
+  );
 }
 
 /**
@@ -62,14 +71,19 @@ function recordSend(requests: Requests, effect: SendRequest) {
     scope,
     isWaiting,
     timeLimitMs: effect.timeLimitMs,
+    ...(effect.slowAfterMs === undefined
+      ? {}
+      : { slowAfterMs: effect.slowAfterMs }),
+    isSlow: earlier?.isSlow ?? false,
     ...(effect.heldFor === undefined ? {} : { heldFor: effect.heldFor }),
   } satisfies RequestRecord;
   const recorded = earlier
     ? requests.map((other) => (other === earlier ? record : other))
     : [...requests, record];
+  const timers = earlier ? [] : firstRecordedSlownessTimers(record);
   return isWaiting
-    ? updated(recorded)
-    : updated(recorded, sendEffectOf(record));
+    ? updated(recorded, ...timers)
+    : updated(recorded, sendEffectOf(record), ...timers);
 }
 
 /** Returns the effect that performs an abort: the abort itself for a request in flight, or the settling of a waiting one. */
@@ -103,8 +117,14 @@ export function sendEffectOf({
   request,
   scope,
   timeLimitMs,
+  slowAfterMs,
 }: RequestRecord): SendRequest {
-  return timeLimitMs === undefined
-    ? { type: "sendRequest", id, request, scope }
-    : { type: "sendRequest", id, request, scope, timeLimitMs };
+  return {
+    type: "sendRequest",
+    id,
+    request,
+    scope,
+    ...(timeLimitMs === undefined ? {} : { timeLimitMs }),
+    ...(slowAfterMs === undefined ? {} : { slowAfterMs }),
+  };
 }

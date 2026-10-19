@@ -1,6 +1,7 @@
 import { ankiCommands } from "../anki/ankiCommands.ts";
 import { dictionaryImportFeature } from "../dictionaryImport/dictionaryImportFeature.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
+import { mediaImportsFeature } from "../mediaImports/mediaImportsFeature.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
@@ -42,6 +43,7 @@ const features = {
   notices: noticesFeature,
   operations: operationsFeature,
   dictionaryImport: dictionaryImportFeature,
+  mediaImports: mediaImportsFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];

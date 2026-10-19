@@ -18,12 +18,11 @@ import type { ProjectScreenState } from "../screenState.ts";
 import { findMediaFileNamed } from "./mediaFileOpenedBy.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
 import { mediaFileRemovalId } from "./mediaFileRemovalId.ts";
-import { updateMediaImport } from "./updateMediaImport.ts";
 
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
 
 /**
- * Updates the project overview: its media import dialog, the adding of a picked media file, the removal of a media file,
+ * Updates the project overview: the adding of a picked media file, the removal of a media file,
  * and where the project's flashcards go: the Anki export dialog, the AnkiConnect setup dialog, and the sends to Anki.
  * The route opens an added, existing or fetched file (see `mediaFileOpenedBy`), which replaces this screen.
  * The Anki actions read the project's flashcards and media files from the server cache, and the sends under way from the operations.
@@ -48,8 +47,6 @@ const updateParts = combineUpdates<
   [ProjectRoute, ServerCacheSlice]
 >({
   pendingMediaFile: updatePickedMediaFile,
-  mediaImport: (wizard, action, route) =>
-    updateMediaImport(wizard, action, route.projectId),
   ankiExport: (dialog, action, { projectId }, backend) =>
     updateAnkiExport(dialog, action, { projectId, backend }),
   isAnkiConnectSetupOpen: (isOpen, action, { projectId }) =>

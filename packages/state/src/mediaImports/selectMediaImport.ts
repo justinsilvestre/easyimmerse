@@ -1,8 +1,9 @@
 import type { MediaSourceJob, PluginForm } from "@easyimmerse/types";
 import { createSelector } from "reselect";
-import type { AppRoot } from "../../app/createAppStore.ts";
-import type { JobsState } from "../../operations/jobs.ts";
-import { jobKey } from "../../operations/jobs.ts";
+import type { AppRoot } from "../app/createAppStore.ts";
+import type { JobsState } from "../operations/jobs.ts";
+import { jobKey } from "../operations/jobs.ts";
+import { mainScreenOf } from "../route/route.ts";
 import type { MediaImportSource } from "./mediaImportWizard.ts";
 
 /** What the media import dialog shows. */
@@ -22,10 +23,12 @@ export type MediaImportView = {
  */
 export const selectMediaImport = createSelector(
   [
-    (state: AppRoot) =>
-      state.app.screen.main.kind === "project"
-        ? state.app.screen.main.mediaImport
-        : null,
+    (state: AppRoot) => {
+      const main = mainScreenOf(state.app.route);
+      return main.screen === "project"
+        ? (state.app.mediaImports[main.projectId] ?? null)
+        : null;
+    },
     (state: AppRoot) => state.app.operations.jobs,
   ],
   (wizard, jobs): MediaImportView | null => {

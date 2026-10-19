@@ -3,6 +3,7 @@ import { updated } from "../app/updated.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { FailedRequest } from "./failedRequests.ts";
 import type { JobsState } from "./jobs.ts";
+import { markSlow, slownessEffects } from "./requestSlowness.ts";
 import { timeLimitEffects } from "./requestTimeLimit.ts";
 import { updateJobs } from "./updateJobs.ts";
 
@@ -19,6 +20,10 @@ export type RequestRecord = {
   isWaiting: boolean;
   /** How long the request may go unanswered once sent before it is aborted, if it has such a limit. */
   timeLimitMs?: number;
+  /** How long the request may go unanswered once asked for before it counts as slow, if it can. */
+  slowAfterMs?: number;
+  /** True once the request has gone unanswered for `slowAfterMs` since it was first asked for. */
+  isSlow: boolean;
   /** The id of the request this one is held for. A held request is not sent until its id is sent again without it. */
   heldFor?: string;
 };
@@ -34,7 +39,7 @@ export type OperationsState = {
 };
 
 /**
- * The operations as a feature. It forgets a request once it settles, aborts one that passes its time limit, and polls the watched jobs;
+ * The operations as a feature. It forgets a request once it settles, aborts one that passes its time limit, marks one that goes slow, and polls the watched jobs;
  * the root update records the requests sent and the jobs watched.
  */
 export const operationsFeature: Feature<OperationsState> = {
@@ -44,10 +49,14 @@ export const operationsFeature: Feature<OperationsState> = {
     const effects = [
       ...jobEffects,
       ...timeLimitEffects(operations.requests, action),
+      ...slownessEffects(operations.requests, action),
     ];
-    const requests = forgetSettled(
-      operations.requests,
-      action.type === "requestSettled" ? action.id : null,
+    const requests = markSlow(
+      forgetSettled(
+        operations.requests,
+        action.type === "requestSettled" ? action.id : null,
+      ),
+      action,
     );
     return requests === operations.requests && jobs === operations.jobs
       ? updated(operations, ...effects)
