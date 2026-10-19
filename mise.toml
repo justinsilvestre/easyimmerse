@@ -187,6 +187,12 @@ description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]
 run = ["node scripts/web-desktop/guardDesktop.ts", "pnpm --filter @easyimmerse/native dev"]
 
+# The desktop app connects to this server in development. The Redux DevTools browser extension shows its store
+# through the extension's remote monitor, set to the local server at localhost:8000.
+[tasks.devtools]
+description = "Serve Redux DevTools for the desktop and mobile apps in development"
+run = "pnpm --filter @easyimmerse/native exec redux-devtools --hostname=localhost --port=8000"
+
 [tasks.web-dev]
 description = "Run the web app with hot reloading against a local server at http://127.0.0.1:8788"
 depends = ["web-dev:server", "web-dev:vite"]

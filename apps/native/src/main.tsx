@@ -1,3 +1,4 @@
+import { renderStartupFailure } from "@easyimmerse/ui";
 import { bootstrap } from "./bootstrap.tsx";
 
-bootstrap();
+bootstrap().catch(renderStartupFailure);
