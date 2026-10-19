@@ -5,7 +5,6 @@ import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
-import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { ItemSpan } from "./itemSpan.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
@@ -77,8 +76,6 @@ export type ScreenState = {
   main: MainScreenState;
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
   settings: {
-    /** The adding of a dictionary from a file, which lasts while the dictionaries page is on top. */
-    dictionaryImport: DictionaryImportWizard | null;
     /** How the last clearing of the media cache, or a failed change of its size, went, while the general page is on top. */
     conversionCacheReport: string | null;
   } | null;

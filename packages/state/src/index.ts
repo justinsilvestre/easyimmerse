@@ -134,7 +134,7 @@ export {
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
-export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
+export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {

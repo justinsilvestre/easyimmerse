@@ -1,3 +1,4 @@
+import type { DictionaryImportWizard } from "../dictionaryImport/dictionaryImportWizard.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
@@ -19,4 +20,6 @@ export type AppState = {
   storedPlaces: StoredPlacesState;
   notices: NoticesState;
   operations: OperationsState;
+  /** The adding of a dictionary from a file, which lasts across screens while it runs or its failure waits to be seen. */
+  dictionaryImport: DictionaryImportWizard | null;
 };
