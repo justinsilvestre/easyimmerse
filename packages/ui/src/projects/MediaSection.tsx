@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
+import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
 import { type MediaItem, MediaList } from "./MediaList.tsx";
 import {
   type MediaCategory,
@@ -16,8 +17,38 @@ import {
  * The project's media files, with the ways to add one: from a file, and through each installed
  * media-source plugin, whose button carries the plugin's own label.
  * The heading is a menu that narrows the list to one kind of file, videos, audio or ebooks, each option counting its files.
+ * Until the list has loaded, the section shows placeholders and offers nothing to choose.
  */
 export function MediaSection({
+  media,
+  ...props
+}: {
+  /** The project's media files, or `undefined` while they are loading. */
+  media: readonly MediaItem[] | undefined;
+  /** The installed media-source plugins, each offered as a button beside "Add media". */
+  importSources: readonly MediaImportSource[];
+  onAddMedia: () => void;
+  onImportMedia: (source: MediaImportSource) => void;
+  onOpenMedia: (mediaId: string) => void;
+  onDeleteMedia: (mediaId: string) => void;
+}) {
+  if (!media) return <LoadingMedia />;
+  return <LoadedMedia media={media} {...props} />;
+}
+
+function LoadingMedia() {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-semibold">Media</h2>
+      <LoadingStatus label="Loading media" className="flex flex-col gap-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </LoadingStatus>
+    </section>
+  );
+}
+
+function LoadedMedia({
   media,
   importSources,
   onAddMedia,
@@ -26,7 +57,6 @@ export function MediaSection({
   onDeleteMedia,
 }: {
   media: readonly MediaItem[];
-  /** The installed media-source plugins, each offered as a button beside "Add media". */
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
   onImportMedia: (source: MediaImportSource) => void;
