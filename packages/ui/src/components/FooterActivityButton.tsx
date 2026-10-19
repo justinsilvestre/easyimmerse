@@ -3,7 +3,10 @@ import clsx from "clsx";
 import { CircleAlert } from "lucide-react";
 import { ProgressBar } from "./ProgressBar.tsx";
 
-/** A compact button for the footer that tells of one activity under way or failed, and opens its place in the app. */
+/**
+ * A compact button for the footer that tells of one activity under way or failed, and opens its place in the app.
+ * An activity with no place shows as the same words without a button.
+ */
 export function FooterActivityButton({
   activity,
   onOpen,
@@ -12,23 +15,41 @@ export function FooterActivityButton({
   onOpen: (activity: FooterActivity) => void;
 }) {
   const isRunning = activity.status === "running";
+  const content = (
+    <>
+      <FooterActivityMark activity={activity} />
+      <span className="truncate">{activity.label}</span>
+      {activity.status === "running" && activity.percent !== null && (
+        <span className="shrink-0 tabular-nums">{activity.percent}%</span>
+      )}
+    </>
+  );
+  const base = "flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-xs";
+  if (activity.opens === null)
+    return (
+      <span
+        className={clsx(
+          base,
+          isRunning ? "text-fg-muted" : "bg-danger-soft text-danger-fg",
+        )}
+      >
+        {content}
+      </span>
+    );
   return (
     <button
       type="button"
       title={activity.opens.label}
       className={clsx(
-        "flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        base,
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         isRunning
           ? "text-fg-muted hover:bg-surface-muted hover:text-fg"
           : "bg-danger-soft text-danger-fg hover:bg-danger-line",
       )}
       onClick={() => onOpen(activity)}
     >
-      <FooterActivityMark activity={activity} />
-      <span className="truncate">{activity.label}</span>
-      {activity.status === "running" && activity.percent !== null && (
-        <span className="shrink-0 tabular-nums">{activity.percent}%</span>
-      )}
+      {content}
     </button>
   );
 }

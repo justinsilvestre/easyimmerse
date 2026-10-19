@@ -14,6 +14,8 @@ export type ServerEffect =
       request: ServerRequest;
       scope?: string;
       timeLimitMs?: number;
+      /** How long the request may go unanswered once sent before it counts as slow, as the operations record it. */
+      slowAfterMs?: number;
       /** The id of the request this one is held for, as a save waits for the lookup that fills its card. */
       heldFor?: string;
     }

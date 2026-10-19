@@ -62,6 +62,9 @@ function recordSend(requests: Requests, effect: SendRequest) {
     scope,
     isWaiting,
     timeLimitMs: effect.timeLimitMs,
+    ...(effect.slowAfterMs === undefined
+      ? {}
+      : { slowAfterMs: effect.slowAfterMs }),
     ...(effect.heldFor === undefined ? {} : { heldFor: effect.heldFor }),
   } satisfies RequestRecord;
   const recorded = earlier
@@ -103,8 +106,14 @@ export function sendEffectOf({
   request,
   scope,
   timeLimitMs,
+  slowAfterMs,
 }: RequestRecord): SendRequest {
-  return timeLimitMs === undefined
-    ? { type: "sendRequest", id, request, scope }
-    : { type: "sendRequest", id, request, scope, timeLimitMs };
+  return {
+    type: "sendRequest",
+    id,
+    request,
+    scope,
+    ...(timeLimitMs === undefined ? {} : { timeLimitMs }),
+    ...(slowAfterMs === undefined ? {} : { slowAfterMs }),
+  };
 }

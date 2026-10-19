@@ -22,7 +22,7 @@ export const RunningWithoutPercentage: Story = {
   args: { activity: samples.flashcardExport },
 };
 
-/** Flashcard saves that have waited on a slow or unreachable server for more than a couple of seconds. */
+/** Flashcard saves that have waited on a slow or unreachable server for more than a couple of seconds, shown as text since they have no place to open. */
 export const PendingFlashcardSaves: Story = {
   args: { activity: samples.pendingFlashcardSaves },
 };

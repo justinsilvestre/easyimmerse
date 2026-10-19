@@ -44,14 +44,14 @@ describe("selectMediaFetchActivities", () => {
     const app = stateAfter(...startedMediaFetch, goHome);
     expect(
       selectMediaFetchActivities({ app, backend: emptyServerCache })[0]?.opens
-        .step,
+        ?.step,
     ).toEqual({ type: "openProject", projectId: "p1" });
   });
 
   it("names the project once it is cached", () => {
     const app = stateAfter(...startedMediaFetch, goHome);
     const backend = serverCacheWith("getProject", "p1", exampleProject("p1"));
-    expect(selectMediaFetchActivities({ app, backend })[0]?.opens.label).toBe(
+    expect(selectMediaFetchActivities({ app, backend })[0]?.opens?.label).toBe(
       "Show in Korean",
     );
   });

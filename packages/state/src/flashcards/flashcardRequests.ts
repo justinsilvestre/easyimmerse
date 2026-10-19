@@ -12,6 +12,9 @@ import type { LookupFieldsContext, Rollback } from "./flashcardForm.ts";
 /** How long a flashcard request may go unanswered, as when the connection hangs, before it counts as failed. */
 const flashcardRequestLimitMs = 30_000;
 
+/** How long a flashcard request may go unanswered before the footer tells that saves are under way. */
+const flashcardRequestSlowMs = 2000;
+
 /** Why a flashcard was saved. It comes back in `requestSettled`, so the settling branch needs nothing else. */
 export type SavePurpose =
   | {
@@ -67,7 +70,7 @@ export const selectFlashcardRequests = createSelector(
 export type FlashcardSender = "form" | "background";
 
 /**
- * Sends a flashcard request in its flashcard's scope, with the time limit, under the first id the recorded requests do not hold.
+ * Sends a flashcard request in its flashcard's scope, with the time limit and the wait before it counts as slow, under the first id the recorded requests do not hold.
  * A request held for another, by its id, is not sent until it is released.
  * Since the id depends only on the recorded requests, a sender may send at most one request per flashcard in one action.
  */
@@ -96,5 +99,6 @@ export function releaseFlashcardRequest(id: string, request: FlashcardRequest) {
     request,
     scope: flashcardScope(request.flashcardId),
     timeLimitMs: flashcardRequestLimitMs,
+    slowAfterMs: flashcardRequestSlowMs,
   } satisfies Effect;
 }

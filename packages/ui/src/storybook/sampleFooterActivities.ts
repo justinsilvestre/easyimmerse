@@ -67,7 +67,7 @@ export const sampleFooterActivities = {
   pendingFlashcardSaves: {
     id: "flashcard-saves",
     label: "Saving 3 flashcards…",
-    opens: tokyoStory,
+    opens: null,
     status: "running",
     percent: null,
   },

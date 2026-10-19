@@ -18,7 +18,7 @@ describe("selectDictionaryImportActivity", () => {
 
   it("leads to the dictionaries page", () => {
     const app = stateAfter(...startedDictionaryImport);
-    expect(selectDictionaryImportActivity({ app })?.opens.step).toEqual({
+    expect(selectDictionaryImportActivity({ app })?.opens?.step).toEqual({
       type: "openDictionaries",
     });
   });

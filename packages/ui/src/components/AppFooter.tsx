@@ -24,9 +24,9 @@ export function AppFooter({ children }: { children?: ReactNode }) {
         dispatch(actions.navigated({ type: "openSettings" }))
       }
       activities={activities}
-      onOpenActivity={(activity) =>
-        dispatch(actions.navigated(activity.opens.step))
-      }
+      onOpenActivity={({ opens }) => {
+        if (opens) dispatch(actions.navigated(opens.step));
+      }}
     >
       {children}
     </FooterBar>

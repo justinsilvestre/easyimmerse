@@ -12,8 +12,11 @@ export type FooterActivity = {
    * or what went wrong, as a short sentence such as "A dictionary could not be added".
    */
   label: string;
-  /** The step to the activity's place, with what a click does as the tooltip says it: "Show on the dictionaries page". */
-  opens: { step: NavigationStep; label: string };
+  /**
+   * The step to the activity's place, with what a click does as the tooltip says it: "Show on the dictionaries page".
+   * Null for an activity with no place to show it, which the footer only tells of.
+   */
+  opens: { step: NavigationStep; label: string } | null;
 } & (
   | {
       status: "running";
