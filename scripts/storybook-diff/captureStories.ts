@@ -1,4 +1,5 @@
 import { mkdir } from "node:fs/promises";
+import { availableParallelism } from "node:os";
 import { join } from "node:path";
 
 import { type Browser, type BrowserContext, chromium } from "playwright";
@@ -13,6 +14,11 @@ import {
 import { serveDirectory } from "./serveDirectory.ts";
 import { readStoryIndex, type StoryEntry } from "./storyIndex.ts";
 import { recordRenderOutcomes, StoryPage } from "./storyPage.ts";
+
+/** As many stories at once as there are processors, up to eight. */
+export function defaultConcurrency(): number {
+  return Math.min(8, availableParallelism());
+}
 
 export interface CaptureOptions {
   storybookDir: string;

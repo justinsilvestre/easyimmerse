@@ -156,7 +156,7 @@
 
       function storyLink(change) {
         if (!report.storybookUrl) return change.importPath;
-        const url = new URL(report.storybookUrl);
+        const url = new URL(report.storybookUrl, location.href);
         url.search = `?path=/story/${change.id}`;
         return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
       }

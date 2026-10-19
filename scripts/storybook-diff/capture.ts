@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 
-import { captureStories } from "./captureStories.ts";
+import { captureStories, defaultConcurrency } from "./captureStories.ts";
 
 /**
  * Screenshots every story of a built Storybook in each theme and viewport.
@@ -11,7 +11,7 @@ const { values } = parseArgs({
   options: {
     storybook: { type: "string" },
     out: { type: "string" },
-    concurrency: { type: "string", default: "4" },
+    concurrency: { type: "string" },
   },
 });
 
@@ -26,7 +26,9 @@ const started = Date.now();
 const manifest = await captureStories({
   storybookDir: values.storybook,
   outputDir: values.out,
-  concurrency: Number(values.concurrency),
+  concurrency: values.concurrency
+    ? Number(values.concurrency)
+    : defaultConcurrency(),
 });
 const failed = manifest.stories.filter((story) => story.error).length;
 const seconds = Math.round((Date.now() - started) / 1000);
