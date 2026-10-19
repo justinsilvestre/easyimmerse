@@ -25,6 +25,7 @@ export function MediaSection({
 }: {
   /** The project's media files, or `undefined` while they are loading. */
   media: readonly MediaItem[] | undefined;
+  /** The installed media-source plugins, each offered as a button beside "Add media". */
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
   onImportMedia: (source: MediaImportSource) => void;
@@ -56,7 +57,6 @@ function LoadedMedia({
   onDeleteMedia,
 }: {
   media: readonly MediaItem[];
-  /** The installed media-source plugins, each offered as a button beside "Add media". */
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
   onImportMedia: (source: MediaImportSource) => void;

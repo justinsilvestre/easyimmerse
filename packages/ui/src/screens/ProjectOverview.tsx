@@ -182,6 +182,10 @@ function useImportSources(): MediaImportSource[] {
     }));
 }
 
+/**
+ * The project's media files as the screen lists them, undefined until the files and their flashcard counts have loaded.
+ * Availability is not awaited, since the server checks it again on every visit; a file's issue shows once the answer arrives.
+ */
 function useMediaItems(projectId: string) {
   const mediaFiles = useListMediaFilesQuery(projectId);
   const flashcards = useListFlashcardsQuery(projectId);
@@ -191,13 +195,14 @@ function useMediaItems(projectId: string) {
   const registry = useBrowserFileRegistry();
   return {
     items:
-      mediaFiles.data &&
-      mediaItemsOf(
-        mediaFiles.data.media_files,
-        flashcards.data?.flashcards ?? [],
-        registry,
-        pathAvailabilitiesOf(availability.data),
-      ),
+      mediaFiles.data && !flashcards.isLoading
+        ? mediaItemsOf(
+            mediaFiles.data.media_files,
+            flashcards.data?.flashcards ?? [],
+            registry,
+            pathAvailabilitiesOf(availability.data),
+          )
+        : undefined,
     error: mediaFiles.error,
   };
 }
