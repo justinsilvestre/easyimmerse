@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 402,
+  "storyCount": 404,
   "changes": [
     {
       "id": "flashcards-flashcardeditor--suspended",
@@ -134,6 +134,22 @@
       "id": "projects-projectflashcardspanel--review-done-for-today",
       "title": "Projects/ProjectFlashcardsPanel",
       "name": "Review Done For Today",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-caught-up-with-nothing-scheduled",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Caught Up With Nothing Scheduled",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-daily-limit-reached",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Daily Limit Reached",
       "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
       "kind": "added",
       "changedVariants": {}
