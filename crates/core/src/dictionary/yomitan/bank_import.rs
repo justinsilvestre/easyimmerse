@@ -15,6 +15,9 @@ use super::term_bank::term_entry;
 use super::term_meta_bank::term_meta;
 use super::yomitan_import::YomitanImport;
 
+/// How many rows of a bank pass between two reports of the import's progress.
+const ROWS_PER_REPORT: usize = 1000;
+
 const BANK_KINDS: [&str; 5] = [
     "tag_bank",
     "term_bank",
@@ -55,7 +58,7 @@ pub fn import_banks(import: &mut YomitanImport, layout: RowLayout) -> Result<(),
     })
 }
 
-/// Converts the rows of every bank of one kind and sends each result to the sink, counting each bank as read once done.
+/// Converts the rows of every bank of one kind and sends each result to the sink, reporting how far it has read as it goes.
 /// A row that cannot be converted stops the import.
 fn import_bank<Row: DeserializeOwned, Item>(
     import: &mut YomitanImport,
@@ -64,9 +67,15 @@ fn import_bank<Row: DeserializeOwned, Item>(
     send: impl Fn(&mut dyn DictionarySink, Item) -> SinkResult,
 ) -> Result<(), DictionaryError> {
     for name in bank_names(import.source, kind) {
-        read_rows(import.source, &name, |row_index, row| {
-            let item = convert(row).ok_or_else(|| malformed_row(&name, row_index))?;
-            Ok(send(&mut *import.sink, item)?)
+        read_rows(import.source, &name, |place, row| {
+            let item = convert(row).ok_or_else(|| malformed_row(&name, place.index))?;
+            send(&mut *import.sink, item)?;
+            if place.index % ROWS_PER_REPORT == ROWS_PER_REPORT - 1 {
+                import
+                    .progress
+                    .report_within_file(&mut *import.sink, place.bytes_read);
+            }
+            Ok(())
         })?;
         import.file_read(&name)?;
     }
