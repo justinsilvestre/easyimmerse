@@ -1,4 +1,9 @@
-import type { ItemSpan, TextCursor } from "@easyimmerse/state";
+import {
+  findTranslationOf,
+  type ItemSpan,
+  stripMarkup,
+  type TextCursor,
+} from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
@@ -7,7 +12,6 @@ import { Button } from "../components/Button.tsx";
 import {
   type ActiveWord,
   ClickableText,
-  stripMarkup,
 } from "../components/ClickableText.tsx";
 import { lineStepOfKey } from "../components/cursorKeys.ts";
 import { EmptyState } from "../components/EmptyState.tsx";
@@ -22,7 +26,6 @@ import {
   type CueWordGestures,
   gesturesForCue,
 } from "./cueWordGestures.ts";
-import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
 

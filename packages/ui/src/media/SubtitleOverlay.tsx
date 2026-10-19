@@ -1,7 +1,7 @@
-import type { SubtitleDisplay } from "@easyimmerse/state";
+import { type SubtitleDisplay, stripMarkup } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { memo } from "react";
-import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
+import { ClickableText } from "../components/ClickableText.tsx";
 import { type LineStep, lineStepOfKey } from "../components/cursorKeys.ts";
 import type { Range } from "../components/RunText.tsx";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";

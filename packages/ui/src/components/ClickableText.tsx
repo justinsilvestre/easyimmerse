@@ -90,11 +90,6 @@ export function splitIntoWords(text: string): TextPart[] {
   return parts;
 }
 
-/** Removes inline markup such as `<i>` from subtitle text. */
-export function stripMarkup(text: string): string {
-  return text.replace(/<[^>]+>/g, "");
-}
-
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
  * Each word is an inline element with the role of a button rather than a `<button>`, which browsers lay out as one unbreakable box:

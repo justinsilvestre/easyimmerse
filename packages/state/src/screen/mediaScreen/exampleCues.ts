@@ -1,6 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 
-/** A short scene in German, for tests of the media screen's cue navigation. */
+/** A short scene in German, for tests of the media screen's cue navigation and flashcards. */
 export const exampleCues: readonly Cue[] = [
   { index: 1, start_ms: 500, end_ms: 2400, text: "Hast du das Licht gesehen?" },
   {
@@ -35,4 +35,31 @@ export const exampleCues: readonly Cue[] = [
     text: "<i>Alles</i> ist ruhig.",
   },
   { index: 8, start_ms: 21_500, end_ms: 23_000, text: "Gute Nacht." },
+];
+
+/** The English translation of `exampleCues`, timed a tenth of a second later. */
+export const exampleTranslationCues: readonly Cue[] = [
+  { index: 1, start_ms: 600, end_ms: 2500, text: "Did you see the light?" },
+  { index: 2, start_ms: 2900, end_ms: 5100, text: "No. It was only the wind." },
+  {
+    index: 3,
+    start_ms: 5500,
+    end_ms: 8300,
+    text: "The dog wants to eat.\nIt is hungry.",
+  },
+  {
+    index: 4,
+    start_ms: 8700,
+    end_ms: 11_100,
+    text: "Then give him something.",
+  },
+  {
+    index: 5,
+    start_ms: 11_600,
+    end_ms: 14_900,
+    text: "Tomorrow we are driving into town.",
+  },
+  { index: 6, start_ms: 15_300, end_ms: 18_000, text: "Don't forget the key." },
+  { index: 7, start_ms: 18_400, end_ms: 21_100, text: "Everything is quiet." },
+  { index: 8, start_ms: 21_600, end_ms: 23_100, text: "Good night." },
 ];

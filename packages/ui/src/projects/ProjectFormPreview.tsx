@@ -1,3 +1,4 @@
+import { addTags } from "@easyimmerse/state";
 import type { ProjectSettings } from "@easyimmerse/types";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useState } from "react";
@@ -7,7 +8,6 @@ import {
   exampleScreenshotUrl,
 } from "../flashcards/exampleFlashcard.ts";
 import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
-import { addTags } from "../flashcards/parseTags.ts";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 
 /** The tag the example flashcard gets from its media file's name, when the project tags by media name. */

@@ -9,7 +9,6 @@ import {
   fieldsWritten,
   hoverSettled,
   lookupSettled,
-  requestCursorFlashcard,
   requestFlashcard,
   restingOn,
 } from "./lookupTestSupport.ts";
@@ -120,19 +119,6 @@ describe("updateMediaScreen", () => {
     it("keeps waiting when a flashcard for another word no dictionary covers is asked for", () => {
       const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
       const [lookup] = apply(requestFlashcard(uncoveredDog), saveCat);
-      expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
-    });
-
-    it("starts a flashcard for the cursor's word on the C key", () => {
-      const [lookup] = apply(
-        requestCursorFlashcard(dog),
-        actions.lookupCursorMoved(dog, "mouse"),
-      );
-      expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
-    });
-
-    it("keeps waiting when the C key is pressed with no cursor", () => {
-      const [lookup] = apply(requestCursorFlashcard(null), saveCat);
       expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
     });
 

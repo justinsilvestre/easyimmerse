@@ -85,6 +85,9 @@ const cachedQueryKinds: readonly string[] = [
   "getMediaTracks",
   "choosePlaybackMethod",
   "listSubtitleTracks",
+  "probePictures",
+  "getProject",
+  "listMediaFiles",
 ] satisfies (keyof CachedQueries)[];
 
 /** Stores the answer of every settled query that state code reads, under the arguments it was sent with. */
@@ -95,10 +98,24 @@ function cacheAnswers(
   if (action.type !== "requestSettled") return slice;
   const { request, outcome } = action as RequestSettled;
   if (!outcome.ok || !cachedQueryKinds.includes(request.kind)) return slice;
-  const { kind, ...queryArgs } = request;
   const entry = { status: "fulfilled", data: outcome.data };
-  const key = cacheKey(kind, queryArgs);
+  const key = cacheKey(request.kind, queryArgsOf(request));
   return { ...slice, queries: { ...slice.queries, [key]: entry } };
+}
+
+/** The arguments a query is cached under, as the backend's request runner sends them: a request's fields, less its kind, unless the runner unwraps one. */
+function queryArgsOf(request: ServerRequest): unknown {
+  switch (request.kind) {
+    case "getProject":
+    case "listMediaFiles":
+      return request.projectId;
+    case "probePictures":
+      return request.file;
+    default: {
+      const { kind: _kind, ...queryArgs } = request;
+      return queryArgs;
+    }
+  }
 }
 
 function startPending(request: ServerRequest) {

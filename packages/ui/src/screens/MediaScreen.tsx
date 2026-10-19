@@ -2,6 +2,8 @@ import { useListPluginsQuery } from "@easyimmerse/backend";
 import type { LookupSource } from "@easyimmerse/state";
 import {
   actions,
+  draftFromCue,
+  findTranslationOf,
   selectCanChooseTracks,
   selectIsSubtitleAppearanceOpen,
   selectMediaKeyBinding,
@@ -9,14 +11,13 @@ import {
   selectPlayer,
   selectShownCue,
   selectSourceMedia,
+  stripMarkup,
   transientNotice,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
-import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
-import { draftFromCue } from "../flashcards/draftFromCue.ts";
 import { MediaFlashcardEditor } from "../flashcards/MediaFlashcardEditor.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -33,7 +34,7 @@ import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
 import { ConnectedPlayerControls } from "../media/ConnectedPlayerControls.tsx";
-import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
+import { findAdjacentCue } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { mediaSourceOf } from "../media/mediaSourceOf.ts";
@@ -194,8 +195,6 @@ export function MediaScreen({
   };
   useKeyBindings((root, press) => selectMediaKeyBinding(root.app, press), {
     toggleFullscreen: fullscreen.toggle,
-    startFlashcardAtCursor: ({ destination }) =>
-      lookup.startFlashcardAtCursor(destination),
     toggleSentenceTranslation: lookup.toggleSentenceTranslation,
   });
   const cueSteps = useStableCallbacks({

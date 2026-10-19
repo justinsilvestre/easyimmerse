@@ -1,5 +1,5 @@
+import { stripMarkup } from "@easyimmerse/state";
 import type { Cue, Flashcard, FlashcardContent } from "@easyimmerse/types";
-import { stripMarkup } from "../components/ClickableText.tsx";
 import type { Range } from "../components/RunText.tsx";
 
 type CardFromCue = Pick<Flashcard, "cue_index" | "word_start"> & {

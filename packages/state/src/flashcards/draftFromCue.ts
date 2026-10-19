@@ -1,13 +1,13 @@
-import { screenshotForClip } from "@easyimmerse/state";
 import type {
   Cue,
   FlashcardDraft,
   MediaFile,
   ProjectSettings,
 } from "@easyimmerse/types";
-import { stripMarkup } from "../components/ClickableText.tsx";
+import { stripMarkup } from "../screen/mediaScreen/stripMarkup.ts";
+import { addTags } from "./addTags.ts";
+import { screenshotForClip } from "./flashcardDrafts.ts";
 import { mediaNameTag } from "./mediaNameTag.ts";
-import { addTags } from "./parseTags.ts";
 
 /**
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:

@@ -74,22 +74,11 @@ export const lookupActions = {
       context,
     }) as const,
   /**
-   * The C or E key: a flashcard for the lookup cursor's word, filled from its lookup, or for no word when there is no cursor.
-   * The dispatcher makes both flashcards; `atCursor` is the one for the cursor's word, or null when there is no cursor or it could make none for its word.
+   * The C or E key: a flashcard for the lookup cursor's word, filled from its lookup, or for no word when there is no cursor,
+   * saved at once or opened in the form as `destination` says. The media screen's commands build it from the server cache.
    */
-  lookupCursorFlashcardRequested: (
-    destination: FlashcardDestination,
-    atCursor: NewFlashcard | null,
-    wordless: NewFlashcard | null,
-    context: LookupFieldsContext,
-  ) =>
-    ({
-      type: "lookupCursorFlashcardRequested",
-      destination,
-      atCursor,
-      wordless,
-      context,
-    }) as const,
+  lookupCursorFlashcardRequested: (destination: FlashcardDestination) =>
+    ({ type: "lookupCursorFlashcardRequested", destination }) as const,
   lookupSearchOpened: () => ({ type: "lookupSearchOpened" }) as const,
   /** A word typed into the pop-up's field, or double-clicked or linked inside it. */
   lookupTermSearched: (word: LookupWord) =>

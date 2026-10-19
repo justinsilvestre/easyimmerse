@@ -101,13 +101,10 @@ export function useWordLookup(
       if (action) dispatch(action);
     },
     startFlashcardFor: made.startFlashcardFor,
-    /**
-     * Starts a flashcard for the word at the cursor once its lookup answers, as a double-click there would,
-     * or, when there is no cursor, for no word from `wordlessPlace`; saved at once, or opened in the editor, as `destination` says.
-     */
+    /** Starts a flashcard for the word at the lookup cursor, or, when there is none, for no word from `wordlessPlace`. */
     startFlashcardAtCursor: (
       destination: FlashcardDestination,
-      wordlessPlace: LookupPlace | null = null,
+      wordlessPlace: LookupPlace | null,
     ) =>
       made.startFlashcardAtCursor(
         selectLookup(store.getState().app)?.cursor?.chosen ?? null,
