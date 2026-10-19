@@ -65,6 +65,11 @@ As a user:
 - [x] Notices appear in one region of the app. Screen readers announce a failure at once, as an alert, and other notices politely. A brief notice stays for ten seconds, and the countdown pauses while the pointer is over it or keyboard focus is in it, so its actions can be reached by keyboard. A notice that reports a failure stays until it is dismissed.
 - [x] While the open flashcard has unsaved changes, a flashcard is being saved or waiting for definitions to be saved, or any flashcard is listed as not saved, the app warns before it closes: the browser's own leave-page prompt on the web and in the extension, and a confirmation dialog on desktop. On macOS, Quit in the app menu (Cmd+Q) closes the window the same way, so it asks too; quitting from the Dock or by logging out still ends the app without asking. Mobile systems close an app without asking it first, so unsaved work is lost when the app is closed there; keeping it would need the project's work to be stored on the device, as the autosave stories describe.
 
+## Reviewing flashcards
+
+- [x] The review screen first used the app's frame, with the wordmark header and the footer, and a progress bar over the card. The header drew the eye from the card. The screen now shows nothing but the card: a slim row at the top with the way back, the counts of cards left and Undo, and the rating buttons pinned at the bottom. Long content scrolls between them, so the way back and the buttons never leave the screen. The progress bar is gone; the counts are enough.
+- [x] The screenshot took most of the card. It is shown small, as on the flashcard preview, so the word and the sentence lead.
+
 ## Dictionaries
 
 As a user:
@@ -137,7 +142,7 @@ The web app was run against a local server and walked through at desktop and pho
 - The immersion screens show the media, the subtitles and the lookup, and nothing else until asked (NN/g minimalist design; the product's own "introduce gradually").
 - Captions: at most two lines of about 40 characters, high contrast on a translucent box, never under the controls (BBC subtitle guidelines).
 - Player keys follow YouTube where they can, and cue-level keys are added because the cue is the unit of study.
-- Review, once built, follows Anki: Space shows the answer, 1 to 4 rate, the buttons show the next interval, and context appears only after the reveal.
+- Review follows Anki where a user expects it: Space shows the answer, the buttons show the next interval, and context appears only after the reveal. It rates with two buttons, Forgot and Remembered, since the FSRS authors find two as accurate as four and the one habit the algorithm cannot absorb is pressing Hard for a forgotten card; the four-button layout exists for a later setting.
 - Reader: lines of 50 to 75 characters, line height 1.4 to 1.6, 4.5:1 contrast in all three themes, word taps never turn the page (Baymard, WCAG 1.4.3).
 - Contrast 4.5:1 for text and 3:1 for controls and focus rings; a visible focus ring on everything; Escape closes and returns focus (WCAG 1.4.3, 1.4.11, 2.4.7).
 - Motion: about 100 ms for feedback, 150 to 250 ms for pop-ups and notices, 300 to 500 ms for panels, and none when the system asks for less (Material 3, WCAG 2.3.3).

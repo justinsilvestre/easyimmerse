@@ -196,6 +196,7 @@ crates/               the Rust workspace
 ├── media-ffmpeg/     ffprobe probing, keyframe listing, encoder discovery, and ffmpeg command lines, including frame grabs and audio clips for flashcards
 ├── conversion/ *     converting media into HLS segments as it plays, with the on-disk cache and its budget
 ├── storage/          persistence
+├── srs/              scheduling of flashcard reviews with FSRS: the next state and interval of a card after an answer
 ├── anki/             Anki notes, note types and deck packages (.apkg) made from flashcards
 ├── api/              the HTTP API; routes in src/routes/, generated document in openapi.json
 ├── plugin-api/       the plugin interfaces, written in WIT under wit/ (MIT licensed)

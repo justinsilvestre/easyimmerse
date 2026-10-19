@@ -48,6 +48,11 @@ As a user:
 - when I am on the home screen:
   - [x] I see a list of my recent projects (if I have any), most recently opened first
   - [x] I see a button to create a new project
+- when cards of a project are due for review in the easyImmerse SRS:
+  - [x] the project in the list shows how many are due
+  - [x] I can start reviewing them from the list with one click or tap, without opening the project first
+- when no card of a project is due, but it has new cards I have never reviewed:
+  - [x] I can start learning them from the list with one click or tap
 - when I click on a project in the list:
   - [x] I am taken to the project's screen
 - when I click on the "Create new project" button:
@@ -592,9 +597,16 @@ As a user:
   - [x] I can open a "More options" menu with buttons to set up AnkiConnect and to start reviewing flashcards in the easyImmerse SRS
 - when flashcards are waiting in the Anki updates queue, and I have no reviews in the easyImmerse SRS due in the future for flashcards of this project:
   - [x] I see a preview of the first-created flashcard in the Anki updates queue
-- when AnkiConnect is off, and I have reviews in the easyImmerse SRS due in the future for flashcards of this project:
-  - [ ] I can see the front of the next flashcard due for review, and a button to continue reviewing
-  - [ ] I can open a "More options" menu with buttons to export an Anki deck package and to set up AnkiConnect
+- when AnkiConnect is off, and I have reviewed flashcards of this project in the easyImmerse SRS:
+  - [x] I can see how many cards are due now and how many new cards are left for today
+  - [x] I can see the front of the next card due for review, or of the next new card when nothing is due
+  - [x] I can open a "More options" menu with buttons to export an Anki deck package and to set up AnkiConnect
+- when cards are due now:
+  - [x] I see a button to review them, which names their number
+- when nothing is due now, but new cards are left for today:
+  - [x] I see a button to learn them, which names their number
+- when nothing is due now, and today's new cards are done:
+  - [x] I see that I am done for today, and when the next card is due
 - when I click the button to set up AnkiConnect for direct export to Anki:
   - [x] I see what to install, and that Anki must be running
 - when I switch on AnkiConnect for the project:
@@ -690,11 +702,51 @@ As a user:
 
 ### Reviewing flashcards
 
-To be implemented after MVP.
+The built-in review schedules cards with FSRS, the algorithm Anki uses, at a desired retention of 90%, with no settings to adjust. A user who wants to tune the scheduling exports to Anki, with the review progress.
 
 As a user:
+- when I start reviewing the flashcards of a project:
+  - [x] the review takes the whole screen, with nothing but the card, the number of cards left (new, learning and due), a way back, Undo and a "More" menu
+  - [x] the cards due for review come first, then the cards I am learning, then up to twenty new cards for the day, in the order I made them
+- when a card is shown:
+  - [x] I see its front, laid out as my project's flashcard settings say
+  - [ ] its audio plays by itself when the audio is on the front
+  - [x] I can replay the audio with its button, or with R
+  - [x] I can show the answer with the button, Space or Enter
+- when the answer is shown:
+  - [x] the back appears beneath the front, which stays in view
+  - [ ] its audio plays by itself when the audio is on the back
+  - [x] I can rate the card Forgot or Remembered, with the buttons or with 1 and 2; Space rates it Remembered
+  - [x] each button tells when the card would come back
+  - [x] the next card appears as soon as I rate
+- when I rate a card Forgot:
+  - [x] it comes back ten minutes later, or sooner once nothing else is left in the session
+- when I rate a new card Remembered:
+  - [x] it is due again in a couple of days
+- when I rate a card by mistake:
+  - [x] I can undo the latest rating with Undo or Z, and the card is shown again
+- when a card is longer than the screen:
+  - [x] the card scrolls, while the counts, the way back and the rating buttons stay in place
+- when the card's media file cannot be read on this device:
+  - [x] the audio and the screenshot are left out, and a line under the card says so
+- when I have reviewed every card for today:
+  - [x] I see that I am done for today, how many cards I reviewed, and when a card I am learning comes back later today
+  - [x] I can go back to the project
+  - [x] I can learn twenty more new cards, when the project has more
+- when I open the review while nothing is due and no new cards are left for today:
+  - [x] I see that there is nothing to review, and when the next card is due
+- when I open the review of a project with no flashcards:
+  - [x] I am told to make flashcards while I watch or read
+- when I leave the review, with the arrow, Escape or by closing the app:
+  - [x] every rating I gave is kept, since each is saved as I give it
+- when it is late at night:
+  - [x] the day's new cards and due counts roll over at 4 a.m. in my own time zone, not at midnight
+- when I delete a flashcard:
+  - [x] its review history goes with it
 - when I export flashcards that I have reviewed in easyImmerse to Anki:
-  - [ ] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
+  - [x] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
+  - [x] my review history comes with the cards, so Anki's scheduling continues from it
+  - [x] a card's progress reaches Anki with the first package that holds the card; a later package refreshes its content but not its progress, as Anki works
 
 ---
 
