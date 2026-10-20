@@ -138,8 +138,9 @@
         background: none;
         opacity: 0.8;
         pointer-events: none;
+        visibility: hidden;
       }
-      .variant:not(:has(.highlight:checked)) .overlay { display: none; }
+      :is(.variant:has(.highlight:checked), .flash) .overlay { visibility: visible; }
       figure img {
         display: block;
         max-width: 100%;
@@ -173,7 +174,8 @@
       document.getElementById("summary").textContent =
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
-        (report.baseLabel ? ` compared with ${report.baseLabel}` : "");
+        (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
+        ". Click a screenshot to flip between before and after.";
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
@@ -197,9 +199,9 @@
         const src = `${change.id}/${side}-${fileName}`;
         const other = side === "before" ? "after" : "before";
         const hasOther = change.kind === "changed";
-        const overlay = side === "after" && change.changedVariants[fileName]
+        const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
-        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span>${hasOther ? " · click to flip" : ""}<a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
+        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
           <div class="frame"><img src="${src}" alt="${side}" loading="lazy" ${hasOther ? `data-flip="${change.id}/${other}-${fileName}"` : ""} />${overlay}</div></figure>`;
       }
 
@@ -245,6 +247,8 @@
         const flipped = img.dataset.flip;
         img.dataset.flip = img.getAttribute("src");
         img.src = flipped;
+        img.parentElement.classList.add("flash");
+        setTimeout(() => img.parentElement.classList.remove("flash"), 200);
         const caption = img.closest("figure").querySelector("figcaption span");
         caption.textContent = flipped.includes("/before-") ? "Before" : "After";
       });
