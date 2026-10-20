@@ -1,7 +1,0 @@
-[
-  ["猫","freq",120],
-  ["犬","freq",{"value":340,"displayValue":"340㋕"}],
-  ["食べる","freq",{"reading":"たべる","frequency":95}],
-  ["猫","pitch",{"reading":"ねこ","pitches":[{"position":1}]}],
-  ["本","pitch",{"reading":"ほん","pitches":[{"position":1,"tags":["n"]}]}]
-]
