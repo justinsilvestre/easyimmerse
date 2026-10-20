@@ -95,6 +95,25 @@ pub fn set_user_role(
     get_user(conn, id)
 }
 
+/// Replaces the password hash of an account and ends all of its sessions, in one transaction.
+pub fn set_password_hash(
+    conn: &mut Connection,
+    id: &str,
+    password_hash: &str,
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    let updated = transaction.execute(
+        "UPDATE users SET password_hash = ?2 WHERE id = ?1",
+        params![id, password_hash],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    transaction.execute("DELETE FROM sessions WHERE user_id = ?1", params![id])?;
+    transaction.commit()?;
+    Ok(())
+}
+
 /// Deletes an account together with its sessions.
 pub fn delete_user(conn: &Connection, id: &str) -> Result<(), StorageError> {
     let deleted = conn.execute("DELETE FROM users WHERE id = ?1", params![id])?;
@@ -201,6 +220,34 @@ mod tests {
     fn reports_setting_the_role_of_an_unknown_user() {
         let storage = Storage::open_in_memory().unwrap();
         let result = storage.set_user_role("missing", AccountRole::Privileged);
+        assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    #[test]
+    fn replaces_a_password_hash() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.set_password_hash(&id, "new hash").unwrap();
+        let found = storage.find_user_by_email("reader@example.com").unwrap();
+        assert_eq!(
+            found.map(|found| found.password_hash),
+            Some("new hash".to_string())
+        );
+    }
+
+    #[test]
+    fn replacing_a_password_hash_ends_the_sessions() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.create_session("token-hash", &id, u64::MAX).unwrap();
+        storage.set_password_hash(&id, "new hash").unwrap();
+        assert_eq!(storage.find_live_session("token-hash", 0).unwrap(), None);
+    }
+
+    #[test]
+    fn reports_replacing_the_password_of_an_unknown_user() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.set_password_hash("missing", "hash");
         assert!(matches!(result, Err(StorageError::UserNotFound(_))));
     }
 

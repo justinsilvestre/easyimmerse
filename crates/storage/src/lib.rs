@@ -386,6 +386,11 @@ impl Storage {
         self.write(|conn| users::set_user_role(conn, id, role))
     }
 
+    /// Replaces the password hash of an account and ends all of its sessions.
+    pub fn set_password_hash(&self, id: &str, password_hash: &str) -> Result<(), StorageError> {
+        self.write(|conn| users::set_password_hash(conn, id, password_hash))
+    }
+
     /// Deletes an account together with its sessions.
     pub fn delete_user(&self, id: &str) -> Result<(), StorageError> {
         self.write(|conn| users::delete_user(conn, id))

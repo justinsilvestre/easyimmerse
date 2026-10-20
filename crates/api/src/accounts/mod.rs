@@ -32,6 +32,13 @@ pub fn create_account(
     Ok(storage.create_user(&email, &password_hash, role)?)
 }
 
+/// Gives an account a new password, after checking that it follows the rules, and ends all of its sessions.
+pub fn set_password(storage: &Storage, user_id: &str, password: &str) -> Result<(), AccountsError> {
+    ensure_password_long_enough(password)?;
+    let password_hash = hash_password(password)?;
+    Ok(storage.set_password_hash(user_id, &password_hash)?)
+}
+
 /// Finds the account with the email address and password.
 /// An unknown address and a wrong password fail alike, and take about as long.
 pub fn authenticate(
@@ -178,6 +185,22 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(session.expires_at_ms, SESSION_LIFETIME_MS);
+    }
+
+    #[test]
+    fn a_new_password_lets_the_account_log_in() {
+        let storage = storage_with_reader();
+        let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
+        set_password(&storage, &user.id, "battery staple").unwrap();
+        assert!(authenticate(&storage, "reader@example.com", "battery staple").is_ok());
+    }
+
+    #[test]
+    fn a_new_password_must_be_long_enough() {
+        let storage = storage_with_reader();
+        let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
+        let result = set_password(&storage, &user.id, "short");
+        assert!(matches!(result, Err(AccountsError::PasswordTooShort)));
     }
 
     #[test]

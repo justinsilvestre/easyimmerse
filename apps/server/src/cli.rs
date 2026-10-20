@@ -75,6 +75,9 @@ pub enum UsersCommand {
     List(DatabaseArgs),
     /// Changes the role of an account.
     SetRole(SetRoleArgs),
+    /// Gives an account a new password and ends all of its sessions. The password is read
+    /// from standard input with `--password-stdin`, or else from `EASYIMMERSE_PASSWORD`.
+    SetPassword(SetPasswordArgs),
     /// Deletes an account together with its sessions.
     Delete(DeleteUserArgs),
 }
@@ -95,6 +98,22 @@ pub struct CreateUserArgs {
     /// One of `library_user`, `privileged` and `administrator`.
     #[arg(long)]
     pub role: AccountRole,
+    #[command(flatten)]
+    pub password: PasswordArgs,
+}
+
+#[derive(Debug, Args)]
+pub struct SetPasswordArgs {
+    #[command(flatten)]
+    pub database: DatabaseArgs,
+    #[arg(long)]
+    pub email: String,
+    #[command(flatten)]
+    pub password: PasswordArgs,
+}
+
+#[derive(Debug, Args)]
+pub struct PasswordArgs {
     /// Reads the password from the first line of standard input.
     #[arg(long)]
     pub password_stdin: bool,
