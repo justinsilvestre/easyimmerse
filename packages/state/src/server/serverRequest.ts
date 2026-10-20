@@ -272,6 +272,8 @@ export type RequestFailure = {
   status: number | "OFFLINE" | "NETWORK" | "ABORTED" | "NO_DATA";
   code?: string;
   message: string;
+  /** How many seconds the server asked the app to wait before trying again, when it said. */
+  retryAfterSeconds?: number;
 };
 
 /** The failure of a request that was aborted, whether in flight or while it waited. */

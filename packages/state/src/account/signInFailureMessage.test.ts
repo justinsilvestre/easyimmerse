@@ -58,6 +58,43 @@ describe("signInFailureMessage", () => {
     );
   });
 
+  it("tells how many minutes to wait after too many attempts", () => {
+    expect(
+      signInFailureMessage(
+        {
+          status: 429,
+          code: "too_many_attempts",
+          message: "",
+          retryAfterSeconds: 290,
+        },
+        serverUrl,
+      ),
+    ).toBe("Too many attempts. Try again in 5 minutes.");
+  });
+
+  it("asks to wait a minute when the server asks for less", () => {
+    expect(
+      signInFailureMessage(
+        {
+          status: 429,
+          code: "too_many_attempts",
+          message: "",
+          retryAfterSeconds: 20,
+        },
+        serverUrl,
+      ),
+    ).toBe("Too many attempts. Try again in a minute.");
+  });
+
+  it("asks to wait a few minutes when the server does not say how long", () => {
+    expect(
+      signInFailureMessage(
+        { status: 429, code: "too_many_attempts", message: "" },
+        serverUrl,
+      ),
+    ).toBe("Too many attempts. Try again in a few minutes.");
+  });
+
   it("passes on the server's own message for another failure", () => {
     expect(
       signInFailureMessage(

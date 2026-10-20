@@ -15,6 +15,8 @@ export function signInFailureMessage(
   failure: RequestFailure,
   serverUrl: string,
 ): string {
+  if (failure.code === "too_many_attempts")
+    return tooManyAttemptsMessage(failure.retryAfterSeconds);
   const known = failure.code && messagesByCode[failure.code];
   if (known) return known;
   if (failure.status === "NETWORK")
@@ -22,4 +24,11 @@ export function signInFailureMessage(
   if (failure.status === 404 || failure.status === "NO_DATA")
     return `The server at ${serverUrl} did not answer as an easyImmerse server does. Check the address.`;
   return `The server could not sign you in: ${failure.message}`;
+}
+
+function tooManyAttemptsMessage(retryAfterSeconds: number | undefined): string {
+  if (retryAfterSeconds === undefined)
+    return "Too many attempts. Try again in a few minutes.";
+  const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
+  return `Too many attempts. Try again in ${minutes === 1 ? "a minute" : `${minutes} minutes`}.`;
 }

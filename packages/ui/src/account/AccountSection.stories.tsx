@@ -97,6 +97,22 @@ export const WrongPassword: Story = {
   ],
 };
 
+export const TooManyAttempts: Story = {
+  decorators: [
+    withDispatchedActions(
+      filledIn,
+      actions.signInSubmitted(),
+      answered(true, true),
+      actions.signInFailed({
+        status: 429,
+        code: "too_many_attempts",
+        message: "Too many attempts.",
+        retryAfterSeconds: 240,
+      }),
+    ),
+  ],
+};
+
 export const ServerUnreachable: Story = {
   decorators: [
     withDispatchedActions(

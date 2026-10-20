@@ -136,6 +136,41 @@ describe("createAccountEffects", () => {
     });
   });
 
+  describe("when the server refuses too many attempts", () => {
+    const refusing = (headers: Record<string, string>) =>
+      answering(
+        () =>
+          new Response(
+            JSON.stringify({
+              code: "too_many_attempts",
+              message: "Slow down.",
+            }),
+            { status: 429, headers },
+          ),
+      ).fetchFn;
+
+    it("keeps the seconds the server asks to wait", async () => {
+      const outcome = await effectsOver(
+        refusing({ "retry-after": "120" }),
+      ).effects.createSession(attempt);
+      expect(outcome).toMatchObject({ error: { retryAfterSeconds: 120 } });
+    });
+
+    it("keeps no wait when the server names a date", async () => {
+      const outcome = await effectsOver(
+        refusing({ "retry-after": "Wed, 21 Oct 2026 07:28:00 GMT" }),
+      ).effects.createSession(attempt);
+      expect(outcome).toEqual({
+        ok: false,
+        error: {
+          status: 429,
+          code: "too_many_attempts",
+          message: "Slow down.",
+        },
+      });
+    });
+  });
+
   describe("connectToServer", () => {
     it("keeps the server and token where the app looks when it starts", () => {
       const { effects, storage } = effectsOver(unreachable);

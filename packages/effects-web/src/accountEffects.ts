@@ -73,17 +73,33 @@ const unreadableAnswer: RequestFailure = {
   message: "The server's answer could not be read.",
 };
 
-/** Reads the API error a failed response holds, or keeps its status alone when its body is not one. */
+/**
+ * Reads the API error a failed response holds, or keeps its status alone when its body is not one,
+ * along with the seconds its `Retry-After` header asks to wait, when it gives them.
+ */
 async function failureOf(response: Response): Promise<RequestFailure> {
+  const retryAfterSeconds = retryAfterSecondsOf(response.headers);
+  const waiting = retryAfterSeconds === null ? {} : { retryAfterSeconds };
   const body: unknown = await response.json().catch(() => null);
   if (typeof body !== "object" || body === null || !("code" in body))
-    return { status: response.status, message: response.statusText };
+    return {
+      status: response.status,
+      message: response.statusText,
+      ...waiting,
+    };
   const { code, message } = body as { code: unknown; message?: unknown };
   return {
     status: response.status,
     code: String(code),
     message: typeof message === "string" ? message : response.statusText,
+    ...waiting,
   };
+}
+
+/** The seconds a `Retry-After` header asks to wait, or null when it names a date or is absent. */
+function retryAfterSecondsOf(headers: Headers): number | null {
+  const value = headers.get("retry-after")?.trim() ?? "";
+  return /^\d+$/.test(value) ? Number(value) : null;
 }
 
 function describe(cause: unknown): string {
