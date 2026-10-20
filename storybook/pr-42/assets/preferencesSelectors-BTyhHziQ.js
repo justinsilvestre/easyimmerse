@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{at as t,it as n}from"./src-BVdHF8cJ.js";var r,i,a,o;function s(){return(s=e((()=>{n(),r=e=>t=>t.app.preferences.values[e],i=e=>e.app.preferences.isLoaded,a=e=>e.app.preferences.playerControls,o=e=>t(e.app.preferences.values.theme)})))()}export{o as a,i,a as n,r,s as t};
