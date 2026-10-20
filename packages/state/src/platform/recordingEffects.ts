@@ -1,6 +1,9 @@
+import type { ServerAuthInfo, SessionCreated } from "@easyimmerse/types";
+import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
 import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { ServerConfig } from "../server/serverState.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
 import { createManualClock } from "../timers/manualClock.ts";
 import type {
@@ -41,7 +44,11 @@ type EffectCall =
   | { type: "openExternalUrl"; url: string }
   | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
-  | { type: "applyAppearance"; appearance: Appearance };
+  | { type: "applyAppearance"; appearance: Appearance }
+  | { type: "fetchServerAuthInfo"; serverUrl: string }
+  | { type: "createSession"; attempt: SignInAttempt }
+  | { type: "connectToServer"; server: ServerConfig }
+  | { type: "disconnectFromServer" };
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -76,6 +83,10 @@ export type RecordingEffects = Effects & {
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
   releasePreferenceLoads(): void;
+  /** Settles the pending fetchServerAuthInfo promise. Throws when no question is pending. */
+  resolveServerAuthInfo(outcome: SignInOutcome<ServerAuthInfo>): void;
+  /** Settles the pending createSession promise. Throws when no sign-in is pending. */
+  resolveSession(outcome: SignInOutcome<SessionCreated>): void;
 };
 
 type PendingPick<R> = {
@@ -128,6 +139,10 @@ export function createRecordingEffects(
   );
   const savePathPick = createPendingPick<SavePathPick>("save path pick");
   const copy = createPendingPick<SaveCopyOutcome>("copy");
+  const serverAuthInfo = createPendingPick<SignInOutcome<ServerAuthInfo>>(
+    "server auth info question",
+  );
+  const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -220,6 +235,20 @@ export function createRecordingEffects(
       systemThemeListeners.add(listener);
       return () => systemThemeListeners.delete(listener);
     },
+    fetchServerAuthInfo: (serverUrl) => {
+      calls.push({ type: "fetchServerAuthInfo", serverUrl });
+      return serverAuthInfo.start();
+    },
+    createSession: (attempt) => {
+      calls.push({ type: "createSession", attempt });
+      return session.start();
+    },
+    connectToServer: (server) => {
+      calls.push({ type: "connectToServer", server });
+    },
+    disconnectFromServer: () => {
+      calls.push({ type: "disconnectFromServer" });
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -254,5 +283,11 @@ export function createRecordingEffects(
       refusesCopies = true;
     },
     releasePreferenceLoads: () => preferenceLoads.resolve(),
+    resolveServerAuthInfo: (outcome) => {
+      serverAuthInfo.take().resolve(outcome);
+    },
+    resolveSession: (outcome) => {
+      session.take().resolve(outcome);
+    },
   };
 }

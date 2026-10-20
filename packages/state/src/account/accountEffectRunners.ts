@@ -1,0 +1,32 @@
+import { actions } from "../app/appAction.ts";
+import type { EffectRunners } from "../app/runEffect.ts";
+import type { AccountEffect } from "./accountEffect.ts";
+
+/** Performs the account's effects through the platform, and reports each server's answer as an action. */
+export const accountEffectRunners = {
+  fetchServerAuthInfo: ({ serverUrl }, { effects, dispatch }) => {
+    effects
+      .fetchServerAuthInfo(serverUrl)
+      .then((outcome) =>
+        dispatch(
+          outcome.ok
+            ? actions.serverAuthInfoReceived(serverUrl, outcome.data)
+            : actions.signInFailed(outcome.error),
+        ),
+      );
+  },
+  createSession: ({ attempt }, { effects, dispatch }) => {
+    effects
+      .createSession(attempt)
+      .then((outcome) =>
+        dispatch(
+          outcome.ok
+            ? actions.signInSucceeded(attempt.serverUrl, outcome.data)
+            : actions.signInFailed(outcome.error),
+        ),
+      );
+  },
+  connectToServer: ({ server }, { effects }) => effects.connectToServer(server),
+  disconnectFromServer: (_effect, { effects }) =>
+    effects.disconnectFromServer(),
+} satisfies EffectRunners<AccountEffect>;

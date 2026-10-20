@@ -1,4 +1,5 @@
 import type { ServerConfig } from "@easyimmerse/state";
+import { serverConfigStorageKey } from "@easyimmerse/state";
 
 /** Whether the native shell runs on a desktop or on a phone. */
 export type NativePlatform = "desktop" | "mobile";
@@ -9,8 +10,6 @@ declare global {
     | (ServerConfig & { platform: NativePlatform })
     | undefined;
 }
-
-const storageKey = "easyimmerse.server";
 
 /**
  * Finds the server to talk to, or null when the app should run offline.
@@ -39,7 +38,7 @@ function readEnvConfig(
 }
 
 function readStoredConfig(storage: Storage | null): ServerConfig | null {
-  const stored = storage?.getItem(storageKey);
+  const stored = storage?.getItem(serverConfigStorageKey);
   if (!stored) return null;
   try {
     return parseServerConfig(JSON.parse(stored));

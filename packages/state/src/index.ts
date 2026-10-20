@@ -1,3 +1,27 @@
+export {
+  type AccountServerOptions,
+  type SignInFormView,
+  selectAccountServerOptions,
+  selectCanSubmitSignIn,
+  selectIsSigningOut,
+  selectSignInForm,
+} from "./account/accountSelectors.ts";
+export type {
+  SignInAttempt,
+  SignInOutcome,
+} from "./account/signInAttempt.ts";
+export type {
+  ServerOffer,
+  SignInMode,
+  SignInServerChoice,
+} from "./account/signInForm.ts";
+export {
+  type NewUserFormView,
+  selectDeletionToConfirm,
+  selectNewUserForm,
+  selectUserChangeFailureMessage,
+  selectUserChangeInFlight,
+} from "./account/userManagementSelectors.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
 export type {
@@ -126,6 +150,7 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
+export { selectIsWorkNotBackedUp } from "./recovery/selectIsWorkNotBackedUp.ts";
 export type {
   MainRoute,
   NavigationStep,
@@ -260,6 +285,7 @@ export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
+export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
 export type {
   RequestFailure,
   RequestOutcome,
@@ -271,7 +297,7 @@ export type {
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
-export type { ServerConfig } from "./server/serverState.ts";
+export type { ServerConfig, ServerState } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
 export type { Clock } from "./timers/clock.ts";

@@ -1,4 +1,6 @@
 import type { Action } from "redux";
+import type { AccountAction } from "../account/accountActions.ts";
+import { accountActions } from "../account/accountActions.ts";
 import type { AnkiAction } from "../anki/ankiActions.ts";
 import { ankiActions } from "../anki/ankiActions.ts";
 import type { FlashcardAction } from "../flashcards/flashcardActions.ts";
@@ -46,6 +48,7 @@ const featureActionCreators = [
   noticesActions,
   operationsActions,
   ankiActions,
+  accountActions,
 ] as const;
 
 /** The action creators of each feature. A type-level test checks that no two declare the same action type. */
@@ -80,7 +83,8 @@ export type AppAction =
   | ServerAction
   | NoticesAction
   | OperationsAction
-  | AnkiAction;
+  | AnkiAction
+  | AccountAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

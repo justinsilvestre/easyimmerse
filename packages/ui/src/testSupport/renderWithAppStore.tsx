@@ -10,6 +10,8 @@ import { createTestAppStore } from "./createTestAppStore.ts";
 
 export type RenderOptions = {
   server?: ServerConfig;
+  /** The address of the official server, which the app offers to log in to. */
+  cloudUrl?: string;
   browserFileRegistry?: BrowserFileRegistry<File>;
   /** Draws the frames of the registry's files. Without one, the registry's files show no pictures. */
   frameCapturer?: FrameCapturer;
@@ -28,7 +30,7 @@ export function renderWithAppStore(
   const browserFileRegistry = options.browserFileRegistry ?? null;
   const { effects, store, playerRegistry } = createTestAppStore(
     client,
-    options.server ?? null,
+    { config: options.server ?? null, cloudUrl: options.cloudUrl ?? null },
     browserFileRegistry && {
       registry: browserFileRegistry,
       frameCapturer: options.frameCapturer ?? createFakeFrameCapturer(false),

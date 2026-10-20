@@ -35,6 +35,8 @@ export type NavigationStep =
   | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
+  /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
+  | { type: "openAccountSettings" }
   | { type: "openDictionaries" }
   | { type: "closeSettings" };
 
@@ -66,6 +68,16 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return current.screen === "settings"
         ? current
         : { screen: "settings", beneath: current, pages: ["general"] };
+    case "openAccountSettings":
+      return current.screen === "settings" &&
+        current.pages.length === 1 &&
+        current.pages[0] === "general"
+        ? current
+        : {
+            screen: "settings",
+            beneath: mainScreenOf(current),
+            pages: ["general"],
+          };
     case "openDictionaries":
       return openSettingsPage(current, "dictionaries");
     case "closeSettings":

@@ -1,3 +1,4 @@
+import type { AccountState } from "../account/updateAccount.ts";
 import type { DictionaryImportWizard } from "../dictionaryImport/dictionaryImportWizard.ts";
 import type { MediaImports } from "../mediaImports/mediaImportWizard.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
@@ -27,4 +28,5 @@ export type AppState = {
   dictionaryImport: DictionaryImportWizard | null;
   /** Each project's media import dialog, which lasts across screens while its fetch runs or its failure waits to be seen. */
   mediaImports: MediaImports;
+  account: AccountState;
 };

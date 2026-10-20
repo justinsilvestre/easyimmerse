@@ -19,7 +19,10 @@ async function storeWithMethod() {
     fixtureResponses,
     directPlaybackRoutes,
   );
-  const { store } = createTestAppStore(client, fakeServer);
+  const { store } = createTestAppStore(client, {
+    config: fakeServer,
+    cloudUrl: null,
+  });
   store.dispatch(actions.openMediaFileRequested("p1", "m1"));
   await vi.waitFor(() =>
     expect(selectPathPlayerStatus(store.getState()).status).toBe("ready"),
