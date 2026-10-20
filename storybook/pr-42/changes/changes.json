@@ -1,0 +1,284 @@
+{
+  "variants": [
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "storyCount": 404,
+  "changes": [
+    {
+      "id": "flashcards-flashcardeditor--suspended",
+      "title": "Flashcards/FlashcardEditor",
+      "name": "Suspended",
+      "importPath": "./src/flashcards/FlashcardEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-caught-up-with-nothing-scheduled",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Caught Up With Nothing Scheduled",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-daily-limit-reached",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Daily Limit Reached",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-leechnotice--leech",
+      "title": "Review/LeechNotice",
+      "name": "Leech",
+      "importPath": "./src/review/LeechNotice.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-leechnotice--without-edit",
+      "title": "Review/LeechNotice",
+      "name": "Without Edit",
+      "importPath": "./src/review/LeechNotice.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewcard--front",
+      "title": "Review/ReviewCard",
+      "name": "Front",
+      "importPath": "./src/review/ReviewCard.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 40163,
+        "light-desktop.png": 39782,
+        "dark-phone.png": 21463,
+        "dark-desktop.png": 21900
+      }
+    },
+    {
+      "id": "review-reviewcard--revealed",
+      "title": "Review/ReviewCard",
+      "name": "Revealed",
+      "importPath": "./src/review/ReviewCard.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 46952,
+        "light-desktop.png": 47501,
+        "dark-phone.png": 54235,
+        "dark-desktop.png": 71605
+      }
+    },
+    {
+      "id": "review-reviewcard--long-content",
+      "title": "Review/ReviewCard",
+      "name": "Long Content",
+      "importPath": "./src/review/ReviewCard.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 61196,
+        "light-desktop.png": 65768,
+        "dark-phone.png": 73083,
+        "dark-desktop.png": 94023
+      }
+    },
+    {
+      "id": "review-reviewdone--done-with-a-backlog",
+      "title": "Review/ReviewDone",
+      "name": "Done With A Backlog",
+      "importPath": "./src/review/ReviewDone.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewdone--limit-reached-earlier-today",
+      "title": "Review/ReviewDone",
+      "name": "Limit Reached Earlier Today",
+      "importPath": "./src/review/ReviewDone.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewsession--front",
+      "title": "Review/ReviewSession",
+      "name": "Front",
+      "importPath": "./src/review/ReviewSession.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 37432,
+        "light-desktop.png": 39786,
+        "dark-phone.png": 19941,
+        "dark-desktop.png": 21874
+      }
+    },
+    {
+      "id": "review-reviewsession--revealed",
+      "title": "Review/ReviewSession",
+      "name": "Revealed",
+      "importPath": "./src/review/ReviewSession.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 44582,
+        "light-desktop.png": 47596,
+        "dark-phone.png": 49632,
+        "dark-desktop.png": 71639
+      }
+    },
+    {
+      "id": "review-reviewsession--leech",
+      "title": "Review/ReviewSession",
+      "name": "Leech",
+      "importPath": "./src/review/ReviewSession.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-connectedreviewscreen--three-new-cards",
+      "title": "Review/ConnectedReviewScreen",
+      "name": "Three New Cards",
+      "importPath": "./src/screens/ConnectedReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 17061,
+        "light-desktop.png": 15424,
+        "dark-phone.png": 19315,
+        "dark-desktop.png": 19223
+      }
+    },
+    {
+      "id": "review-reviewscreen--front",
+      "title": "Review/ReviewScreen",
+      "name": "Front",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 41071,
+        "light-desktop.png": 41285,
+        "dark-phone.png": 22334,
+        "dark-desktop.png": 22783
+      }
+    },
+    {
+      "id": "review-reviewscreen--revealed-with-two-buttons",
+      "title": "Review/ReviewScreen",
+      "name": "Revealed With Two Buttons",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 44069,
+        "light-desktop.png": 46183,
+        "dark-phone.png": 70071,
+        "dark-desktop.png": 105028
+      }
+    },
+    {
+      "id": "review-reviewscreen--revealed-with-four-buttons",
+      "title": "Review/ReviewScreen",
+      "name": "Revealed With Four Buttons",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 44069,
+        "light-desktop.png": 46183,
+        "dark-phone.png": 70071,
+        "dark-desktop.png": 105028
+      }
+    },
+    {
+      "id": "review-reviewscreen--long-content",
+      "title": "Review/ReviewScreen",
+      "name": "Long Content",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 53352,
+        "light-desktop.png": 54350,
+        "dark-phone.png": 50940,
+        "dark-desktop.png": 71138
+      }
+    },
+    {
+      "id": "review-reviewscreen--on-a-small-phone",
+      "title": "Review/ReviewScreen",
+      "name": "On A Small Phone",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 44069,
+        "light-desktop.png": 46183,
+        "dark-phone.png": 70071,
+        "dark-desktop.png": 105028
+      }
+    },
+    {
+      "id": "review-reviewscreen--undo-available",
+      "title": "Review/ReviewScreen",
+      "name": "Undo Available",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 41071,
+        "light-desktop.png": 41285,
+        "dark-phone.png": 22334,
+        "dark-desktop.png": 22783
+      }
+    },
+    {
+      "id": "review-reviewscreen--leech",
+      "title": "Review/ReviewScreen",
+      "name": "Leech",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewscreen--screenshot-expanded",
+      "title": "Review/ReviewScreen",
+      "name": "Screenshot Expanded",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "error": "light-phone: [object Object]",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewscreen--done-with-a-backlog",
+      "title": "Review/ReviewScreen",
+      "name": "Done With A Backlog",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    }
+  ]
+}
