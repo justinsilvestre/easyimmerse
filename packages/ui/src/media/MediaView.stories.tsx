@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { fn } from "storybook/test";
+import { expect, fn, waitFor } from "storybook/test";
 import { INITIAL_VIEWPORTS } from "storybook/viewport";
 import type { WordHit } from "../components/useWordGestures.ts";
 import {
@@ -360,6 +360,11 @@ export const InFullscreenWhilePlaying: Story = {
       { ...pausedPlayback, isPlaying: true },
       { ...panels, isFullscreen: true },
     ),
+  },
+  // Waits until the pointer counts as resting, so that the story always settles with the chrome folded away.
+  play: async ({ canvas }) => {
+    const back = canvas.getByRole("button", { name: /^Back to/ });
+    await waitFor(() => expect(back).not.toBeVisible(), { timeout: 5000 });
   },
 };
 

@@ -3,7 +3,7 @@ import { PNG } from "pngjs";
 
 export interface ImageDiff {
   pixelsChanged: number;
-  /** The two images side by side in the diff's colors: changed pixels in red over a faded original. */
+  /** The changed pixels in red on a transparent background, to lay over either screenshot. */
   diff: PNG;
 }
 
@@ -25,6 +25,7 @@ export function diffImages(before: PNG, after: PNG): ImageDiff {
     height,
     {
       threshold: 0.1,
+      diffMask: true,
     },
   );
   return { pixelsChanged, diff };
