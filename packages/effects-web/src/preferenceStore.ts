@@ -6,7 +6,7 @@ export type PreferenceStore = {
   load(key: string): Promise<string | null>;
 };
 
-/** Persists preferences in the browser's IndexedDB. The database opens on first use. */
+/** Persists preferences, and the values kept on the device, in the browser's IndexedDB. The database opens on first use. */
 export function createPreferenceStore(): PreferenceStore {
   let database: Promise<IDBDatabase> | null = null;
   const open = () => {

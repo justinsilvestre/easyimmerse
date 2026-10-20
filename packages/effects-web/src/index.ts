@@ -43,6 +43,8 @@ export function createWebEffects(options: {
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
     savePreference: preferences.save,
     loadPreference: preferences.load,
+    saveOnDevice: preferences.save,
+    loadFromDevice: preferences.load,
     openExternalUrl,
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),

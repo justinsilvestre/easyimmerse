@@ -77,6 +77,10 @@ export interface Effects {
   writeDefinitionMarkdown(definition: Definition): string;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
+  /** Keeps a value in this device's own storage, whichever server the app talks to. */
+  saveOnDevice(key: string, value: string): Promise<void>;
+  /** Reads a value kept in this device's own storage, or null when none is kept. */
+  loadFromDevice(key: string): Promise<string | null>;
   openExternalUrl(url: string): void;
   /** Copies text to the clipboard; rejects when the platform refuses. */
   copyText(text: string): Promise<void>;

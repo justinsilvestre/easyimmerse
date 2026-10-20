@@ -1,10 +1,10 @@
-import type { FailedRequest } from "../operations/failedRequests.ts";
+import type { RecoverableWork } from "./recoverableWork.ts";
 
 /** The action creators of the recovery. */
 export const recoveryActions = {
-  /** The saves kept on the device were read, or could not be. */
-  recoverableSavesLoaded: (saves: readonly FailedRequest[] | "unreadable") =>
-    ({ type: "recoverableSavesLoaded", saves }) as const,
+  /** The work kept on the device was read, or could not be. */
+  recoverableWorkLoaded: (work: RecoverableWork | "unreadable") =>
+    ({ type: "recoverableWorkLoaded", work }) as const,
 };
 
 /** An action of the recovery. */

@@ -36,6 +36,8 @@ type EffectCall =
   | { type: "downloadFile"; fileName: string; bytes: Uint8Array<ArrayBuffer> }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
+  | { type: "saveOnDevice"; key: string; value: string }
+  | { type: "loadFromDevice"; key: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
@@ -48,6 +50,8 @@ export type RecordingEffects = Effects & {
   calls: EffectCall[];
   /** The store behind savePreference and loadPreference. Tests may seed it. */
   preferences: Map<string, string>;
+  /** The store behind saveOnDevice and loadFromDevice. Tests may seed it. */
+  deviceValues: Map<string, string>;
   /** Settles the pending pickFile promise. Throws when no pick is pending. */
   resolvePickFile(file: PickedFile | null): void;
   /** Rejects the pending pickFile promise. Throws when no pick is pending. */
@@ -112,6 +116,7 @@ export function createRecordingEffects(
 ): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map(Object.entries(storedPreferences));
+  const deviceValues = new Map<string, string>();
   const preferenceLoads = Promise.withResolvers<void>();
   if (!holdsPreferenceLoads) preferenceLoads.resolve();
   const filePick = createPendingPick<PickedFile | null>("file pick");
@@ -130,6 +135,7 @@ export function createRecordingEffects(
     clock: createManualClock(),
     calls,
     preferences,
+    deviceValues,
     seekPlayer: (seconds) => {
       calls.push({ type: "seekPlayer", seconds });
     },
@@ -184,6 +190,14 @@ export function createRecordingEffects(
       calls.push({ type: "loadPreference", key });
       await preferenceLoads.promise;
       return preferences.get(key) ?? null;
+    },
+    saveOnDevice: async (key, value) => {
+      calls.push({ type: "saveOnDevice", key, value });
+      deviceValues.set(key, value);
+    },
+    loadFromDevice: async (key) => {
+      calls.push({ type: "loadFromDevice", key });
+      return deviceValues.get(key) ?? null;
     },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });
