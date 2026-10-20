@@ -44,6 +44,7 @@ export class StoryPage {
     const clip = await this.page.evaluate(measureContent);
     await this.page.screenshot({
       path: outputPath,
+      // Without a full-page capture, Playwright trims the clip to the viewport.
       fullPage: true,
       clip,
       animations: "disabled",
