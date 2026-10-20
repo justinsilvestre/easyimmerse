@@ -4,6 +4,7 @@ import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { signInFailureMessage } from "./signInFailureMessage.ts";
 import {
   canSubmitSignIn,
+  isBusy,
   type ServerOffer,
   type SignInForm,
   type SignInMode,
@@ -21,6 +22,8 @@ export type SignInFormView = {
   email: string;
   password: string;
   status: SignInStatus["kind"];
+  /** Whether the form waits for a server's answer, during which it takes no changes. */
+  isBusy: boolean;
   /** Why the last attempt failed, while it stands. */
   failureMessage: string | null;
   /** What the chosen server offers, as far as the form has learned. */
@@ -48,6 +51,7 @@ export const selectSignInForm = createSelector(
       email: form.email,
       password: form.password,
       status: form.status.kind,
+      isBusy: isBusy(form),
       failureMessage: failureMessageOf(form, serverUrl),
       serverOffer: serverOfferOf(form, serverUrl),
     };

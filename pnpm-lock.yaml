@@ -497,6 +497,9 @@ importers:
       '@easyimmerse/state':
         specifier: workspace:*
         version: link:../state
+      '@easyimmerse/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@easyimmerse/config':
         specifier: workspace:*

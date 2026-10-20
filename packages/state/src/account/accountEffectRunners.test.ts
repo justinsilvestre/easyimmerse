@@ -32,8 +32,9 @@ function submittedStore() {
   return { effects, store };
 }
 
-async function signedIn() {
-  const { effects } = submittedStore();
+async function signedIn(refusesConnections = false) {
+  const { effects, store } = submittedStore();
+  if (refusesConnections) effects.refuseConnections();
   effects.resolveServerAuthInfo({
     ok: true,
     data: { accounts: true, open_signup: true },
@@ -44,17 +45,26 @@ async function signedIn() {
     ),
   );
   effects.resolveSession({ ok: true, data: session });
-  return effects;
+  return { effects, store };
 }
 
 describe("accountEffectRunners", () => {
   it("connects the app to the server once the sign-in succeeds", async () => {
-    const effects = await signedIn();
+    const { effects } = await signedIn();
     await vi.waitFor(() =>
       expect(effects.calls).toContainEqual({
         type: "connectToServer",
         server: { serverUrl: ownServer, token: "session-token" },
       }),
+    );
+  });
+
+  it("tells when the browser could not keep the sign-in", async () => {
+    const { store } = await signedIn(true);
+    await vi.waitFor(() =>
+      expect(selectSignInForm(store.getState()).failureMessage).toBe(
+        "The sign-in could not be saved in this browser.",
+      ),
     );
   });
 

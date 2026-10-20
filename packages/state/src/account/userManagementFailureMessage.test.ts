@@ -34,6 +34,15 @@ describe("userManagementFailureMessage", () => {
     ).toBe("The password must be at least 8 characters long.");
   });
 
+  it("tells of a password too long", () => {
+    expect(
+      userManagementFailureMessage(
+        failure(400, "password_too_long"),
+        "createUser",
+      ),
+    ).toBe("The password is too long.");
+  });
+
   it("tells of an invalid email address", () => {
     expect(
       userManagementFailureMessage(failure(400, "invalid_email"), "createUser"),

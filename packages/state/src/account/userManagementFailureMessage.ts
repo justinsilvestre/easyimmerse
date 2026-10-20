@@ -14,6 +14,7 @@ const lastAdministratorMessages: Record<UserChange, string> = {
 const messagesByCode: Record<string, string> = {
   email_taken: "An account with this email address already exists.",
   password_too_short: "The password must be at least 8 characters long.",
+  password_too_long: "The password is too long.",
   invalid_email: "This email address is not valid.",
   forbidden: "Only an administrator may manage this server's accounts.",
 };

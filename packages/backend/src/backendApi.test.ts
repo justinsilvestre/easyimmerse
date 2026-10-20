@@ -8,7 +8,7 @@ import type {
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
@@ -815,6 +815,35 @@ describe("the account endpoints", () => {
         body: { kind: "json", value: { role: "administrator" } },
       },
     ]);
+  });
+
+  it("fetch the current principal again once an account's role changes", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(
+      backendApi.endpoints.setUserRole.initiate({
+        userId: "u1",
+        body: { role: "library_user" },
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/me"),
+      ).toHaveLength(2),
+    );
+  });
+
+  it("fetch the current principal again once an account is deleted", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(backendApi.endpoints.deleteUser.initiate("u1"));
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/me"),
+      ).toHaveLength(2),
+    );
   });
 
   it("send DELETE /users/{id} for deleteUser", async () => {

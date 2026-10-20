@@ -9,6 +9,9 @@ export type SignInAttempt = {
   password: string;
 };
 
+/** The code of the failure to keep the server and session in the browser, which the platform reports when connecting. */
+export const connectionNotKeptCode = "connection_not_kept";
+
 /** How a request made while signing in ended: the server's answer, or why there is none. */
 export type SignInOutcome<T> =
   | { ok: true; data: T }

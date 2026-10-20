@@ -293,6 +293,7 @@ export const backendApi = createApi({
     "Dictionaries",
     "ConversionCache",
     "Users",
+    "CurrentPrincipal",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -920,6 +921,7 @@ export const backendApi = createApi({
     /** Who the app's token belongs to: the owner of the machine the server runs on, or an account. */
     getCurrentPrincipal: build.query<CurrentPrincipal, void>({
       query: () => ({ method: "GET", path: "/auth/me" }),
+      providesTags: ["CurrentPrincipal"],
     }),
     /** Ends the session the app's token belongs to. */
     logOut: build.mutation<void, void>({
@@ -944,14 +946,16 @@ export const backendApi = createApi({
         path: `/users/${encodeURIComponent(userId)}/role`,
         body: { kind: "json", value: body },
       }),
-      invalidatesTags: ["Users"],
+      // The account may be the app's own, whose role the Account section shows.
+      invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
     deleteUser: build.mutation<void, string>({
       query: (userId) => ({
         method: "DELETE",
         path: `/users/${encodeURIComponent(userId)}`,
       }),
-      invalidatesTags: ["Users"],
+      // The account may be the app's own, whose session then ends.
+      invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
   }),
 });
