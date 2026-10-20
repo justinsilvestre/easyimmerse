@@ -33,8 +33,16 @@
       }
     }
   ],
-  "storyCount": 393,
+  "storyCount": 404,
   "changes": [
+    {
+      "id": "flashcards-flashcardeditor--suspended",
+      "title": "Flashcards/FlashcardEditor",
+      "name": "Suspended",
+      "importPath": "./src/flashcards/FlashcardEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
     {
       "id": "flashcards-flashcardpreview--front-only",
       "title": "Flashcards/FlashcardPreview",
@@ -42,6 +50,19 @@
       "importPath": "./src/flashcards/FlashcardPreview.stories.tsx",
       "kind": "added",
       "changedVariants": {}
+    },
+    {
+      "id": "media-mediaview--in-fullscreen-while-playing",
+      "title": "Media/MediaView",
+      "name": "In Fullscreen While Playing",
+      "importPath": "./src/media/MediaView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 30220,
+        "light-desktop.png": 61251,
+        "dark-phone.png": 30220,
+        "dark-desktop.png": 61252
+      }
     },
     {
       "id": "projects-homeview--recent-projects",
@@ -87,10 +108,10 @@
       "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 14208,
-        "light-desktop.png": 13926,
-        "dark-phone.png": 15873,
-        "dark-desktop.png": 16062
+        "light-phone.png": 16677,
+        "light-desktop.png": 16837,
+        "dark-phone.png": 17490,
+        "dark-desktop.png": 18375
       }
     },
     {
@@ -100,9 +121,9 @@
       "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 9199,
+        "light-phone.png": 11865,
         "light-desktop.png": 258,
-        "dark-phone.png": 10632,
+        "dark-phone.png": 12571,
         "dark-desktop.png": 269
       }
     },
@@ -126,6 +147,22 @@
       "id": "projects-projectflashcardspanel--review-done-for-today",
       "title": "Projects/ProjectFlashcardsPanel",
       "name": "Review Done For Today",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-caught-up-with-nothing-scheduled",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Caught Up With Nothing Scheduled",
+      "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "projects-projectflashcardspanel--review-daily-limit-reached",
+      "title": "Projects/ProjectFlashcardsPanel",
+      "name": "Review Daily Limit Reached",
       "importPath": "./src/projects/ProjectFlashcardsPanel.stories.tsx",
       "kind": "added",
       "changedVariants": {}
@@ -155,6 +192,22 @@
         "dark-phone.png": 16155,
         "dark-desktop.png": 269
       }
+    },
+    {
+      "id": "review-leechnotice--leech",
+      "title": "Review/LeechNotice",
+      "name": "Leech",
+      "importPath": "./src/review/LeechNotice.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-leechnotice--without-edit",
+      "title": "Review/LeechNotice",
+      "name": "Without Edit",
+      "importPath": "./src/review/LeechNotice.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
     },
     {
       "id": "review-ratingbar--front",
@@ -269,6 +322,22 @@
       "changedVariants": {}
     },
     {
+      "id": "review-reviewdone--done-with-a-backlog",
+      "title": "Review/ReviewDone",
+      "name": "Done With A Backlog",
+      "importPath": "./src/review/ReviewDone.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewdone--limit-reached-earlier-today",
+      "title": "Review/ReviewDone",
+      "name": "Limit Reached Earlier Today",
+      "importPath": "./src/review/ReviewDone.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
       "id": "review-reviewdone--nothing-to-review",
       "title": "Review/ReviewDone",
       "name": "Nothing To Review",
@@ -304,6 +373,14 @@
       "id": "review-reviewsession--revealed",
       "title": "Review/ReviewSession",
       "name": "Revealed",
+      "importPath": "./src/review/ReviewSession.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewsession--leech",
+      "title": "Review/ReviewSession",
+      "name": "Leech",
       "importPath": "./src/review/ReviewSession.stories.tsx",
       "kind": "added",
       "changedVariants": {}
@@ -400,6 +477,31 @@
       "id": "review-reviewscreen--done-for-today",
       "title": "Review/ReviewScreen",
       "name": "Done For Today",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewscreen--leech",
+      "title": "Review/ReviewScreen",
+      "name": "Leech",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewscreen--screenshot-expanded",
+      "title": "Review/ReviewScreen",
+      "name": "Screenshot Expanded",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "error": "light-phone: [object Object]",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "review-reviewscreen--done-with-a-backlog",
+      "title": "Review/ReviewScreen",
+      "name": "Done With A Backlog",
       "importPath": "./src/screens/ReviewScreen.stories.tsx",
       "kind": "added",
       "changedVariants": {}
