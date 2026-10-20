@@ -50,6 +50,14 @@ describe("signInFailureMessage", () => {
     );
   });
 
+  it("tells of an answer that is not an easyImmerse server's", () => {
+    expect(
+      signInFailureMessage({ status: "NO_DATA", message: "" }, serverUrl),
+    ).toBe(
+      "The server at https://books.example.org did not answer as an easyImmerse server does. Check the address.",
+    );
+  });
+
   it("passes on the server's own message for another failure", () => {
     expect(
       signInFailureMessage(

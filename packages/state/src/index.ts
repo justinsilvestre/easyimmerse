@@ -289,7 +289,7 @@ export type {
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
-export type { ServerConfig } from "./server/serverState.ts";
+export type { ServerConfig, ServerState } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
 export type { Clock } from "./timers/clock.ts";

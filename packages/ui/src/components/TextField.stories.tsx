@@ -30,3 +30,12 @@ export const Multiline: Story = {
     defaultValue: "to eat (of animals); to devour",
   },
 };
+
+export const Password: Story = {
+  args: {
+    label: "Password",
+    type: "password",
+    placeholder: undefined,
+    defaultValue: "correct horse",
+  },
+};

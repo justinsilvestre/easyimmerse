@@ -19,7 +19,7 @@ export function signInFailureMessage(
   if (known) return known;
   if (failure.status === "NETWORK")
     return `Couldn't reach a server at ${serverUrl}. Check the address and your connection.`;
-  if (failure.status === 404)
+  if (failure.status === 404 || failure.status === "NO_DATA")
     return `The server at ${serverUrl} did not answer as an easyImmerse server does. Check the address.`;
   return `The server could not sign you in: ${failure.message}`;
 }
