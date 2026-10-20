@@ -11,6 +11,7 @@ import type {
 } from "@easyimmerse/state";
 import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
+  AccountUser,
   AddAlignmentRequest,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
@@ -24,6 +25,8 @@ import type {
   BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  CreateUserRequest,
+  CurrentPrincipal,
   Document,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
@@ -50,6 +53,7 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  SetUserRoleRequest,
   SourceStepRequest,
   SourceStepResponse,
   SubtitleSelection,
@@ -140,6 +144,8 @@ type AlignmentArgs = MediaFileArgs & { alignmentId: string };
 type TranslationDocumentArgs = MediaFileArgs & {
   body: TranslationDocumentSelection;
 };
+
+type UserRoleArgs = { userId: string; body: SetUserRoleRequest };
 
 type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 
@@ -285,6 +291,7 @@ export const backendApi = createApi({
     "Alignments",
     "Dictionaries",
     "ConversionCache",
+    "Users",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -905,6 +912,42 @@ export const backendApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
+    /** Who the app's token belongs to: the owner of the machine the server runs on, or an account. */
+    getCurrentPrincipal: build.query<CurrentPrincipal, void>({
+      query: () => ({ method: "GET", path: "/auth/me" }),
+    }),
+    /** Ends the session the app's token belongs to. */
+    logOut: build.mutation<void, void>({
+      query: () => ({ method: "POST", path: "/auth/logout" }),
+    }),
+    /** The server's accounts, which only an administrator may list. */
+    listUsers: build.query<AccountUser[], void>({
+      query: () => ({ method: "GET", path: "/users" }),
+      providesTags: ["Users"],
+    }),
+    createUser: build.mutation<AccountUser, CreateUserRequest>({
+      query: (request) => ({
+        method: "POST",
+        path: "/users",
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: ["Users"],
+    }),
+    setUserRole: build.mutation<AccountUser, UserRoleArgs>({
+      query: ({ userId, body }) => ({
+        method: "PUT",
+        path: `/users/${encodeURIComponent(userId)}/role`,
+        body: { kind: "json", value: body },
+      }),
+      invalidatesTags: ["Users"],
+    }),
+    deleteUser: build.mutation<void, string>({
+      query: (userId) => ({
+        method: "DELETE",
+        path: `/users/${encodeURIComponent(userId)}`,
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -936,6 +979,7 @@ export const {
   useLookupTextQuery,
   useLazyLookupTextQuery,
   useListAnkiPendingDeletionsQuery,
+  useGetCurrentPrincipalQuery,
 } = backendApi;
 
 type BackendState = Parameters<

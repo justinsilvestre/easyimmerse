@@ -7,7 +7,7 @@ import {
 import type { Effects } from "../platform/effects.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import type { RequestRunner } from "../server/serverRequest.ts";
-import type { ServerConfig } from "../server/serverState.ts";
+import type { ServerConfig, ServerState } from "../server/serverState.ts";
 import type { AppAction } from "./appAction.ts";
 import { actions, isAppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
@@ -50,16 +50,18 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
  * The store opens Settings whenever the platform asks for them, and follows the operating system's theme, for as long as it lives.
+ * `cloudUrl` is the address of the official easyImmerse server, which the app offers to log in to, or null while there is none.
  * Once created, it dispatches `appStarted`, which loads the stored preferences.
  */
 export function createAppStore(
   effects: Effects,
   server: ServerStoreParts,
+  cloudUrl: string | null = null,
   composeEnhancers: EnhancerComposer = compose,
 ): AppStore {
   const app = createEffectsReducer(
     update,
-    initialStateWith(server.serverConfig),
+    initialStateWith({ config: server.serverConfig, cloudUrl }),
     isAppAction,
   );
   const store: AppStore = createStore(
@@ -98,7 +100,7 @@ function createRootReducer(
   };
 }
 
-/** The initial app state, with the server the store was created for. */
-function initialStateWith(serverConfig: ServerConfig | null): AppState {
-  return { ...initialAppState, server: { config: serverConfig } };
+/** The initial app state, with the servers the store was created for. */
+function initialStateWith(server: ServerState): AppState {
+  return { ...initialAppState, server };
 }

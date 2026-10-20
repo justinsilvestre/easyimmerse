@@ -228,6 +228,8 @@ export const requestEndpoints = {
       { projectId, usesAnkiConnect },
       { track: false },
     ),
+  logOut: () =>
+    backendApi.endpoints.logOut.initiate(undefined, { track: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

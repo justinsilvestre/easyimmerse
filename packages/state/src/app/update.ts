@@ -1,3 +1,4 @@
+import { accountFeature } from "../account/updateAccount.ts";
 import { ankiCommands } from "../anki/ankiCommands.ts";
 import { dictionaryImportFeature } from "../dictionaryImport/dictionaryImportFeature.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
@@ -47,6 +48,7 @@ const features = {
   operations: operationsFeature,
   dictionaryImport: dictionaryImportFeature,
   mediaImports: mediaImportsFeature,
+  account: accountFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];

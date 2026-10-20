@@ -1,3 +1,20 @@
+export {
+  type AccountServerOptions,
+  type SignInFormView,
+  selectAccountServerOptions,
+  selectCanSubmitSignIn,
+  selectIsSigningOut,
+  selectSignInForm,
+} from "./account/accountSelectors.ts";
+export type {
+  SignInAttempt,
+  SignInOutcome,
+} from "./account/signInAttempt.ts";
+export type {
+  ServerOffer,
+  SignInMode,
+  SignInServerChoice,
+} from "./account/signInForm.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
 export type {
@@ -260,6 +277,7 @@ export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
+export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
 export type {
   RequestFailure,
   RequestOutcome,

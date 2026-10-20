@@ -193,7 +193,9 @@ export type ServerRequest =
       kind: "setAnkiConnect";
       projectId: string;
       usesAnkiConnect: boolean;
-    };
+    }
+  /** Ends the session the app's token belongs to. */
+  | { kind: "logOut" };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -248,6 +250,8 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  logOut: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */
