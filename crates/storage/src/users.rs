@@ -1,5 +1,5 @@
 use easyimmerse_core::account::{AccountRole, AccountUser};
-use rusqlite::{Connection, OptionalExtension, Row, params};
+use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
 
 use crate::error::StorageError;
 use crate::new_row::{generate_id, now_ms};
@@ -82,21 +82,24 @@ pub fn list_users(conn: &Connection) -> Result<Vec<AccountUser>, StorageError> {
 
 /// Changes an account's role, unless that would leave no administrator account.
 pub fn set_user_role(
-    conn: &Connection,
+    conn: &mut Connection,
     id: &str,
     role: AccountRole,
 ) -> Result<AccountUser, StorageError> {
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     if role != AccountRole::Administrator {
-        ensure_not_last_administrator(conn, id)?;
+        ensure_not_last_administrator(&transaction, id)?;
     }
-    let updated = conn.execute(
+    let updated = transaction.execute(
         "UPDATE users SET role = ?2 WHERE id = ?1",
         params![id, role.as_str()],
     )?;
     if updated == 0 {
         return Err(StorageError::UserNotFound(id.to_string()));
     }
-    get_user(conn, id)
+    let user = get_user(&transaction, id)?;
+    transaction.commit()?;
+    Ok(user)
 }
 
 /// Replaces the password hash of an account and ends all of its sessions, in one transaction.
@@ -119,17 +122,21 @@ pub fn set_password_hash(
 }
 
 /// Deletes an account together with its sessions, unless it is the last administrator account.
-pub fn delete_user(conn: &Connection, id: &str) -> Result<(), StorageError> {
-    ensure_not_last_administrator(conn, id)?;
-    let deleted = conn.execute("DELETE FROM users WHERE id = ?1", params![id])?;
+pub fn delete_user(conn: &mut Connection, id: &str) -> Result<(), StorageError> {
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    ensure_not_last_administrator(&transaction, id)?;
+    let deleted = transaction.execute("DELETE FROM users WHERE id = ?1", params![id])?;
     if deleted == 0 {
         return Err(StorageError::UserNotFound(id.to_string()));
     }
+    transaction.commit()?;
     Ok(())
 }
 
 /// Fails when the account is an administrator and no other account is.
-/// Every write runs on the one writer connection, so no other change can come between this check and the write.
+/// Callers run the check and their change in one immediate transaction,
+/// which holds the database's write lock from the start, so that no other connection or process,
+/// such as the `users` command beside a running server, can change the accounts in between.
 fn ensure_not_last_administrator(conn: &Connection, id: &str) -> Result<(), StorageError> {
     let administrator = AccountRole::Administrator.as_str();
     let is_last: bool = conn.query_row(
@@ -165,6 +172,7 @@ pub fn read_user(row: &Row) -> rusqlite::Result<AccountUser> {
 #[cfg(test)]
 mod tests {
     use easyimmerse_core::account::AccountRole;
+    use rusqlite::TransactionBehavior;
 
     use crate::{Storage, StorageError};
 
@@ -312,6 +320,58 @@ mod tests {
                 .set_user_role(&id, AccountRole::Administrator)
                 .is_ok()
         );
+    }
+
+    /// Two administrators in a database file, and a second connection to it, as another process would have.
+    fn database_with_two_administrators(dir: &std::path::Path) -> (Storage, rusqlite::Connection) {
+        let path = dir.join("accounts.sqlite");
+        let storage = Storage::open(&path).unwrap();
+        storage
+            .create_user("first@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        storage
+            .create_user("second@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        (storage, rusqlite::Connection::open(&path).unwrap())
+    }
+
+    /// Starts demoting the second administrator on the other connection, demotes the first through storage
+    /// while the other change is still open, then lets the other change commit.
+    fn demote_both_concurrently(
+        storage: Storage,
+        mut other: rusqlite::Connection,
+    ) -> Result<(), StorageError> {
+        let first = storage
+            .find_user_by_email("first@example.com")
+            .unwrap()
+            .unwrap()
+            .user
+            .id;
+        let transaction = other
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .unwrap();
+        transaction
+            .execute(
+                "UPDATE users SET role = 'privileged' WHERE email = 'second@example.com'",
+                [],
+            )
+            .unwrap();
+        let demotion = std::thread::spawn(move || {
+            storage
+                .set_user_role(&first, AccountRole::Privileged)
+                .map(|_| ())
+        });
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        transaction.commit().unwrap();
+        demotion.join().unwrap()
+    }
+
+    #[test]
+    fn a_concurrent_demotion_by_another_connection_keeps_the_last_administrator() {
+        let dir = tempfile::tempdir().unwrap();
+        let (storage, other) = database_with_two_administrators(dir.path());
+        let result = demote_both_concurrently(storage, other);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
     }
 
     #[test]
