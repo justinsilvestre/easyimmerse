@@ -155,7 +155,7 @@ function installRenderRecorder(): void {
   });
 }
 
-/** Runs in the page. Resolves once fonts, images, and the first video frames are ready, or after the timeout. */
+/** Runs in the page. Resolves once fonts and images have loaded and every video shows its frame, or after the timeout. */
 function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
   const settled = (target: EventTarget, events: string[]) =>
     new Promise<void>((resolve) => {
@@ -163,9 +163,21 @@ function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
         target.addEventListener(event, () => resolve(), { once: true });
       }
     });
-  const videos = [...document.querySelectorAll("video")]
-    .filter((video) => video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)
-    .map((video) => settled(video, ["loadeddata", "error"]));
+  // A video can have its frame decoded but not yet painted, which shows as black.
+  // Seeking to the current position makes the browser present the frame again and report when it has.
+  const presentFrame = (video: HTMLVideoElement) =>
+    new Promise<void>((resolve) => {
+      if (video.error) return resolve();
+      video.requestVideoFrameCallback(() => resolve());
+      const position = video.currentTime;
+      video.currentTime = position;
+    });
+  const videos = [...document.querySelectorAll("video")].map((video) =>
+    (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+      ? settled(video, ["loadeddata", "error"])
+      : Promise.resolve()
+    ).then(() => presentFrame(video)),
+  );
   const images = [...document.images]
     .filter((image) => !image.complete)
     .map((image) => settled(image, ["load", "error"]));
