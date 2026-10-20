@@ -38,6 +38,10 @@ pub enum StorageError {
     AlignmentNotFound(String),
     #[error("the media file {0:?} cannot be aligned or paired with itself")]
     PairedWithItself(String),
+    #[error("an account already has the email address {0:?}")]
+    EmailTaken(String),
+    #[error("no account has the id {0:?}")]
+    UserNotFound(String),
 }
 
 impl From<DictionaryError> for StorageError {
