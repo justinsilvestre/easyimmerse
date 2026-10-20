@@ -26,6 +26,7 @@ pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
 pub use sample_content::SampleContentError;
+pub use sessions::LiveSession;
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 pub use users::StoredUser;
 
@@ -400,20 +401,25 @@ impl Storage {
         self.write(|conn| sessions::create_session(conn, token_hash, user_id, expires_at_ms))
     }
 
-    /// Finds the user of the session stored under the token hash, unless the session has expired by `now_ms`.
-    /// An expired session is deleted.
-    pub fn find_session_user(
+    /// Finds the session stored under the token hash, unless it has expired by `now_ms`.
+    /// An expired session is deleted. The lookup itself does not wait for a write in progress.
+    pub fn find_live_session(
         &self,
         token_hash: &str,
         now_ms: u64,
-    ) -> Result<Option<AccountUser>, StorageError> {
-        match self.read(|conn| sessions::find_session_user(conn, token_hash))? {
-            Some((user, expires_at_ms)) if expires_at_ms > now_ms => Ok(Some(user)),
+    ) -> Result<Option<LiveSession>, StorageError> {
+        match self.read(|conn| sessions::find_session(conn, token_hash))? {
+            Some(session) if session.expires_at_ms > now_ms => Ok(Some(session)),
             Some(_) => self
                 .write(|conn| sessions::delete_session(conn, token_hash))
                 .map(|()| None),
             None => Ok(None),
         }
+    }
+
+    /// Moves the expiry of the session stored under the token hash.
+    pub fn extend_session(&self, token_hash: &str, expires_at_ms: u64) -> Result<(), StorageError> {
+        self.write(|conn| sessions::extend_session(conn, token_hash, expires_at_ms))
     }
 
     pub fn delete_session(&self, token_hash: &str) -> Result<(), StorageError> {

@@ -3,8 +3,14 @@
 
 use sha2::{Digest, Sha256};
 
-/// How long a session lasts after it is created: ninety days.
-pub const SESSION_LIFETIME_MS: u64 = 90 * 24 * 60 * 60 * 1000;
+const DAY_MS: u64 = 24 * 60 * 60 * 1000;
+
+/// How long a session lasts after it is created, or after it was last extended: ninety days.
+pub const SESSION_LIFETIME_MS: u64 = 90 * DAY_MS;
+
+/// A session in use whose expiry lies less than this far ahead is extended,
+/// so that each session is extended at most once a day.
+pub const SESSION_RENEWAL_HORIZON_MS: u64 = 89 * DAY_MS;
 
 /// Thirty-two random bytes, hex encoded.
 pub fn generate_session_token() -> String {

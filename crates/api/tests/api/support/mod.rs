@@ -102,11 +102,15 @@ pub async fn spawn_test_server_with_options(
 /// A server that has accounts as well as the launch token, which the requests present by default.
 /// It allows local paths, so that tests can tell that only the launch token may read them.
 pub async fn spawn_test_server_with_accounts(open_signup: bool) -> TestServer {
+    spawn_test_server_with_accounts_on(seeded_storage(), open_signup).await
+}
+
+pub async fn spawn_test_server_with_accounts_on(storage: Storage, open_signup: bool) -> TestServer {
     let configure = |port| ApiConfig {
         accounts: Some(AccountsConfig { open_signup }),
         ..ApiConfig::for_loopback(port, TOKEN.to_string(), true)
     };
-    spawn_configured_test_server(configure, seeded_storage(), ServeOptions::default()).await
+    spawn_configured_test_server(configure, storage, ServeOptions::default()).await
 }
 
 /// Starts a server with the configuration that `configure` builds for its port.

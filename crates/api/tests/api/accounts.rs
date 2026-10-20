@@ -1,12 +1,17 @@
 //! Signing up, logging in and out, and the principal behind a token.
 
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use easyimmerse_api::accounts::hash_session_token;
 use easyimmerse_api::{ApiConfig, ServeError, ServeOptions, serve};
+use easyimmerse_core::account::AccountRole;
 use easyimmerse_storage::Storage;
 use serde_json::json;
 use tokio::net::TcpListener;
 
 use crate::support::{
     TestResponse, TestServer, fixture_path, spawn_test_server, spawn_test_server_with_accounts,
+    spawn_test_server_with_accounts_on,
 };
 
 const PASSWORD: &str = "correct horse";
@@ -271,6 +276,45 @@ mod me {
         let server = spawn_test_server_with_accounts(true).await;
         let response = get_as(&server, "/auth/me", "unknown").await;
         assert_eq!(response.json()["code"], "unauthorized");
+    }
+}
+
+mod session_expiry {
+    use super::*;
+
+    const DAY_MS: u64 = 24 * 60 * 60 * 1000;
+
+    fn now_ms() -> u64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64
+    }
+
+    /// Stores a session with the token `session-token` that expires a day from now.
+    fn store_session_expiring_tomorrow(storage: &Storage) {
+        let user = storage
+            .create_user("reader@example.com", "hash", AccountRole::LibraryUser)
+            .unwrap();
+        let token_hash = hash_session_token("session-token");
+        storage
+            .create_session(&token_hash, &user.id, now_ms() + DAY_MS)
+            .unwrap();
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_session_in_use_is_extended_to_ninety_days() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("server.sqlite");
+        store_session_expiring_tomorrow(&Storage::open(&path).unwrap());
+        let server = spawn_test_server_with_accounts_on(Storage::open(&path).unwrap(), true).await;
+        get_as(&server, "/auth/me", "session-token").await;
+        let session = Storage::open(&path)
+            .unwrap()
+            .find_live_session(&hash_session_token("session-token"), now_ms())
+            .unwrap()
+            .unwrap();
+        assert!(session.expires_at_ms > now_ms() + 89 * DAY_MS);
     }
 }
 

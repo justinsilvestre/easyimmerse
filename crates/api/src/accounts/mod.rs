@@ -10,13 +10,14 @@ mod session_tokens;
 
 pub use error::AccountsError;
 pub use login_throttle::LoginThrottle;
+pub use session_tokens::hash_session_token;
 
 use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_storage::{Storage, StorageError};
 
 use credentials::{ensure_password_long_enough, normalized_email};
 use password_hashing::{check_against_dummy_hash, hash_password, password_matches};
-use session_tokens::{SESSION_LIFETIME_MS, generate_session_token, hash_session_token};
+use session_tokens::{SESSION_LIFETIME_MS, SESSION_RENEWAL_HORIZON_MS, generate_session_token};
 
 /// Creates an account after checking that its email address and password follow the rules.
 pub fn create_account(
@@ -62,12 +63,20 @@ pub fn start_session(
 }
 
 /// Finds the user of the session with the token, unless it has expired by `now_ms`.
+/// A session in use is extended to last ninety days from now, at most once a day.
 pub fn find_session_user(
     storage: &Storage,
     token: &str,
     now_ms: u64,
 ) -> Result<Option<AccountUser>, StorageError> {
-    storage.find_session_user(&hash_session_token(token), now_ms)
+    let token_hash = hash_session_token(token);
+    let Some(session) = storage.find_live_session(&token_hash, now_ms)? else {
+        return Ok(None);
+    };
+    if session.expires_at_ms < now_ms.saturating_add(SESSION_RENEWAL_HORIZON_MS) {
+        storage.extend_session(&token_hash, now_ms.saturating_add(SESSION_LIFETIME_MS))?;
+    }
+    Ok(Some(session.user))
 }
 
 pub fn end_session(storage: &Storage, token: &str) -> Result<(), StorageError> {
@@ -144,6 +153,31 @@ mod tests {
             find_session_user(&storage, &token, SESSION_LIFETIME_MS).unwrap(),
             None
         );
+    }
+
+    #[test]
+    fn a_session_in_use_outlives_ninety_days() {
+        let storage = storage_with_reader();
+        let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
+        let token = start_session(&storage, &user.id, 0).unwrap();
+        find_session_user(&storage, &token, SESSION_LIFETIME_MS / 2).unwrap();
+        assert_eq!(
+            find_session_user(&storage, &token, SESSION_LIFETIME_MS).unwrap(),
+            Some(user)
+        );
+    }
+
+    #[test]
+    fn a_session_used_again_within_a_day_keeps_its_expiry() {
+        let storage = storage_with_reader();
+        let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
+        let token = start_session(&storage, &user.id, 0).unwrap();
+        find_session_user(&storage, &token, 1_000).unwrap();
+        let session = storage
+            .find_live_session(&hash_session_token(&token), 1_000)
+            .unwrap()
+            .unwrap();
+        assert_eq!(session.expires_at_ms, SESSION_LIFETIME_MS);
     }
 
     #[test]
