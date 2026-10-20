@@ -252,15 +252,24 @@
       });
 
       // Records each screenshot's own size on first load, before any flip, to flag stories that grew or shrank.
+      // Both sides then share one scale that fits the taller of the two on screen, so that flipping moves nothing.
       document.addEventListener("load", (event) => {
         if (!event.target.matches?.(".frame img")) return;
         const [img, overlay] = event.target.parentElement.querySelectorAll("img");
         if (overlay?.complete && img.complete) overlay.style.width = `${(overlay.naturalWidth / img.naturalWidth) * 100}%`;
-        if (event.target !== img || img.dataset.size) return;
-        img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
+        if (event.target !== img) return;
         const section = img.closest(".variant");
-        const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
-        if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
+        if (!img.dataset.size) {
+          img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
+          img.dataset.height = img.naturalHeight;
+          const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
+          if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
+        }
+        const screenshots = [...section.querySelectorAll(".frame img:not(.overlay)")];
+        const heights = screenshots.map((screenshot) => Number(screenshot.dataset.height));
+        if (!heights.every(Boolean)) return;
+        const scale = Math.min(1, (innerHeight * 0.8) / Math.max(...heights));
+        for (const screenshot of screenshots) screenshot.style.width = `${screenshot.naturalWidth * scale}px`;
       }, true);
     </script>
   </body>
