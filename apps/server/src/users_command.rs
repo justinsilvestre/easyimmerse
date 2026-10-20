@@ -147,7 +147,7 @@ mod tests {
         let user = find_user(&storage, "reader@example.com").unwrap();
         let token = easyimmerse_api::accounts::start_session(&storage, &user.id, 0).unwrap();
         set_password_of(&storage, "reader@example.com", "battery staple").unwrap();
-        let found = easyimmerse_api::accounts::find_session_user(&storage, &token, 1).unwrap();
+        let found = easyimmerse_api::accounts::find_session(&storage, &token, 1).unwrap();
         assert_eq!(found, None);
     }
 

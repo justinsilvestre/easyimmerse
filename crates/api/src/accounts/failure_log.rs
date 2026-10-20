@@ -46,6 +46,16 @@ impl<K: Eq + Hash> FailureLog<K> {
         self.failures.remove(key);
     }
 
+    /// Forgets the key's most recent failure, as when an attempt counted as one turns out to succeed.
+    pub fn forget_latest(&mut self, key: &K) {
+        if let Some(times) = self.failures.get_mut(key) {
+            times.pop();
+            if times.is_empty() {
+                self.failures.remove(key);
+            }
+        }
+    }
+
     #[cfg(test)]
     pub fn len(&self) -> usize {
         self.failures.len()
@@ -99,6 +109,13 @@ mod tests {
     fn lets_a_cleared_key_try() {
         let mut log = log_with_failures(&[1, 2, 3]);
         log.clear(&"key");
+        assert_eq!(log.retry_after_ms(&"key", 4), None);
+    }
+
+    #[test]
+    fn forgetting_the_latest_failure_lets_a_key_at_the_limit_try() {
+        let mut log = log_with_failures(&[1, 2, 3]);
+        log.forget_latest(&"key");
         assert_eq!(log.retry_after_ms(&"key", 4), None);
     }
 

@@ -38,6 +38,16 @@
               }
             }
           },
+          "400": {
+            "description": "`invalid_email`: the email address is longer than 254 characters, or `password_too_long`: the password is longer than 1024 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "`invalid_credentials`: no account has this email address and password",
             "content": {
@@ -69,7 +79,7 @@
             }
           },
           "429": {
-            "description": "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes",
+            "description": "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -236,7 +246,7 @@
             }
           },
           "400": {
-            "description": "`invalid_email` or `password_too_short`",
+            "description": "`invalid_email`, `password_too_short` or `password_too_long`",
             "content": {
               "application/json": {
                 "schema": {
@@ -276,7 +286,7 @@
             }
           },
           "429": {
-            "description": "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes",
+            "description": "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -5966,7 +5976,7 @@
             }
           },
           "400": {
-            "description": "`invalid_email` or `password_too_short`",
+            "description": "`invalid_email`, `password_too_short` or `password_too_long`",
             "content": {
               "application/json": {
                 "schema": {

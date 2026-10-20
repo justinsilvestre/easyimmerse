@@ -6,16 +6,19 @@ mod error;
 mod failure_log;
 mod login_throttle;
 mod password_hashing;
+mod session_extension;
 mod session_tokens;
 
+pub use credentials::ensure_credentials_bounded;
 pub use error::AccountsError;
-pub use login_throttle::LoginThrottle;
+pub use login_throttle::{LoginAttempt, LoginThrottle};
+pub use session_extension::{PendingExtensions, SessionExtension, extend_in_background};
 pub use session_tokens::hash_session_token;
 
 use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_storage::{Storage, StorageError};
 
-use credentials::{ensure_password_long_enough, normalized_email};
+use credentials::{ensure_password_acceptable, normalized_email};
 use password_hashing::{check_against_dummy_hash, hash_password, password_matches};
 use session_tokens::{SESSION_LIFETIME_MS, SESSION_RENEWAL_HORIZON_MS, generate_session_token};
 
@@ -27,14 +30,14 @@ pub fn create_account(
     role: AccountRole,
 ) -> Result<AccountUser, AccountsError> {
     let email = normalized_email(email)?;
-    ensure_password_long_enough(password)?;
+    ensure_password_acceptable(password)?;
     let password_hash = hash_password(password)?;
     Ok(storage.create_user(&email, &password_hash, role)?)
 }
 
 /// Gives an account a new password, after checking that it follows the rules, and ends all of its sessions.
 pub fn set_password(storage: &Storage, user_id: &str, password: &str) -> Result<(), AccountsError> {
-    ensure_password_long_enough(password)?;
+    ensure_password_acceptable(password)?;
     let password_hash = hash_password(password)?;
     Ok(storage.set_password_hash(user_id, &password_hash)?)
 }
@@ -69,21 +72,34 @@ pub fn start_session(
     Ok(token)
 }
 
-/// Finds the user of the session with the token, unless it has expired by `now_ms`.
-/// A session in use is extended to last ninety days from now, at most once a day.
-pub fn find_session_user(
+/// The session that a token belongs to: its user, and the extension it is due, if any.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FoundSession {
+    pub user: AccountUser,
+    /// Present when the session's expiry lies less than 89 days ahead.
+    /// Applying it makes the session last ninety days from now, so that a session in use never expires.
+    pub extension: Option<SessionExtension>,
+}
+
+/// Finds the session with the token, unless it has expired by `now_ms`. Only reads.
+pub fn find_session(
     storage: &Storage,
     token: &str,
     now_ms: u64,
-) -> Result<Option<AccountUser>, StorageError> {
+) -> Result<Option<FoundSession>, StorageError> {
     let token_hash = hash_session_token(token);
     let Some(session) = storage.find_live_session(&token_hash, now_ms)? else {
         return Ok(None);
     };
-    if session.expires_at_ms < now_ms.saturating_add(SESSION_RENEWAL_HORIZON_MS) {
-        storage.extend_session(&token_hash, now_ms.saturating_add(SESSION_LIFETIME_MS))?;
-    }
-    Ok(Some(session.user))
+    let is_due = session.expires_at_ms < now_ms.saturating_add(SESSION_RENEWAL_HORIZON_MS);
+    let extension = is_due.then(|| SessionExtension {
+        token_hash,
+        expires_at_ms: now_ms.saturating_add(SESSION_LIFETIME_MS),
+    });
+    Ok(Some(FoundSession {
+        user: session.user,
+        extension,
+    }))
 }
 
 pub fn end_session(storage: &Storage, token: &str) -> Result<(), StorageError> {
@@ -93,6 +109,21 @@ pub fn end_session(storage: &Storage, token: &str) -> Result<(), StorageError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Finds the session's user as a request would, applying the extension the session is due.
+    fn find_session_user(
+        storage: &Storage,
+        token: &str,
+        now_ms: u64,
+    ) -> Result<Option<AccountUser>, StorageError> {
+        let Some(found) = find_session(storage, token, now_ms)? else {
+            return Ok(None);
+        };
+        if let Some(extension) = &found.extension {
+            extension.apply(storage)?;
+        }
+        Ok(Some(found.user))
+    }
 
     fn storage_with_reader() -> Storage {
         let storage = Storage::open_in_memory().unwrap();

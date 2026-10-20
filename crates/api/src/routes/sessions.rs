@@ -9,7 +9,10 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::accounts::{AccountsError, authenticate, create_account, end_session, start_session};
+use crate::accounts::{
+    AccountsError, authenticate, create_account, end_session, ensure_credentials_bounded,
+    start_session,
+};
 use crate::auth::bearer_token::header_token;
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::auth::principal::Principal;
@@ -49,11 +52,11 @@ pub struct SessionCreated {
     request_body = SignupRequest,
     responses(
         (status = 201, description = "The account was created and logged in", body = SessionCreated),
-        (status = 400, description = "`invalid_email` or `password_too_short`", body = ApiError),
+        (status = 400, description = "`invalid_email`, `password_too_short` or `password_too_long`", body = ApiError),
         (status = 403, description = "`signup_closed`: the server has no accounts or does not let anyone sign up", body = ApiError),
         (status = 409, description = "`email_taken`: an account already has this email address", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 429, description = "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes", body = ApiError,
+        (status = 429, description = "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes", body = ApiError,
             headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
     ),
 )]
@@ -63,6 +66,7 @@ pub async fn sign_up(
     Json(request): Json<SignupRequest>,
 ) -> Result<(StatusCode, Json<SessionCreated>), ApiFailure> {
     ensure_signup_open(&state.config)?;
+    ensure_credentials_bounded(&request.email, &request.password)?;
     let peer = peer_address(peer);
     state
         .login_throttle
@@ -86,10 +90,11 @@ pub async fn sign_up(
     request_body = LoginRequest,
     responses(
         (status = 200, description = "The account was logged in", body = SessionCreated),
+        (status = 400, description = "`invalid_email`: the email address is longer than 254 characters, or `password_too_long`: the password is longer than 1024 bytes", body = ApiError),
         (status = 401, description = "`invalid_credentials`: no account has this email address and password", body = ApiError),
         (status = 403, description = "`accounts_disabled`: the server has no accounts", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 429, description = "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes", body = ApiError,
+        (status = 429, description = "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes", body = ApiError,
             headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
     ),
 )]
@@ -99,19 +104,14 @@ pub async fn log_in(
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<SessionCreated>, ApiFailure> {
     ensure_accounts_enabled(&state.config)?;
-    let peer = peer_address(peer);
+    ensure_credentials_bounded(&request.email, &request.password)?;
     let throttle = &state.login_throttle;
-    throttle.ensure_allowed(&request.email, peer, now_ms())?;
-    let email = request.email.clone();
-    let outcome = state
-        .with_accounts(move |storage| Ok(log_in_and_open_session(storage, &request)))
+    let attempt = throttle.begin_attempt(&request.email, peer_address(peer), now_ms())?;
+    let session = state
+        .with_accounts(move |storage| log_in_and_open_session(storage, &request))
         .await?;
-    match &outcome {
-        Ok(_) => throttle.clear(&email),
-        Err(AccountsError::InvalidCredentials) => throttle.record_failure(&email, peer, now_ms()),
-        Err(_) => {}
-    }
-    Ok(Json(outcome?))
+    throttle.succeeded(&attempt);
+    Ok(Json(session))
 }
 
 /// Ends the session that authenticated the request. With the launch token it does nothing.

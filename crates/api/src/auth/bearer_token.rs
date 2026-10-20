@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::extract::{MatchedPath, Query, Request, State};
 use axum::http::HeaderMap;
 use axum::http::header::AUTHORIZATION;
@@ -5,7 +7,7 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 
-use crate::accounts::find_session_user;
+use crate::accounts::{extend_in_background, find_session};
 use crate::auth::error_body::{ApiFailure, unauthorized};
 use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
@@ -57,10 +59,17 @@ async fn authenticate(state: &AppState, token: String) -> Result<Option<Principa
     if state.config.accounts.is_none() {
         return Ok(None);
     }
-    let user = state
-        .with_storage(move |storage| find_session_user(storage, &token, now_ms()))
+    let found = state
+        .with_storage(move |storage| find_session(storage, &token, now_ms()))
         .await?;
-    Ok(user.as_ref().map(Principal::of_account))
+    let Some(found) = found else {
+        return Ok(None);
+    };
+    if let Some(extension) = found.extension {
+        let storage = Arc::clone(&state.storage);
+        extend_in_background(storage, Arc::clone(&state.session_extensions), extension);
+    }
+    Ok(Some(Principal::of_account(&found.user)))
 }
 
 #[derive(Deserialize)]

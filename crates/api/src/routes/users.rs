@@ -60,7 +60,7 @@ pub async fn list_users(
     request_body = CreateUserRequest,
     responses(
         (status = 201, description = "The account was created", body = AccountUser),
-        (status = 400, description = "`invalid_email` or `password_too_short`", body = ApiError),
+        (status = 400, description = "`invalid_email`, `password_too_short` or `password_too_long`", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the token is not an administrator's", body = ApiError),
         (status = 409, description = "`email_taken`: an account already has this email address", body = ApiError),

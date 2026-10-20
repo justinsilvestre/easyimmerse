@@ -25,6 +25,8 @@ use crate::state::AppState;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
+/// The routes that need no token take only small JSON bodies.
+const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 
 /// Builds the complete application router together with its OpenAPI document.
 ///
@@ -37,14 +39,25 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
         .layer(Extension(Arc::new(document.clone())))
         .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
+    let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));
     let router = protected
         .merge(public)
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
-        .layer(TraceLayer::new_for_http())
+        .layer(TraceLayer::new_for_http().make_span_with(request_span))
         .with_state(state);
     (router, document)
+}
+
+/// Records the method and the path of a request, but not its query,
+/// since the media routes accept a token as a query parameter.
+fn request_span(request: &axum::extract::Request) -> tracing::Span {
+    tracing::debug_span!(
+        "request",
+        method = %request.method(),
+        path = %request.uri().path(),
+    )
 }
 
 /// Allows any origin, since the bearer token is what protects the API.

@@ -2,15 +2,21 @@ use axum::http::StatusCode;
 use easyimmerse_storage::StorageError;
 use thiserror::Error;
 
-use crate::accounts::credentials::MIN_PASSWORD_CHARACTERS;
+use crate::accounts::credentials::{
+    MAX_EMAIL_CHARACTERS, MAX_PASSWORD_BYTES, MIN_PASSWORD_CHARACTERS,
+};
 use crate::auth::error_body::ApiFailure;
 
 #[derive(Debug, Error)]
 pub enum AccountsError {
     #[error("{0:?} is not an email address")]
     InvalidEmail(String),
+    #[error("an email address may have at most {MAX_EMAIL_CHARACTERS} characters")]
+    EmailTooLong,
     #[error("a password must be at least {MIN_PASSWORD_CHARACTERS} characters long")]
     PasswordTooShort,
+    #[error("a password may have at most {MAX_PASSWORD_BYTES} bytes")]
+    PasswordTooLong,
     #[error("an account already has the email address {0:?}")]
     EmailTaken(String),
     #[error("the email address or the password is wrong")]
@@ -36,11 +42,14 @@ impl From<AccountsError> for ApiFailure {
     fn from(error: AccountsError) -> Self {
         let message = error.to_string();
         match error {
-            AccountsError::InvalidEmail(_) => {
+            AccountsError::InvalidEmail(_) | AccountsError::EmailTooLong => {
                 ApiFailure::new(StatusCode::BAD_REQUEST, "invalid_email", message)
             }
             AccountsError::PasswordTooShort => {
                 ApiFailure::new(StatusCode::BAD_REQUEST, "password_too_short", message)
+            }
+            AccountsError::PasswordTooLong => {
+                ApiFailure::new(StatusCode::BAD_REQUEST, "password_too_long", message)
             }
             AccountsError::EmailTaken(_) => {
                 ApiFailure::new(StatusCode::CONFLICT, "email_taken", message)

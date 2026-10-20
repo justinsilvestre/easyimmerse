@@ -242,12 +242,77 @@ mod throttling {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn lets_no_more_than_five_concurrent_attempts_through() {
+        let server = spawn_test_server_with_accounts(true).await;
+        let body = json!({ "email": "reader@example.com", "password": "battery staple" });
+        let mut attempts = tokio::task::JoinSet::new();
+        for _ in 0..12 {
+            let request = server
+                .request("POST", "/auth/login")
+                .without_token()
+                .json(&body);
+            attempts.spawn(request.send());
+        }
+        let statuses = attempts.join_all().await;
+        let let_through = statuses
+            .iter()
+            .filter(|response| response.status != 429)
+            .count();
+        assert_eq!(let_through, 5);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn forgets_the_failures_after_a_successful_login() {
         let server = spawn_test_server_with_accounts(true).await;
         sign_up(&server, "reader@example.com", PASSWORD).await;
         fail_to_log_in(&server, 4).await;
         log_in(&server, "reader@example.com", PASSWORD).await;
         fail_to_log_in(&server, 4).await;
+        let response = log_in(&server, "reader@example.com", PASSWORD).await;
+        assert_eq!(response.status, 200);
+    }
+}
+
+mod request_size {
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_login_body_over_16_kilobytes() {
+        let server = spawn_test_server_with_accounts(true).await;
+        let password = "a".repeat(17 * 1024);
+        let response = log_in(&server, "reader@example.com", &password).await;
+        assert_eq!(response.status, 413);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_an_email_over_254_characters() {
+        let server = spawn_test_server_with_accounts(true).await;
+        let email = format!("{}@example.com", "a".repeat(250));
+        let response = log_in(&server, &email, PASSWORD).await;
+        assert_eq!(
+            (response.status, response.json()["code"].clone()),
+            (400, json!("invalid_email"))
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_password_over_1024_bytes() {
+        let server = spawn_test_server_with_accounts(true).await;
+        let password = "a".repeat(1025);
+        let response = sign_up(&server, "reader@example.com", &password).await;
+        assert_eq!(
+            (response.status, response.json()["code"].clone()),
+            (400, json!("password_too_long"))
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn does_not_count_a_refused_long_password_as_an_attempt() {
+        let server = spawn_test_server_with_accounts(true).await;
+        sign_up(&server, "reader@example.com", PASSWORD).await;
+        for _ in 0..5 {
+            log_in(&server, "reader@example.com", &"a".repeat(1025)).await;
+        }
         let response = log_in(&server, "reader@example.com", PASSWORD).await;
         assert_eq!(response.status, 200);
     }
@@ -309,12 +374,24 @@ mod session_expiry {
         store_session_expiring_tomorrow(&Storage::open(&path).unwrap());
         let server = spawn_test_server_with_accounts_on(Storage::open(&path).unwrap(), true).await;
         get_as(&server, "/auth/me", "session-token").await;
-        let session = Storage::open(&path)
-            .unwrap()
-            .find_live_session(&hash_session_token("session-token"), now_ms())
-            .unwrap()
-            .unwrap();
-        assert!(session.expires_at_ms > now_ms() + 89 * DAY_MS);
+        assert!(expiry_after_extension(&path).await > now_ms() + 89 * DAY_MS);
+    }
+
+    /// The session's expiry once the extension, which the server writes in the background, has landed,
+    /// or after two seconds without it.
+    async fn expiry_after_extension(path: &std::path::Path) -> u64 {
+        let storage = Storage::open(path).unwrap();
+        let token_hash = hash_session_token("session-token");
+        let mut expires_at_ms = 0;
+        for _ in 0..100 {
+            let session = storage.find_live_session(&token_hash, now_ms()).unwrap();
+            expires_at_ms = session.unwrap().expires_at_ms;
+            if expires_at_ms > now_ms() + 89 * DAY_MS {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+        expires_at_ms
     }
 }
 

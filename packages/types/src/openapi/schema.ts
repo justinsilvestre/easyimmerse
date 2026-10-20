@@ -2652,6 +2652,15 @@ export interface operations {
                     "application/json": components["schemas"]["SessionCreated"];
                 };
             };
+            /** @description `invalid_email`: the email address is longer than 254 characters, or `password_too_long`: the password is longer than 1024 bytes */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description `invalid_credentials`: no account has this email address and password */
             401: {
                 headers: {
@@ -2679,7 +2688,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes */
+            /** @description `too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes */
             429: {
                 headers: {
                     /** @description The seconds to wait before trying again */
@@ -2817,7 +2826,7 @@ export interface operations {
                     "application/json": components["schemas"]["SessionCreated"];
                 };
             };
-            /** @description `invalid_email` or `password_too_short` */
+            /** @description `invalid_email`, `password_too_short` or `password_too_long` */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2853,7 +2862,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes */
+            /** @description `too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes */
             429: {
                 headers: {
                     /** @description The seconds to wait before trying again */
@@ -7014,7 +7023,7 @@ export interface operations {
                     "application/json": components["schemas"]["AccountUser"];
                 };
             };
-            /** @description `invalid_email` or `password_too_short` */
+            /** @description `invalid_email`, `password_too_short` or `password_too_long` */
             400: {
                 headers: {
                     [name: string]: unknown;
