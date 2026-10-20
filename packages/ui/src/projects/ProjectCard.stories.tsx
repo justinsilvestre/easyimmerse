@@ -4,6 +4,7 @@ import {
   exampleProjectReviewed,
   exampleProjectWithNewCards,
   exampleProjectWithReviewsDue,
+  exampleReviewCounts,
 } from "./exampleProjects.ts";
 import { ProjectCard } from "./ProjectCard.tsx";
 
@@ -17,7 +18,12 @@ const meta = {
       </div>
     ),
   ],
-  args: { project: exampleProjectReviewed, onOpen: fn(), onReview: fn() },
+  args: {
+    project: exampleProjectReviewed,
+    review: exampleReviewCounts[2] ?? null,
+    onOpen: fn(),
+    onReview: fn(),
+  },
 } satisfies Meta<typeof ProjectCard>;
 
 export default meta;
@@ -28,10 +34,16 @@ export const NothingToReview: Story = {};
 
 /** Cards are due, so the card offers to review them, with their count. */
 export const ReviewsDue: Story = {
-  args: { project: exampleProjectWithReviewsDue },
+  args: {
+    project: exampleProjectWithReviewsDue,
+    review: exampleReviewCounts[0] ?? null,
+  },
 };
 
 /** Nothing is due, but some cards have never been reviewed, so the card offers to learn them. */
 export const NewCardsToLearn: Story = {
-  args: { project: exampleProjectWithNewCards },
+  args: {
+    project: exampleProjectWithNewCards,
+    review: exampleReviewCounts[1] ?? null,
+  },
 };

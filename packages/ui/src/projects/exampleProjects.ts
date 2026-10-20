@@ -1,4 +1,8 @@
-import type { Project, ProjectSettings } from "@easyimmerse/types";
+import type {
+  Project,
+  ProjectSettings,
+  ReviewCounts,
+} from "@easyimmerse/types";
 import {
   fieldsOfPreset,
   frontFieldsOfPreset,
@@ -32,7 +36,6 @@ export const exampleProjectWithReviewsDue = {
   media_count: 10,
   uses_anki_connect: false,
   flashcard_count: 184,
-  due_review_count: 8,
   unreviewed_count: 20,
 } satisfies Project;
 
@@ -45,7 +48,6 @@ export const exampleProjectWithNewCards = {
   media_count: 3,
   uses_anki_connect: false,
   flashcard_count: 42,
-  due_review_count: 0,
   unreviewed_count: 12,
 } satisfies Project;
 
@@ -58,9 +60,30 @@ export const exampleProjectReviewed = {
   media_count: 1,
   uses_anki_connect: false,
   flashcard_count: 7,
-  due_review_count: 0,
   unreviewed_count: 0,
 } satisfies Project;
+
+/** What waits in the review of each example project, for stories. */
+export const exampleReviewCounts: readonly ReviewCounts[] = [
+  {
+    project_id: "project-german",
+    due_count: 6,
+    learning_count: 2,
+    new_count: 20,
+  },
+  {
+    project_id: "project-japanese",
+    due_count: 0,
+    learning_count: 0,
+    new_count: 12,
+  },
+  {
+    project_id: "project-spanish",
+    due_count: 0,
+    learning_count: 0,
+    new_count: 0,
+  },
+];
 
 /** Projects for stories, ordered as the home screen lists them. */
 export const exampleProjects: readonly Project[] = [

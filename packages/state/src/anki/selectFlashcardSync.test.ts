@@ -67,6 +67,7 @@ describe("selectFlashcardSync", () => {
       due_count: 3,
       learning_count: 2,
       new_count: 5,
+      held_back_count: 0,
       next_due_at_ms: 9,
       next_card: null,
       has_progress: true,

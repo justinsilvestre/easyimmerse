@@ -7,6 +7,10 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::flashcard::{Flashcard, FlashcardId};
+use crate::project::ProjectId;
+
+/// The longest time an answer is logged as taking, as Anki caps it, since a longer one means the user stepped away.
+pub const MAX_ANSWER_DURATION_MS: u64 = 60_000;
 
 /// The button the user pressed after seeing the answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
@@ -52,6 +56,8 @@ pub struct ReviewCardState {
     pub learning_step: u32,
     /// Milliseconds since the Unix epoch.
     pub last_reviewed_at_ms: u64,
+    /// Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending.
+    pub is_leech: bool,
 }
 
 /// One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across.
@@ -82,11 +88,25 @@ pub struct ReviewLogEntry {
     pub desired_retention: f64,
 }
 
-/// A flashcard's schedule together with every answer given to it, oldest first, as the Anki export carries them across.
+/// How the user set a card aside from the review.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum ReviewHoldKind {
+    /// Left out until the next local day begins.
+    Buried,
+    /// Left out until the user unsuspends it.
+    Suspended,
+}
+
+/// A flashcard's place in the review, as the Anki export carries it across:
+/// its schedule and every answer given to it, oldest first, and whether the user set it aside.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReviewProgress {
-    pub state: ReviewCardState,
+    /// None for a new card.
+    pub state: Option<ReviewCardState>,
     pub log: Vec<ReviewLogEntry>,
+    pub hold: Option<ReviewHoldKind>,
 }
 
 /// The interval each rating would give a card if it were answered now.
@@ -109,12 +129,34 @@ pub struct ReviewSummary {
     pub learning_count: u64,
     /// New cards that may still be introduced today.
     pub new_count: u64,
+    /// Cards under review that are due today but left for later days, because more are due than a day's limit.
+    /// While any are, no new cards are introduced.
+    pub held_back_count: u64,
     /// Milliseconds since the Unix epoch at which the earliest answered card is due. Null when no card has been answered.
     pub next_due_at_ms: Option<u64>,
     /// The flashcard the review would show first. Null when nothing waits.
     pub next_card: Option<Flashcard>,
     /// Whether any flashcard of the project has been answered.
     pub has_progress: bool,
+}
+
+/// What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ReviewCounts {
+    pub project_id: ProjectId,
+    /// Cards under review that are due today, up to the day's limit.
+    pub due_count: u64,
+    /// Cards in learning or relearning that are due now or within the learn-ahead time.
+    pub learning_count: u64,
+    /// New cards that may still be introduced today.
+    pub new_count: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ListReviewCountsResponse {
+    pub projects: Vec<ReviewCounts>,
 }
 
 /// The cards of a review session, in the order they are shown.
@@ -165,13 +207,31 @@ pub struct ReviewAnswerUndone {
     pub intervals: ReviewIntervals,
 }
 
-/// Raises the number of new cards the project's review introduces today.
+/// Raises the number of new cards, or of reviews, the project's review shows today.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ReviewAllowanceRequest {
     /// Local time minus UTC, in minutes, as on the user's device.
     pub utc_offset_min: i32,
     pub extra_new_cards: u32,
+    pub extra_reviews: u32,
+}
+
+/// Sets a card aside from the review: buries it until the next local day, or suspends it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ReviewHoldRequest {
+    pub kind: ReviewHoldKind,
+    /// Local time minus UTC, in minutes, as on the user's device, which places the end of a buried card's day.
+    pub utc_offset_min: i32,
+}
+
+/// The FSRS parameters fitted to the user's own answers across every project, which schedule their reviews in place of the defaults.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReviewParameters {
+    pub weights: Vec<f32>,
+    /// Milliseconds since the Unix epoch at which the fit began.
+    pub fitted_at_ms: u64,
 }
 
 #[cfg(test)]

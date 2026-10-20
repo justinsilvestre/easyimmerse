@@ -4,6 +4,7 @@ import type { AppAction } from "../app/appAction.ts";
 import { combineUpdates } from "../app/combineUpdates.ts";
 import type { Feature } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
+import { reviewFlashcardsOf } from "../review/reviewFlashcards.ts";
 import { fetchQueue } from "../review/reviewRequests.ts";
 import { updateReviewScreen } from "../review/updateReviewScreen.ts";
 import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
@@ -73,7 +74,12 @@ function updateShownScreen(
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route, app);
   if (main.kind === "review" && route.screen === "review")
-    return updateReviewScreen(main, action, route.projectId);
+    return updateReviewScreen(
+      main,
+      action,
+      route.projectId,
+      reviewFlashcardsOf(app.backend, route.projectId),
+    );
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));

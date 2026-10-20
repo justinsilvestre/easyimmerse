@@ -62,7 +62,6 @@ export const fixtureProject: Project = {
   last_opened_at_ms: 1767398400000,
   media_count: 2,
   flashcard_count: 0,
-  due_review_count: 0,
   unreviewed_count: 0,
   uses_anki_connect: false,
 };
@@ -77,7 +76,6 @@ const fixtureProjects: ListProjectsResponse = {
       last_opened_at_ms: 1767312000000,
       media_count: 0,
       flashcard_count: 0,
-      due_review_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: false,
     },
@@ -158,6 +156,7 @@ export const fixtureImportedMediaFiles: ListMediaFilesResponse = {
 export const fixtureResponses = {
   "GET /plugins": { plugins: [] },
   "GET /projects": fixtureProjects,
+  "GET /review/counts": { projects: [] },
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,

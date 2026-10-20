@@ -5,31 +5,36 @@ use std::collections::HashMap;
 use easyimmerse_core::flashcard::{Flashcard, FlashcardId};
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
-    ReviewCardState, ReviewPhase, ReviewProgress, ReviewQueue, ReviewQueueCard, ReviewSummary,
+    ReviewCardState, ReviewCounts, ReviewPhase, ReviewProgress, ReviewQueue, ReviewQueueCard,
+    ReviewSummary,
 };
 use easyimmerse_srs::{
-    ReviewMoment, ReviewedCard, candidate_intervals, learn_ahead_cutoff_ms, new_cards_available,
+    ReviewMoment, ReviewedCard, Scheduler, learn_ahead_cutoff_ms, new_cards_available,
+    reviews_available,
 };
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::StorageError;
 use crate::flashcards::list_flashcards;
 use crate::projects::ensure_project_exists;
+use crate::review_holds::list_review_holds;
+use crate::review_parameters::load_scheduler;
 use crate::review_rows::{list_log_entries, list_review_cards};
-use crate::stored_integer::to_stored_integer;
+use crate::stored_integer::{read_unsigned, to_stored_integer};
 
-/// The session's cards: reviews due today, most overdue first; then learning cards due now or within the learn-ahead time;
-/// then the new cards still allowed today, in the order they were made.
+/// The session's cards: reviews due today, most overdue first, up to the day's limit; then learning cards due now or within the learn-ahead time;
+/// then the new cards still allowed today, in the order they were made. Cards the user set aside are left out.
 pub fn review_queue(
     conn: &Connection,
     project_id: &ProjectId,
     moment: ReviewMoment,
 ) -> Result<ReviewQueue, StorageError> {
     let sections = queue_sections(conn, project_id, moment)?;
+    let scheduler = load_scheduler(conn)?;
     let cards = sections
         .into_ordered()
         .into_iter()
-        .map(|(flashcard, state)| queue_card(flashcard, state, moment))
+        .map(|(flashcard, state)| queue_card(&scheduler, flashcard, state, moment))
         .collect::<Result<_, _>>()?;
     Ok(ReviewQueue { cards })
 }
@@ -40,12 +45,13 @@ pub fn review_summary(
     moment: ReviewMoment,
 ) -> Result<ReviewSummary, StorageError> {
     let sections = queue_sections(conn, project_id, moment)?;
-    let next_due_at_ms = sections.states.values().map(|state| state.due_at_ms).min();
-    let has_progress = !sections.states.is_empty();
+    let next_due_at_ms = sections.next_due_at_ms;
+    let has_progress = sections.has_progress;
     Ok(ReviewSummary {
         due_count: sections.reviews.len() as u64,
         learning_count: sections.learning.len() as u64,
         new_count: sections.new.len() as u64,
+        held_back_count: sections.held_back_count,
         next_due_at_ms,
         next_card: sections
             .into_ordered()
@@ -56,23 +62,43 @@ pub fn review_summary(
     })
 }
 
-/// The schedule and the answers of each of the project's answered flashcards.
+/// What waits in each project's review on the moment's local day, counted as the queue counts it.
+pub fn list_review_counts(
+    conn: &Connection,
+    moment: ReviewMoment,
+) -> Result<Vec<ReviewCounts>, StorageError> {
+    let mut statement = conn.prepare("SELECT id FROM projects ORDER BY rowid")?;
+    let project_ids: Vec<String> = statement
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<_, _>>()?;
+    project_ids
+        .into_iter()
+        .map(|id| {
+            let project_id = ProjectId(id);
+            let sections = queue_sections(conn, &project_id, moment)?;
+            Ok(ReviewCounts {
+                project_id,
+                due_count: sections.reviews.len() as u64,
+                learning_count: sections.learning.len() as u64,
+                new_count: sections.new.len() as u64,
+            })
+        })
+        .collect()
+}
+
+/// The schedule, the answers and the hold at `at_ms` of each of the project's flashcards that has been answered or set aside.
 pub fn list_review_progress(
     conn: &Connection,
     project_id: &ProjectId,
+    at_ms: u64,
 ) -> Result<HashMap<FlashcardId, ReviewProgress>, StorageError> {
-    let mut progress: HashMap<FlashcardId, ReviewProgress> = list_review_cards(conn, project_id)?
-        .into_iter()
-        .map(|(id, state)| {
-            (
-                id,
-                ReviewProgress {
-                    state,
-                    log: Vec::new(),
-                },
-            )
-        })
-        .collect();
+    let mut progress: HashMap<FlashcardId, ReviewProgress> = HashMap::new();
+    for (id, state) in list_review_cards(conn, project_id)? {
+        progress.entry(id).or_insert_with(no_progress).state = Some(state);
+    }
+    for (id, hold) in list_review_holds(conn, project_id, at_ms)? {
+        progress.entry(id).or_insert_with(no_progress).hold = Some(hold);
+    }
     for entry in list_log_entries(conn, project_id)? {
         if let Some(card) = progress.get_mut(&entry.flashcard_id) {
             card.log.push(entry);
@@ -81,12 +107,25 @@ pub fn list_review_progress(
     Ok(progress)
 }
 
+fn no_progress() -> ReviewProgress {
+    ReviewProgress {
+        state: None,
+        log: Vec::new(),
+        hold: None,
+    }
+}
+
 /// The project's flashcards sorted into the parts of a session, with the schedules of the answered ones.
 struct QueueSections {
     reviews: Vec<(Flashcard, ReviewCardState)>,
+    /// The reviews due today that the day's limit leaves for later days.
+    held_back_count: u64,
     learning: Vec<(Flashcard, ReviewCardState)>,
     new: Vec<Flashcard>,
-    states: HashMap<FlashcardId, ReviewCardState>,
+    /// When the earliest answered card that is not set aside is due.
+    next_due_at_ms: Option<u64>,
+    /// Whether any flashcard of the project has been answered.
+    has_progress: bool,
 }
 
 impl QueueSections {
@@ -106,10 +145,15 @@ fn queue_sections(
 ) -> Result<QueueSections, StorageError> {
     ensure_project_exists(conn, project_id)?;
     let states = list_review_cards(conn, project_id)?;
+    let holds = list_review_holds(conn, project_id, moment.at_ms)?;
     let mut reviews = Vec::new();
     let mut learning = Vec::new();
     let mut new = Vec::new();
-    for flashcard in list_flashcards(conn, project_id)? {
+    let flashcards = list_flashcards(conn, project_id)?;
+    for flashcard in flashcards
+        .into_iter()
+        .filter(|card| !holds.contains_key(&card.id))
+    {
         match states.get(&flashcard.id) {
             None => new.push(flashcard),
             Some(state) if is_review_due(state, moment) => reviews.push((flashcard, state.clone())),
@@ -121,12 +165,27 @@ fn queue_sections(
     }
     reviews.sort_by_key(|(_, state)| state.due_at_ms);
     learning.sort_by_key(|(_, state)| state.due_at_ms);
-    new.truncate(new_cards_allowed(conn, project_id, moment, reviews.len() as u64)? as usize);
+    let allowance = day_allowance(conn, project_id, moment)?;
+    let reviewed = reviewed_on_day(conn, project_id, moment)?;
+    let shown_reviews = reviews_available(reviewed, allowance.extra_reviews) as usize;
+    let held_back_count = reviews.len().saturating_sub(shown_reviews) as u64;
+    reviews.truncate(shown_reviews);
+    let introduced = introduced_on_day(conn, project_id, moment)?;
+    let new_allowed =
+        new_cards_available(introduced, allowance.extra_new_cards, held_back_count > 0);
+    new.truncate(new_allowed as usize);
+    let next_due_at_ms = states
+        .iter()
+        .filter(|(id, _)| !holds.contains_key(*id))
+        .map(|(_, state)| state.due_at_ms)
+        .min();
     Ok(QueueSections {
         reviews,
+        held_back_count,
         learning,
         new,
-        states,
+        next_due_at_ms,
+        has_progress: !states.is_empty(),
     })
 }
 
@@ -139,15 +198,23 @@ fn is_learning_due(state: &ReviewCardState, moment: ReviewMoment) -> bool {
     state.state != ReviewPhase::Review && state.due_at_ms <= learn_ahead_cutoff_ms(moment)
 }
 
-fn new_cards_allowed(
+/// The answers given on the moment's local day to cards under review, which count against the day's limit of reviews.
+fn reviewed_on_day(
     conn: &Connection,
     project_id: &ProjectId,
     moment: ReviewMoment,
-    due_review_count: u64,
 ) -> Result<u64, StorageError> {
-    let introduced = introduced_on_day(conn, project_id, moment)?;
-    let extra = extra_new_cards(conn, project_id, moment)?;
-    Ok(new_cards_available(introduced, extra, due_review_count))
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM review_log WHERE project_id = ?1 AND kind = 'review' \
+         AND answered_at_ms >= ?2 AND answered_at_ms < ?3",
+        params![
+            project_id.0,
+            to_stored_integer(moment.day_start_ms()),
+            to_stored_integer(moment.day_end_ms()),
+        ],
+        |row| row.get(0),
+    )?;
+    Ok(u64::try_from(count).unwrap_or(0))
 }
 
 /// The number of flashcards whose first answer fell on the moment's local day.
@@ -169,20 +236,34 @@ fn introduced_on_day(
     Ok(u64::try_from(count).unwrap_or(0))
 }
 
-fn extra_new_cards(
+/// The new cards and the reviews the user asked for on a local day beyond the day's limits.
+struct DayAllowance {
+    extra_new_cards: u64,
+    extra_reviews: u64,
+}
+
+fn day_allowance(
     conn: &Connection,
     project_id: &ProjectId,
     moment: ReviewMoment,
-) -> Result<u64, StorageError> {
-    let extra: Option<i64> = conn.query_row(
-        "SELECT SUM(extra_new_cards) FROM review_day_allowances WHERE project_id = ?1 AND day_key = ?2",
-        params![project_id.0, moment.day()],
-        |row| row.get(0),
-    )?;
-    Ok(extra.map_or(0, |extra| u64::try_from(extra).unwrap_or(0)))
+) -> Result<DayAllowance, StorageError> {
+    let (extra_new_cards, extra_reviews) = conn
+        .query_row(
+            "SELECT extra_new_cards, extra_reviews FROM review_day_allowances \
+             WHERE project_id = ?1 AND day_key = ?2",
+            params![project_id.0, moment.day()],
+            |row| Ok((read_unsigned(row, 0)?, read_unsigned(row, 1)?)),
+        )
+        .optional()?
+        .unwrap_or((0, 0));
+    Ok(DayAllowance {
+        extra_new_cards,
+        extra_reviews,
+    })
 }
 
 fn queue_card(
+    scheduler: &Scheduler,
     flashcard: Flashcard,
     state: Option<ReviewCardState>,
     moment: ReviewMoment,
@@ -191,7 +272,7 @@ fn queue_card(
         flashcard_id: &flashcard.id,
         state: state.as_ref(),
     };
-    let intervals = candidate_intervals(card, moment)?;
+    let intervals = scheduler.candidate_intervals(card, moment)?;
     Ok(ReviewQueueCard {
         flashcard,
         state,
@@ -255,11 +336,114 @@ mod tests {
         let request = ReviewAllowanceRequest {
             utc_offset_min: 0,
             extra_new_cards: 20,
+            extra_reviews: 0,
         };
         storage
             .raise_review_allowance(&project(), &request, NOON_MS)
             .unwrap();
         assert_eq!(queue_at(&storage, NOON_MS).cards.len(), 30);
+    }
+
+    /// Answers `count` cards Good two days before noon, which makes them due at noon, and leaves `new_count` more new.
+    fn storage_with_due_reviews(count: usize, new_count: usize) -> crate::Storage {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, count + new_count);
+        for id in &ids[..count] {
+            rate(&storage, id, ReviewRating::Good, NOON_MS - 2 * DAY_MS);
+        }
+        storage
+    }
+
+    fn summary_at(storage: &crate::Storage, at_ms: u64) -> ReviewSummary {
+        storage.review_summary(&project(), at(at_ms)).unwrap()
+    }
+
+    #[test]
+    fn shows_at_most_two_hundred_reviews_a_day() {
+        let storage = storage_with_due_reviews(201, 0);
+        assert_eq!(queue_at(&storage, NOON_MS).cards.len(), 200);
+    }
+
+    #[test]
+    fn the_summary_counts_the_reviews_left_for_later_days() {
+        let storage = storage_with_due_reviews(205, 0);
+        assert_eq!(summary_at(&storage, NOON_MS).held_back_count, 5);
+    }
+
+    #[test]
+    fn introduces_no_new_cards_while_reviews_are_held_back() {
+        let storage = storage_with_due_reviews(201, 1);
+        assert_eq!(summary_at(&storage, NOON_MS).new_count, 0);
+    }
+
+    #[test]
+    fn introduces_new_cards_when_every_due_review_fits_in_the_day() {
+        let storage = storage_with_due_reviews(200, 1);
+        assert_eq!(summary_at(&storage, NOON_MS).new_count, 1);
+    }
+
+    #[test]
+    fn counts_the_reviews_answered_today_against_the_limit() {
+        let storage = storage_with_due_reviews(201, 0);
+        let first = queue_at(&storage, NOON_MS).cards[0].flashcard.id.clone();
+        rate(&storage, &first, ReviewRating::Good, NOON_MS);
+        assert_eq!(queue_at(&storage, NOON_MS).cards.len(), 199);
+    }
+
+    #[test]
+    fn extra_reviews_show_the_held_back_ones_today() {
+        let storage = storage_with_due_reviews(205, 0);
+        let request = ReviewAllowanceRequest {
+            utc_offset_min: 0,
+            extra_new_cards: 0,
+            extra_reviews: 100,
+        };
+        storage
+            .raise_review_allowance(&project(), &request, NOON_MS)
+            .unwrap();
+        assert_eq!(queue_at(&storage, NOON_MS).cards.len(), 205);
+    }
+
+    fn counts_at(storage: &crate::Storage, at_ms: u64) -> ReviewCounts {
+        storage
+            .list_review_counts(at(at_ms))
+            .unwrap()
+            .into_iter()
+            .find(|counts| counts.project_id == project())
+            .unwrap()
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_cap_reviews_as_the_queue_does() {
+        let storage = storage_with_due_reviews(300, 0);
+        assert_eq!(counts_at(&storage, NOON_MS).due_count, 200);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_a_review_due_later_today() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let morning_of_due_day = NOON_MS + 2 * DAY_MS - 7 * 60 * MINUTE_MS;
+        assert_eq!(counts_at(&storage, morning_of_due_day).due_count, 1);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_only_the_new_cards_left_today() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 25);
+        for id in &ids[..20] {
+            rate(&storage, id, ReviewRating::Good, NOON_MS);
+        }
+        assert_eq!(counts_at(&storage, NOON_MS).new_count, 0);
+    }
+
+    #[test]
+    fn the_counts_of_the_project_list_count_a_learning_card_within_the_learn_ahead_time() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        rate(&storage, &ids[0], ReviewRating::Again, NOON_MS);
+        assert_eq!(counts_at(&storage, NOON_MS + MINUTE_MS).learning_count, 1);
     }
 
     #[test]
@@ -392,7 +576,7 @@ mod tests {
             ReviewRating::Good,
             NOON_MS + 10 * MINUTE_MS,
         );
-        let progress = storage.list_review_progress(&project()).unwrap();
+        let progress = storage.list_review_progress(&project(), NOON_MS).unwrap();
         assert_eq!(progress[&ids[0]].log.len(), 2);
     }
 
@@ -401,7 +585,7 @@ mod tests {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 1);
         let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
-        let progress = storage.list_review_progress(&project()).unwrap();
-        assert_eq!(progress[&ids[0]].state, answered.state);
+        let progress = storage.list_review_progress(&project(), NOON_MS).unwrap();
+        assert_eq!(progress[&ids[0]].state, Some(answered.state));
     }
 }

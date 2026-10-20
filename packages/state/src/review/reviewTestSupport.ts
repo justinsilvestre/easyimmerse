@@ -1,5 +1,6 @@
 import type {
   ReviewCardState,
+  ReviewHoldKind,
   ReviewIntervals,
   ReviewPhase,
   ReviewQueueCard,
@@ -7,8 +8,11 @@ import type {
 } from "@easyimmerse/types";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { stateAfter, stateAfterWithCache } from "../app/stateAfter.ts";
 import { exampleListedFlashcard } from "../flashcards/exampleFlashcards.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
+import { cacheKey } from "../server/cacheKey.ts";
+import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { reviewRequestIds } from "./reviewRequests.ts";
 import { selectReviewScreen } from "./selectReviewSession.ts";
 
@@ -37,6 +41,7 @@ export function exampleCardState(
     lapses: 0,
     learning_step: 0,
     last_reviewed_at_ms: 0,
+    is_leech: false,
   };
 }
 
@@ -122,6 +127,63 @@ export function undoSettled(answeredAtMs: number, isUndone = true) {
         }
       : { ok: false, error: { status: 409, message: "Not the latest" } },
   );
+}
+
+/** The bury or suspension of a flashcard of p1 landing, or failing. */
+export function holdSettled(
+  flashcardId: string,
+  hold: ReviewHoldKind,
+  isHeld = true,
+) {
+  return actions.requestSettled(
+    `${reviewRequestIds("p1").hold}/1`,
+    { kind: "holdReviewCard", projectId: "p1", flashcardId, hold },
+    isHeld
+      ? { ok: true, data: undefined }
+      : { ok: false, error: { status: 500, message: "Server error" } },
+  );
+}
+
+/** The lift of a hold on a flashcard of p1 landing. */
+export function liftSettled(flashcardId: string) {
+  return actions.requestSettled(
+    `${reviewRequestIds("p1").hold}/2`,
+    { kind: "liftReviewHold", projectId: "p1", flashcardId },
+    { ok: true, data: undefined },
+  );
+}
+
+/**
+ * A server cache whose list of p1's flashcards holds the named ones, each worded as its id unless `words` says otherwise,
+ * as fetched at `fetchedAtMs`.
+ */
+export function listedCache(
+  ids: readonly string[] = ["a", "b", "c"],
+  fetchedAtMs = 1,
+  words: Record<string, string> = {},
+): ServerCacheSlice {
+  const listed = serverCacheWith("listFlashcards", "p1", {
+    flashcards: ids.map((id) => exampleListedFlashcard(id, words[id] ?? id)),
+  });
+  const key = cacheKey("listFlashcards", "p1");
+  const entry = listed.queries[key];
+  return {
+    queries: {
+      [key]: { ...entry, status: "fulfilled", fulfilledTimeStamp: fetchedAtMs },
+    },
+  };
+}
+
+/** The review screen's state after opening p1's review and the given actions, with a server cache. */
+export function reviewAfterWithCache(
+  backend: ServerCacheSlice,
+  ...given: AppAction[]
+) {
+  const review = selectReviewScreen(
+    stateAfterWithCache(backend, openReview, ...given),
+  );
+  if (review === null) throw new Error("The review is not open.");
+  return review;
 }
 
 /** The review screen's state after opening p1's review and the given actions. */

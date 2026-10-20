@@ -36,4 +36,8 @@ learning_step: number,
 /**
  * Milliseconds since the Unix epoch.
  */
-last_reviewed_at_ms: number, };
+last_reviewed_at_ms: number, 
+/**
+ * Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending.
+ */
+is_leech: boolean, };

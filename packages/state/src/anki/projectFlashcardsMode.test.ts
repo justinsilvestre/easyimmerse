@@ -25,6 +25,8 @@ const neverDelivered: FlashcardSync = {
   review: {
     dueCount: 0,
     newCount: 0,
+    heldBackCount: 0,
+    moreReviewCount: 0,
     nextDueAtMs: null,
     nextCard: null,
     hasProgress: false,

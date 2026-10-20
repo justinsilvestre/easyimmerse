@@ -18,6 +18,7 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
     exported_at_ms: null,
     was_packaged: false,
     sent_at_ms: null,
+    is_suspended: false,
   };
 }
 

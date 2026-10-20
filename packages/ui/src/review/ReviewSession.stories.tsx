@@ -20,6 +20,8 @@ const meta = {
   ],
   args: {
     card: exampleReviewCard,
+    leechLapseCount: null,
+    isScreenshotExpanded: false,
     stage: "front",
     end: null,
     includedFields: fieldsOfPreset("intermediate"),
@@ -27,8 +29,13 @@ const meta = {
     languages: exampleLanguages,
     audioPlayKey: "f1",
     onReplayAudio: fn(),
+    onExpandScreenshot: fn(),
+    onCloseScreenshot: fn(),
+    onEditFlashcard: fn(),
+    onSuspend: fn(),
     onBack: fn(),
     onLearnMore: fn(),
+    onReviewMore: fn(),
     onRetry: fn(),
   },
 } satisfies Meta<typeof ReviewSession>;
@@ -42,6 +49,11 @@ export const Revealed: Story = {
   args: { stage: "back" },
 };
 
+/** A card the user keeps forgetting, flagged as a leech above it. */
+export const Leech: Story = {
+  args: { leechLapseCount: 8 },
+};
+
 export const Ended: Story = {
   args: {
     card: null,
@@ -50,6 +62,8 @@ export const Ended: Story = {
       reviewedCount: 13,
       comesBack: null,
       moreNewCount: 0,
+      heldBackCount: 0,
+      moreReviewCount: 0,
     },
   },
 };

@@ -8,7 +8,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Response;
 use axum::{Extension, Json};
-use easyimmerse_anki::{AnkiNote, PackageMedia, render_note, write_package};
+use easyimmerse_anki::{AnkiNote, ExportTime, PackageMedia, render_note, write_package};
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::{Project, ProjectId};
 use easyimmerse_core::review::ReviewProgress;
@@ -41,6 +41,8 @@ pub struct AnkiPackageRequest {
     /// Requires a save path.
     #[serde(default)]
     pub staged: bool,
+    /// Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on.
+    pub utc_offset_min: i32,
 }
 
 /// What the server wrote to the save path.
@@ -100,11 +102,11 @@ pub async fn export_anki_package(
     if request.flashcard_ids.is_empty() {
         return Err(bad_request("name at least one flashcard"));
     }
-    let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
+    let selection = load_selection(&state, project_id, request.flashcard_ids.clone()).await?;
     if selection.flashcards.is_empty() {
         return Err(not_found("none of the named flashcards is in the project"));
     }
-    let package = build_package(&state, token, selection, request.marks_exported).await?;
+    let package = build_package(&state, token, selection, &request).await?;
     match request.save_path {
         Some(path) if request.staged => stage_package(package, &path).await,
         Some(path) => save_package(&state, package, &path).await,
@@ -118,8 +120,9 @@ async fn build_package(
     state: &AppState,
     token: TokenKind,
     selection: Selection,
-    marks_exported: bool,
+    request: &AnkiPackageRequest,
 ) -> Result<BuiltPackage, ApiFailure> {
+    let marks_exported = request.marks_exported;
     let notes: Vec<AnkiNote> = selection.flashcards.iter().map(render_note).collect();
     let media = render_media(state, token, &notes).await;
     for skipped in &media.skipped {
@@ -133,10 +136,19 @@ async fn build_package(
     let project = &selection.project;
     let project_id = project.id.clone();
     let review_progress = state
-        .with_storage(move |storage| storage.list_review_progress(&project_id))
+        .with_storage(move |storage| storage.list_review_progress(&project_id, now_ms()))
         .await?;
     Ok(BuiltPackage {
-        bytes: write_package_bytes(project, notes, media.files, review_progress).await?,
+        bytes: write_package_bytes(
+            project,
+            PackageContents {
+                notes,
+                media: media.files,
+                review_progress,
+            },
+            request.utc_offset_min,
+        )
+        .await?,
         file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
         skipped_media_count: media.skipped.len() as u64,
         read_at_ms: selection.read_at_ms,
@@ -152,15 +164,29 @@ async fn build_package(
     })
 }
 
-/// Writes the package in memory on a blocking thread, dated now; 500 `package_failed` when it cannot be written.
-async fn write_package_bytes(
-    project: &Project,
+/// What goes into a package: its notes, their media files, and the review progress of their flashcards.
+struct PackageContents {
     notes: Vec<AnkiNote>,
     media: Vec<PackageMedia>,
     review_progress: HashMap<FlashcardId, ReviewProgress>,
+}
+
+/// Writes the package in memory on a blocking thread, dated now; 500 `package_failed` when it cannot be written.
+async fn write_package_bytes(
+    project: &Project,
+    contents: PackageContents,
+    utc_offset_min: i32,
 ) -> Result<Vec<u8>, ApiFailure> {
     let project = project.clone();
-    let exported_at_ms = now_ms();
+    let PackageContents {
+        notes,
+        media,
+        review_progress,
+    } = contents;
+    let exported_at = ExportTime {
+        at_ms: now_ms(),
+        utc_offset_min,
+    };
     let written = tokio::task::spawn_blocking(move || {
         let mut out = Cursor::new(Vec::new());
         write_package(
@@ -169,7 +195,7 @@ async fn write_package_bytes(
             &notes,
             &media,
             &review_progress,
-            exported_at_ms,
+            exported_at,
         )
         .map(|()| out.into_inner())
     })

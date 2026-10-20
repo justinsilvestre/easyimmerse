@@ -85,6 +85,11 @@ export const SaveWaitingForDefinitions: Story = {
   args: { saveStatus: "waitingForDefinitions" },
 };
 
+/** A flashcard the user suspended from the review, which the editor offers to bring back. */
+export const Suspended: Story = {
+  args: { onUnsuspend: fn() },
+};
+
 /** A flashcard just started, which has never been saved and so has nothing to delete. */
 export const NewFlashcard: Story = {
   args: { isNew: true },

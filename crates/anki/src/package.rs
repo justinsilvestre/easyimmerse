@@ -11,6 +11,7 @@ use zip::{CompressionMethod, ZipWriter};
 
 use crate::collection::collection_bytes;
 use crate::deck_spec::DeckSpec;
+use crate::export_time::ExportTime;
 use crate::render_note::AnkiNote;
 
 /// A media file to put in the package, named as an `AnkiMediaRef` names it.
@@ -32,7 +33,7 @@ pub enum AnkiError {
 
 /// Writes a legacy .apkg: `collection.anki2` at schema 11, the JSON `media` map, and the media files, all stored uncompressed.
 /// Every Anki client reads this format.
-/// Every note and card is dated at `exported_at_ms`, since Anki updates a note it already has only from a newer one.
+/// Every note and card is dated at the export, since Anki updates a note it already has only from a newer one.
 /// A flashcard with review progress goes in with its schedule and its review log; the others go in as new cards.
 pub fn write_package(
     out: impl Write + Seek,
@@ -40,9 +41,9 @@ pub fn write_package(
     notes: &[AnkiNote],
     media: &[PackageMedia],
     review_progress: &HashMap<FlashcardId, ReviewProgress>,
-    exported_at_ms: u64,
+    exported_at: ExportTime,
 ) -> Result<(), AnkiError> {
-    let collection = collection_bytes(spec, notes, review_progress, exported_at_ms)?;
+    let collection = collection_bytes(spec, notes, review_progress, exported_at)?;
     let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
     let mut zip = ZipWriter::new(out);
     zip.start_file("collection.anki2", options)?;
@@ -72,7 +73,9 @@ mod tests {
     use std::io::{Cursor, Read};
 
     use easyimmerse_core::flashcard::FlashcardId;
-    use easyimmerse_core::review::{ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating};
+    use easyimmerse_core::review::{
+        ReviewCardState, ReviewHoldKind, ReviewLogEntry, ReviewPhase, ReviewRating,
+    };
     use rusqlite::Connection;
     use tempfile::NamedTempFile;
     use zip::ZipArchive;
@@ -114,7 +117,10 @@ mod tests {
             &notes,
             &media,
             review_progress,
-            EXPORTED_AT_MS,
+            ExportTime {
+                at_ms: EXPORTED_AT_MS,
+                utc_offset_min: 0,
+            },
         )
         .expect("the package is written");
         ZipArchive::new(Cursor::new(out.into_inner())).expect("the package is a zip")
@@ -189,14 +195,24 @@ mod tests {
     }
 
     #[test]
-    fn writes_the_collection_row_at_schema_11_created_at_a_midnight() {
+    fn writes_the_collection_row_at_schema_11_created_at_4_am_local_time() {
         let (_file, connection) = collection();
         let row: (i64, i64) = connection
             .query_row("SELECT ver, crt FROM col", [], |row| {
                 Ok((row.get(0)?, row.get(1)?))
             })
             .expect("the collection row exists");
-        assert_eq!(row, (11, 1_759_968_000));
+        assert_eq!(row, (11, 1_759_982_400));
+    }
+
+    #[test]
+    fn tells_anki_the_creation_offset_in_minutes_west() {
+        assert_eq!(collection_json("conf")["creationOffset"], 0);
+    }
+
+    #[test]
+    fn tells_anki_that_days_begin_at_4_am() {
+        assert_eq!(collection_json("conf")["rollover"], 4);
     }
 
     #[test]
@@ -384,9 +400,9 @@ mod tests {
         }
     }
 
-    fn reviewed_collection() -> (NamedTempFile, Connection) {
-        let progress = ReviewProgress {
-            state: ReviewCardState {
+    fn reviewed_progress() -> ReviewProgress {
+        ReviewProgress {
+            state: Some(ReviewCardState {
                 state: ReviewPhase::Review,
                 due_at_ms: SECOND_ANSWER_MS + TWO_DAYS_MS,
                 stability: 2.4,
@@ -396,14 +412,65 @@ mod tests {
                 lapses: 0,
                 learning_step: 0,
                 last_reviewed_at_ms: SECOND_ANSWER_MS,
-            },
+                is_leech: false,
+            }),
             log: vec![
                 log_entry(FIRST_ANSWER_MS, ReviewRating::Again, ReviewPhase::Learning),
                 log_entry(SECOND_ANSWER_MS, ReviewRating::Good, ReviewPhase::Review),
             ],
-        };
+            hold: None,
+        }
+    }
+
+    fn collection_with_progress(progress: ReviewProgress) -> (NamedTempFile, Connection) {
         let progress = HashMap::from([(FlashcardId(FLASHCARD_ID.to_owned()), progress)]);
         collection_of(written_package_with(&progress))
+    }
+
+    fn reviewed_collection() -> (NamedTempFile, Connection) {
+        collection_with_progress(reviewed_progress())
+    }
+
+    fn first_card_queue(connection: &Connection) -> i64 {
+        connection
+            .query_row("SELECT queue FROM cards ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the card row exists")
+    }
+
+    #[test]
+    fn writes_a_suspended_card_in_queue_minus_one() {
+        let (_file, connection) = collection_with_progress(ReviewProgress {
+            hold: Some(ReviewHoldKind::Suspended),
+            ..reviewed_progress()
+        });
+        assert_eq!(first_card_queue(&connection), -1);
+    }
+
+    #[test]
+    fn writes_a_buried_new_card_in_queue_minus_three() {
+        let (_file, connection) = collection_with_progress(ReviewProgress {
+            state: None,
+            log: Vec::new(),
+            hold: Some(ReviewHoldKind::Buried),
+        });
+        assert_eq!(first_card_queue(&connection), -3);
+    }
+
+    #[test]
+    fn tags_a_leech() {
+        let mut progress = reviewed_progress();
+        if let Some(state) = progress.state.as_mut() {
+            state.is_leech = true;
+        }
+        let (_file, connection) = collection_with_progress(progress);
+        let tags: String = connection
+            .query_row("SELECT tags FROM notes ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the note row exists");
+        assert!(tags.split_whitespace().any(|tag| tag == "leech"));
     }
 
     #[test]

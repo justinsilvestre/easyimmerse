@@ -21,6 +21,8 @@ export type FlashcardFieldContext = {
   size: FlashcardFieldSize;
   screenshotUrl: string | null;
   onPlayAudio: (() => void) | undefined;
+  /** Shows the screenshot at full size when it is tapped. Without it, the screenshot is only an image. */
+  onExpandScreenshot?: () => void;
 };
 
 /** The fields drawn together in one block under the sentence, set off by a coloured edge. */
@@ -161,10 +163,10 @@ function Field({
     case "screenshot":
       return (
         context.screenshotUrl !== null && (
-          <img
-            src={context.screenshotUrl}
-            alt="Screenshot from the video"
-            className={clsx("rounded-md object-cover", screenshotSizes[size])}
+          <Screenshot
+            url={context.screenshotUrl}
+            size={size}
+            onExpand={context.onExpandScreenshot}
           />
         )
       );
@@ -273,5 +275,35 @@ function HighlightedWord({
     ) : (
       <TextWithLineBreaks key={part.start} text={part.text} />
     ),
+  );
+}
+
+/** The card's screenshot, which opens at full size when tapped if `onExpand` is given. */
+function Screenshot({
+  url,
+  size,
+  onExpand,
+}: {
+  url: string;
+  size: FlashcardFieldSize;
+  onExpand: (() => void) | undefined;
+}) {
+  const image = (
+    <img
+      src={url}
+      alt="Screenshot from the video"
+      className={clsx("rounded-md object-cover", screenshotSizes[size])}
+    />
+  );
+  if (onExpand === undefined) return image;
+  return (
+    <button
+      type="button"
+      aria-label="Show the screenshot at full size"
+      className="cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-accent"
+      onClick={onExpand}
+    >
+      {image}
+    </button>
   );
 }

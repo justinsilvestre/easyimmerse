@@ -240,9 +240,19 @@ export const requestEndpoints = {
       { projectId, answeredAtMs },
       { track: false },
     ),
-  raiseReviewAllowance: ({ projectId, extraNewCards }) =>
+  raiseReviewAllowance: ({ projectId, extraNewCards, extraReviews }) =>
     backendApi.endpoints.raiseReviewAllowance.initiate(
-      { projectId, extraNewCards },
+      { projectId, extraNewCards, extraReviews },
+      { track: false },
+    ),
+  holdReviewCard: ({ projectId, flashcardId, hold }) =>
+    backendApi.endpoints.holdReviewCard.initiate(
+      { projectId, flashcardId, hold },
+      { track: false },
+    ),
+  liftReviewHold: ({ projectId, flashcardId }) =>
+    backendApi.endpoints.liftReviewHold.initiate(
+      { projectId, flashcardId },
       { track: false },
     ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };

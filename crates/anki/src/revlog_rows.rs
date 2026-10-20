@@ -1,32 +1,30 @@
 //! The rows of the `revlog` table: one for each answer given in easyImmerse's review, which Anki imports with the card
 //! and from which it recomputes the card's FSRS memory state.
 
-use easyimmerse_core::review::{ReviewLogEntry, ReviewPhase, ReviewRating};
+use easyimmerse_core::review::{MAX_ANSWER_DURATION_MS, ReviewLogEntry, ReviewPhase, ReviewRating};
 use rusqlite::{Connection, params};
 
 use crate::card_scheduling::{DEFAULT_FACTOR, interval_days};
-use crate::note_rows::sql_int;
+use crate::note_rows::{sql_int, unique_ids};
 
-/// Anki caps the time an answer took at one minute by default.
-const MAX_ANSWER_MS: u64 = 60_000;
-
-/// Inserts a row for each answer given to the card, its id the time of the answer in milliseconds.
+/// Inserts a row for each answer given to each card, as (card id, answer) pairs.
+/// A row's id is the time of the answer in milliseconds, raised until it is free within the package, as Anki raises an id on insert.
 pub(crate) fn insert_revlog_rows(
     connection: &Connection,
-    card_id: i64,
-    log: &[ReviewLogEntry],
+    answers: &[(i64, &ReviewLogEntry)],
 ) -> rusqlite::Result<()> {
     let mut statement = connection
         .prepare_cached("INSERT INTO revlog VALUES (?1, ?2, -1, ?3, ?4, ?5, ?6, ?7, ?8)")?;
-    for entry in log {
+    let ids = unique_ids(answers.iter().map(|(_, entry)| entry.answered_at_ms));
+    for ((card_id, entry), id) in answers.iter().zip(ids) {
         statement.execute(params![
-            sql_int(entry.answered_at_ms)?,
+            sql_int(id)?,
             card_id,
             ease(entry.rating),
             revlog_interval(entry.interval_ms_after, entry.state),
             revlog_interval(entry.interval_ms_before, entry.kind),
             DEFAULT_FACTOR,
-            sql_int(entry.duration_ms.min(MAX_ANSWER_MS))?,
+            sql_int(entry.duration_ms.min(MAX_ANSWER_DURATION_MS))?,
             revlog_type(entry.kind),
         ])?;
     }
@@ -80,5 +78,38 @@ mod tests {
     #[test]
     fn writes_no_interval_before_the_first_answer() {
         assert_eq!(revlog_interval(0, ReviewPhase::Learning), 0);
+    }
+
+    fn entry(answered_at_ms: u64) -> ReviewLogEntry {
+        ReviewLogEntry {
+            flashcard_id: easyimmerse_core::flashcard::FlashcardId("f".to_owned()),
+            answered_at_ms,
+            rating: ReviewRating::Good,
+            kind: ReviewPhase::Learning,
+            state: ReviewPhase::Review,
+            elapsed_ms: 0,
+            duration_ms: 1_000,
+            stability: 1.0,
+            difficulty: 5.0,
+            interval_ms_before: 0,
+            interval_ms_after: 86_400_000,
+            desired_retention: 0.9,
+        }
+    }
+
+    #[test]
+    fn gives_answers_of_the_same_millisecond_their_own_ids() {
+        let connection = Connection::open_in_memory().unwrap();
+        connection.execute_batch(crate::schema::SCHEMA_11).unwrap();
+        let (first, second) = (entry(7_000), entry(7_000));
+        insert_revlog_rows(&connection, &[(1, &first), (2, &second)]).unwrap();
+        let ids: Vec<i64> = connection
+            .prepare("SELECT id FROM revlog ORDER BY id")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(ids, [7_000, 7_001]);
     }
 }

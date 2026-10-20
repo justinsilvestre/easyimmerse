@@ -24,6 +24,7 @@ export {
   useListMediaFilesQuery,
   useListPluginsQuery,
   useListProjectsQuery,
+  useListReviewCountsQuery,
   useListSubtitleTracksQuery,
   useLookupTextQuery,
   useOpenBookQuery,

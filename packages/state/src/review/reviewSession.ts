@@ -1,5 +1,9 @@
-import type { ReviewCardState, ReviewQueueCard } from "@easyimmerse/types";
-import type { ReviewScreenState } from "./reviewScreenState.ts";
+import type { ReviewCardState } from "@easyimmerse/types";
+import type {
+  ReviewScreenState,
+  SessionCard,
+  SessionStep,
+} from "./reviewScreenState.ts";
 
 /** How long before its due time a card still being learned may be shown, when nothing else is left, as Anki's learn-ahead limit allows. */
 export const learnAheadMs = 20 * 60 * 1000;
@@ -19,22 +23,30 @@ export function showNext(session: ReviewScreenState, atMs: number) {
   return { ...session, shown: null } satisfies ReviewScreenState;
 }
 
-/** Tells whether Undo can take back the session's latest rating: it has landed, and no undo is on its way. */
+/** Tells whether Undo can take back the session's latest step: it has landed, and no undo is on its way. */
 export function canUndo(session: ReviewScreenState): boolean {
-  const latest = session.answers.at(-1);
-  return session.undoingAtMs === null && latest?.answeredAtMs != null;
+  const latest = session.steps.at(-1);
+  return session.undoing === null && latest !== undefined && hasLanded(latest);
+}
+
+/** Tells whether the server has recorded a step. */
+export function hasLanded(step: SessionStep): boolean {
+  return step.kind === "answer" ? step.answeredAtMs !== null : step.hasLanded;
+}
+
+/** The ratings among the steps. */
+export function answersOf(steps: readonly SessionStep[]) {
+  return steps.filter((step) => step.kind === "answer");
 }
 
 /** Shows a card from its front. */
-export function showCard(
-  session: ReviewScreenState,
-  card: ReviewQueueCard | null,
-) {
+export function showCard(session: ReviewScreenState, card: SessionCard | null) {
   return {
     ...session,
     shown: card,
     stage: "front",
     isConfirmingDelete: false,
+    isScreenshotExpanded: false,
   } satisfies ReviewScreenState;
 }
 
@@ -45,9 +57,9 @@ export function isDueWithinSession(state: ReviewCardState): boolean {
 
 /** Adds a card to those coming back, in order of their due times. */
 export function comeBack(
-  comingBack: readonly ReviewQueueCard[],
-  card: ReviewQueueCard,
-): readonly ReviewQueueCard[] {
+  comingBack: readonly SessionCard[],
+  card: SessionCard,
+): readonly SessionCard[] {
   const index = comingBack.findIndex(
     (other) => dueAtMsOf(other) > dueAtMsOf(card),
   );
@@ -58,16 +70,16 @@ export function comeBack(
 
 /** Leaves out a flashcard's cards. */
 export function without(
-  cards: readonly ReviewQueueCard[],
+  cards: readonly SessionCard[],
   flashcardId: string,
-): readonly ReviewQueueCard[] {
-  return cards.filter(({ flashcard }) => flashcard.id !== flashcardId);
+): readonly SessionCard[] {
+  return cards.filter((card) => card.flashcardId !== flashcardId);
 }
 
-function isDueBy(card: ReviewQueueCard, atMs: number): boolean {
+function isDueBy(card: SessionCard, atMs: number): boolean {
   return dueAtMsOf(card) <= atMs;
 }
 
-function dueAtMsOf(card: ReviewQueueCard): number {
+function dueAtMsOf(card: SessionCard): number {
   return card.state?.due_at_ms ?? 0;
 }

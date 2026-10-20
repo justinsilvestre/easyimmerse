@@ -10,7 +10,9 @@ import {
 } from "../server/serverCacheWith.ts";
 import {
   answerLanded,
+  exampleCardState,
   exampleQueueCard,
+  listedCache,
   openReview,
   queueArrived,
   queueFailed,
@@ -27,13 +29,18 @@ const summary: ReviewSummary = {
   due_count: 0,
   learning_count: 0,
   new_count: 0,
+  held_back_count: 0,
   next_due_at_ms: 86_400_000,
   next_card: null,
   has_progress: true,
 };
 
-/** p1 with the given counts, and its review's summary. */
-const cacheOf = (flashcardCount: number, unreviewedCount = 0) =>
+/** p1 with the given counts, and its review's summary with the reviews it holds back. */
+const cacheOf = (
+  flashcardCount: number,
+  unreviewedCount = 0,
+  heldBackCount = 0,
+) =>
   serverCacheWith(
     "getProject",
     "p1",
@@ -42,7 +49,10 @@ const cacheOf = (flashcardCount: number, unreviewedCount = 0) =>
       flashcard_count: flashcardCount,
       unreviewed_count: unreviewedCount,
     },
-    serverCacheWith("getReviewSummary", "p1", summary),
+    serverCacheWith("getReviewSummary", "p1", {
+      ...summary,
+      held_back_count: heldBackCount,
+    }),
   );
 
 const sessionOf = (backend: ServerCacheSlice, ...given: AppAction[]) =>
@@ -108,6 +118,8 @@ describe("selectReviewSession", () => {
         reviewedCount: 1,
         comesBack: null,
         moreNewCount: 20,
+        heldBackCount: 0,
+        moreReviewCount: 0,
       });
     });
 
@@ -122,6 +134,32 @@ describe("selectReviewSession", () => {
     });
   });
 
+  describe("when the day's limit holds reviews back", () => {
+    it("offers a hundred more reviews", () => {
+      expect(
+        sessionOf(cacheOf(300, 0, 140), queueArrived())?.end,
+      ).toMatchObject({ kind: "doneForToday", moreReviewCount: 100 });
+    });
+
+    it("offers only the reviews held back", () => {
+      expect(sessionOf(cacheOf(300, 0, 40), queueArrived())?.end).toMatchObject(
+        { heldBackCount: 40, moreReviewCount: 40 },
+      );
+    });
+  });
+
+  it("tells how often a leech was forgotten", () => {
+    const leech = {
+      ...a,
+      state: { ...exampleCardState("review"), lapses: 9, is_leech: true },
+    };
+    expect(viewOf(queueArrived(leech))?.leechLapseCount).toBe(9);
+  });
+
+  it("tells of no leech for a card that is none", () => {
+    expect(viewOf(queueArrived(a))?.leechLapseCount).toBeNull();
+  });
+
   it("offers no Undo before an answer lands", () => {
     expect(viewOf(queueArrived(a, b), ...rated("good"))?.canUndo).toBe(false);
   });
@@ -131,5 +169,24 @@ describe("selectReviewSession", () => {
       viewOf(queueArrived(a, b), ...rated("good"), answerLanded("a", 7))
         ?.canUndo,
     ).toBe(true);
+  });
+  describe("when the shown card's flashcard is edited", () => {
+    const edited = () => {
+      const app = stateAfterWithCache(
+        listedCache(["a"], 1),
+        openReview,
+        queueArrived(a),
+      );
+      const backend = listedCache(["a"], 2, { a: "Katze" });
+      return selectReviewSession({ app, backend });
+    };
+
+    it("shows its new content at once", () => {
+      expect(edited()?.card?.flashcard.content.word).toBe("Katze");
+    });
+  });
+
+  it("shows no card while the flashcards list loads", () => {
+    expect(viewOf(queueArrived(a))?.card).toBeNull();
   });
 });

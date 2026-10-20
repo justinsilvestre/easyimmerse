@@ -777,7 +777,6 @@ describe("setAnkiConnect", () => {
       last_opened_at_ms: 0,
       media_count: 0,
       flashcard_count: 0,
-      due_review_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: true,
     };

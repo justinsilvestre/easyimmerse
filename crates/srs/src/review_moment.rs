@@ -30,6 +30,11 @@ impl ReviewMoment {
         self.day_start_ms() + DAY_MS
     }
 
+    /// The number of local days from the day of `earlier_ms` to the moment's day. Zero for a time on the same day or later.
+    pub fn days_since(self, earlier_ms: u64) -> u32 {
+        u32::try_from(self.day() - self.at(earlier_ms).day()).unwrap_or(0)
+    }
+
     /// The same offset at another time.
     pub fn at(self, at_ms: u64) -> Self {
         Self { at_ms, ..self }

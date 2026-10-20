@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { withAppStore } from "../storybook/withAppStore.tsx";
-import { exampleProjects } from "./exampleProjects.ts";
+import { exampleProjects, exampleReviewCounts } from "./exampleProjects.ts";
 import { HomeView } from "./HomeView.tsx";
 
 const meta = {
@@ -12,6 +12,7 @@ const meta = {
   args: {
     status: "ready",
     projects: exampleProjects,
+    reviewCounts: exampleReviewCounts,
     onOpenProject: fn(),
     onReviewProject: fn(),
     onCreateProject: fn(),

@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating};
+use easyimmerse_srs::is_leech;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
@@ -131,6 +132,17 @@ pub fn latest_log_row(
     Ok(row)
 }
 
+/// Every answer given in any project, oldest first.
+pub fn list_all_log_entries(conn: &Connection) -> Result<Vec<ReviewLogEntry>, StorageError> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT {LOG_COLUMNS} FROM review_log ORDER BY answered_at_ms"
+    ))?;
+    let entries = statement
+        .query_map([], |row| Ok(read_log_row(row)?.0))?
+        .collect::<Result<_, _>>()?;
+    Ok(entries)
+}
+
 /// Every answer given to the project's flashcards, oldest first.
 pub fn list_log_entries(
     conn: &Connection,
@@ -150,6 +162,7 @@ fn read_card_row(row: &Row) -> rusqlite::Result<ReviewCardState> {
 }
 
 fn read_card_row_from(row: &Row, first: usize) -> rusqlite::Result<ReviewCardState> {
+    let lapses = row.get(first + 6)?;
     Ok(ReviewCardState {
         state: read_phase(row, first)?,
         due_at_ms: read_unsigned(row, first + 1)?,
@@ -157,9 +170,10 @@ fn read_card_row_from(row: &Row, first: usize) -> rusqlite::Result<ReviewCardSta
         difficulty: row.get(first + 3)?,
         interval_ms: read_unsigned(row, first + 4)?,
         reps: row.get(first + 5)?,
-        lapses: row.get(first + 6)?,
+        lapses,
         learning_step: row.get(first + 7)?,
         last_reviewed_at_ms: read_unsigned(row, first + 8)?,
+        is_leech: is_leech(lapses),
     })
 }
 
@@ -178,6 +192,7 @@ fn read_log_row(row: &Row) -> rusqlite::Result<(ReviewLogEntry, ReviewCardState)
         interval_ms_after: read_unsigned(row, 10)?,
         desired_retention: row.get(11)?,
     };
+    let lapses = row.get(14)?;
     let state = ReviewCardState {
         state: entry.state,
         due_at_ms: read_unsigned(row, 12)?,
@@ -185,9 +200,10 @@ fn read_log_row(row: &Row) -> rusqlite::Result<(ReviewLogEntry, ReviewCardState)
         difficulty: entry.difficulty,
         interval_ms: entry.interval_ms_after,
         reps: row.get(13)?,
-        lapses: row.get(14)?,
+        lapses,
         learning_step: row.get(15)?,
         last_reviewed_at_ms: entry.answered_at_ms,
+        is_leech: is_leech(lapses),
     };
     Ok((entry, state))
 }

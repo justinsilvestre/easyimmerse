@@ -20,6 +20,8 @@ const ankiConnectOff: AnkiConnectSync = {
 const noReview: ReviewSync = {
   dueCount: 0,
   newCount: 0,
+  heldBackCount: 0,
+  moreReviewCount: 0,
   nextDueAtMs: null,
   nextCard: null,
   hasProgress: false,
@@ -106,6 +108,8 @@ export function reviewSync(changes: Partial<ReviewSync> = {}): FlashcardSync {
     review: {
       dueCount: 8,
       newCount: 5,
+      heldBackCount: 0,
+      moreReviewCount: 0,
       nextDueAtMs: null,
       nextCard: exampleFlashcard,
       hasProgress: true,

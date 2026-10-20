@@ -1,4 +1,7 @@
-import { useListProjectsQuery } from "@easyimmerse/backend";
+import {
+  useListProjectsQuery,
+  useListReviewCountsQuery,
+} from "@easyimmerse/backend";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 import { isOfflineError } from "./isOfflineError.ts";
@@ -18,10 +21,15 @@ export function HomeScreen({
   const navigate = useNavigate();
   const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { data, isLoading, error } = useListProjectsQuery();
+  // Counted afresh on each visit, since what is due depends on the time of day.
+  const reviewCounts = useListReviewCountsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  }).data?.projects;
   return (
     <HomeView
       status={statusOf(isLoading, error)}
       projects={data?.projects ?? []}
+      reviewCounts={reviewCounts ?? []}
       onOpenProject={onOpenProject}
       onReviewProject={onReviewProject}
       onCreateProject={onCreateProject}

@@ -1080,7 +1080,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Raises the number of new cards the project's review introduces today, as "Learn 20 more" does. */
+        /** Raises the number of new cards, or of reviews, the project's review shows today, as "Learn 20 more" and "Review 100 more" do. */
         post: operations["raiseReviewAllowance"];
         delete?: never;
         options?: never;
@@ -1122,6 +1122,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/review/holds/{flashcard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Sets a card aside from the review: buries it until the user's next day begins at 4 a.m., or suspends it until they unsuspend it. */
+        put: operations["holdReviewCard"];
+        post?: never;
+        /** Brings a card back into the review, as unburying or unsuspending it does. A card that was not set aside stays as it is. */
+        delete: operations["liftReviewHold"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/review/queue": {
         parameters: {
             query?: never;
@@ -1130,10 +1148,29 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lists the cards of a review session in the order they are shown: reviews due today, most overdue first;
+         * Lists the cards of a review session in the order they are shown: reviews due today, most overdue first, up to two hundred a day;
          *     then learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.
+         *     Cards the user buried or suspended are left out.
+         *     Starting a session also fits the FSRS parameters to the user's answers in the background, when the last fit is thirty days old.
          */
         get: operations["getReviewQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/review/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+        get: operations["listReviewCounts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1318,6 +1355,11 @@ export interface components {
              *     Requires a save path.
              */
             staged?: boolean;
+            /**
+             * Format: int32
+             * @description Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on.
+             */
+            utc_offset_min: number;
         };
         /** @description What the server wrote to the save path. */
         AnkiPackageSaved: {
@@ -1629,6 +1671,8 @@ export interface components {
             id: components["schemas"]["FlashcardId"];
             /** @description The fields the card shows, in no particular order. */
             included_fields: components["schemas"]["FlashcardFieldKey"][];
+            /** @description Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it. */
+            is_suspended: boolean;
             media_file_id?: components["schemas"]["MediaFileId"] | null;
             project_id: components["schemas"]["ProjectId"];
             /**
@@ -1900,6 +1944,9 @@ export interface components {
         ListProjectsResponse: {
             projects: components["schemas"]["Project"][];
         };
+        ListReviewCountsResponse: {
+            projects: components["schemas"]["ReviewCounts"][];
+        };
         LookupResponse: {
             /** @description The kanji dictionary entries for the first character, when it is a kanji. */
             kanji: components["schemas"]["KanjiResult"][];
@@ -2153,11 +2200,6 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             created_at_ms: number;
-            /**
-             * Format: int64
-             * @description The flashcards whose review is due, counted at the server's clock.
-             */
-            due_review_count: number;
             /** Format: int64 */
             flashcard_count: number;
             id: components["schemas"]["ProjectId"];
@@ -2171,7 +2213,7 @@ export interface components {
             settings: components["schemas"]["ProjectSettings"];
             /**
              * Format: int64
-             * @description The flashcards never answered in the review.
+             * @description The flashcards never answered in the review, less those the user buried or suspended.
              */
             unreviewed_count: number;
             /** @description Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off. */
@@ -2208,10 +2250,12 @@ export interface components {
             /** Format: int64 */
             num: number;
         };
-        /** @description Raises the number of new cards the project's review introduces today. */
+        /** @description Raises the number of new cards, or of reviews, the project's review shows today. */
         ReviewAllowanceRequest: {
             /** Format: int32 */
             extra_new_cards: number;
+            /** Format: int32 */
+            extra_reviews: number;
             /**
              * Format: int32
              * @description Local time minus UTC, in minutes, as on the user's device.
@@ -2263,6 +2307,8 @@ export interface components {
              * @description The time from the latest answer to `due_at_ms`.
              */
             interval_ms: number;
+            /** @description Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending. */
+            is_leech: boolean;
             /**
              * Format: int32
              * @description The number of times the user forgot the card under review.
@@ -2289,6 +2335,39 @@ export interface components {
              */
             stability: number;
             state: components["schemas"]["ReviewPhase"];
+        };
+        /** @description What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show. */
+        ReviewCounts: {
+            /**
+             * Format: int64
+             * @description Cards under review that are due today, up to the day's limit.
+             */
+            due_count: number;
+            /**
+             * Format: int64
+             * @description Cards in learning or relearning that are due now or within the learn-ahead time.
+             */
+            learning_count: number;
+            /**
+             * Format: int64
+             * @description New cards that may still be introduced today.
+             */
+            new_count: number;
+            project_id: components["schemas"]["ProjectId"];
+        };
+        /**
+         * @description How the user set a card aside from the review.
+         * @enum {string}
+         */
+        ReviewHoldKind: "buried" | "suspended";
+        /** @description Sets a card aside from the review: buries it until the next local day, or suspends it. */
+        ReviewHoldRequest: {
+            kind: components["schemas"]["ReviewHoldKind"];
+            /**
+             * Format: int32
+             * @description Local time minus UTC, in minutes, as on the user's device, which places the end of a buried card's day.
+             */
+            utc_offset_min: number;
         };
         /** @description The interval each rating would give a card if it were answered now. */
         ReviewIntervals: {
@@ -2380,6 +2459,12 @@ export interface components {
             due_count: number;
             /** @description Whether any flashcard of the project has been answered. */
             has_progress: boolean;
+            /**
+             * Format: int64
+             * @description Cards under review that are due today but left for later days, because more are due than a day's limit.
+             *     While any are, no new cards are introduced.
+             */
+            held_back_count: number;
             /**
              * Format: int64
              * @description Cards in learning or relearning that are due now or within the learn-ahead time.
@@ -6802,7 +6887,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Today's allowance of new cards was raised */
+            /** @description Today's allowance of new cards or reviews was raised */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -6956,6 +7041,110 @@ export interface operations {
             };
         };
     };
+    holdReviewCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The flashcard id */
+                flashcard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewHoldRequest"];
+            };
+        };
+        responses: {
+            /** @description The card was set aside */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no such flashcard in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    liftReviewHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The flashcard id */
+                flashcard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The card is back in the review */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no such flashcard in it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getReviewQueue: {
         parameters: {
             query: {
@@ -6991,6 +7180,47 @@ export interface operations {
             };
             /** @description No such project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listReviewCounts: {
+        parameters: {
+            query: {
+                /** @description Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time. */
+                utc_offset_min: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts of each project's review today */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListReviewCountsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

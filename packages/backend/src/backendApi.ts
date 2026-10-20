@@ -38,6 +38,7 @@ import type {
   ListMediaFilesResponse,
   ListPluginsResponse,
   ListProjectsResponse,
+  ListReviewCountsResponse,
   LookupQuery,
   LookupResponse,
   MediaAvailabilityResponse,
@@ -54,6 +55,8 @@ import type {
   ReviewAnswerRequest,
   ReviewAnswerResponse,
   ReviewAnswerUndone,
+  ReviewHoldKind,
+  ReviewHoldRequest,
   ReviewQueue,
   ReviewRating,
   ReviewSummary,
@@ -165,7 +168,17 @@ type ReviewAnswerArgs = {
 
 type ReviewUndoArgs = { projectId: string; answeredAtMs: number };
 
-type ReviewAllowanceArgs = { projectId: string; extraNewCards: number };
+type ReviewAllowanceArgs = {
+  projectId: string;
+  extraNewCards: number;
+  extraReviews: number;
+};
+
+type ReviewHoldArgs = {
+  projectId: string;
+  flashcardId: string;
+  hold: ReviewHoldKind;
+};
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -291,6 +304,13 @@ const reviewAnsweredTags = (projectId: string) =>
     { type: "Review", id: projectId },
     { type: "Projects", id: projectId },
     "Projects",
+  ] as const;
+
+/** The data a hold or its lift changes: what an answer changes, and whether the project's flashcards are suspended. */
+const reviewHeldTags = (projectId: string) =>
+  [
+    ...reviewAnsweredTags(projectId),
+    { type: "Flashcards", id: projectId },
   ] as const;
 
 /** The client's UTC offset now, as a query parameter of the review routes, which place the current time in the user's local day. */
@@ -436,9 +456,25 @@ export const backendApi = createApi({
         { type: "Review", id: projectId },
       ],
     }),
+    /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+    listReviewCounts: build.query<ListReviewCountsResponse, void>({
+      query: () => ({
+        method: "GET",
+        path: "/review/counts",
+        query: utcOffsetQuery(),
+      }),
+      providesTags: (result) => [
+        "Review",
+        ...(result?.projects ?? []).map(({ project_id }) => ({
+          type: "Review" as const,
+          id: project_id,
+        })),
+      ],
+    }),
     /**
      * The cards of a review session, in the order they are shown. The answer is not cached,
      * since the review screen keeps the session's cards and fetches the queue again only when it runs out.
+     * The screen keeps only each card's id and schedule, and reads its content from the flashcards list.
      */
     getReviewQueue: build.mutation<ReviewQueue, string>({
       query: (projectId) => ({
@@ -446,6 +482,10 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/review/queue`,
         query: utcOffsetQuery(),
       }),
+      // The review takes each card's content from the flashcards list, which a fetch after the queue's brings up to date with it.
+      invalidatesTags: (_result, _error, projectId) => [
+        { type: "Flashcards", id: projectId },
+      ],
     }),
     answerReview: build.mutation<ReviewAnswerResponse, ReviewAnswerArgs>({
       query: ({ projectId, flashcardId, rating, durationMs }) => ({
@@ -475,7 +515,7 @@ export const backendApi = createApi({
         reviewAnsweredTags(projectId),
     }),
     raiseReviewAllowance: build.mutation<void, ReviewAllowanceArgs>({
-      query: ({ projectId, extraNewCards }) => ({
+      query: ({ projectId, extraNewCards, extraReviews }) => ({
         method: "POST",
         path: `/projects/${projectId}/review/allowance`,
         body: {
@@ -483,12 +523,38 @@ export const backendApi = createApi({
           value: {
             utc_offset_min: utcOffsetMinOf(new Date()),
             extra_new_cards: extraNewCards,
+            extra_reviews: extraReviews,
           } satisfies ReviewAllowanceRequest,
         },
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Review", id: projectId },
       ],
+    }),
+    /** Buries a card until the user's next day begins, or suspends it until they unsuspend it. */
+    holdReviewCard: build.mutation<void, ReviewHoldArgs>({
+      query: ({ projectId, flashcardId, hold }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}/review/holds/${flashcardId}`,
+        body: {
+          kind: "json",
+          value: {
+            kind: hold,
+            utc_offset_min: utcOffsetMinOf(new Date()),
+          } satisfies ReviewHoldRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewHeldTags(projectId),
+    }),
+    /** Brings a card back into the review, as unburying or unsuspending it does. */
+    liftReviewHold: build.mutation<void, FlashcardArgs>({
+      query: ({ projectId, flashcardId }) => ({
+        method: "DELETE",
+        path: `/projects/${projectId}/review/holds/${flashcardId}`,
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        reviewHeldTags(projectId),
     }),
     listPlugins: build.query<ListPluginsResponse, void>({
       query: () => ({ method: "GET", path: "/plugins" }),
@@ -1042,6 +1108,7 @@ export const {
   useLazyLookupTextQuery,
   useListAnkiPendingDeletionsQuery,
   useGetReviewSummaryQuery,
+  useListReviewCountsQuery,
 } = backendApi;
 
 type BackendState = Parameters<

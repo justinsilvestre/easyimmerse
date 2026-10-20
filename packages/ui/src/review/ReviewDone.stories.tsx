@@ -13,9 +13,12 @@ const meta = {
       reviewedCount: 13,
       comesBack: null,
       moreNewCount: 0,
+      heldBackCount: 0,
+      moreReviewCount: 0,
     },
     onBack: fn(),
     onLearnMore: fn(),
+    onReviewMore: fn(),
     onRetry: fn(),
   },
 } satisfies Meta<typeof ReviewDone>;
@@ -33,6 +36,36 @@ export const DoneWithACardComingBack: Story = {
       reviewedCount: 13,
       comesBack: { count: 1, atMs: Date.now() + 2 * hourMs },
       moreNewCount: 20,
+      heldBackCount: 0,
+      moreReviewCount: 0,
+    },
+  },
+};
+
+/** The day's limit of reviews is reached, and more are due: they wait for the next days, and new cards are paused. */
+export const DoneWithABacklog: Story = {
+  args: {
+    end: {
+      kind: "doneForToday",
+      reviewedCount: 200,
+      comesBack: null,
+      moreNewCount: 0,
+      heldBackCount: 340,
+      moreReviewCount: 100,
+    },
+  },
+};
+
+/** The user comes back on a day whose limit they already reached, with reviews still held back. */
+export const LimitReachedEarlierToday: Story = {
+  args: {
+    end: {
+      kind: "doneForToday",
+      reviewedCount: 0,
+      comesBack: null,
+      moreNewCount: 0,
+      heldBackCount: 1,
+      moreReviewCount: 1,
     },
   },
 };

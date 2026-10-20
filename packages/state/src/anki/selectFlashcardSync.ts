@@ -6,6 +6,7 @@ import type {
 } from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
+import { extraReviewCount } from "../review/reviewRequests.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
 import {
   cachedDeletions,
@@ -73,6 +74,10 @@ export type ReviewSync = {
   dueCount: number;
   /** The new cards left to learn today. */
   newCount: number;
+  /** The reviews due today that the day's limit leaves for later days. While any are, no new cards are introduced. */
+  heldBackCount: number;
+  /** The reviews that "Review more" would add to today's, from those held back. */
+  moreReviewCount: number;
   /** When the next review falls due, while nothing is due now, or null when none is scheduled. */
   nextDueAtMs: number | null;
   /** The card the review would show first. */
@@ -150,6 +155,8 @@ function reviewSyncOf(summary: ReviewSummary | undefined): ReviewSync {
   return {
     dueCount: (summary?.due_count ?? 0) + (summary?.learning_count ?? 0),
     newCount: summary?.new_count ?? 0,
+    heldBackCount: summary?.held_back_count ?? 0,
+    moreReviewCount: Math.min(extraReviewCount, summary?.held_back_count ?? 0),
     nextDueAtMs: summary?.next_due_at_ms ?? null,
     nextCard: summary?.next_card?.content ?? null,
     hasProgress: summary?.has_progress ?? false,

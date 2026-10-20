@@ -19,4 +19,8 @@ marks_exported: boolean,
  * A staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.
  * Requires a save path.
  */
-staged: boolean, };
+staged: boolean, 
+/**
+ * Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on.
+ */
+utc_offset_min: number, };

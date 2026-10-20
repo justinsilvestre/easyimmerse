@@ -14,9 +14,10 @@ use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to
 const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
      content_json, included_fields_json, created_at_ms, updated_at_ms";
 
-/// The columns every flashcard query selects: the draft's columns, then the ones the export writes.
+/// The columns every flashcard query selects: the draft's columns, then the ones the export writes, then whether the review suspended it.
 const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
-     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, was_packaged, sent_at_ms";
+     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, was_packaged, sent_at_ms, \
+     EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = flashcards.id AND h.kind = 'suspended')";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -155,6 +156,7 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         exported_at_ms: read_optional_unsigned(row, 9)?,
         was_packaged: row.get(10)?,
         sent_at_ms: read_optional_unsigned(row, 11)?,
+        is_suspended: row.get(12)?,
     })
 }
 

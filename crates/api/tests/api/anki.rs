@@ -109,7 +109,7 @@ async fn export(server: &TestServer, body: &Value) -> crate::support::TestRespon
 async fn export_ids(server: &TestServer, ids: &[String]) -> crate::support::TestResponse {
     export(
         server,
-        &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": null }),
+        &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": null, "utc_offset_min": 0 }),
     )
     .await
 }
@@ -284,7 +284,7 @@ mod export_anki_package {
     async fn marks_nothing_exported_when_not_asked_to() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
-        let body = json!({ "flashcard_ids": ids, "marks_exported": false, "save_path": null });
+        let body = json!({ "flashcard_ids": ids, "marks_exported": false, "save_path": null, "utc_offset_min": 0 });
         export(&server, &body).await;
         assert!(list_flashcards(&server).await[0]["exported_at_ms"].is_null());
     }
@@ -293,7 +293,7 @@ mod export_anki_package {
     async fn records_that_a_package_held_the_flashcards_when_not_marking_them() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
-        let body = json!({ "flashcard_ids": ids, "marks_exported": false, "save_path": null });
+        let body = json!({ "flashcard_ids": ids, "marks_exported": false, "save_path": null, "utc_offset_min": 0 });
         export(&server, &body).await;
         assert_eq!(list_flashcards(&server).await[0]["was_packaged"], true);
     }
@@ -361,7 +361,7 @@ mod export_anki_package {
         let dir = tempfile::tempdir().unwrap();
         let response = export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": dir.path() }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": dir.path(), "utc_offset_min": 0 }),
         )
         .await;
         assert_eq!(response.json()["code"], "save_failed");
@@ -374,7 +374,7 @@ mod export_anki_package {
         let dir = tempfile::tempdir().unwrap();
         export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": dir.path() }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": dir.path(), "utc_offset_min": 0 }),
         )
         .await;
         let exported: Vec<Value> = list_flashcards(&server)
@@ -399,7 +399,7 @@ mod export_anki_package {
         let path = "/nonexistent/refused.apkg";
         let response = export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path, "utc_offset_min": 0 }),
         )
         .await;
         assert_eq!(response.status, 403);
@@ -411,7 +411,7 @@ mod export_anki_package {
         let ids = create_two(&server).await;
         let response = export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": "deck.apkg" }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": "deck.apkg", "utc_offset_min": 0 }),
         )
         .await;
         assert_eq!(response.status, 400);
@@ -425,7 +425,7 @@ mod export_anki_package {
         let path = dir.path().join("deck.apkg");
         export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path, "utc_offset_min": 0 }),
         )
         .await;
         assert_eq!(count_notes(&std::fs::read(&path).unwrap()), 2);
@@ -439,7 +439,7 @@ mod export_anki_package {
         let path = dir.path().join("deck.apkg");
         let response = export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path, "utc_offset_min": 0 }),
         )
         .await;
         let mut saved = response.json();
@@ -458,7 +458,7 @@ mod export_anki_package {
         let path = dir.path().join("deck.apkg");
         let response = export(
             &server,
-            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path, "utc_offset_min": 0 }),
         )
         .await;
         let exported_at_ms = list_flashcards(&server).await[0]["exported_at_ms"].clone();
@@ -532,7 +532,7 @@ mod staged_export {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("deck.apkg");
         let body = json!({
-            "flashcard_ids": ids, "marks_exported": true, "save_path": path, "staged": true,
+            "flashcard_ids": ids, "marks_exported": true, "save_path": path, "utc_offset_min": 0, "staged": true,
         });
         (export(server, &body).await, dir)
     }
@@ -575,7 +575,7 @@ mod staged_export {
         let server = spawn_test_server(true).await;
         let ids = create_two(&server).await;
         let body = json!({
-            "flashcard_ids": ids, "marks_exported": true, "save_path": null, "staged": true,
+            "flashcard_ids": ids, "marks_exported": true, "save_path": null, "utc_offset_min": 0, "staged": true,
         });
         assert_eq!(export(&server, &body).await.status, 400);
     }
@@ -791,7 +791,7 @@ mod package_deletions {
     async fn refuses_a_package_naming_no_flashcard_while_a_deletion_is_listed() {
         let server = spawn_test_server(false).await;
         delete_exported(&server).await;
-        let body = json!({ "flashcard_ids": [], "marks_exported": true, "save_path": null });
+        let body = json!({ "flashcard_ids": [], "marks_exported": true, "save_path": null, "utc_offset_min": 0 });
         assert_eq!(export(&server, &body).await.status, 400);
     }
 }

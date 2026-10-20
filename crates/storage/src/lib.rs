@@ -18,6 +18,8 @@ mod projects;
 mod referenced_paths;
 mod review;
 mod review_answers;
+mod review_holds;
+mod review_parameters;
 mod review_rows;
 #[cfg(test)]
 mod review_test_support;
@@ -46,7 +48,7 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, Medi
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::review::{
     ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewProgress, ReviewQueue, ReviewSummary,
+    ReviewCounts, ReviewHoldRequest, ReviewLogEntry, ReviewProgress, ReviewQueue, ReviewSummary,
 };
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
@@ -310,6 +312,14 @@ impl Storage {
         self.read(|conn| review::review_summary(conn, project_id, moment))
     }
 
+    /// What waits in each project's review on the moment's local day, counted as the queue counts it.
+    pub fn list_review_counts(
+        &self,
+        moment: ReviewMoment,
+    ) -> Result<Vec<ReviewCounts>, StorageError> {
+        self.read(|conn| review::list_review_counts(conn, moment))
+    }
+
     /// The cards of a review session at `moment`, in the order they are shown, each with the intervals its ratings would give.
     pub fn review_queue(
         &self,
@@ -342,7 +352,47 @@ impl Storage {
         })
     }
 
-    /// Raises the number of new cards the project's review introduces on the local day of `now_ms`.
+    /// Sets a flashcard of the project aside from the review: buries it until the local day of `now_ms` ends, or suspends it.
+    pub fn hold_review_card(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+        request: &ReviewHoldRequest,
+        now_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            review_holds::hold_review_card(conn, project_id, flashcard_id, request, now_ms)
+        })
+    }
+
+    /// Brings a flashcard of the project back into the review, as unburying or unsuspending it does.
+    pub fn lift_review_hold(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| review_holds::lift_review_hold(conn, project_id, flashcard_id))
+    }
+
+    /// Every answer of every project to fit the FSRS parameters to, when a fit is due at `moment` and there are enough answers for it.
+    /// The fit runs outside the database, and `save_review_parameters` keeps its result.
+    pub fn log_to_fit(
+        &self,
+        moment: ReviewMoment,
+    ) -> Result<Option<Vec<ReviewLogEntry>>, StorageError> {
+        self.read(|conn| review_parameters::log_to_fit(conn, moment))
+    }
+
+    /// Keeps the FSRS parameters of a fit begun at `fitted_at_ms`, which schedule every review from now on.
+    pub fn save_review_parameters(
+        &self,
+        weights: &[f32],
+        fitted_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| review_parameters::save_review_parameters(conn, weights, fitted_at_ms))
+    }
+
+    /// Raises the number of new cards and of reviews the project's review shows on the local day of `now_ms`.
     pub fn raise_review_allowance(
         &self,
         project_id: &ProjectId,
@@ -352,12 +402,13 @@ impl Storage {
         self.write(|conn| review_answers::raise_review_allowance(conn, project_id, request, now_ms))
     }
 
-    /// The schedule and the answers of each of the project's answered flashcards, for the Anki export.
+    /// The schedule, the answers and the hold at `at_ms` of each of the project's flashcards that has been answered or set aside, for the Anki export.
     pub fn list_review_progress(
         &self,
         project_id: &ProjectId,
+        at_ms: u64,
     ) -> Result<HashMap<FlashcardId, ReviewProgress>, StorageError> {
-        self.read(|conn| review::list_review_progress(conn, project_id))
+        self.read(|conn| review::list_review_progress(conn, project_id, at_ms))
     }
 
     pub fn list_subtitle_tracks(

@@ -30,6 +30,8 @@ const meta = {
   args: {
     projectName: "German series",
     card: exampleReviewCard,
+    leechLapseCount: null,
+    isScreenshotExpanded: false,
     stage: "front",
     buttons: "two",
     progress: {
@@ -48,12 +50,17 @@ const meta = {
     onShowAnswer: fn(),
     onRate: fn(),
     onReplayAudio: fn(),
+    onExpandScreenshot: fn(),
+    onCloseScreenshot: fn(),
     onUndo: fn(),
     onBack: fn(),
     onLearnMore: fn(),
+    onReviewMore: fn(),
     onRetry: fn(),
     audioPlayKey: "f1",
     onEditFlashcard: fn(),
+    onBury: fn(),
+    onSuspend: fn(),
     onDeleteFlashcard: fn(),
   },
 } satisfies Meta<typeof ReviewScreen>;
@@ -117,6 +124,34 @@ export const DoneForToday: Story = {
       reviewedCount: 13,
       comesBack: { count: 1, atMs: Date.now() + 2 * hourMs },
       moreNewCount: 20,
+      heldBackCount: 0,
+      moreReviewCount: 0,
+    },
+  },
+};
+
+/** The user forgot this card for the eighth time, which flags it as a leech with the ways to deal with it. */
+export const Leech: Story = {
+  args: { stage: "back", leechLapseCount: 8 },
+};
+
+/** The card's screenshot, tapped, shown at full size over the review. */
+export const ScreenshotExpanded: Story = {
+  args: { isScreenshotExpanded: true },
+};
+
+/** More reviews were due than a day shows, so the rest wait for the next days and new cards are paused. */
+export const DoneWithABacklog: Story = {
+  args: {
+    card: null,
+    canUndo: true,
+    end: {
+      kind: "doneForToday",
+      reviewedCount: 200,
+      comesBack: null,
+      moreNewCount: 20,
+      heldBackCount: 340,
+      moreReviewCount: 100,
     },
   },
 };

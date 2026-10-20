@@ -38,6 +38,7 @@ export function ProjectFlashcardsPanel({
   onCopyAnkiSearch,
   onMarkDeletionsDone,
   onStartReview,
+  onReviewMore,
 }: {
   sync: FlashcardSync;
   includedFields: readonly FlashcardFieldKey[];
@@ -52,6 +53,8 @@ export function ProjectFlashcardsPanel({
   onCopyAnkiSearch: () => void;
   onMarkDeletionsDone: () => void;
   onStartReview: () => void;
+  /** Raises today's allowance by as many reviews of those the day's limit left for later days, and opens the review. */
+  onReviewMore: (reviewCount: number) => void;
 }) {
   const { flashcardCount } = sync;
   const mode = projectFlashcardsModeOf(sync);
@@ -146,6 +149,7 @@ export function ProjectFlashcardsPanel({
           review={sync.review}
           preview={reviewPreview}
           onStartReview={onStartReview}
+          onReviewMore={onReviewMore}
         />
       )}
       {mode === "package" && (

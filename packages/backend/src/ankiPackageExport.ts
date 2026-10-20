@@ -5,6 +5,7 @@ import { contentDispositionFileName } from "./contentDispositionFileName.ts";
 import { readBackendError } from "./httpBackendClient.ts";
 import type { ServerQuery } from "./sendToAnki.ts";
 import type { ServerFetch } from "./serverFetch.ts";
+import { utcOffsetMinOf } from "./utcOffsetMinOf.ts";
 
 /**
  * The flashcards of a project to export, the path to save the package at, or null to receive it, and whether to mark them exported.
@@ -111,6 +112,7 @@ function packageRequest(
     save_path: savePath,
     marks_exported: marksExported,
     staged,
+    utc_offset_min: utcOffsetMinOf(new Date()),
   };
 }
 

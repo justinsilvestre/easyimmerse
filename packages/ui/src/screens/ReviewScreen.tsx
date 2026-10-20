@@ -23,6 +23,8 @@ export function ReviewScreen({
   onRate,
   onUndo,
   onEditFlashcard,
+  onBury,
+  onSuspend,
   onDeleteFlashcard,
   ...session
 }: ComponentProps<typeof ReviewSession> & {
@@ -37,6 +39,8 @@ export function ReviewScreen({
   onUndo: () => void;
   /** Opens the card in the editor. Null leaves the item out of the More menu. */
   onEditFlashcard: (() => void) | null;
+  onBury: () => void;
+  onSuspend: () => void;
   onDeleteFlashcard: () => void;
 }) {
   return (
@@ -49,10 +53,16 @@ export function ReviewScreen({
         onBack={session.onBack}
         onUndo={onUndo}
         onEditFlashcard={onEditFlashcard}
+        onBury={onBury}
+        onSuspend={onSuspend}
         onDeleteFlashcard={onDeleteFlashcard}
       />
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <ReviewSession {...session} />
+        <ReviewSession
+          {...session}
+          onEditFlashcard={onEditFlashcard}
+          onSuspend={onSuspend}
+        />
       </main>
       {session.card && (
         <RatingBar
