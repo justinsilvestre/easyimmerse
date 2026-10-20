@@ -32,15 +32,20 @@ export class StoryPage {
     this.theme = theme;
   }
 
-  /** Shows the story, waits until it has rendered and its fonts and media have loaded, then screenshots it. */
+  /**
+   * Shows the story, waits until it has rendered and its fonts and media have loaded, then screenshots it.
+   * The screenshot is cropped to the story's content, which may extend past the viewport.
+   */
   async capture(storyId: string, outputPath: string): Promise<void> {
     await this.show(storyId);
     const outcome = await awaitRenderOutcome(this.page);
     if (outcome.status === "error") throw new Error(outcome.message);
     await this.page.evaluate(awaitFontsAndMedia, mediaTimeoutMs);
+    const clip = await this.page.evaluate(measureContent);
     await this.page.screenshot({
       path: outputPath,
       fullPage: true,
+      clip,
       animations: "disabled",
       caret: "hide",
       scale: "css",
@@ -168,4 +173,33 @@ function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
     setTimeout(resolve, timeoutMs),
   );
   return Promise.race([ready.then(() => undefined), timeout]);
+}
+
+/**
+ * Runs in the page. Measures the box around the story root and anything drawn outside it,
+ * such as a modal dialog, a popover, or a menu positioned beside its button.
+ */
+function measureContent(): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const root = document.getElementById("storybook-root") ?? document.body;
+  const isOverlay = (element: Element) =>
+    element.matches("dialog[open], :popover-open") ||
+    ["fixed", "absolute"].includes(getComputedStyle(element).position);
+  const rects = [root, ...[...root.querySelectorAll("*")].filter(isOverlay)]
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const left = Math.max(0, Math.min(...rects.map((rect) => rect.left)));
+  const top = Math.max(0, Math.min(...rects.map((rect) => rect.top)));
+  const right = Math.max(...rects.map((rect) => rect.right));
+  const bottom = Math.max(...rects.map((rect) => rect.bottom));
+  return {
+    x: Math.floor(left + window.scrollX),
+    y: Math.floor(top + window.scrollY),
+    width: Math.max(1, Math.ceil(right - left)),
+    height: Math.max(1, Math.ceil(bottom - top)),
+  };
 }
