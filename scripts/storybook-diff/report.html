@@ -133,7 +133,7 @@
         position: absolute;
         top: 0;
         left: 0;
-        max-width: none;
+        width: 100%;
         background: none;
         opacity: 0.8;
         pointer-events: none;
@@ -252,24 +252,30 @@
       });
 
       // Records each screenshot's own size on first load, before any flip, to flag stories that grew or shrank.
-      // Both sides then share one scale that fits the taller of the two on screen, so that flipping moves nothing.
+      // Both sides then share one scale and one frame, sized to the larger of the two and fitted to the row and the screen,
+      // so that flipping moves nothing. The diff image has that same size, so the highlight fills the frame.
       document.addEventListener("load", (event) => {
         if (!event.target.matches?.(".frame img")) return;
-        const [img, overlay] = event.target.parentElement.querySelectorAll("img");
-        if (overlay?.complete && img.complete) overlay.style.width = `${(overlay.naturalWidth / img.naturalWidth) * 100}%`;
-        if (event.target !== img) return;
+        const img = event.target;
+        if (img.matches(".overlay")) return;
         const section = img.closest(".variant");
         if (!img.dataset.size) {
           img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
+          img.dataset.width = img.naturalWidth;
           img.dataset.height = img.naturalHeight;
           const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
           if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
         }
         const screenshots = [...section.querySelectorAll(".frame img:not(.overlay)")];
-        const heights = screenshots.map((screenshot) => Number(screenshot.dataset.height));
-        if (!heights.every(Boolean)) return;
-        const scale = Math.min(1, (innerHeight * 0.8) / Math.max(...heights));
-        for (const screenshot of screenshots) screenshot.style.width = `${screenshot.naturalWidth * scale}px`;
+        if (!screenshots.every((screenshot) => screenshot.dataset.width)) return;
+        const width = Math.max(...screenshots.map((screenshot) => Number(screenshot.dataset.width)));
+        const height = Math.max(...screenshots.map((screenshot) => Number(screenshot.dataset.height)));
+        const room = (section.querySelector(".images").clientWidth - 16 * (screenshots.length - 1)) / screenshots.length - 2;
+        const scale = Math.min(1, room / width, (innerHeight * 0.8) / height);
+        for (const screenshot of screenshots) {
+          screenshot.style.width = `${screenshot.naturalWidth * scale}px`;
+          Object.assign(screenshot.parentElement.style, { width: `${width * scale}px`, height: `${height * scale}px` });
+        }
       }, true);
     </script>
   </body>
