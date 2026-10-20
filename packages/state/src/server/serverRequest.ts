@@ -1,9 +1,12 @@
 import type {
+  AccountRole,
+  AccountUser,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
   AlignmentsResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  CreateUserRequest,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
@@ -195,7 +198,13 @@ export type ServerRequest =
       usesAnkiConnect: boolean;
     }
   /** Ends the session the app's token belongs to. */
-  | { kind: "logOut" };
+  | { kind: "logOut" }
+  /** Creates an account on the server, as only an administrator may. */
+  | { kind: "createUser"; request: CreateUserRequest }
+  /** Gives an account another role, as only an administrator may. */
+  | { kind: "setUserRole"; userId: string; role: AccountRole }
+  /** Deletes an account and its sessions, as only an administrator may. */
+  | { kind: "deleteUser"; userId: string };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -252,6 +261,10 @@ export type ServerResponses = {
   setAnkiConnect: Project;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   logOut: void;
+  createUser: AccountUser;
+  setUserRole: AccountUser;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteUser: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */

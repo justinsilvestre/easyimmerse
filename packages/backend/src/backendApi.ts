@@ -53,6 +53,7 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  ServerAuthInfo,
   SetUserRoleRequest,
   SourceStepRequest,
   SourceStepResponse,
@@ -912,6 +913,10 @@ export const backendApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
+    /** What the connected server offers for signing in. The route needs no token. */
+    getServerAuthInfo: build.query<ServerAuthInfo, void>({
+      query: () => ({ method: "GET", path: "/auth/server" }),
+    }),
     /** Who the app's token belongs to: the owner of the machine the server runs on, or an account. */
     getCurrentPrincipal: build.query<CurrentPrincipal, void>({
       query: () => ({ method: "GET", path: "/auth/me" }),
@@ -980,6 +985,8 @@ export const {
   useLazyLookupTextQuery,
   useListAnkiPendingDeletionsQuery,
   useGetCurrentPrincipalQuery,
+  useGetServerAuthInfoQuery,
+  useListUsersQuery,
 } = backendApi;
 
 type BackendState = Parameters<

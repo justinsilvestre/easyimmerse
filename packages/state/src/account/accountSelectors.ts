@@ -12,7 +12,7 @@ import {
   serverOfferOf,
   signInServerUrlOf,
 } from "./signInForm.ts";
-import { logOutRequestId } from "./updateAccount.ts";
+import { logOutRequestId } from "./updateSignIn.ts";
 
 /** The sign-in form as it shows. */
 export type SignInFormView = {

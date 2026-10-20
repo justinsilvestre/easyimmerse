@@ -1,10 +1,14 @@
-import { useGetCurrentPrincipalQuery } from "@easyimmerse/backend";
+import {
+  useGetCurrentPrincipalQuery,
+  useGetServerAuthInfoQuery,
+} from "@easyimmerse/backend";
 import { actions, selectIsSigningOut } from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { accountRoleName } from "./accountRoleName.ts";
+import { UserManagement } from "./users/UserManagement.tsx";
 
 /** Tells who the app's server knows it as: an account, which may log out, or the server's owner, who needs none. */
 export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
@@ -16,14 +20,22 @@ export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
         Checking which account this app uses…
       </p>
     );
-  if (principal.data.kind === "launch")
-    return (
+  if (principal.data.kind === "launch") return <LaunchAccount />;
+  return <AccountDetails user={principal.data.user} serverUrl={serverUrl} />;
+}
+
+/** The server's owner, who needs no account, and who manages the server's accounts when it has any. */
+function LaunchAccount() {
+  const authInfo = useGetServerAuthInfoQuery();
+  return (
+    <>
       <p className="text-sm text-fg-muted">
         This app uses its own easyImmerse server, which needs no account.
         Logging in to an account is not available here yet.
       </p>
-    );
-  return <AccountDetails user={principal.data.user} serverUrl={serverUrl} />;
+      {authInfo.data?.accounts === true && <UserManagement />}
+    </>
+  );
 }
 
 function AccountDetails({
@@ -44,6 +56,7 @@ function AccountDetails({
         <dd className="break-all">{serverUrl}</dd>
       </dl>
       <LogOut />
+      {user.role === "administrator" && <UserManagement />}
     </>
   );
 }

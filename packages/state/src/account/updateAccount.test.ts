@@ -7,9 +7,9 @@ import type { ServerState } from "../server/serverState.ts";
 import {
   type AccountState,
   accountFeature,
-  logOutRequestId,
   updateAccount,
 } from "./updateAccount.ts";
+import { logOutRequestId } from "./updateSignIn.ts";
 
 const cloudUrl = "https://cloud.example.com";
 

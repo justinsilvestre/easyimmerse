@@ -751,6 +751,14 @@ describe("setAnkiConnect", () => {
 });
 
 describe("the account endpoints", () => {
+  it("send GET /auth/server for getServerAuthInfo", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getServerAuthInfo.initiate(),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/auth/server" }]);
+  });
+
   it("send GET /auth/me for getCurrentPrincipal", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(

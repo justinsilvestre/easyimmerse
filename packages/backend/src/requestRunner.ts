@@ -230,6 +230,15 @@ export const requestEndpoints = {
     ),
   logOut: () =>
     backendApi.endpoints.logOut.initiate(undefined, { track: false }),
+  createUser: ({ request }) =>
+    backendApi.endpoints.createUser.initiate(request, { track: false }),
+  setUserRole: ({ userId, role }) =>
+    backendApi.endpoints.setUserRole.initiate(
+      { userId, body: { role } },
+      { track: false },
+    ),
+  deleteUser: ({ userId }) =>
+    backendApi.endpoints.deleteUser.initiate(userId, { track: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

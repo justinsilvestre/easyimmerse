@@ -344,3 +344,27 @@ describe("runRequest", () => {
     });
   });
 });
+
+describe("runRequest for setUserRole", () => {
+  it("puts the role chosen at the account's role path", async () => {
+    const sent: BackendRequest[] = [];
+    const client: BackendClient = {
+      send: async <T>(request: BackendRequest) => {
+        sent.push(request);
+        return { data: {} as T };
+      },
+    };
+    await settle(createStore(client), {
+      kind: "setUserRole",
+      userId: "u1",
+      role: "privileged",
+    });
+    expect(sent).toEqual([
+      {
+        method: "PUT",
+        path: "/users/u1/role",
+        body: { kind: "json", value: { role: "privileged" } },
+      },
+    ]);
+  });
+});
