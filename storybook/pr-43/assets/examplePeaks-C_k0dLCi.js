@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e,t=7){let n=t,r=()=>(n=(n*1103515245+12345)%2147483648,n/2147483648);return Array.from({length:e},(e,t)=>{let n=Math.max(0,Math.sin(t/9)*Math.sin(t/23+1));return Math.min(1,.04+n*(.35+r()*.6))})}function n(){return(n=e((()=>{})))()}export{n,t};
