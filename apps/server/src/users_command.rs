@@ -5,7 +5,7 @@ use std::io::BufRead;
 
 use anyhow::{Context, anyhow};
 use easyimmerse_api::accounts::{create_account, set_password};
-use easyimmerse_core::account::AccountUser;
+use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_storage::Storage;
 
 use crate::cli::{
@@ -43,10 +43,15 @@ fn list(args: &DatabaseArgs) -> anyhow::Result<()> {
 
 fn set_role(args: SetRoleArgs) -> anyhow::Result<()> {
     let storage = open(&args.database)?;
-    let user = find_user(&storage, &args.email)?;
-    let user = storage.set_user_role(&user.id, args.role)?;
+    let user = set_role_of(&storage, &args.email, args.role)?;
     println!("updated {}", describe(&user));
     Ok(())
+}
+
+/// Changes the role of the account with the email address, unless it is the last administrator.
+fn set_role_of(storage: &Storage, email: &str, role: AccountRole) -> anyhow::Result<AccountUser> {
+    let user = find_user(storage, email)?;
+    Ok(storage.set_user_role(&user.id, role)?)
 }
 
 fn change_password(args: SetPasswordArgs) -> anyhow::Result<()> {
@@ -66,10 +71,16 @@ fn set_password_of(storage: &Storage, email: &str, password: &str) -> anyhow::Re
 
 fn delete(args: DeleteUserArgs) -> anyhow::Result<()> {
     let storage = open(&args.database)?;
-    let user = find_user(&storage, &args.email)?;
-    storage.delete_user(&user.id)?;
+    let user = delete_user_of(&storage, &args.email)?;
     println!("deleted {}", describe(&user));
     Ok(())
+}
+
+/// Deletes the account with the email address, unless it is the last administrator.
+fn delete_user_of(storage: &Storage, email: &str) -> anyhow::Result<AccountUser> {
+    let user = find_user(storage, email)?;
+    storage.delete_user(&user.id)?;
+    Ok(user)
 }
 
 fn open(args: &DatabaseArgs) -> anyhow::Result<Storage> {
@@ -108,7 +119,6 @@ fn describe(user: &AccountUser) -> String {
 #[cfg(test)]
 mod tests {
     use easyimmerse_api::accounts::authenticate;
-    use easyimmerse_core::account::AccountRole;
 
     use super::*;
 
@@ -139,6 +149,43 @@ mod tests {
         set_password_of(&storage, "reader@example.com", "battery staple").unwrap();
         let found = easyimmerse_api::accounts::find_session_user(&storage, &token, 1).unwrap();
         assert_eq!(found, None);
+    }
+
+    fn storage_with_administrator() -> Storage {
+        let storage = Storage::open_in_memory().unwrap();
+        create_account(
+            &storage,
+            "admin@example.com",
+            "correct horse",
+            AccountRole::Administrator,
+        )
+        .unwrap();
+        storage
+    }
+
+    #[test]
+    fn refuses_to_demote_the_last_administrator() {
+        let storage = storage_with_administrator();
+        assert!(set_role_of(&storage, "admin@example.com", AccountRole::Privileged).is_err());
+    }
+
+    #[test]
+    fn refuses_to_delete_the_last_administrator() {
+        let storage = storage_with_administrator();
+        assert!(delete_user_of(&storage, "admin@example.com").is_err());
+    }
+
+    #[test]
+    fn deletes_an_account_that_is_not_the_last_administrator() {
+        let storage = storage_with_administrator();
+        create_account(
+            &storage,
+            "reader@example.com",
+            "correct horse",
+            AccountRole::LibraryUser,
+        )
+        .unwrap();
+        assert!(delete_user_of(&storage, "reader@example.com").is_ok());
     }
 
     #[test]

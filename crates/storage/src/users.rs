@@ -80,11 +80,15 @@ pub fn list_users(conn: &Connection) -> Result<Vec<AccountUser>, StorageError> {
     Ok(users)
 }
 
+/// Changes an account's role, unless that would leave no administrator account.
 pub fn set_user_role(
     conn: &Connection,
     id: &str,
     role: AccountRole,
 ) -> Result<AccountUser, StorageError> {
+    if role != AccountRole::Administrator {
+        ensure_not_last_administrator(conn, id)?;
+    }
     let updated = conn.execute(
         "UPDATE users SET role = ?2 WHERE id = ?1",
         params![id, role.as_str()],
@@ -114,13 +118,31 @@ pub fn set_password_hash(
     Ok(())
 }
 
-/// Deletes an account together with its sessions.
+/// Deletes an account together with its sessions, unless it is the last administrator account.
 pub fn delete_user(conn: &Connection, id: &str) -> Result<(), StorageError> {
+    ensure_not_last_administrator(conn, id)?;
     let deleted = conn.execute("DELETE FROM users WHERE id = ?1", params![id])?;
     if deleted == 0 {
         return Err(StorageError::UserNotFound(id.to_string()));
     }
     Ok(())
+}
+
+/// Fails when the account is an administrator and no other account is.
+/// Every write runs on the one writer connection, so no other change can come between this check and the write.
+fn ensure_not_last_administrator(conn: &Connection, id: &str) -> Result<(), StorageError> {
+    let administrator = AccountRole::Administrator.as_str();
+    let is_last: bool = conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM users WHERE id = ?1 AND role = ?2) \
+         AND (SELECT COUNT(*) FROM users WHERE role = ?2) = 1",
+        params![id, administrator],
+        |row| row.get(0),
+    )?;
+    if is_last {
+        Err(StorageError::LastAdministrator(id.to_string()))
+    } else {
+        Ok(())
+    }
 }
 
 /// Reads the columns of `USER_COLUMNS` at the start of the row.
@@ -249,6 +271,47 @@ mod tests {
         let storage = Storage::open_in_memory().unwrap();
         let result = storage.set_password_hash("missing", "hash");
         assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    fn storage_with_administrator() -> (Storage, String) {
+        let storage = Storage::open_in_memory().unwrap();
+        let admin = storage
+            .create_user("admin@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        (storage, admin.id)
+    }
+
+    #[test]
+    fn keeps_the_role_of_the_last_administrator() {
+        let (storage, id) = storage_with_administrator();
+        let result = storage.set_user_role(&id, AccountRole::Privileged);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
+    }
+
+    #[test]
+    fn keeps_the_last_administrator() {
+        let (storage, id) = storage_with_administrator();
+        let result = storage.delete_user(&id);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
+    }
+
+    #[test]
+    fn demotes_an_administrator_while_another_remains() {
+        let (storage, id) = storage_with_administrator();
+        storage
+            .create_user("second@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        assert!(storage.set_user_role(&id, AccountRole::Privileged).is_ok());
+    }
+
+    #[test]
+    fn lets_the_last_administrator_stay_an_administrator() {
+        let (storage, id) = storage_with_administrator();
+        assert!(
+            storage
+                .set_user_role(&id, AccountRole::Administrator)
+                .is_ok()
+        );
     }
 
     #[test]

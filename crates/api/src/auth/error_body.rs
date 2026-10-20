@@ -112,6 +112,11 @@ impl From<StorageError> for ApiFailure {
             StorageError::EmailTaken(_) => {
                 ApiFailure::new(StatusCode::CONFLICT, "email_taken", error.to_string())
             }
+            StorageError::LastAdministrator(_) => ApiFailure::new(
+                StatusCode::CONFLICT,
+                "last_administrator",
+                error.to_string(),
+            ),
             StorageError::DictionaryAlreadyImported(_) => ApiFailure::new(
                 StatusCode::CONFLICT,
                 "dictionary_already_imported",

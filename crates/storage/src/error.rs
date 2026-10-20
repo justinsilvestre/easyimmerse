@@ -42,6 +42,8 @@ pub enum StorageError {
     EmailTaken(String),
     #[error("no account has the id {0:?}")]
     UserNotFound(String),
+    #[error("the account {0:?} is the last administrator, and the server must keep one")]
+    LastAdministrator(String),
 }
 
 impl From<DictionaryError> for StorageError {

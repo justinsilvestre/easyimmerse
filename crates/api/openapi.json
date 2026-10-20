@@ -6028,7 +6028,7 @@
         "tags": [
           "users"
         ],
-        "summary": "Deletes an account together with its sessions.",
+        "summary": "Deletes an account together with its sessions. The last administrator account cannot be deleted.",
         "operationId": "deleteUser",
         "parameters": [
           {
@@ -6075,6 +6075,16 @@
               }
             }
           },
+          "409": {
+            "description": "`last_administrator`: the change would leave the server without an administrator account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "421": {
             "description": "Unexpected Host header",
             "content": {
@@ -6098,7 +6108,7 @@
         "tags": [
           "users"
         ],
-        "summary": "Changes an account's role.",
+        "summary": "Changes an account's role. The last administrator account keeps its role.",
         "operationId": "setUserRole",
         "parameters": [
           {
@@ -6154,6 +6164,16 @@
           },
           "404": {
             "description": "No account has this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`last_administrator`: the change would leave the server without an administrator account",
             "content": {
               "application/json": {
                 "schema": {

@@ -1184,7 +1184,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Deletes an account together with its sessions. */
+        /** Deletes an account together with its sessions. The last administrator account cannot be deleted. */
         delete: operations["deleteUser"];
         options?: never;
         head?: never;
@@ -1199,7 +1199,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Changes an account's role. */
+        /** Changes an account's role. The last administrator account keeps its role. */
         put: operations["setUserRole"];
         post?: never;
         delete?: never;
@@ -7107,6 +7107,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description `last_administrator`: the change would leave the server without an administrator account */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description Unexpected Host header */
             421: {
                 headers: {
@@ -7163,6 +7172,15 @@ export interface operations {
             };
             /** @description No account has this id */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `last_administrator`: the change would leave the server without an administrator account */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

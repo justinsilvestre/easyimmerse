@@ -160,12 +160,51 @@ async fn deleting_an_account_answers_no_content() {
 #[tokio::test(flavor = "multi_thread")]
 async fn deleting_an_account_ends_its_sessions() {
     let server = spawn_test_server_with_accounts(false).await;
-    let token = token_of_new_user(&server, "admin@example.com", "administrator").await;
+    let token = token_of_new_user(&server, "member@example.com", "privileged").await;
     let id = server.get("/users").await.json()[0]["id"].clone();
     server
         .delete(&format!("/users/{}", id.as_str().unwrap()))
         .await;
-    assert_eq!(list_users_as(&server, &token).await.status, 401);
+    let response = server
+        .request("GET", "/auth/me")
+        .with_token(&token)
+        .send()
+        .await;
+    assert_eq!(response.status, 401);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn demoting_the_last_administrator_conflicts() {
+    let server = spawn_test_server_with_accounts(false).await;
+    let admin = create_user(&server, "admin@example.com", "administrator").await;
+    let path = format!("/users/{}/role", admin["id"].as_str().unwrap());
+    let response = server
+        .put_json(&path, &json!({ "role": "library_user" }))
+        .await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (409, json!("last_administrator"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn deleting_the_last_administrator_conflicts() {
+    let server = spawn_test_server_with_accounts(false).await;
+    let admin = create_user(&server, "admin@example.com", "administrator").await;
+    let path = format!("/users/{}", admin["id"].as_str().unwrap());
+    assert_eq!(
+        server.delete(&path).await.json()["code"],
+        "last_administrator"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn an_administrator_is_deleted_while_another_remains() {
+    let server = spawn_test_server_with_accounts(false).await;
+    let admin = create_user(&server, "admin@example.com", "administrator").await;
+    create_user(&server, "second@example.com", "administrator").await;
+    let path = format!("/users/{}", admin["id"].as_str().unwrap());
+    assert_eq!(server.delete(&path).await.status, 204);
 }
 
 #[tokio::test(flavor = "multi_thread")]

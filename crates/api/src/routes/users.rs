@@ -80,7 +80,7 @@ pub async fn create_user(
     Ok((StatusCode::CREATED, Json(user)))
 }
 
-/// Changes an account's role.
+/// Changes an account's role. The last administrator account keeps its role.
 #[utoipa::path(
     put,
     path = "/users/{id}/role",
@@ -94,6 +94,7 @@ pub async fn create_user(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the token is not an administrator's", body = ApiError),
         (status = 404, description = "No account has this id", body = ApiError),
+        (status = 409, description = "`last_administrator`: the change would leave the server without an administrator account", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -109,7 +110,7 @@ pub async fn set_user_role(
     Ok(Json(user))
 }
 
-/// Deletes an account together with its sessions.
+/// Deletes an account together with its sessions. The last administrator account cannot be deleted.
 #[utoipa::path(
     delete,
     path = "/users/{id}",
@@ -122,6 +123,7 @@ pub async fn set_user_role(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the token is not an administrator's", body = ApiError),
         (status = 404, description = "No account has this id", body = ApiError),
+        (status = 409, description = "`last_administrator`: the change would leave the server without an administrator account", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
