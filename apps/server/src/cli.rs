@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
+use easyimmerse_core::account::AccountRole;
 
 #[derive(Debug, Parser)]
 #[command(name = "easyimmerse-server", version, about = "The easyImmerse server")]
@@ -14,6 +15,9 @@ pub struct Cli {
 pub enum Command {
     /// Starts the HTTP server.
     Serve(ServeArgs),
+    /// Manages the accounts in a database, without a running server.
+    #[command(subcommand)]
+    Users(UsersCommand),
 }
 
 #[derive(Debug, Args)]
@@ -21,10 +25,16 @@ pub struct ServeArgs {
     /// The address to listen on.
     #[arg(long, default_value = "127.0.0.1:8787")]
     pub bind: SocketAddr,
-    /// The bearer token clients must present. A random one is generated and printed to
-    /// standard error when absent.
+    /// The launch token, whose holder may do anything. Without it and without `--accounts`,
+    /// a random one is generated and printed to standard error.
     #[arg(long, env = "EASYIMMERSE_TOKEN")]
     pub token: Option<String>,
+    /// Lets people log in to accounts, which `easyimmerse-server users` creates.
+    #[arg(long)]
+    pub accounts: bool,
+    /// Lets anyone create an account through the API. Needs `--accounts`.
+    #[arg(long, requires = "accounts")]
+    pub open_signup: bool,
     /// The SQLite database file, or `:memory:` for a database that lives only while the
     /// server runs.
     #[arg(long, default_value = ":memory:")]
@@ -54,4 +64,57 @@ pub struct ServeArgs {
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
     pub expected_hosts: Vec<String>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UsersCommand {
+    /// Creates an account. The password is read from standard input with `--password-stdin`,
+    /// or else from `EASYIMMERSE_PASSWORD`.
+    Create(CreateUserArgs),
+    /// Lists every account, oldest first.
+    List(DatabaseArgs),
+    /// Changes the role of an account.
+    SetRole(SetRoleArgs),
+    /// Deletes an account together with its sessions.
+    Delete(DeleteUserArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct DatabaseArgs {
+    /// The SQLite database file the server uses. It is created when missing.
+    #[arg(long)]
+    pub db: PathBuf,
+}
+
+#[derive(Debug, Args)]
+pub struct CreateUserArgs {
+    #[command(flatten)]
+    pub database: DatabaseArgs,
+    #[arg(long)]
+    pub email: String,
+    /// One of `library_user`, `privileged` and `administrator`.
+    #[arg(long)]
+    pub role: AccountRole,
+    /// Reads the password from the first line of standard input.
+    #[arg(long)]
+    pub password_stdin: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct SetRoleArgs {
+    #[command(flatten)]
+    pub database: DatabaseArgs,
+    #[arg(long)]
+    pub email: String,
+    /// One of `library_user`, `privileged` and `administrator`.
+    #[arg(long)]
+    pub role: AccountRole,
+}
+
+#[derive(Debug, Args)]
+pub struct DeleteUserArgs {
+    #[command(flatten)]
+    pub database: DatabaseArgs,
+    #[arg(long)]
+    pub email: String,
 }

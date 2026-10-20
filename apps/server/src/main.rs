@@ -1,5 +1,6 @@
 mod cli;
 mod serve_command;
+mod users_command;
 
 use clap::Parser;
 
@@ -12,6 +13,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
     match Cli::parse().command {
         Command::Serve(args) => serve_command::run(args).await,
+        Command::Users(command) => users_command::run(command),
     }
 }
 

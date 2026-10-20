@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 
 use anyhow::Context;
-use easyimmerse_api::{ApiConfig, ServeOptions, serve};
+use easyimmerse_api::{AccountsConfig, ApiConfig, ServeOptions, serve};
 use easyimmerse_storage::Storage;
 use tokio::net::TcpListener;
 
@@ -31,12 +31,19 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
 }
 
 /// Accepts the loopback hosts, the bound address itself, and every `--expected-host`.
+/// A random launch token is made only when there is neither `--token` nor `--accounts`.
 /// A server bound to an unspecified address such as `0.0.0.0`
 /// is reached through interface addresses it cannot know,
 /// so those must be passed with `--expected-host`.
 fn build_config(args: &ServeArgs, addr: SocketAddr) -> ApiConfig {
-    let token = args.token.clone().unwrap_or_else(generate_and_print_token);
-    let mut config = ApiConfig::for_loopback(addr.port(), token, args.allow_local_paths);
+    let mut config = ApiConfig::for_loopback_hosts(addr.port(), args.allow_local_paths);
+    config.launch_token = args
+        .token
+        .clone()
+        .or_else(|| (!args.accounts).then(generate_and_print_token));
+    config.accounts = args.accounts.then_some(AccountsConfig {
+        open_signup: args.open_signup,
+    });
     if addr.ip().is_unspecified() {
         warn_when_no_host_is_expected(args, addr);
     } else {
@@ -94,6 +101,8 @@ mod tests {
         ServeArgs {
             bind: bind.parse().unwrap(),
             token: Some("t".to_string()),
+            accounts: false,
+            open_signup: false,
             db: ":memory:".to_string(),
             allow_local_paths: false,
             seed_placeholders: false,
@@ -108,6 +117,36 @@ mod tests {
     fn hosts_for(bind: &str, expected_hosts: &[&str]) -> Vec<String> {
         let args = args(bind, expected_hosts);
         build_config(&args, args.bind).expected_hosts
+    }
+
+    fn config_for(args: &ServeArgs) -> ApiConfig {
+        build_config(args, args.bind)
+    }
+
+    #[test]
+    fn makes_no_launch_token_for_accounts_without_a_token() {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.token = None;
+        args.accounts = true;
+        assert_eq!(config_for(&args).launch_token, None);
+    }
+
+    #[test]
+    fn makes_a_launch_token_without_accounts_or_a_token() {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.token = None;
+        assert!(config_for(&args).launch_token.is_some());
+    }
+
+    #[test]
+    fn passes_open_signup_to_the_accounts() {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.accounts = true;
+        args.open_signup = true;
+        assert_eq!(
+            config_for(&args).accounts,
+            Some(AccountsConfig { open_signup: true })
+        );
     }
 
     #[test]
