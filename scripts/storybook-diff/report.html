@@ -107,12 +107,12 @@
       .variant label { cursor: pointer; }
       .resized { color: #b45309; }
       .images {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        align-items: start;
-        gap: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
       }
       figure {
+        flex: 0 1 auto;
         margin: 0;
         min-width: 0;
       }
