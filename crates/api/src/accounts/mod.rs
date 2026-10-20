@@ -3,10 +3,13 @@
 
 mod credentials;
 mod error;
+mod failure_log;
+mod login_throttle;
 mod password_hashing;
 mod session_tokens;
 
 pub use error::AccountsError;
+pub use login_throttle::LoginThrottle;
 
 use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_storage::{Storage, StorageError};

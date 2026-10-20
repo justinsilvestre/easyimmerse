@@ -15,6 +15,8 @@ pub enum AccountsError {
     EmailTaken(String),
     #[error("the email address or the password is wrong")]
     InvalidCredentials,
+    #[error("too many failed logins; try again in {retry_after_secs} seconds")]
+    TooManyAttempts { retry_after_secs: u64 },
     #[error("could not hash the password: {0}")]
     Hashing(String),
     #[error(transparent)]
@@ -46,6 +48,10 @@ impl From<AccountsError> for ApiFailure {
             AccountsError::InvalidCredentials => {
                 ApiFailure::new(StatusCode::UNAUTHORIZED, "invalid_credentials", message)
             }
+            AccountsError::TooManyAttempts { retry_after_secs } => {
+                ApiFailure::new(StatusCode::TOO_MANY_REQUESTS, "too_many_attempts", message)
+                    .with_retry_after(retry_after_secs)
+            }
             AccountsError::Hashing(_) => crate::auth::error_body::internal(message),
             AccountsError::Storage(error) => error.into(),
         }
@@ -66,6 +72,14 @@ mod tests {
     fn wrong_credentials_are_unauthorized() {
         let failure = ApiFailure::from(AccountsError::InvalidCredentials);
         assert_eq!(failure.status, StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn too_many_attempts_tells_when_to_retry() {
+        let failure = ApiFailure::from(AccountsError::TooManyAttempts {
+            retry_after_secs: 60,
+        });
+        assert_eq!(failure.retry_after_secs, Some(60));
     }
 
     #[test]

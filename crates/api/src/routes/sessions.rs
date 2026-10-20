@@ -1,4 +1,6 @@
-use axum::extract::State;
+use std::net::{IpAddr, SocketAddr};
+
+use axum::extract::{ConnectInfo, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
 use easyimmerse_core::account::{AccountRole, AccountUser};
@@ -51,13 +53,20 @@ pub struct SessionCreated {
         (status = 403, description = "`signup_closed`: the server has no accounts or does not let anyone sign up", body = ApiError),
         (status = 409, description = "`email_taken`: an account already has this email address", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
+        (status = 429, description = "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes", body = ApiError,
+            headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
     ),
 )]
 pub async fn sign_up(
     State(state): State<AppState>,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
     Json(request): Json<SignupRequest>,
 ) -> Result<(StatusCode, Json<SessionCreated>), ApiFailure> {
     ensure_signup_open(&state.config)?;
+    let peer = peer_address(peer);
+    state
+        .login_throttle
+        .ensure_allowed(&request.email, peer, now_ms())?;
     let session = state
         .with_accounts(move |storage| {
             let role = AccountRole::LibraryUser;
@@ -80,20 +89,29 @@ pub async fn sign_up(
         (status = 401, description = "`invalid_credentials`: no account has this email address and password", body = ApiError),
         (status = 403, description = "`accounts_disabled`: the server has no accounts", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
+        (status = 429, description = "`too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes", body = ApiError,
+            headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
     ),
 )]
 pub async fn log_in(
     State(state): State<AppState>,
+    peer: Option<Extension<ConnectInfo<SocketAddr>>>,
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<SessionCreated>, ApiFailure> {
     ensure_accounts_enabled(&state.config)?;
-    let session = state
-        .with_accounts(move |storage| {
-            let user = authenticate(storage, &request.email, &request.password)?;
-            open_session(storage, user)
-        })
+    let peer = peer_address(peer);
+    let throttle = &state.login_throttle;
+    throttle.ensure_allowed(&request.email, peer, now_ms())?;
+    let email = request.email.clone();
+    let outcome = state
+        .with_accounts(move |storage| Ok(log_in_and_open_session(storage, &request)))
         .await?;
-    Ok(Json(session))
+    match &outcome {
+        Ok(_) => throttle.clear(&email),
+        Err(AccountsError::InvalidCredentials) => throttle.record_failure(&email, peer, now_ms()),
+        Err(_) => {}
+    }
+    Ok(Json(outcome?))
 }
 
 /// Ends the session that authenticated the request. With the launch token it does nothing.
@@ -121,6 +139,18 @@ pub async fn log_out(
             .await?;
     }
     Ok(StatusCode::NO_CONTENT)
+}
+
+fn log_in_and_open_session(
+    storage: &Storage,
+    request: &LoginRequest,
+) -> Result<SessionCreated, AccountsError> {
+    let user = authenticate(storage, &request.email, &request.password)?;
+    open_session(storage, user)
+}
+
+fn peer_address(peer: Option<Extension<ConnectInfo<SocketAddr>>>) -> Option<IpAddr> {
+    peer.map(|Extension(ConnectInfo(address))| address.ip())
 }
 
 fn open_session(storage: &Storage, user: AccountUser) -> Result<SessionCreated, AccountsError> {

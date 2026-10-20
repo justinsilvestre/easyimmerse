@@ -5,7 +5,7 @@ use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_storage::{Storage, StorageError};
 
-use crate::accounts::AccountsError;
+use crate::accounts::{AccountsError, LoginThrottle};
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
@@ -29,6 +29,8 @@ pub struct AppState {
     /// Where media-source plugins put what they fetch. None when the server has no media
     /// directory, in which case media cannot be added through a plugin.
     pub media_dir: Option<PathBuf>,
+    /// The recent failed logins, which make further attempts wait.
+    pub login_throttle: Arc<LoginThrottle>,
 }
 
 impl AppState {
@@ -47,6 +49,7 @@ impl AppState {
             plugins: Arc::new(PluginRegistry::default()),
             media_source_jobs: Arc::new(MediaSourceJobs::default()),
             media_dir: None,
+            login_throttle: Arc::default(),
         }
     }
 

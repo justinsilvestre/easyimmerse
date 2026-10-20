@@ -199,6 +199,55 @@ mod login {
     }
 }
 
+mod throttling {
+    use super::*;
+
+    async fn fail_to_log_in(server: &TestServer, times: usize) {
+        for _ in 0..times {
+            log_in(server, "reader@example.com", "battery staple").await;
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_sixth_login_after_five_failures() {
+        let server = spawn_test_server_with_accounts(true).await;
+        sign_up(&server, "reader@example.com", PASSWORD).await;
+        fail_to_log_in(&server, 5).await;
+        let response = log_in(&server, "reader@example.com", PASSWORD).await;
+        assert_eq!(
+            (response.status, response.json()["code"].clone()),
+            (429, json!("too_many_attempts"))
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn tells_in_seconds_when_to_retry() {
+        let server = spawn_test_server_with_accounts(true).await;
+        fail_to_log_in(&server, 5).await;
+        let response = log_in(&server, "Reader@Example.com", PASSWORD).await;
+        assert_eq!(response.header("retry-after"), Some("900"));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_signup_for_the_throttled_address() {
+        let server = spawn_test_server_with_accounts(true).await;
+        fail_to_log_in(&server, 5).await;
+        let response = sign_up(&server, "reader@example.com", PASSWORD).await;
+        assert_eq!(response.status, 429);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn forgets_the_failures_after_a_successful_login() {
+        let server = spawn_test_server_with_accounts(true).await;
+        sign_up(&server, "reader@example.com", PASSWORD).await;
+        fail_to_log_in(&server, 4).await;
+        log_in(&server, "reader@example.com", PASSWORD).await;
+        fail_to_log_in(&server, 4).await;
+        let response = log_in(&server, "reader@example.com", PASSWORD).await;
+        assert_eq!(response.status, 200);
+    }
+}
+
 mod me {
     use super::*;
 

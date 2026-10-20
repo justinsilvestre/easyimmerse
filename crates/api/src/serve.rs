@@ -94,7 +94,8 @@ pub async fn serve(
         .with_plugins(plugins, media_dir);
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
-    let server = axum::serve(listener, router).with_graceful_shutdown(async {
+    let service = router.into_make_service_with_connect_info::<SocketAddr>();
+    let server = axum::serve(listener, service).with_graceful_shutdown(async {
         let _ = shutdown_requested.await;
     });
     let task = tokio::spawn(server.into_future());

@@ -2679,6 +2679,17 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description `too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
         };
     };
     logOut: {
@@ -2836,6 +2847,17 @@ export interface operations {
             /** @description Unexpected Host header */
             421: {
                 headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: too many failed logins for this email address or from this peer within fifteen minutes */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
                     [name: string]: unknown;
                 };
                 content: {
