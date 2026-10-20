@@ -49,6 +49,18 @@ describe("selectSignInForm", () => {
     expect(selectSignInForm(store.getState()).serverOffer).toBe("signupClosed");
   });
 
+  it("tells that the form is busy while the server is being asked", () => {
+    const store = storeWith(cloudUrl);
+    store.dispatch(
+      actions.signInFormChanged({
+        email: "someone@example.com",
+        password: "correct horse",
+      }),
+    );
+    store.dispatch(actions.signInSubmitted());
+    expect(selectSignInForm(store.getState()).isBusy).toBe(true);
+  });
+
   it("keeps its reference while nothing changes", () => {
     const store = storeWith(null);
     expect(selectSignInForm(store.getState())).toBe(

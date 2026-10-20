@@ -26,15 +26,21 @@ const severalUsers = [
   user("u3", "reader@example.com", "privileged"),
 ];
 
-/** A server where the app is logged in as the given account, which lists the given accounts and answers account creations as given. */
+/** Answers an account creation with the account the form asked for. */
+const createdAccount = (request: { body?: { value: unknown } }) => ({
+  id: "u9",
+  created_at_ms: 0,
+  ...(request.body?.value as object),
+});
+
+/** Never answers, so that the request stays under way. */
+const neverAnswered = () => new Promise(() => undefined);
+
+/** A server where the app is logged in as the given account, which lists the given accounts and answers the other routes as given. */
 const serverWith = (
   me: AccountUser,
-  users: readonly AccountUser[],
-  creation: FakeResponse = (request: { body?: { value: unknown } }) => ({
-    id: "u9",
-    created_at_ms: 0,
-    ...(request.body?.value as object),
-  }),
+  users: FakeResponse,
+  responses: Record<string, FakeResponse> = {},
 ) => ({
   appStore: {
     server: { serverUrl: "https://books.example.org", token: "session-token" },
@@ -42,7 +48,8 @@ const serverWith = (
       ...fixtureResponses,
       "GET /auth/me": { kind: "account", user: me },
       "GET /users": users,
-      "POST /users": creation,
+      "POST /users": createdAccount,
+      ...responses,
     }),
   },
 });
@@ -70,29 +77,66 @@ export const EmptyList: Story = {
 };
 
 export const Creating: Story = {
-  parameters: serverWith(
-    administrator,
-    severalUsers,
-    () => new Promise(() => undefined),
-  ),
+  parameters: serverWith(administrator, severalUsers, {
+    "POST /users": neverAnswered,
+  }),
   decorators: [withDispatchedActions(filledIn, actions.newUserSubmitted())],
 };
 
 export const CreationFailed: Story = {
-  parameters: serverWith(
-    administrator,
-    severalUsers,
-    fakeFailure({
+  parameters: serverWith(administrator, severalUsers, {
+    "POST /users": fakeFailure({
       status: 409,
       code: "email_taken",
       message: "The email is taken.",
     }),
-  ),
+  }),
   decorators: [withDispatchedActions(filledIn, actions.newUserSubmitted())],
 };
 
 export const ConfirmingDeletion: Story = {
   decorators: [withDispatchedActions(actions.userDeletionAsked("u2"))],
+};
+
+export const ListFailed: Story = {
+  parameters: serverWith(
+    administrator,
+    fakeFailure({ status: 500, message: "The database is locked." }),
+  ),
+};
+
+export const RoleChanging: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "PUT /users/u2/role": neverAnswered,
+  }),
+  decorators: [
+    withDispatchedActions(actions.userRoleChosen("u2", "privileged")),
+  ],
+};
+
+export const Deleting: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "DELETE /users/u2": neverAnswered,
+  }),
+  decorators: [
+    withDispatchedActions(
+      actions.userDeletionAsked("u2"),
+      actions.userDeletionConfirmed(),
+    ),
+  ],
+};
+
+export const LastAdministrator: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "PUT /users/u1/role": fakeFailure({
+      status: 409,
+      code: "last_administrator",
+      message: "The server needs an administrator.",
+    }),
+  }),
+  decorators: [
+    withDispatchedActions(actions.userRoleChosen("u1", "library_user")),
+  ],
 };
 
 export const NotAnAdministrator: Story = {

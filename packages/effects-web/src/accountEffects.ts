@@ -5,7 +5,11 @@ import type {
   SignInAttempt,
   SignInOutcome,
 } from "@easyimmerse/state";
-import { serverConfigStorageKey } from "@easyimmerse/state";
+import {
+  connectionNotKeptCode,
+  serverConfigStorageKey,
+} from "@easyimmerse/state";
+import type { ApiError } from "@easyimmerse/types";
 
 /** The effects through which a person signs in to a server and connects the app to it, or disconnects it. */
 export type AccountEffects = Pick<
@@ -19,6 +23,7 @@ export type AccountEffects = Pick<
 /**
  * Builds the account effects over the given fetch, the storage the app reads its server from when it starts, and a function that reloads the page.
  * Connecting keeps the server and token in the storage, and disconnecting removes them; either then reloads the page, which starts the app anew.
+ * A connection the storage refuses, as a full or private one may, resolves as a failure and reloads nothing.
  */
 export function createAccountEffects(
   fetchFn: typeof fetch,
@@ -34,9 +39,14 @@ export function createAccountEffects(
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, password }),
       }),
-    connectToServer: (server: ServerConfig) => {
-      storage.setItem(serverConfigStorageKey, JSON.stringify(server));
+    connectToServer: async (server: ServerConfig) => {
+      try {
+        storage.setItem(serverConfigStorageKey, JSON.stringify(server));
+      } catch (cause) {
+        return { ok: false, error: connectionNotKept(cause) };
+      }
       reload();
+      return { ok: true, data: null };
     },
     disconnectFromServer: () => {
       storage.removeItem(serverConfigStorageKey);
@@ -81,18 +91,31 @@ async function failureOf(response: Response): Promise<RequestFailure> {
   const retryAfterSeconds = retryAfterSecondsOf(response.headers);
   const waiting = retryAfterSeconds === null ? {} : { retryAfterSeconds };
   const body: unknown = await response.json().catch(() => null);
-  if (typeof body !== "object" || body === null || !("code" in body))
+  if (!isApiError(body))
     return {
       status: response.status,
       message: response.statusText,
       ...waiting,
     };
-  const { code, message } = body as { code: unknown; message?: unknown };
   return {
     status: response.status,
-    code: String(code),
-    message: typeof message === "string" ? message : response.statusText,
+    code: body.code,
+    message: body.message,
     ...waiting,
+  };
+}
+
+function isApiError(value: unknown): value is ApiError {
+  if (typeof value !== "object" || value === null) return false;
+  const { code, message } = value as Partial<Record<keyof ApiError, unknown>>;
+  return typeof code === "string" && typeof message === "string";
+}
+
+function connectionNotKept(cause: unknown): RequestFailure {
+  return {
+    status: "NO_DATA",
+    code: connectionNotKeptCode,
+    message: describe(cause),
   };
 }
 

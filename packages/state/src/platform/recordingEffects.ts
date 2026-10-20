@@ -1,8 +1,13 @@
 import type { ServerAuthInfo, SessionCreated } from "@easyimmerse/types";
-import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
+import {
+  connectionNotKeptCode,
+  type SignInAttempt,
+  type SignInOutcome,
+} from "../account/signInAttempt.ts";
 import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { RequestFailure } from "../server/serverRequest.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
 import { createManualClock } from "../timers/manualClock.ts";
@@ -87,6 +92,8 @@ export type RecordingEffects = Effects & {
   resolveServerAuthInfo(outcome: SignInOutcome<ServerAuthInfo>): void;
   /** Settles the pending createSession promise. Throws when no sign-in is pending. */
   resolveSession(outcome: SignInOutcome<SessionCreated>): void;
+  /** Makes every later connection to a server fail, as a browser whose storage is full does. */
+  refuseConnections(): void;
 };
 
 type PendingPick<R> = {
@@ -110,6 +117,13 @@ function createPendingPick<R>(description: string) {
     },
   };
 }
+
+/** The failure of a connection the recording effects refuse. */
+const connectionNotKept: RequestFailure = {
+  status: "NO_DATA",
+  code: connectionNotKeptCode,
+  message: "The storage is full.",
+};
 
 /** Writes a definition as its plain text, which is all a test of the state needs; the UI's tests pass the app's own writer. */
 const plainDefinitionText: DefinitionWriter = (definition) =>
@@ -146,6 +160,7 @@ export function createRecordingEffects(
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
+  let refusesConnections = false;
   return {
     clock: createManualClock(),
     calls,
@@ -243,8 +258,11 @@ export function createRecordingEffects(
       calls.push({ type: "createSession", attempt });
       return session.start();
     },
-    connectToServer: (server) => {
+    connectToServer: async (server) => {
       calls.push({ type: "connectToServer", server });
+      return refusesConnections
+        ? { ok: false, error: connectionNotKept }
+        : { ok: true, data: null };
     },
     disconnectFromServer: () => {
       calls.push({ type: "disconnectFromServer" });
@@ -288,6 +306,9 @@ export function createRecordingEffects(
     },
     resolveSession: (outcome) => {
       session.take().resolve(outcome);
+    },
+    refuseConnections: () => {
+      refusesConnections = true;
     },
   };
 }

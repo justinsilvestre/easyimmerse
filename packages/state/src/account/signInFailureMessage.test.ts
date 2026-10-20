@@ -33,6 +33,15 @@ describe("signInFailureMessage", () => {
     ).toBe("The password must be at least 8 characters long.");
   });
 
+  it("tells of a password too long", () => {
+    expect(
+      signInFailureMessage(
+        { status: 400, code: "password_too_long", message: "" },
+        serverUrl,
+      ),
+    ).toBe("The password is too long.");
+  });
+
   it("tells of an invalid email address", () => {
     expect(
       signInFailureMessage(

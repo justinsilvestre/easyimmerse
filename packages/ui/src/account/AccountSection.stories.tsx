@@ -3,7 +3,11 @@ import type { CurrentPrincipal } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { AccountSection } from "./AccountSection.tsx";
 
@@ -21,16 +25,27 @@ const answered = (accounts: boolean, openSignup: boolean) =>
     open_signup: openSignup,
   });
 
-/** A connected server that answers who the app's token belongs to. */
-const connectedAs = (principal: CurrentPrincipal) => ({
+/** A connected server that answers who the app's token belongs to as given, and never answers a log-out. */
+const connectedAs = (principal: FakeResponse) => ({
   appStore: {
     server: { serverUrl: ownServer, token: "session-token" },
     client: createFakeBackendClient({
       ...fixtureResponses,
       "GET /auth/me": principal,
+      "POST /auth/logout": () => new Promise(() => undefined),
     }),
   },
 });
+
+const someone: CurrentPrincipal = {
+  kind: "account",
+  user: {
+    id: "u1",
+    email: "someone@example.com",
+    role: "privileged",
+    created_at_ms: 0,
+  },
+};
 
 const meta = {
   title: "Account/AccountSection",
@@ -123,16 +138,27 @@ export const ServerUnreachable: Story = {
   ],
 };
 
+export const CheckingAccount: Story = {
+  parameters: connectedAs(() => new Promise(() => undefined)),
+};
+
 export const LoggedIn: Story = {
-  parameters: connectedAs({
-    kind: "account",
-    user: {
-      id: "u1",
-      email: "someone@example.com",
-      role: "privileged",
-      created_at_ms: 0,
-    },
-  }),
+  parameters: connectedAs(someone),
+};
+
+export const LoggingOut: Story = {
+  parameters: connectedAs(someone),
+  decorators: [withDispatchedActions(actions.signOutRequested())],
+};
+
+export const SignInNoLongerAccepted: Story = {
+  parameters: connectedAs(
+    fakeFailure({
+      status: 401,
+      code: "unauthorized",
+      message: "The token is not valid.",
+    }),
+  ),
 };
 
 export const LaunchPrincipal: Story = {

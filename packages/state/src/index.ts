@@ -6,9 +6,10 @@ export {
   selectIsSigningOut,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
-export type {
-  SignInAttempt,
-  SignInOutcome,
+export {
+  connectionNotKeptCode,
+  type SignInAttempt,
+  type SignInOutcome,
 } from "./account/signInAttempt.ts";
 export type {
   ServerOffer,

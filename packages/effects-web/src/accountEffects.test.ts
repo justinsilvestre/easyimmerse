@@ -1,4 +1,7 @@
-import { serverConfigStorageKey } from "@easyimmerse/state";
+import {
+  connectionNotKeptCode,
+  serverConfigStorageKey,
+} from "@easyimmerse/state";
 import { describe, expect, it } from "vitest";
 import { createAccountEffects } from "./accountEffects.ts";
 
@@ -28,9 +31,24 @@ const unreachable: typeof fetch = async () => {
   throw new TypeError("Failed to fetch");
 };
 
-/** Account effects over the fetch, with storage and reloads recorded. */
-function effectsOver(fetchFn: typeof fetch) {
-  const storage = new Storage();
+/** A storage that holds nothing and refuses every value, as a full one does. */
+class FullStorage implements Storage {
+  readonly length = 0;
+  clear() {}
+  getItem() {
+    return null;
+  }
+  key() {
+    return null;
+  }
+  removeItem() {}
+  setItem(): never {
+    throw new Error("The quota has been exceeded.");
+  }
+}
+
+/** Account effects over the fetch and storage, with reloads recorded. */
+function effectsOver(fetchFn: typeof fetch, storage: Storage = new Storage()) {
   const reloads: number[] = [];
   const effects = createAccountEffects(fetchFn, storage, () =>
     reloads.push(reloads.length),
@@ -184,6 +202,26 @@ describe("createAccountEffects", () => {
       const { effects, reloads } = effectsOver(unreachable);
       effects.connectToServer({ serverUrl, token: "session-token" });
       expect(reloads).toHaveLength(1);
+    });
+
+    it("resolves as a failure the storage refuses", async () => {
+      const { effects } = effectsOver(unreachable, new FullStorage());
+      expect(
+        await effects.connectToServer({ serverUrl, token: "session-token" }),
+      ).toEqual({
+        ok: false,
+        error: {
+          status: "NO_DATA",
+          code: connectionNotKeptCode,
+          message: "The quota has been exceeded.",
+        },
+      });
+    });
+
+    it("does not reload when the storage refuses", async () => {
+      const { effects, reloads } = effectsOver(unreachable, new FullStorage());
+      await effects.connectToServer({ serverUrl, token: "session-token" });
+      expect(reloads).toEqual([]);
     });
   });
 

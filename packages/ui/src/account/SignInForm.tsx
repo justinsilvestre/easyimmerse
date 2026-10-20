@@ -33,8 +33,6 @@ export function SignInForm() {
   const form = useAppSelector(selectSignInForm);
   const servers = useAppSelector(selectAccountServerOptions);
   const canSubmit = useAppSelector(selectCanSubmitSignIn);
-  const isBusy =
-    form.status === "checkingServer" || form.status === "submitting";
   const change = (changes: Parameters<typeof actions.signInFormChanged>[0]) =>
     dispatch(actions.signInFormChanged(changes));
   return (
@@ -71,7 +69,7 @@ export function SignInForm() {
           placeholder="https://"
           hint="The address your easyImmerse server is reached at, starting with http:// or https://."
           value={form.ownServerUrl}
-          disabled={isBusy}
+          disabled={form.isBusy}
           onChange={(event) => change({ ownServerUrl: event.target.value })}
         />
       )}
@@ -81,7 +79,7 @@ export function SignInForm() {
         type="email"
         autoComplete="email"
         value={form.email}
-        disabled={isBusy}
+        disabled={form.isBusy}
         onChange={(event) => change({ email: event.target.value })}
       />
       <TextField
@@ -92,7 +90,7 @@ export function SignInForm() {
         }
         hint={form.mode === "signup" ? "At least 8 characters." : undefined}
         value={form.password}
-        disabled={isBusy}
+        disabled={form.isBusy}
         onChange={(event) => change({ password: event.target.value })}
       />
       {form.failureMessage !== null && (

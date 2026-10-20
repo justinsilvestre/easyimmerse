@@ -1,10 +1,13 @@
 import type { RequestFailure } from "../server/serverRequest.ts";
+import { connectionNotKeptCode } from "./signInAttempt.ts";
 
 const messagesByCode: Record<string, string> = {
   invalid_credentials: "The email address or the password is wrong.",
   email_taken:
     "An account with this email address already exists. Log in instead.",
   password_too_short: "The password must be at least 8 characters long.",
+  password_too_long: "The password is too long.",
+  [connectionNotKeptCode]: "The sign-in could not be saved in this browser.",
   invalid_email: "This email address is not valid.",
   signup_closed: "This server does not let anyone sign up.",
   accounts_disabled: "This server has no accounts.",

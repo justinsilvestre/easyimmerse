@@ -26,7 +26,11 @@ export const accountEffectRunners = {
         ),
       );
   },
-  connectToServer: ({ server }, { effects }) => effects.connectToServer(server),
+  connectToServer: ({ server }, { effects, dispatch }) => {
+    effects.connectToServer(server).then((outcome) => {
+      if (!outcome.ok) dispatch(actions.signInFailed(outcome.error));
+    });
+  },
   disconnectFromServer: (_effect, { effects }) =>
     effects.disconnectFromServer(),
 } satisfies EffectRunners<AccountEffect>;

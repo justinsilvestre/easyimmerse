@@ -111,8 +111,11 @@ export interface Effects {
   ): Promise<SignInOutcome<ServerAuthInfo>>;
   /** Logs in to the attempt's server, or signs up on it, and resolves with the session it opens. Never rejects. */
   createSession(attempt: SignInAttempt): Promise<SignInOutcome<SessionCreated>>;
-  /** Makes the app talk to the server with the token from now on, which starts the app anew. */
-  connectToServer(server: ServerConfig): void;
+  /**
+   * Makes the app talk to the server with the token from now on, which starts the app anew.
+   * Resolves with a failure when the platform cannot keep the server, and never rejects.
+   */
+  connectToServer(server: ServerConfig): Promise<SignInOutcome<null>>;
   /** Makes the app run offline from now on, forgetting the server it was connected to, which starts the app anew. */
   disconnectFromServer(): void;
 }

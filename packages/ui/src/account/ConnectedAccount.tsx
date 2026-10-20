@@ -61,7 +61,10 @@ function AccountDetails({
   );
 }
 
-function PrincipalFailure({ error }: { error: unknown }) {
+/** Why the query of the current principal failed: the backend's failure, or one RTK Query describes. */
+type PrincipalError = ReturnType<typeof useGetCurrentPrincipalQuery>["error"];
+
+function PrincipalFailure({ error }: { error: PrincipalError }) {
   return (
     <>
       <p role="alert" className="text-sm text-danger-fg">
@@ -90,13 +93,9 @@ function LogOut() {
   );
 }
 
-function principalFailureMessage(error: unknown): string {
-  const { status, message } = (error ?? {}) as {
-    status?: unknown;
-    message?: unknown;
-  };
-  if (status === 401)
+function principalFailureMessage(error: PrincipalError): string {
+  if (error !== undefined && "status" in error && error.status === 401)
     return "The server no longer accepts this app's sign-in. Log out, then log in again.";
-  const detail = typeof message === "string" && message ? `: ${message}` : ".";
+  const detail = error?.message ? `: ${error.message}` : ".";
   return `Couldn't tell which account this app uses${detail}`;
 }
