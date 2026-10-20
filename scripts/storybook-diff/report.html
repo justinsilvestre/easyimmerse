@@ -40,6 +40,11 @@
         margin: 0 0 16px;
       }
       nav {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 8px 0;
+        background: var(--bg);
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
@@ -88,16 +93,23 @@
         font-size: 12px;
       }
       .meta a { color: var(--accent); }
+      .full-size { margin-left: 6px; color: var(--accent); }
       .variant { margin-top: 12px; }
       .variant h3 {
         font-size: 13px;
         margin: 0 0 6px;
         color: var(--muted);
         font-weight: normal;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
       }
+      .variant label { cursor: pointer; }
+      .resized { color: #b45309; }
       .images {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        align-items: start;
         gap: 8px;
       }
       figure {
@@ -109,15 +121,33 @@
         color: var(--muted);
         margin-bottom: 4px;
       }
+      .frame {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        vertical-align: top;
+        border: 1px solid var(--line);
+      }
+      .frame .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        max-width: none;
+        max-height: none;
+        background: none;
+        opacity: 0.8;
+        pointer-events: none;
+      }
+      .variant:not(:has(.highlight:checked)) .overlay { display: none; }
       figure img {
         display: block;
         max-width: 100%;
         max-height: 480px;
         width: auto;
         height: auto;
-        border: 1px solid var(--line);
         background: #fff;
-        cursor: zoom-in;
+        cursor: pointer;
       }
       pre.error {
         white-space: pre-wrap;
@@ -161,24 +191,30 @@
         return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
       }
 
-      function image(change, prefix, fileName, caption) {
-        const src = `${change.id}/${prefix}-${fileName}`;
-        return `<figure><figcaption>${caption}</figcaption><a href="${src}" target="_blank"><img src="${src}" alt="${caption}" loading="lazy" /></a></figure>`;
+      const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
+
+      function image(change, side, fileName) {
+        const src = `${change.id}/${side}-${fileName}`;
+        const other = side === "before" ? "after" : "before";
+        const hasOther = change.kind === "changed";
+        const overlay = side === "after" && change.changedVariants[fileName]
+          ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
+        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span>${hasOther ? " · click to flip" : ""}<a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" ${hasOther ? `data-flip="${change.id}/${other}-${fileName}"` : ""} />${overlay}</div></figure>`;
       }
 
       function variantSection(change, fileName) {
         const pixels = change.changedVariants[fileName];
         const label = fileName.replace(".png", "").replace("-", " / ");
-        const images = [];
-        if (change.kind !== "added") images.push(image(change, "before", fileName, "Before"));
-        if (change.kind !== "removed" && change.kind !== "errored") images.push(image(change, "after", fileName, "After"));
-        if (pixels) images.push(image(change, "diff", fileName, `Diff (${pixels} px)`));
-        return `<section class="variant"><h3>${label}</h3><div class="images">${images.join("")}</div></section>`;
+        const sides = change.kind === "added" ? ["after"] : change.kind === "changed" ? ["before", "after"] : ["before"];
+        const highlight = pixels ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>` : "";
+        return `<section class="variant"><h3><span>${label}</span>${highlight}<span class="resized"></span></h3>
+          <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
 
       function variantsOf(change) {
         const all = report.variants.map((variant) => `${variant.theme}-${variant.viewport.name}.png`);
-        const changed = Object.keys(change.changedVariants);
+        const changed = Object.keys(change.changedVariants).sort((a, b) => change.changedVariants[b] - change.changedVariants[a]);
         return change.kind === "changed" && changed.length > 0 ? changed : all;
       }
 
@@ -194,12 +230,36 @@
 
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        const shown = report.changes.filter((change) => state.kind === "all" || change.kind === state.kind);
+        const shown = report.changes
+          .filter((change) => state.kind === "all" || change.kind === state.kind)
+          .sort((a, b) => pixelsOf(b) - pixelsOf(a));
         document.getElementById("changes").innerHTML = shown.length
           ? shown.map(card).join("")
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
       }
       render();
+
+      document.addEventListener("click", (event) => {
+        const img = event.target.closest("img[data-flip]");
+        if (!img) return;
+        const flipped = img.dataset.flip;
+        img.dataset.flip = img.getAttribute("src");
+        img.src = flipped;
+        const caption = img.closest("figure").querySelector("figcaption span");
+        caption.textContent = flipped.includes("/before-") ? "Before" : "After";
+      });
+
+      // Records each screenshot's own size on first load, before any flip, to flag stories that grew or shrank.
+      document.addEventListener("load", (event) => {
+        if (!event.target.matches?.(".frame img")) return;
+        const [img, overlay] = event.target.parentElement.querySelectorAll("img");
+        if (overlay?.complete && img.complete) overlay.style.width = `${(overlay.naturalWidth / img.naturalWidth) * 100}%`;
+        if (event.target !== img || img.dataset.size) return;
+        img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
+        const section = img.closest(".variant");
+        const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
+        if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
+      }, true);
     </script>
   </body>
 </html>
