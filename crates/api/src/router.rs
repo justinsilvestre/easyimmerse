@@ -14,11 +14,12 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    alignments, anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache,
-    conversions, dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup,
-    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_availability,
-    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
-    media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
+    alignments, anki, anki_exported, anki_package, anki_pending_deletions, auth_server,
+    conversion_cache, conversions, current_principal, dictionaries, dictionary_batch_lookup,
+    dictionary_imports, dictionary_lookup, dictionary_media, documents, flashcards, health,
+    local_dictionaries, media, media_availability, media_clip, media_frame, media_import,
+    media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
+    preferences, projects, sessions, source_form, subtitles, timed_text, users,
 };
 use crate::state::AppState;
 
@@ -27,8 +28,8 @@ const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
 
 /// Builds the complete application router together with its OpenAPI document.
 ///
-/// Every route checks the `Host` header. Every route except `/health` requires the bearer
-/// token.
+/// Every route checks the `Host` header. Every route except `/health`, `/auth/server`,
+/// `/auth/signup` and `/auth/login` requires a bearer token.
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
     let (protected, _) = protected_routes().split_for_parts();
@@ -150,10 +151,19 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(dictionary_lookup::lookup_text))
         .routes(routes!(dictionary_batch_lookup::lookup_texts))
         .routes(routes!(dictionary_media::get_dictionary_media))
+        .routes(routes!(current_principal::get_current_principal))
+        .routes(routes!(sessions::log_out))
+        .routes(routes!(users::list_users, users::create_user))
+        .routes(routes!(users::set_user_role))
+        .routes(routes!(users::delete_user))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(health::get_health))
+    OpenApiRouter::new()
+        .routes(routes!(health::get_health))
+        .routes(routes!(auth_server::get_server_auth_info))
+        .routes(routes!(sessions::sign_up))
+        .routes(routes!(sessions::log_in))
 }
 
 #[derive(utoipa::OpenApi)]

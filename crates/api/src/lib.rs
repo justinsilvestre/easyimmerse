@@ -32,7 +32,7 @@ mod typescript_constants;
 
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::token_kind::TokenKind;
-pub use config::ApiConfig;
+pub use config::{AccountsConfig, ApiConfig};
 pub use plugins::PluginRegistry;
 pub use router::{build_router, openapi_document};
 pub use serve::{ServeError, ServeOptions, ServerHandle, serve};

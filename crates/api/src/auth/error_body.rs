@@ -78,6 +78,15 @@ pub fn conflict(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::CONFLICT, "conflict", message)
 }
 
+/// Answers a route whose behavior is not written yet.
+pub fn not_implemented() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::NOT_IMPLEMENTED,
+        "not_implemented",
+        "this route is not implemented yet",
+    )
+}
+
 pub fn internal(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", message)
 }

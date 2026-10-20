@@ -25,7 +25,7 @@ pub async fn require_bearer_token(
     next: Next,
 ) -> Response {
     match presented_token(&request) {
-        Some(token) if bytes_are_equal(token.as_bytes(), config.token.as_bytes()) => {
+        Some(token) if is_launch_token(&config, &token) => {
             request.extensions_mut().insert(TokenKind::Launch);
             next.run(request).await
         }
@@ -76,6 +76,13 @@ fn accepts_query_token(request: &Request) -> bool {
             ]
             .contains(&matched.as_str())
         })
+}
+
+fn is_launch_token(config: &ApiConfig, token: &str) -> bool {
+    config
+        .launch_token
+        .as_ref()
+        .is_some_and(|launch_token| bytes_are_equal(token.as_bytes(), launch_token.as_bytes()))
 }
 
 /// Compares in time that depends only on the length of the input, so that a caller cannot
