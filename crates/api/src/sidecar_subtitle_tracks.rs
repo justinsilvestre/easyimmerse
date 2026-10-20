@@ -8,7 +8,7 @@ use easyimmerse_core::sidecar_subtitles::{SidecarSubtitle, find_sidecar_subtitle
 use easyimmerse_core::subtitle_track::{AddSubtitleTrackRequest, SubtitleTrackId};
 use easyimmerse_core::text_source::TextSource;
 
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::subtitles::store_subtitle_track;
 use crate::state::AppState;
 
@@ -16,7 +16,7 @@ use crate::state::AppState;
 /// that cannot be read or parsed, and returns the added tracks with their language tags.
 pub async fn add_sidecar_subtitle_tracks(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     path: &str,
 ) -> Vec<FoundTrack> {
@@ -24,7 +24,7 @@ pub async fn add_sidecar_subtitle_tracks(
     let mut added = Vec::new();
     for sidecar in list_sidecars(media_path).await {
         let request = sidecar_request(folder_of(media_path), &sidecar);
-        if let Some(track_id) = add_sidecar(state, token, media_file, request).await {
+        if let Some(track_id) = add_sidecar(state, principal, media_file, request).await {
             added.push((track_id, sidecar.language));
         }
     }
@@ -81,12 +81,12 @@ fn sidecar_request(folder: &Path, sidecar: &SidecarSubtitle) -> AddSubtitleTrack
 
 async fn add_sidecar(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     request: AddSubtitleTrackRequest,
 ) -> Option<SubtitleTrackId> {
     let name = request.name.clone();
-    match store_subtitle_track(state, token, media_file.id.clone(), request).await {
+    match store_subtitle_track(state, principal, media_file.id.clone(), request).await {
         Ok(track) => Some(track.id),
         Err(failure) => {
             tracing::warn!(

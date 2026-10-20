@@ -5,7 +5,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use easyimmerse_api::{ApiConfig, ServeOptions, ServerHandle, serve};
+use easyimmerse_api::{AccountsConfig, ApiConfig, ServeOptions, ServerHandle, serve};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use serde_json::Value;
@@ -91,12 +91,35 @@ pub async fn spawn_test_server_with_options(
     storage: Storage,
     options: ServeOptions,
 ) -> TestServer {
+    spawn_configured_test_server(
+        |port| ApiConfig::for_loopback(port, TOKEN.to_string(), allow_local_paths),
+        storage,
+        options,
+    )
+    .await
+}
+
+/// A server that has accounts as well as the launch token, which the requests present by default.
+/// It allows local paths, so that tests can tell that only the launch token may read them.
+pub async fn spawn_test_server_with_accounts(open_signup: bool) -> TestServer {
+    let configure = |port| ApiConfig {
+        accounts: Some(AccountsConfig { open_signup }),
+        ..ApiConfig::for_loopback(port, TOKEN.to_string(), true)
+    };
+    spawn_configured_test_server(configure, seeded_storage(), ServeOptions::default()).await
+}
+
+/// Starts a server with the configuration that `configure` builds for its port.
+pub async fn spawn_configured_test_server(
+    configure: impl FnOnce(u16) -> ApiConfig,
+    storage: Storage,
+    options: ServeOptions,
+) -> TestServer {
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
         .expect("a free loopback port");
     let port = listener.local_addr().expect("a bound address").port();
-    let config = ApiConfig::for_loopback(port, TOKEN.to_string(), allow_local_paths);
-    let handle = serve(listener, config, storage, options)
+    let handle = serve(listener, configure(port), storage, options)
         .await
         .expect("the server to start");
     TestServer {
@@ -184,6 +207,12 @@ impl TestRequest {
     pub fn without_token(mut self) -> Self {
         self.headers.retain(|(name, _)| name != "Authorization");
         self
+    }
+
+    /// Presents `token` instead of the test token.
+    pub fn with_token(self, token: &str) -> Self {
+        self.without_token()
+            .header("Authorization", &format!("Bearer {token}"))
     }
 
     pub fn header(mut self, name: &str, value: &str) -> Self {

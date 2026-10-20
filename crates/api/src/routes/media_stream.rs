@@ -12,7 +12,7 @@ use tower_http::services::ServeFile;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_file;
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
@@ -54,7 +54,7 @@ pub struct StreamQuery {
 )]
 pub async fn stream_media_file(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     request: Request,
 ) -> Result<Response, ApiFailure> {
@@ -63,7 +63,7 @@ pub async fn stream_media_file(
         MediaFileSource::Path { path } => path,
         MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
     };
-    resolve_local_file(token, &state.config, &path).await?;
+    resolve_local_file(&principal, &state.config, &path).await?;
     Ok(serve_file(&path, request).await)
 }
 

@@ -20,7 +20,7 @@ use easyimmerse_media_ffmpeg::{
 use tokio::process::Command;
 
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_file;
 use crate::state::AppState;
 
@@ -29,14 +29,14 @@ pub const CONVERSION_UNAVAILABLE: &str = "conversion_unavailable";
 /// The local path of a media file, once the token may read it and the file exists.
 pub async fn resolve_source_path(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
 ) -> Result<String, ApiFailure> {
     let path = match &media_file.source {
         MediaFileSource::Path { path } => path.clone(),
         MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
     };
-    resolve_local_file(token, &state.config, &path).await?;
+    resolve_local_file(principal, &state.config, &path).await?;
     Ok(path)
 }
 

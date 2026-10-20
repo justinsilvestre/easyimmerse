@@ -1,11 +1,19 @@
-use axum::Json;
-use axum::http::StatusCode;
-use easyimmerse_core::account::AccountUser;
+use axum::extract::State;
+use axum::http::{HeaderMap, StatusCode};
+use axum::{Extension, Json};
+use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_storage::Storage;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::auth::error_body::{ApiError, ApiFailure, not_implemented};
+use crate::accounts::{AccountsError, authenticate, create_account, end_session, start_session};
+use crate::auth::bearer_token::header_token;
+use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::auth::principal::Principal;
+use crate::config::ApiConfig;
+use crate::now_ms::now_ms;
+use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
@@ -46,9 +54,18 @@ pub struct SessionCreated {
     ),
 )]
 pub async fn sign_up(
-    Json(_request): Json<SignupRequest>,
+    State(state): State<AppState>,
+    Json(request): Json<SignupRequest>,
 ) -> Result<(StatusCode, Json<SessionCreated>), ApiFailure> {
-    Err(not_implemented())
+    ensure_signup_open(&state.config)?;
+    let session = state
+        .with_accounts(move |storage| {
+            let role = AccountRole::LibraryUser;
+            let user = create_account(storage, &request.email, &request.password, role)?;
+            open_session(storage, user)
+        })
+        .await?;
+    Ok((StatusCode::CREATED, Json(session)))
 }
 
 /// Logs in to an account. Needs no token.
@@ -66,9 +83,17 @@ pub async fn sign_up(
     ),
 )]
 pub async fn log_in(
-    Json(_request): Json<LoginRequest>,
+    State(state): State<AppState>,
+    Json(request): Json<LoginRequest>,
 ) -> Result<Json<SessionCreated>, ApiFailure> {
-    Err(not_implemented())
+    ensure_accounts_enabled(&state.config)?;
+    let session = state
+        .with_accounts(move |storage| {
+            let user = authenticate(storage, &request.email, &request.password)?;
+            open_session(storage, user)
+        })
+        .await?;
+    Ok(Json(session))
 }
 
 /// Ends the session that authenticated the request. With the launch token it does nothing.
@@ -84,6 +109,49 @@ pub async fn log_in(
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
-pub async fn log_out() -> Result<StatusCode, ApiFailure> {
-    Err(not_implemented())
+pub async fn log_out(
+    State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
+    headers: HeaderMap,
+) -> Result<StatusCode, ApiFailure> {
+    if let (Principal::Account { .. }, Some(token)) = (&principal, header_token(&headers)) {
+        let token = token.to_string();
+        state
+            .with_storage(move |storage| end_session(storage, &token))
+            .await?;
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn open_session(storage: &Storage, user: AccountUser) -> Result<SessionCreated, AccountsError> {
+    let token = start_session(storage, &user.id, now_ms())?;
+    Ok(SessionCreated { token, user })
+}
+
+fn ensure_signup_open(config: &ApiConfig) -> Result<(), ApiFailure> {
+    if config
+        .accounts
+        .as_ref()
+        .is_some_and(|accounts| accounts.open_signup)
+    {
+        Ok(())
+    } else {
+        Err(ApiFailure::new(
+            StatusCode::FORBIDDEN,
+            "signup_closed",
+            "this server does not let anyone create an account",
+        ))
+    }
+}
+
+fn ensure_accounts_enabled(config: &ApiConfig) -> Result<(), ApiFailure> {
+    if config.accounts.is_some() {
+        Ok(())
+    } else {
+        Err(ApiFailure::new(
+            StatusCode::FORBIDDEN,
+            "accounts_disabled",
+            "this server has no accounts",
+        ))
+    }
 }

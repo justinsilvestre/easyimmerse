@@ -9,7 +9,7 @@ use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_path;
 use crate::state::AppState;
 
@@ -81,10 +81,10 @@ pub async fn parse_document_route(
 )]
 pub async fn parse_local_document(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Json(request): Json<ParseLocalDocumentRequest>,
 ) -> Result<Json<Document>, ApiFailure> {
-    let bytes = resolve_local_path(token, &state.config, &request.path).await?;
+    let bytes = resolve_local_path(&principal, &state.config, &request.path).await?;
     Ok(Json(parse_document(&bytes, request.format)?))
 }
 

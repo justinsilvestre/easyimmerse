@@ -35,10 +35,7 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let (protected, _) = protected_routes().split_for_parts();
     let protected = protected
         .layer(Extension(Arc::new(document.clone())))
-        .layer(from_fn_with_state(
-            Arc::clone(&state.config),
-            require_bearer_token,
-        ));
+        .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
     let router = protected
         .merge(public)

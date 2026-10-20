@@ -5,6 +5,7 @@ use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_storage::{Storage, StorageError};
 
+use crate::accounts::AccountsError;
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
@@ -67,6 +68,21 @@ impl AppState {
         tokio::task::spawn_blocking(move || operation(&storage))
             .await
             .map_err(|error| internal(format!("storage task failed: {error}")))?
+            .map_err(ApiFailure::from)
+    }
+
+    /// Runs an account operation on the blocking thread pool, since password hashing and SQLite calls block.
+    pub async fn with_accounts<T>(
+        &self,
+        operation: impl FnOnce(&Storage) -> Result<T, AccountsError> + Send + 'static,
+    ) -> Result<T, ApiFailure>
+    where
+        T: Send + 'static,
+    {
+        let storage = Arc::clone(&self.storage);
+        tokio::task::spawn_blocking(move || operation(&storage))
+            .await
+            .map_err(|error| internal(format!("account task failed: {error}")))?
             .map_err(ApiFailure::from)
     }
 

@@ -1,14 +1,17 @@
 //! Account management. Only the launch token and administrators may use these routes.
 
 use axum::Json;
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::account::{AccountRole, AccountUser};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::auth::error_body::{ApiError, ApiFailure, not_implemented};
+use crate::accounts::create_account;
+use crate::auth::administrator::Administrator;
+use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
@@ -39,8 +42,12 @@ pub struct SetUserRoleRequest {
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
-pub async fn list_users() -> Result<Json<Vec<AccountUser>>, ApiFailure> {
-    Err(not_implemented())
+pub async fn list_users(
+    _: Administrator,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<AccountUser>>, ApiFailure> {
+    let users = state.with_storage(|storage| storage.list_users()).await?;
+    Ok(Json(users))
 }
 
 /// Creates an account with the given role.
@@ -61,9 +68,16 @@ pub async fn list_users() -> Result<Json<Vec<AccountUser>>, ApiFailure> {
     ),
 )]
 pub async fn create_user(
-    Json(_request): Json<CreateUserRequest>,
+    _: Administrator,
+    State(state): State<AppState>,
+    Json(request): Json<CreateUserRequest>,
 ) -> Result<(StatusCode, Json<AccountUser>), ApiFailure> {
-    Err(not_implemented())
+    let user = state
+        .with_accounts(move |storage| {
+            create_account(storage, &request.email, &request.password, request.role)
+        })
+        .await?;
+    Ok((StatusCode::CREATED, Json(user)))
 }
 
 /// Changes an account's role.
@@ -84,10 +98,15 @@ pub async fn create_user(
     ),
 )]
 pub async fn set_user_role(
-    Path(_id): Path<String>,
-    Json(_request): Json<SetUserRoleRequest>,
+    _: Administrator,
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(request): Json<SetUserRoleRequest>,
 ) -> Result<Json<AccountUser>, ApiFailure> {
-    Err(not_implemented())
+    let user = state
+        .with_storage(move |storage| storage.set_user_role(&id, request.role))
+        .await?;
+    Ok(Json(user))
 }
 
 /// Deletes an account together with its sessions.
@@ -106,6 +125,13 @@ pub async fn set_user_role(
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
-pub async fn delete_user(Path(_id): Path<String>) -> Result<StatusCode, ApiFailure> {
-    Err(not_implemented())
+pub async fn delete_user(
+    _: Administrator,
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ApiFailure> {
+    state
+        .with_storage(move |storage| storage.delete_user(&id))
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
