@@ -143,6 +143,7 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
+export { selectIsWorkNotBackedUp } from "./recovery/selectIsWorkNotBackedUp.ts";
 export type {
   MainRoute,
   NavigationStep,
