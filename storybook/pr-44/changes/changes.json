@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 380,
+  "storyCount": 383,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -144,6 +144,38 @@
       "title": "Account/AccountSection",
       "name": "Launch Principal",
       "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "account-accountsection--desktop-app",
+      "title": "Account/AccountSection",
+      "name": "Desktop App",
+      "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "account-accountsection--mobile-app",
+      "title": "Account/AccountSection",
+      "name": "Mobile App",
+      "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "account-notbackedupsign--not-backed-up",
+      "title": "Account/NotBackedUpSign",
+      "name": "Not Backed Up",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
+      "id": "account-notbackedupsign--explained",
+      "title": "Account/NotBackedUpSign",
+      "name": "Explained",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "added",
       "changedVariants": {}
     },
@@ -297,14 +329,6 @@
         "dark-phone.png": 8865,
         "dark-desktop.png": 938
       }
-    },
-    {
-      "id": "flashcards-notbackedupstatus--not-backed-up",
-      "title": "Flashcards/NotBackedUpStatus",
-      "name": "Not Backed Up",
-      "importPath": "./src/flashcards/unsaved/NotBackedUpStatus.stories.tsx",
-      "kind": "added",
-      "changedVariants": {}
     },
     {
       "id": "notices-notice--save-rejected",
