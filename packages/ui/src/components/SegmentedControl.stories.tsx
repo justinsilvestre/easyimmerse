@@ -24,6 +24,7 @@ export const Default: Story = {};
 
 /** Inside a column that stretches its children, as in a form, where the row keeps to the width of its options. */
 export const InAColumn: Story = {
+  parameters: { layout: "padded" },
   decorators: [
     (Story) => (
       <div className="flex max-w-lg flex-col gap-3">
