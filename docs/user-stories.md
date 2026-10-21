@@ -527,7 +527,7 @@ As a user:
 - when I have made flashcards without having saved my work:
   - [ ] I see an indication that my work is unsaved, and a button to save it
 - when I have made flashcards without having logged in:
-  - [ ] I see an indication that my work is not backed up, and a button to log in or sign up
+  - [x] I see an indication that my work is not backed up, and a button to log in or sign up
 
 ---
 
@@ -777,9 +777,33 @@ As a web/mobile app user who is not logged in:
 
 As a user:
 - when I choose to sign up or log in:
-  - [ ] I can create an account with my email address
-  - [ ] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
-  - [ ] I can keep using all offline features of the app without an account
+  - [x] I can create an account with my email address
+  - [x] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
+  - [x] I can keep using all offline features of the app without an account
+- when I enter the address of a server that does not have accounts:
+  - [x] I am told that the server has no accounts, and I stay in offline mode
+- when I try to sign up on a server whose sign-up is closed:
+  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
+  - [x] I am told which of the two is wrong
+- when I try to log in with a wrong password:
+  - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
+- when I fail to log in too many times in a row:
+  - [x] I am told how many minutes to wait before trying again
+- when I am logged in:
+  - [x] I see my email address and my role, and a button to log out
+  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+- when I log out:
+  - [x] the web app returns to offline mode, using only the data stored on this device
+- when the app is using its own built-in server and no account:
+  - [x] the account settings say so, and do not offer to log in
+- when I am an administrator and open the Account section:
+  - [x] I see the server's accounts with their roles
+  - [x] I can create an account by giving an email address, a password and a role
+  - [x] I can change an account's role
+  - [x] I can delete an account after confirming, which logs out anyone using it
+- when I try to demote or delete the server's only administrator:
+  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
 - when I subscribe:
   - [ ] I can choose the amount I pay on a sliding scale
   - [ ] I can manage or cancel my subscription from the account settings
@@ -822,6 +846,7 @@ As a desktop app user:
   - [ ] I can see the server's status, including whether it is running and whether it is reachable from other devices on the local network
   - [ ] I can see the server's logs, including any errors or warnings
   - [ ] I can configure whether to start the server automatically when the app starts
+  - [ ] I can choose whether the server serves the complete web app or only the API
 - when I close the app with the server running:
   - [ ] the server continues to run in the background, and I can see its status in the system tray or menu bar
 - when I use the CLI:
@@ -846,6 +871,23 @@ As a standalone server user:
 - when I install the server without the desktop app:
   - [ ] I can start and stop it from the command line, and configure it through a config file or command-line options
   - [ ] the server offers the same user account management as the desktop app's server
+- when I start the server:
+  - [ ] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
+- when I start the server with `--accounts`:
+  - [x] people can log in to it with an email address and password
+  - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
+- when I start the server with `--accounts --open-signup`:
+  - [x] anyone who can reach the server can sign up for an account, and is a library user
+- when I start the server with `--accounts` but not `--open-signup`:
+  - [x] nobody can sign up, and only an administrator can add accounts
+- when I start the server with neither `--accounts` nor `--token`:
+  - [x] it makes a random launch token and prints it to standard error
+- when I run `easyimmerse-server users create` with an email address and a role:
+  - [x] an account is created in the server's database, with the password I give on standard input or in `EASYIMMERSE_PASSWORD`, so that I can create the first administrator without the server running
+- when I run `easyimmerse-server users list`, `users set-role` or `users delete`:
+  - [x] I see the accounts with their roles, change an account's role, or delete an account together with its sessions
+- when I run `easyimmerse-server users set-password` with an email address:
+  - [x] the account gets the new password, and everyone logged in to it is logged out
 
 ---
 
