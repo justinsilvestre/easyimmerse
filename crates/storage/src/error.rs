@@ -38,6 +38,14 @@ pub enum StorageError {
     AlignmentNotFound(String),
     #[error("the media file {0:?} cannot be aligned or paired with itself")]
     PairedWithItself(String),
+    #[error("no review answer was given at {0} ms in the project")]
+    ReviewAnswerNotFound(u64),
+    #[error(
+        "the review answer given at {0} ms is not the project's latest, and only the latest can be undone"
+    )]
+    ReviewAnswerNotLatest(u64),
+    #[error(transparent)]
+    Scheduling(#[from] easyimmerse_srs::SrsError),
 }
 
 impl From<DictionaryError> for StorageError {

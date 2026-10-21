@@ -14,6 +14,7 @@ mod openapi;
 mod plugin_routes;
 mod preferences;
 mod projects;
+mod review;
 mod sidecar_subtitles;
 mod subtitles;
 mod support;

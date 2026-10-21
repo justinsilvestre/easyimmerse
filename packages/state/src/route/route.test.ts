@@ -74,6 +74,12 @@ describe("navigate", () => {
     ).toEqual({ screen: "projectSettings", projectId: "p1" });
   });
 
+  it("opens a project's review", () => {
+    expect(
+      navigate(initialRoute, { type: "openReview", projectId: "p1" }),
+    ).toEqual({ screen: "review", projectId: "p1" });
+  });
+
   it("opens the new project form", () => {
     expect(navigate(initialRoute, { type: "createProject" })).toEqual({
       screen: "newProject",

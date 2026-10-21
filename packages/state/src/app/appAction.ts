@@ -11,6 +11,8 @@ import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
+import type { ReviewAction } from "../review/reviewActions.ts";
+import { reviewActions } from "../review/reviewActions.ts";
 import type { RouteAction } from "../route/routeActions.ts";
 import { routeActions } from "../route/routeActions.ts";
 import type { LookupAction } from "../screen/lookup/lookupActions.ts";
@@ -43,6 +45,7 @@ const featureActionCreators = [
   noticesActions,
   operationsActions,
   ankiActions,
+  reviewActions,
 ] as const;
 
 /** The action creators of each feature. A type-level test checks that no two declare the same action type. */
@@ -76,7 +79,8 @@ export type AppAction =
   | ServerAction
   | NoticesAction
   | OperationsAction
-  | AnkiAction;
+  | AnkiAction
+  | ReviewAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

@@ -1,6 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature } from "../app/feature.ts";
+import { editedFlashcardRoute } from "../review/editedFlashcardRoute.ts";
 import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
 import type { MainRoute, Route } from "./route.ts";
@@ -45,9 +46,11 @@ export type RouteApp = Pick<AppState, "route" | "screen">;
 
 /**
  * Returns where the app is after an action, including the media file that a settled pick or fetch opens,
- * and the project that a settled project form opens.
+ * the project that a settled project form opens, and the media file of a card the review opens in the editor.
  */
 export function routeAfter(app: RouteApp, action: AppAction): Route {
+  const edited = editedFlashcardRoute(app, action);
+  if (edited !== null) return withMainRoute(app.route, () => edited);
   const project = projectOpenedByForm(mainScreenOf(app.route), action);
   if (project !== null)
     return withMainRoute(app.route, () => ({

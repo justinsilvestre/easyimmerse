@@ -228,6 +228,33 @@ export const requestEndpoints = {
       { projectId, usesAnkiConnect },
       { track: false },
     ),
+  getReviewQueue: ({ projectId }) =>
+    backendApi.endpoints.getReviewQueue.initiate(projectId, { track: false }),
+  answerReview: ({ projectId, flashcardId, rating, durationMs }) =>
+    backendApi.endpoints.answerReview.initiate(
+      { projectId, flashcardId, rating, durationMs },
+      { track: false },
+    ),
+  undoReviewAnswer: ({ projectId, answeredAtMs }) =>
+    backendApi.endpoints.undoReviewAnswer.initiate(
+      { projectId, answeredAtMs },
+      { track: false },
+    ),
+  raiseReviewAllowance: ({ projectId, extraNewCards, extraReviews }) =>
+    backendApi.endpoints.raiseReviewAllowance.initiate(
+      { projectId, extraNewCards, extraReviews },
+      { track: false },
+    ),
+  holdReviewCard: ({ projectId, flashcardId, hold }) =>
+    backendApi.endpoints.holdReviewCard.initiate(
+      { projectId, flashcardId, hold },
+      { track: false },
+    ),
+  liftReviewHold: ({ projectId, flashcardId }) =>
+    backendApi.endpoints.liftReviewHold.initiate(
+      { projectId, flashcardId },
+      { track: false },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

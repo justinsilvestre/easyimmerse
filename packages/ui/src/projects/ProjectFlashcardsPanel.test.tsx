@@ -32,6 +32,29 @@ const neverDelivered: FlashcardSync = {
   },
   ankiConnect: ankiConnectOff,
   nextCard: null,
+  review: {
+    dueCount: 0,
+    newCount: 0,
+    heldBackCount: 0,
+    moreReviewCount: 0,
+    nextDueAtMs: null,
+    nextCard: null,
+    hasProgress: false,
+  },
+};
+
+/** Reviewed in easyImmerse, with three cards due and two new ones left for today. */
+const reviewing: FlashcardSync = {
+  ...neverDelivered,
+  review: {
+    dueCount: 3,
+    newCount: 2,
+    heldBackCount: 0,
+    moreReviewCount: 0,
+    nextDueAtMs: null,
+    nextCard: exampleFlashcard,
+    hasProgress: true,
+  },
 };
 
 const exportedBefore: FlashcardSync = {
@@ -64,6 +87,7 @@ function renderPanel(sync: FlashcardSync) {
       onSetUpAnkiConnect={call("setUp")}
       onTurnOffAnkiConnect={call("turnOff")}
       onStartReview={call("review")}
+      onReviewMore={call("reviewMore")}
       onCheckConnection={call("check")}
       onTryAnkiSyncAgain={call("tryAgain")}
       onCopyAnkiSearch={call("copy")}
@@ -154,7 +178,7 @@ describe("ProjectFlashcardsPanel", () => {
       expect(
         screen.getAllByRole("button").map((button) => button.textContent),
       ).toEqual([
-        "Review in easyImmerseStudy the flashcards here, with spaced repetition.Coming soon",
+        "Review in easyImmerseStudy the flashcards here, with spaced repetition.",
         "Set up AnkiConnectSend flashcards to Anki as you make them.",
         "Export an Anki deck packageSave a file to import into Anki.",
       ]);
@@ -176,7 +200,7 @@ describe("ProjectFlashcardsPanel", () => {
       expect(calls).toEqual(["setUp"]);
     });
 
-    it("explains the review when it is chosen", () => {
+    it("starts the review when it is chosen", () => {
       const calls = renderPanel(neverDelivered);
       fireEvent.click(
         screen.getByRole("button", { name: /Review in easyImmerse/ }),
@@ -219,7 +243,7 @@ describe("ProjectFlashcardsPanel", () => {
       openMoreOptions();
       expect(menuItemNames()).toEqual([
         "Set up AnkiConnect",
-        "Review in easyImmerse (coming soon)",
+        "Review in easyImmerse",
       ]);
     });
 
@@ -232,7 +256,7 @@ describe("ProjectFlashcardsPanel", () => {
       expect(calls).toEqual(["setUp"]);
     });
 
-    it("explains the review when it is chosen from the menu", () => {
+    it("starts the review when it is chosen from the menu", () => {
       const calls = renderPanel(exportedBefore);
       openMoreOptions();
       fireEvent.click(
@@ -263,7 +287,7 @@ describe("ProjectFlashcardsPanel", () => {
       openMoreOptions();
       expect(menuItemNames()).toEqual([
         "Export an Anki deck package",
-        "Review in easyImmerse (coming soon)",
+        "Review in easyImmerse",
       ]);
     });
 
@@ -319,7 +343,7 @@ describe("ProjectFlashcardsPanel", () => {
       openMoreOptions();
       expect(menuItemNames()).toEqual([
         "Export an Anki deck package",
-        "Review in easyImmerse (coming soon)",
+        "Review in easyImmerse",
       ]);
     });
 
@@ -352,6 +376,74 @@ describe("ProjectFlashcardsPanel", () => {
         },
       });
       expect(screen.getByText("Katze")).toBeDefined();
+    });
+  });
+
+  describe("while the review has progress and AnkiConnect is off", () => {
+    it("counts the cards waiting in the review button", () => {
+      renderPanel(reviewing);
+      expect(
+        screen.getByRole("button", { name: "Review 5 cards" }),
+      ).toBeDefined();
+    });
+
+    it("starts the review", () => {
+      const calls = renderPanel(reviewing);
+      fireEvent.click(screen.getByRole("button", { name: "Review 5 cards" }));
+      expect(calls).toEqual(["review"]);
+    });
+
+    it("offers to learn the new cards once the reviews are done", () => {
+      renderPanel({
+        ...reviewing,
+        review: { ...reviewing.review, dueCount: 0 },
+      });
+      expect(
+        screen.getByRole("button", { name: "Learn 2 new cards" }),
+      ).toBeDefined();
+    });
+
+    it("says it is all caught up once nothing waits", () => {
+      renderPanel({
+        ...reviewing,
+        review: { ...reviewing.review, dueCount: 0, newCount: 0 },
+      });
+      expect(screen.getByText("All caught up")).toBeDefined();
+    });
+
+    describe("once the day's limit holds reviews back", () => {
+      const limitReached: FlashcardSync = {
+        ...reviewing,
+        review: {
+          ...reviewing.review,
+          dueCount: 0,
+          newCount: 0,
+          heldBackCount: 140,
+          moreReviewCount: 100,
+        },
+      };
+
+      it("says that the daily limit is reached", () => {
+        renderPanel(limitReached);
+        expect(screen.getByText("Daily limit reached")).toBeDefined();
+      });
+
+      it("reviews more on request", () => {
+        const calls = renderPanel(limitReached);
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review 100 more now" }),
+        );
+        expect(calls).toEqual(["reviewMore"]);
+      });
+    });
+
+    it("keeps the Anki ways in the More options menu", () => {
+      renderPanel(reviewing);
+      openMoreOptions();
+      expect(menuItemNames()).toEqual([
+        "Export an Anki deck package",
+        "Set up AnkiConnect",
+      ]);
     });
   });
 });

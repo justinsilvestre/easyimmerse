@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -28,6 +29,8 @@ pub struct AppState {
     /// Where media-source plugins put what they fetch. None when the server has no media
     /// directory, in which case media cannot be added through a plugin.
     pub media_dir: Option<PathBuf>,
+    /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
+    pub is_fitting_review_parameters: Arc<AtomicBool>,
 }
 
 impl AppState {
@@ -46,6 +49,7 @@ impl AppState {
             plugins: Arc::new(PluginRegistry::default()),
             media_source_jobs: Arc::new(MediaSourceJobs::default()),
             media_dir: None,
+            is_fitting_review_parameters: Arc::default(),
         }
     }
 

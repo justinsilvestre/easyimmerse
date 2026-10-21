@@ -5507,6 +5507,608 @@
         ]
       }
     },
+    "/projects/{id}/review": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "operationId": "getReviewSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What waits in the project's review today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/allowance": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Raises the number of new cards, or of reviews, the project's review shows today, as \"Learn 20 more\" and \"Review 100 more\" do.",
+        "operationId": "raiseReviewAllowance",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAllowanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Today's allowance of new cards or reviews was raised"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/answers": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Records the user's rating of a card, stamped with the server's time, and schedules the card's next review.",
+        "operationId": "answerReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The card's new schedule, the log entry of the answer, and the intervals of its next answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewAnswerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/answers/{answered_at_ms}": {
+      "delete": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Undoes the project's latest answer and restores the card's schedule from before it.",
+        "operationId": "undoReviewAnswer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answered_at_ms",
+            "in": "path",
+            "description": "The time of the answer, as its log entry gives it",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The card as it stood before the answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewAnswerUndone"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no answer at that time in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The answer is not the project's latest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/holds/{flashcard_id}": {
+      "put": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Sets a card aside from the review: buries it until the user's next day begins at 4 a.m., or suspends it until they unsuspend it.",
+        "operationId": "holdReviewCard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewHoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The card was set aside"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Brings a card back into the review, as unburying or unsuspending it does. A card that was not set aside stays as it is.",
+        "operationId": "liftReviewHold",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The card is back in the review"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/queue": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Lists the cards of a review session in the order they are shown: reviews due today, most overdue first, up to two hundred a day;\nthen learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.\nCards the user buried or suspended are left out.\nStarting a session also fits the FSRS parameters to the user's answers in the background, when the last fit is thirty days old.",
+        "operationId": "getReviewQueue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session's cards, each with the intervals its ratings would give",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewQueue"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/review/counts": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "What waits in each project's review today, counted as the queue counts it, as the list of projects shows it.",
+        "operationId": "listReviewCounts",
+        "parameters": [
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts of each project's review today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewCountsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/timed-text/parse": {
       "post": {
         "tags": [
@@ -6036,7 +6638,8 @@
         "type": "object",
         "required": [
           "flashcard_ids",
-          "marks_exported"
+          "marks_exported",
+          "utc_offset_min"
         ],
         "properties": {
           "flashcard_ids": {
@@ -6060,6 +6663,11 @@
           "staged": {
             "type": "boolean",
             "description": "Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.\nA staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.\nRequires a save path."
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on."
           }
         }
       },
@@ -6960,7 +7568,8 @@
           "included_fields",
           "created_at_ms",
           "updated_at_ms",
-          "was_packaged"
+          "was_packaged",
+          "is_suspended"
         ],
         "properties": {
           "content": {
@@ -6999,6 +7608,10 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields the card shows, in no particular order."
+          },
+          "is_suspended": {
+            "type": "boolean",
+            "description": "Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it."
           },
           "media_file_id": {
             "oneOf": [
@@ -7894,6 +8507,20 @@
           }
         }
       },
+      "ListReviewCountsResponse": {
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCounts"
+            }
+          }
+        }
+      },
       "LookupResponse": {
         "type": "object",
         "required": [
@@ -8726,6 +9353,7 @@
           "last_opened_at_ms",
           "media_count",
           "flashcard_count",
+          "unreviewed_count",
           "uses_anki_connect"
         ],
         "properties": {
@@ -8756,6 +9384,12 @@
           },
           "settings": {
             "$ref": "#/components/schemas/ProjectSettings"
+          },
+          "unreviewed_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The flashcards never answered in the review, less those the user buried or suspended.",
+            "minimum": 0
           },
           "uses_anki_connect": {
             "type": "boolean",
@@ -8843,6 +9477,471 @@
           "num": {
             "type": "integer",
             "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ReviewAllowanceRequest": {
+        "type": "object",
+        "description": "Raises the number of new cards, or of reviews, the project's review shows today.",
+        "required": [
+          "utc_offset_min",
+          "extra_new_cards",
+          "extra_reviews"
+        ],
+        "properties": {
+          "extra_new_cards": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "extra_reviews": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device."
+          }
+        }
+      },
+      "ReviewAnswerRequest": {
+        "type": "object",
+        "description": "What the review screen sends when the user rates a card.",
+        "required": [
+          "flashcard_id",
+          "rating",
+          "utc_offset_min",
+          "duration_ms"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the card appearing to the answer, as measured by the client.",
+            "minimum": 0
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ReviewRating"
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time."
+          }
+        }
+      },
+      "ReviewAnswerResponse": {
+        "type": "object",
+        "description": "A card after an answer.",
+        "required": [
+          "state",
+          "entry",
+          "intervals"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/ReviewLogEntry"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals",
+            "description": "The intervals of the card's next answer, were it given now."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewCardState"
+          }
+        }
+      },
+      "ReviewAnswerUndone": {
+        "type": "object",
+        "description": "A card after its latest answer was undone.",
+        "required": [
+          "flashcard_id",
+          "intervals"
+        ],
+        "properties": {
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReviewCardState",
+                "description": "The state before the undone answer. Null when the card is new again."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ReviewCardState": {
+        "type": "object",
+        "description": "The schedule of a card that has been answered at least once.",
+        "required": [
+          "state",
+          "due_at_ms",
+          "stability",
+          "difficulty",
+          "interval_ms",
+          "reps",
+          "lapses",
+          "learning_step",
+          "last_reviewed_at_ms",
+          "is_leech"
+        ],
+        "properties": {
+          "difficulty": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS difficulty, from 1 to 10."
+          },
+          "due_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "interval_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the latest answer to `due_at_ms`.",
+            "minimum": 0
+          },
+          "is_leech": {
+            "type": "boolean",
+            "description": "Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending."
+          },
+          "lapses": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of times the user forgot the card under review.",
+            "minimum": 0
+          },
+          "last_reviewed_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "learning_step": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of learning or relearning steps passed in the current phase. Zero under review.",
+            "minimum": 0
+          },
+          "reps": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of answers given.",
+            "minimum": 0
+          },
+          "stability": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS stability in days: how long until the chance of remembering the card falls to 90%."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewPhase"
+          }
+        }
+      },
+      "ReviewCounts": {
+        "type": "object",
+        "description": "What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show.",
+        "required": [
+          "project_id",
+          "due_count",
+          "learning_count",
+          "new_count"
+        ],
+        "properties": {
+          "due_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today, up to the day's limit.",
+            "minimum": 0
+          },
+          "learning_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards in learning or relearning that are due now or within the learn-ahead time.",
+            "minimum": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "New cards that may still be introduced today.",
+            "minimum": 0
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          }
+        }
+      },
+      "ReviewHoldKind": {
+        "type": "string",
+        "description": "How the user set a card aside from the review.",
+        "enum": [
+          "buried",
+          "suspended"
+        ]
+      },
+      "ReviewHoldRequest": {
+        "type": "object",
+        "description": "Sets a card aside from the review: buries it until the next local day, or suspends it.",
+        "required": [
+          "kind",
+          "utc_offset_min"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ReviewHoldKind"
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the end of a buried card's day."
+          }
+        }
+      },
+      "ReviewIntervals": {
+        "type": "object",
+        "description": "The interval each rating would give a card if it were answered now.",
+        "required": [
+          "again_ms",
+          "hard_ms",
+          "good_ms",
+          "easy_ms"
+        ],
+        "properties": {
+          "again_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "easy_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "good_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "hard_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ReviewLogEntry": {
+        "type": "object",
+        "description": "One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across.",
+        "required": [
+          "flashcard_id",
+          "answered_at_ms",
+          "rating",
+          "kind",
+          "state",
+          "elapsed_ms",
+          "duration_ms",
+          "stability",
+          "difficulty",
+          "interval_ms_before",
+          "interval_ms_after",
+          "desired_retention"
+        ],
+        "properties": {
+          "answered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.",
+            "minimum": 0
+          },
+          "desired_retention": {
+            "type": "number",
+            "format": "double",
+            "description": "The chance of remembering the card when it comes due that its interval was chosen for, from 0 to 1."
+          },
+          "difficulty": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS difficulty after the answer, from 1 to 10."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the card appearing to the answer, at most one minute.",
+            "minimum": 0
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time since the card's previous answer. Zero for its first answer.",
+            "minimum": 0
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "interval_ms_after": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The interval the answer gave the card.",
+            "minimum": 0
+          },
+          "interval_ms_before": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The interval the card had before the answer. Zero for its first answer.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReviewPhase",
+            "description": "The phase the card was in when answered. A new card's first answer is a learning answer."
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ReviewRating"
+          },
+          "stability": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS stability after the answer, in days."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewPhase",
+            "description": "The phase the answer put the card in."
+          }
+        }
+      },
+      "ReviewPhase": {
+        "type": "string",
+        "description": "Where a card stands in its schedule.\nA card is learning from its first answer until it graduates, under review once it has graduated,\nand relearning after the user forgot it under review, until it graduates again.",
+        "enum": [
+          "learning",
+          "review",
+          "relearning"
+        ]
+      },
+      "ReviewQueue": {
+        "type": "object",
+        "description": "The cards of a review session, in the order they are shown.",
+        "required": [
+          "cards"
+        ],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewQueueCard"
+            }
+          }
+        }
+      },
+      "ReviewQueueCard": {
+        "type": "object",
+        "required": [
+          "flashcard",
+          "intervals"
+        ],
+        "properties": {
+          "flashcard": {
+            "$ref": "#/components/schemas/Flashcard"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReviewCardState",
+                "description": "Null for a new card."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ReviewRating": {
+        "type": "string",
+        "description": "The button the user pressed after seeing the answer.",
+        "enum": [
+          "again",
+          "hard",
+          "good",
+          "easy"
+        ]
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "description": "What waits in a project's review, as the flashcards panel shows it.",
+        "required": [
+          "due_count",
+          "learning_count",
+          "new_count",
+          "held_back_count",
+          "has_progress"
+        ],
+        "properties": {
+          "due_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today.",
+            "minimum": 0
+          },
+          "has_progress": {
+            "type": "boolean",
+            "description": "Whether any flashcard of the project has been answered."
+          },
+          "held_back_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today but left for later days, because more are due than a day's limit.\nWhile any are, no new cards are introduced.",
+            "minimum": 0
+          },
+          "learning_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards in learning or relearning that are due now or within the learn-ahead time.",
+            "minimum": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "New cards that may still be introduced today.",
+            "minimum": 0
+          },
+          "next_card": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Flashcard",
+                "description": "The flashcard the review would show first. Null when nothing waits."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_due_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the earliest answered card is due. Null when no card has been answered.",
             "minimum": 0
           }
         }

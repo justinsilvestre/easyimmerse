@@ -16,6 +16,7 @@ easyimmerse-core = { workspace = true }
 easyimmerse-media = { workspace = true }
 easyimmerse-media-ffmpeg = { workspace = true }
 easyimmerse-plugins = { workspace = true }
+easyimmerse-srs = { workspace = true }
 futures-util = { workspace = true }
 hex = { workspace = true }
 percent-encoding = { workspace = true }

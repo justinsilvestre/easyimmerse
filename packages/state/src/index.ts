@@ -26,6 +26,7 @@ export {
   type AnkiUpdatesQueue,
   type FlashcardSync,
   type PackageSync,
+  type ReviewSync,
   selectFlashcardSync,
 } from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";
@@ -82,6 +83,7 @@ export { selectFooterActivities } from "./footer/selectFooterActivities.ts";
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
+export { selectReviewKeyBinding } from "./keys/selectReviewKeyBinding.ts";
 export type { MediaImportSource } from "./mediaImports/mediaImportWizard.ts";
 export { selectMediaImport } from "./mediaImports/selectMediaImport.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
@@ -126,6 +128,15 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
+export type {
+  ReviewEnd,
+  ReviewSessionProgress,
+} from "./review/reviewSessionView.ts";
+export { selectIsFlashcardSuspended } from "./review/selectIsFlashcardSuspended.ts";
+export {
+  selectReviewProjectId,
+  selectReviewSession,
+} from "./review/selectReviewSession.ts";
 export type {
   MainRoute,
   NavigationStep,

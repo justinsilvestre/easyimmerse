@@ -7,6 +7,7 @@ import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
+import { reviewCommands } from "../review/reviewCommands.ts";
 import { routeFeature } from "../route/updateRoute.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
@@ -80,6 +81,7 @@ export const update: UpdateFunction<
   effects.push(...screenCommands(action, readable));
   effects.push(...flashcardCommands(action, state));
   effects.push(...ankiCommands(action, readable));
+  effects.push(...reviewCommands(action));
   const [operations, performed] = trackOperations(next.operations, effects);
   const tracked =
     operations === next.operations ? next : { ...next, operations };
