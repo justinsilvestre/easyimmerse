@@ -26,7 +26,6 @@ export function ReviewSession({
   onReplayAudio,
   onExpandScreenshot,
   onCloseScreenshot,
-  onEditFlashcard,
   onSuspend,
   onBack,
   onLearnMore,
@@ -34,7 +33,7 @@ export function ReviewSession({
   onRetry,
 }: {
   card: ReviewCardView | null;
-  /** How often the user has forgotten the card, when that is so often that it may need rewording or suspending; otherwise null. */
+  /** How often the user has forgotten the card, when that is so often that it may need suspending; otherwise null. */
   leechLapseCount: number | null;
   isScreenshotExpanded: boolean;
   stage: "front" | "back";
@@ -48,8 +47,6 @@ export function ReviewSession({
   onReplayAudio: () => void;
   onExpandScreenshot: () => void;
   onCloseScreenshot: () => void;
-  /** Opens the card in the editor. Null when it cannot be edited from here. */
-  onEditFlashcard: (() => void) | null;
   onSuspend: () => void;
   onBack: () => void;
   onLearnMore: () => void;
@@ -76,11 +73,7 @@ export function ReviewSession({
   return (
     <div className="flex flex-col gap-3 px-4 pt-4 pb-10 sm:pt-8">
       {leechLapseCount !== null && (
-        <LeechNotice
-          lapseCount={leechLapseCount}
-          onEdit={onEditFlashcard}
-          onSuspend={onSuspend}
-        />
+        <LeechNotice lapseCount={leechLapseCount} onSuspend={onSuspend} />
       )}
       <ReviewCard
         key={card.flashcardId}

@@ -111,8 +111,11 @@ export function ReviewDone({
 /** Says that the reviews beyond the day's limit come up on the next days, and that new cards wait for them. */
 function heldBackLine(count: number) {
   const verb = count === 1 ? "is" : "are";
-  const pronoun = count === 1 ? "it" : "them";
-  return `Another ${pluralize(count, "review")} ${verb} due beyond today's limit. You will get to ${pronoun} in the coming days, and new cards are paused until you have caught up.`;
+  const later =
+    count === 1
+      ? "It will come up in one of the next few days' review sessions"
+      : "They will be distributed across the next few days' review sessions";
+  return `Another ${pluralize(count, "review")} ${verb} due beyond today's limit. ${later}, and new cards are paused until you have caught up.`;
 }
 
 /** Says when the cards still being learned are shown again later today. */

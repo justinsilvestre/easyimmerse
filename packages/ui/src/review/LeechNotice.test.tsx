@@ -6,31 +6,14 @@ afterEach(cleanup);
 
 describe("LeechNotice", () => {
   it("tells how often the card was forgotten", () => {
-    render(<LeechNotice lapseCount={9} onEdit={null} onSuspend={() => {}} />);
+    render(<LeechNotice lapseCount={9} onSuspend={() => {}} />);
     expect(screen.getByText(/forgotten this card 9 times/)).toBeTruthy();
   });
 
   it("suspends the card on request", () => {
     const onSuspend = vi.fn();
-    render(<LeechNotice lapseCount={8} onEdit={null} onSuspend={onSuspend} />);
+    render(<LeechNotice lapseCount={8} onSuspend={onSuspend} />);
     fireEvent.click(screen.getByRole("button", { name: "Suspend" }));
     expect(onSuspend).toHaveBeenCalled();
-  });
-
-  it("offers no Edit for a card that cannot be edited from the review", () => {
-    render(<LeechNotice lapseCount={8} onEdit={null} onSuspend={() => {}} />);
-    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
-  });
-
-  it("does not suggest editing a card that cannot be edited from the review", () => {
-    render(<LeechNotice lapseCount={8} onEdit={null} onSuspend={() => {}} />);
-    expect(screen.queryByText(/editing/)).toBeNull();
-  });
-
-  it("suggests editing the card to make it easier to remember", () => {
-    render(
-      <LeechNotice lapseCount={8} onEdit={() => {}} onSuspend={() => {}} />,
-    );
-    expect(screen.getByText(/easier to remember/)).toBeTruthy();
   });
 });

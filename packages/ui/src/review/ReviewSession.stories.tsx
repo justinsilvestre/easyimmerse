@@ -31,7 +31,6 @@ const meta = {
     onReplayAudio: fn(),
     onExpandScreenshot: fn(),
     onCloseScreenshot: fn(),
-    onEditFlashcard: fn(),
     onSuspend: fn(),
     onBack: fn(),
     onLearnMore: fn(),

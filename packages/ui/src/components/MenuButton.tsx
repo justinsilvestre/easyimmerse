@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { ChevronDown, MoreHorizontal } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { type MenuItem, MenuItemButton } from "./MenuItemButton.tsx";
@@ -12,6 +12,7 @@ import { MenuShell } from "./MenuShell.tsx";
  * The menu's keys and closing are those of `MenuShell`.
  * It opens downward unless told to open upward, for a button near the bottom of a scrolling area.
  * A text button's menu lines up with its start, and an icon button's with its end, unless `align` says otherwise.
+ * A `heading` sits above the items as text that describes the menu, without being an item itself.
  */
 export function MenuButton({
   label,
@@ -22,6 +23,7 @@ export function MenuButton({
   opensUpward = false,
   align,
   isUnavailable = false,
+  heading,
   children,
 }: {
   label: string;
@@ -35,8 +37,10 @@ export function MenuButton({
   align?: "start" | "end";
   /** Keeps the menu closed and marks its button unavailable, keeping keyboard focus on it. */
   isUnavailable?: boolean;
+  heading?: ReactNode;
   children?: ReactNode;
 }) {
+  const headingId = useId();
   return (
     <MenuShell
       isUnavailable={isUnavailable}
@@ -70,6 +74,7 @@ export function MenuButton({
           {...menuProps}
           role="menu"
           aria-label={label}
+          aria-describedby={heading ? headingId : undefined}
           className={clsx(
             "absolute z-20 min-w-40 rounded-md border border-line bg-surface py-1 text-sm text-fg shadow-lg",
             opensUpward ? "bottom-full mb-1" : "top-full mt-1",
@@ -78,6 +83,15 @@ export function MenuButton({
               : "right-0",
           )}
         >
+          {heading && (
+            <div
+              id={headingId}
+              role="none"
+              className="mb-1 border-b border-line px-3 pt-1 pb-2 text-xs text-fg-muted"
+            >
+              {heading}
+            </div>
+          )}
           {items.map((item) => (
             <div key={item.label} role="none">
               <MenuItemButton item={item} onClose={close} />

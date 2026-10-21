@@ -78,7 +78,9 @@ function summaryOf({
           <Count>{dueCount} to review</Count>
           {newPart && <> · {newPart}</>}
         </span>
-        {heldBackPart(`${heldBackCount} more due beyond today's limit`)}
+        {heldBackPart(
+          `${pluralize(heldBackCount, "more card")} due today, but saved for later to respect the daily limit`,
+        )}
       </span>
     );
   if (newCount > 0) return <>All reviews done · {newPart}</>;

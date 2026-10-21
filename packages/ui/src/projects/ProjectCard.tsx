@@ -9,7 +9,7 @@ import { languageName } from "./languages.ts";
 
 /**
  * One project on the home screen, with its language, size, and when it was last opened.
- * Beside it, a button opens its review directly: to review the cards due, with their count, or to learn new cards when none is due.
+ * Beside it, or under it at phone width, a button opens its review directly: to review the cards due, with their count, or to learn new cards when none is due.
  */
 export function ProjectCard({
   project,
@@ -25,7 +25,7 @@ export function ProjectCard({
 }) {
   const { name, target_language: language } = project.settings;
   return (
-    <div className="flex items-center rounded-lg border border-line bg-surface has-[button:hover]:border-line-strong">
+    <div className="flex flex-col rounded-lg border border-line bg-surface has-[button:hover]:border-line-strong sm:flex-row sm:items-center">
       <button
         type="button"
         onClick={() => onOpen(project.id)}
@@ -71,7 +71,7 @@ export function ProjectCard({
 /**
  * Opens the project's review: with the count of cards due while any is, those being learned included,
  * or to learn new cards while none is due and some are left for today. Nothing shows otherwise.
- * At phone width the review button shows only the count, so that the project's details keep their room.
+ * At phone width it spans the card's width below the project's details, so that they keep their room.
  */
 function ReviewButton({
   projectId,
@@ -88,17 +88,14 @@ function ReviewButton({
     <Button
       size="sm"
       variant={dueCount > 0 ? "primary" : "secondary"}
-      className="mr-2 shrink-0 sm:mr-3"
+      className="mx-3 mb-3 shrink-0 sm:my-0 sm:mr-3 sm:ml-0"
       onClick={() => onReview(projectId)}
     >
       <GraduationCap className="size-3.5" aria-hidden />
       {dueCount > 0 ? (
         <>
-          <span className="max-sm:sr-only">Review</span>
-          <span className="tabular-nums sm:opacity-80">
-            {dueCount}
-            <span className="max-sm:sr-only"> due</span>
-          </span>
+          Review
+          <span className="tabular-nums opacity-80">{dueCount} due</span>
         </>
       ) : (
         "Learn"

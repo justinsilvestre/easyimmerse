@@ -11,11 +11,11 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import type { MenuItem } from "../components/MenuItemButton.tsx";
-import { SessionCountsButton } from "./SessionCountsButton.tsx";
+import { SessionCounts } from "./SessionCounts.tsx";
 
 /**
- * The slim row at the top of the review screen: the way back to the project, a button that shows
- * the cards left by kind, and Undo with the card's actions.
+ * The slim row at the top of the review screen: the way back to the project, and Undo with the More menu,
+ * which tells how many cards are left by kind and holds the card's actions.
  * Undo stays in place while unavailable so that the row does not shift.
  */
 export function ReviewControlRow({
@@ -64,7 +64,6 @@ export function ReviewControlRow({
       <IconButton label={`Back to ${projectName}`} onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
       </IconButton>
-      <SessionCountsButton progress={progress} />
       <div className="flex items-center gap-1">
         <Button
           variant="subtle"
@@ -78,6 +77,7 @@ export function ReviewControlRow({
         <MenuButton
           label="More"
           isUnavailable={!hasCard}
+          heading={<SessionCounts progress={progress} />}
           items={[
             ...editItem,
             {

@@ -34,7 +34,7 @@ describe("ReviewDone", () => {
       renderDone(doneWithBacklog);
       expect(
         screen.getByText(
-          "Another 340 reviews are due beyond today's limit. You will get to them in the coming days, and new cards are paused until you have caught up.",
+          "Another 340 reviews are due beyond today's limit. They will be distributed across the next few days' review sessions, and new cards are paused until you have caught up.",
         ),
       ).toBeTruthy();
     });

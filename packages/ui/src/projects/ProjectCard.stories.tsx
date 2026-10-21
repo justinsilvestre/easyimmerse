@@ -49,7 +49,7 @@ export const NewCardsToLearn: Story = {
   },
 };
 
-/** At phone width, the review button shows only the count of cards due. */
+/** At phone width, the review button spans the card below the project's details. */
 export const ReviewsDueOnAPhone: Story = {
   parameters: { viewport: { options: INITIAL_VIEWPORTS } },
   globals: { viewport: { value: "iphonex", isRotated: false } },

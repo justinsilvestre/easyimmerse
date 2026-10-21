@@ -62,11 +62,7 @@ export function ReviewScreen({
         onToggleIntervals={onToggleIntervals}
       />
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <ReviewSession
-          {...session}
-          onEditFlashcard={onEditFlashcard}
-          onSuspend={onSuspend}
-        />
+        <ReviewSession {...session} onSuspend={onSuspend} />
       </main>
       {session.card && (
         <RatingBar

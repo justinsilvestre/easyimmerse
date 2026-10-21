@@ -59,11 +59,11 @@ export const SessionEnded: Story = {
   },
 };
 
-/** The cards left by kind, shown after a press on their button. */
-export const CardsLeftBreakdown: Story = {
+/** The More menu open, with the cards left by kind above the card's actions. */
+export const MoreMenuOpen: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Cards left" }),
+      within(canvasElement).getByRole("button", { name: "More" }),
     );
   },
 };
