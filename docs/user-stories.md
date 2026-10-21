@@ -50,6 +50,7 @@ As a user:
   - [x] I see a button to create a new project
 - when cards of a project are due for review in the easyImmerse SRS:
   - [x] the project in the list shows how many are due
+  - [x] the project's row in the list shows how many cards I would review if I started now: reviews due today, cards I am learning that are due now, and new cards left for today
   - [x] I can start reviewing them from the list with one click or tap, without opening the project first
 - when no card of a project is due, but it has new cards I have never reviewed:
   - [x] I can start learning them from the list with one click or tap
@@ -619,6 +620,9 @@ As a user:
   - [x] I see a button to learn them, which names their number
 - when nothing is due now, and today's new cards are done:
   - [x] I see that I am done for today, and when the next card is due
+- when the day's limit of reviews is reached and more are due:
+  - [x] the panel says "Daily limit reached" and how many more are due
+  - [x] I can review 100 more now, which opens the review
 - when I click the button to set up AnkiConnect for direct export to Anki:
   - [x] I see what to install, and that Anki must be running
 - when I switch on AnkiConnect for the project:
@@ -755,9 +759,37 @@ As a user:
   - [x] the day's new cards and due counts roll over at 4 a.m. in my own time zone, not at midnight
 - when I delete a flashcard:
   - [x] its review history goes with it
+- when I bury or suspend a card, from the More menu:
+  - [x] I can bury it until tomorrow, so that it leaves the session and comes back when the next day begins at 4 a.m.
+  - [x] I can suspend it, so that it stays out of the review until I unsuspend it
+  - [x] the next card appears at once
+  - [x] Undo takes a bury or a suspension back, as it does a rating
+- when I have forgotten a card under review eight times:
+  - [x] it is flagged as a leech above the card, telling me how often I forgot it
+  - [x] I can edit it from the flag, when it can be edited from the review, or suspend it
+- when more than 200 reviews are due in a day:
+  - [x] a day shows at most 200 reviews, and the reviews due beyond that wait for the next days
+  - [x] no new cards are introduced while any wait
+  - [x] at the end of the session I see how many are held back, that they come up over the next few days and that new cards are paused
+  - [x] I can review 100 more now
+- when I tap the card's screenshot:
+  - [x] it shows at full size over the review
+  - [x] closing it, or moving to the next card, hides it
+- when I have given 64 answers on later days than each card's previous answer, across all my projects:
+  - [x] the scheduling is fitted to my own answers in the background when I start a session, and fitted again every thirty days
+  - [x] until then, the default FSRS parameters schedule
+- when I open a flashcard that I suspended, in the editor:
+  - [x] it says so and offers to unsuspend it
+- when I delete a flashcard elsewhere while its card is in the session:
+  - [x] the session skips it
+- when I edit a flashcard while its card is in the session:
+  - [x] the card shows the new content
 - when I export flashcards that I have reviewed in easyImmerse to Anki:
   - [x] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
   - [x] my review history comes with the cards, so Anki's scheduling continues from it
+  - [x] buried and suspended cards reach Anki buried and suspended
+  - [x] a leech reaches Anki with its "leech" tag
+  - [x] the package tells Anki that my days begin at 4 a.m. in my time zone, so due days match
   - [x] a card's progress reaches Anki with the first package that holds the card; a later package refreshes its content but not its progress, as Anki works
 
 ---

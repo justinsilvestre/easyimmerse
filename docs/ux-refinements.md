@@ -69,6 +69,7 @@ As a user:
 
 - [x] The review screen first used the app's frame, with the wordmark header and the footer, and a progress bar over the card. The header drew the eye from the card. The screen now shows nothing but the card: a slim row at the top with the way back, the counts of cards left and Undo, and the rating buttons pinned at the bottom. Long content scrolls between them, so the way back and the buttons never leave the screen. The progress bar is gone; the counts are enough.
 - [x] The screenshot took most of the card. It is shown small, as on the flashcard preview, so the word and the sentence lead.
+- [x] The review session keeps only each card's id and schedule, and reads the card's content from the project's cached flashcards list. An edit made elsewhere therefore shows on the card at once, and a card deleted elsewhere is skipped. A session that held its own copies of the cards would show stale content.
 
 ## Dictionaries
 
