@@ -9,6 +9,7 @@ use tokio::net::TcpListener;
 use crate::cli::ServeArgs;
 
 pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
+    refuse_unreachable_accounts(&args)?;
     let listener = TcpListener::bind(args.bind)
         .await
         .with_context(|| format!("could not bind {}", args.bind))?;
@@ -27,6 +28,21 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
         .context("could not listen for Ctrl-C")?;
     tracing::info!("shutting down");
     handle.shutdown().await?;
+    Ok(())
+}
+
+/// Refuses accounts on an in-memory database when nobody could ever authenticate:
+/// the `users` command needs a database file, and without `--open-signup` or `--token`
+/// the API cannot create the first account.
+fn refuse_unreachable_accounts(args: &ServeArgs) -> anyhow::Result<()> {
+    let is_in_memory = args.db == ":memory:";
+    if args.accounts && is_in_memory && !args.open_signup && args.token.is_none() {
+        anyhow::bail!(
+            "with --accounts and an in-memory database, nobody could log in: pass --db with a \
+             file and create an administrator with `easyimmerse-server users create`, \
+             or pass --open-signup or --token"
+        );
+    }
     Ok(())
 }
 
@@ -121,6 +137,46 @@ mod tests {
 
     fn config_for(args: &ServeArgs) -> ApiConfig {
         build_config(args, args.bind)
+    }
+
+    fn unreachable_accounts_args() -> ServeArgs {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.token = None;
+        args.accounts = true;
+        args
+    }
+
+    #[test]
+    fn refuses_accounts_on_an_in_memory_database_without_signup_or_a_token() {
+        assert!(refuse_unreachable_accounts(&unreachable_accounts_args()).is_err());
+    }
+
+    #[test]
+    fn allows_accounts_on_a_database_file() {
+        let mut args = unreachable_accounts_args();
+        args.db = "accounts.db".to_string();
+        assert!(refuse_unreachable_accounts(&args).is_ok());
+    }
+
+    #[test]
+    fn allows_accounts_on_an_in_memory_database_with_open_signup() {
+        let mut args = unreachable_accounts_args();
+        args.open_signup = true;
+        assert!(refuse_unreachable_accounts(&args).is_ok());
+    }
+
+    #[test]
+    fn allows_accounts_on_an_in_memory_database_with_a_token() {
+        let mut args = unreachable_accounts_args();
+        args.token = Some("t".to_string());
+        assert!(refuse_unreachable_accounts(&args).is_ok());
+    }
+
+    #[test]
+    fn allows_an_in_memory_database_without_accounts() {
+        let mut args = unreachable_accounts_args();
+        args.accounts = false;
+        assert!(refuse_unreachable_accounts(&args).is_ok());
     }
 
     #[test]
