@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 378,
+  "storyCount": 379,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -228,6 +228,14 @@
       "changedVariants": {}
     },
     {
+      "id": "components-segmentedcontrol--in-a-column",
+      "title": "Components/SegmentedControl",
+      "name": "In A Column",
+      "importPath": "./src/components/SegmentedControl.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
       "id": "components-textfield--password",
       "title": "Components/TextField",
       "name": "Password",
@@ -242,10 +250,10 @@
       "importPath": "./src/flashcards/FlashcardEditor.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 237,
-        "light-desktop.png": 237,
-        "dark-phone.png": 242,
-        "dark-desktop.png": 242
+        "light-phone.png": 198,
+        "light-desktop.png": 198,
+        "dark-phone.png": 1143,
+        "dark-desktop.png": 1143
       }
     },
     {
@@ -257,29 +265,16 @@
       "changedVariants": {}
     },
     {
-      "id": "flashcards-failedsavesstatus--several-not-saved",
-      "title": "Flashcards/FailedSavesStatus",
-      "name": "Several Not Saved",
-      "importPath": "./src/flashcards/unsaved/FailedSavesStatus.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 2712,
-        "light-desktop.png": 2826,
-        "dark-phone.png": 30783,
-        "dark-desktop.png": 30617
-      }
-    },
-    {
       "id": "flashcards-failedsavesstatus--one-refused-by-the-server",
       "title": "Flashcards/FailedSavesStatus",
       "name": "One Refused By The Server",
       "importPath": "./src/flashcards/unsaved/FailedSavesStatus.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 2712,
-        "light-desktop.png": 2826,
-        "dark-phone.png": 30783,
-        "dark-desktop.png": 30617
+        "light-phone.png": 2417,
+        "light-desktop.png": 939,
+        "dark-phone.png": 8865,
+        "dark-desktop.png": 938
       }
     },
     {
@@ -291,6 +286,140 @@
       "changedVariants": {}
     },
     {
+      "id": "notices-notice--save-rejected",
+      "title": "Notices/Notice",
+      "name": "Save Rejected",
+      "importPath": "./src/notices/Notice.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 9883,
+        "light-desktop.png": 1238,
+        "dark-phone.png": 16059,
+        "dark-desktop.png": 1287
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--queued-cards",
+      "title": "Projects/AnkiExportDialog",
+      "name": "Queued Cards",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--keeping-the-cards-in-the-queue",
+      "title": "Projects/AnkiExportDialog",
+      "name": "Keeping The Cards In The Queue",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--warning-of-duplicates",
+      "title": "Projects/AnkiExportDialog",
+      "name": "Warning Of Duplicates",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--all-cards",
+      "title": "Projects/AnkiExportDialog",
+      "name": "All Cards",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--one-media-file",
+      "title": "Projects/AnkiExportDialog",
+      "name": "One Media File",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--nothing-to-export",
+      "title": "Projects/AnkiExportDialog",
+      "name": "Nothing To Export",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 486,
+        "dark-desktop.png": 492
+      }
+    },
+    {
+      "id": "projects-ankiexportdialog--exporting",
+      "title": "Projects/AnkiExportDialog",
+      "name": "Exporting",
+      "importPath": "./src/projects/AnkiExportDialog.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 456,
+        "dark-desktop.png": 462
+      }
+    },
+    {
+      "id": "projects-projectsettingsview--new-project",
+      "title": "Projects/ProjectSettingsView",
+      "name": "New Project",
+      "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 770,
+        "dark-desktop.png": 778
+      }
+    },
+    {
+      "id": "projects-projectsettingsview--new-project-prefilled-from-last",
+      "title": "Projects/ProjectSettingsView",
+      "name": "New Project Prefilled From Last",
+      "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 770,
+        "dark-desktop.png": 778
+      }
+    },
+    {
+      "id": "projects-projectsettingsview--editing-settings",
+      "title": "Projects/ProjectSettingsView",
+      "name": "Editing Settings",
+      "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 770,
+        "dark-desktop.png": 778
+      }
+    },
+    {
+      "id": "projects-projectsettingsview--editing-settings-without-the-deletion-list",
+      "title": "Projects/ProjectSettingsView",
+      "name": "Editing Settings Without The Deletion List",
+      "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-desktop.png": 770,
+        "dark-desktop.png": 778
+      }
+    },
+    {
       "id": "screens-settingsscreen--without-conversion",
       "title": "Screens/SettingsScreen",
       "name": "Without Conversion",
@@ -298,9 +427,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 287380,
-        "light-desktop.png": 699319,
+        "light-desktop.png": 699025,
         "dark-phone.png": 312404,
-        "dark-desktop.png": 739764
+        "dark-desktop.png": 739531
       }
     },
     {
@@ -311,9 +440,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 292056,
-        "light-desktop.png": 702972,
+        "light-desktop.png": 702678,
         "dark-phone.png": 321798,
-        "dark-desktop.png": 748543
+        "dark-desktop.png": 748310
       }
     },
     {
@@ -324,9 +453,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 297019,
-        "light-desktop.png": 706680,
+        "light-desktop.png": 706386,
         "dark-phone.png": 345027,
-        "dark-desktop.png": 773935
+        "dark-desktop.png": 773702
       }
     }
   ]
