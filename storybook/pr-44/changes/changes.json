@@ -291,19 +291,6 @@
       "changedVariants": {}
     },
     {
-      "id": "media-mediaview--in-fullscreen-while-playing",
-      "title": "Media/MediaView",
-      "name": "In Fullscreen While Playing",
-      "importPath": "./src/media/MediaView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 30220,
-        "light-desktop.png": 61251,
-        "dark-phone.png": 30220,
-        "dark-desktop.png": 61252
-      }
-    },
-    {
       "id": "screens-settingsscreen--without-conversion",
       "title": "Screens/SettingsScreen",
       "name": "Without Conversion",
