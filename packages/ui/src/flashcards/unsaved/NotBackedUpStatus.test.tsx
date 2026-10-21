@@ -7,7 +7,7 @@ import { exampleFlashcard } from "../exampleFlashcard.ts";
 afterEach(cleanup);
 
 const notBackedUp =
-  "Your flashcards are not backed up. They are kept only in this browser and are lost when its data is cleared.";
+  "Your flashcards aren't backed up. They're stored only in this browser, so you'll lose them if its data is cleared.";
 
 /** Renders the notice region and opens a new flashcard with a word typed in, which waits to be saved. */
 function renderWithOpenCard(server?: ServerConfig) {

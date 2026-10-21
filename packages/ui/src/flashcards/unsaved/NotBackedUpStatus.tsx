@@ -11,8 +11,8 @@ export function NotBackedUpStatus() {
   return (
     <div className="pointer-events-auto flex max-w-md items-center gap-2 rounded-lg border border-warning-line bg-warning-soft px-3 py-2 text-sm text-warning-fg shadow-md">
       <p className="flex-1">
-        Your flashcards are not backed up. They are kept only in this browser
-        and are lost when its data is cleared.
+        Your flashcards aren't backed up. They're stored only in this browser,
+        so you'll lose them if its data is cleared.
       </p>
       <Button
         size="sm"

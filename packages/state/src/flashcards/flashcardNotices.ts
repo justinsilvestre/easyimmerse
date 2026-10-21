@@ -61,7 +61,7 @@ export const flashcardNotices = {
     return {
       key: flashcardNoticeKeys.saveRefused(flashcardId),
       tone: "danger",
-      message: `The server refused the flashcard for “${wordOf(failedSave.card)}”.`,
+      message: `The flashcard for “${wordOf(failedSave.card)}” can't be saved.`,
       buttons: [
         ...open,
         {
