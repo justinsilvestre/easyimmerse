@@ -40,6 +40,11 @@
         margin: 0 0 16px;
       }
       nav {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 8px 0;
+        background: var(--bg);
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
@@ -88,19 +93,26 @@
         font-size: 12px;
       }
       .meta a { color: var(--accent); }
+      .full-size { margin-left: 6px; color: var(--accent); }
       .variant { margin-top: 12px; }
       .variant h3 {
         font-size: 13px;
         margin: 0 0 6px;
         color: var(--muted);
         font-weight: normal;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
       }
+      .variant label { cursor: pointer; }
+      .resized { color: #b45309; }
       .images {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
       }
       figure {
+        flex: 0 1 auto;
         margin: 0;
         min-width: 0;
       }
@@ -109,15 +121,33 @@
         color: var(--muted);
         margin-bottom: 4px;
       }
+      .frame {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        vertical-align: top;
+        border: 1px solid var(--line);
+        background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
+      }
+      .frame .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: none;
+        opacity: 0.8;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      :is(.variant:has(.highlight:checked), .flash) .overlay { visibility: visible; }
       figure img {
         display: block;
         max-width: 100%;
-        max-height: 480px;
         width: auto;
         height: auto;
-        border: 1px solid var(--line);
         background: #fff;
-        cursor: zoom-in;
+        cursor: pointer;
       }
       pre.error {
         white-space: pre-wrap;
@@ -133,7 +163,7 @@
     <p class="summary" id="summary"></p>
     <nav id="filters"></nav>
     <main id="changes"></main>
-    <script id="report" type="application/json">{"variants":[{"theme":"light","viewport":{"name":"phone","width":390,"height":844}},{"theme":"light","viewport":{"name":"desktop","width":1280,"height":800}},{"theme":"dark","viewport":{"name":"phone","width":390,"height":844}},{"theme":"dark","viewport":{"name":"desktop","width":1280,"height":800}}],"storyCount":327,"changes":[{"id":"projects-mediasection--loading","title":"Projects/MediaSection","name":"Loading","importPath":"./src/projects/MediaSection.stories.tsx","kind":"added","changedVariants":{}}],"storybookUrl":"../","baseLabel":"main (0f09657)"}</script>
+    <script id="report" type="application/json">{"variants":[{"theme":"light","viewport":{"name":"phone","width":390,"height":844}},{"theme":"light","viewport":{"name":"desktop","width":1280,"height":800}},{"theme":"dark","viewport":{"name":"phone","width":390,"height":844}},{"theme":"dark","viewport":{"name":"desktop","width":1280,"height":800}}],"storyCount":351,"changes":[{"id":"components-footeractivities-footeractivitieslist--all-running","title":"Components/FooterActivities/FooterActivitiesList","name":"All Running","importPath":"./src/components/FooterActivitiesList.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitieslist--with-a-failure","title":"Components/FooterActivities/FooterActivitiesList","name":"With A Failure","importPath":"./src/components/FooterActivitiesList.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitieslist--crowded","title":"Components/FooterActivities/FooterActivitiesList","name":"Crowded","importPath":"./src/components/FooterActivitiesList.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitiesmenu--all-running","title":"Components/FooterActivities/FooterActivitiesMenu","name":"All Running","importPath":"./src/components/FooterActivitiesMenu.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitiesmenu--all-running-without-percentage","title":"Components/FooterActivities/FooterActivitiesMenu","name":"All Running Without Percentage","importPath":"./src/components/FooterActivitiesMenu.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitiesmenu--with-a-failure","title":"Components/FooterActivities/FooterActivitiesMenu","name":"With A Failure","importPath":"./src/components/FooterActivitiesMenu.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitiesmenu--all-failed","title":"Components/FooterActivities/FooterActivitiesMenu","name":"All Failed","importPath":"./src/components/FooterActivitiesMenu.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitiesmenu--open","title":"Components/FooterActivities/FooterActivitiesMenu","name":"Open","importPath":"./src/components/FooterActivitiesMenu.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitybutton--running","title":"Components/FooterActivities/FooterActivityButton","name":"Running","importPath":"./src/components/FooterActivityButton.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitybutton--running-without-percentage","title":"Components/FooterActivities/FooterActivityButton","name":"Running Without Percentage","importPath":"./src/components/FooterActivityButton.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitybutton--pending-flashcard-saves","title":"Components/FooterActivities/FooterActivityButton","name":"Pending Flashcard Saves","importPath":"./src/components/FooterActivityButton.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitybutton--failed","title":"Components/FooterActivities/FooterActivityButton","name":"Failed","importPath":"./src/components/FooterActivityButton.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footeractivitybutton--truncated","title":"Components/FooterActivities/FooterActivityButton","name":"Truncated","importPath":"./src/components/FooterActivityButton.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--idle","title":"Components/FooterActivities/FooterBar","name":"Idle","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--one-activity","title":"Components/FooterActivities/FooterBar","name":"One Activity","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--two-activities","title":"Components/FooterActivities/FooterBar","name":"Two Activities","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--several-collapsed","title":"Components/FooterActivities/FooterBar","name":"Several Collapsed","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--failure-among-running","title":"Components/FooterActivities/FooterBar","name":"Failure Among Running","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--one-failure","title":"Components/FooterActivities/FooterBar","name":"One Failure","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--pending-flashcard-saves","title":"Components/FooterActivities/FooterBar","name":"Pending Flashcard Saves","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--on-a-phone-with-media-toggles","title":"Components/FooterActivities/FooterBar","name":"On A Phone With Media Toggles","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--on-a-phone-with-one-activity","title":"Components/FooterActivities/FooterBar","name":"On A Phone With One Activity","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--with-media-toggles","title":"Components/FooterActivities/FooterBar","name":"With Media Toggles","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"components-footeractivities-footerbar--menu-open","title":"Components/FooterActivities/FooterBar","name":"Menu Open","importPath":"./src/components/FooterBar.stories.tsx","kind":"added","changedVariants":{}},{"id":"dictionaries-dictionariesview--adding-with-progress","title":"Dictionaries/DictionariesView","name":"Adding With Progress","importPath":"./src/dictionaries/DictionariesView.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":263,"light-desktop.png":461,"dark-phone.png":268,"dark-desktop.png":466}},{"id":"media-mediaview--in-fullscreen-while-playing","title":"Media/MediaView","name":"In Fullscreen While Playing","importPath":"./src/media/MediaView.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":30220,"light-desktop.png":61251,"dark-phone.png":30220,"dark-desktop.png":61252}},{"id":"projects-mediasection--loading","title":"Projects/MediaSection","name":"Loading","importPath":"./src/projects/MediaSection.stories.tsx","kind":"added","changedVariants":{}}],"storybookUrl":"../","baseLabel":"main (0f09657)"}</script>
     <script>
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
@@ -143,7 +173,8 @@
       document.getElementById("summary").textContent =
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
-        (report.baseLabel ? ` compared with ${report.baseLabel}` : "");
+        (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
+        ". Click a screenshot to flip between before and after.";
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
@@ -161,24 +192,30 @@
         return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
       }
 
-      function image(change, prefix, fileName, caption) {
-        const src = `${change.id}/${prefix}-${fileName}`;
-        return `<figure><figcaption>${caption}</figcaption><a href="${src}" target="_blank"><img src="${src}" alt="${caption}" loading="lazy" /></a></figure>`;
+      const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
+
+      function image(change, side, fileName) {
+        const src = `${change.id}/${side}-${fileName}`;
+        const other = side === "before" ? "after" : "before";
+        const hasOther = change.kind === "changed";
+        const overlay = change.changedVariants[fileName]
+          ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
+        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" ${hasOther ? `data-flip="${change.id}/${other}-${fileName}"` : ""} />${overlay}</div></figure>`;
       }
 
       function variantSection(change, fileName) {
         const pixels = change.changedVariants[fileName];
         const label = fileName.replace(".png", "").replace("-", " / ");
-        const images = [];
-        if (change.kind !== "added") images.push(image(change, "before", fileName, "Before"));
-        if (change.kind !== "removed" && change.kind !== "errored") images.push(image(change, "after", fileName, "After"));
-        if (pixels) images.push(image(change, "diff", fileName, `Diff (${pixels} px)`));
-        return `<section class="variant"><h3>${label}</h3><div class="images">${images.join("")}</div></section>`;
+        const sides = change.kind === "added" ? ["after"] : change.kind === "changed" ? ["before", "after"] : ["before"];
+        const highlight = pixels ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>` : "";
+        return `<section class="variant"><h3><span>${label}</span>${highlight}<span class="resized"></span></h3>
+          <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
 
       function variantsOf(change) {
         const all = report.variants.map((variant) => `${variant.theme}-${variant.viewport.name}.png`);
-        const changed = Object.keys(change.changedVariants);
+        const changed = Object.keys(change.changedVariants).sort((a, b) => change.changedVariants[b] - change.changedVariants[a]);
         return change.kind === "changed" && changed.length > 0 ? changed : all;
       }
 
@@ -194,12 +231,53 @@
 
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        const shown = report.changes.filter((change) => state.kind === "all" || change.kind === state.kind);
+        const shown = report.changes
+          .filter((change) => state.kind === "all" || change.kind === state.kind)
+          .sort((a, b) => pixelsOf(b) - pixelsOf(a));
         document.getElementById("changes").innerHTML = shown.length
           ? shown.map(card).join("")
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
       }
       render();
+
+      document.addEventListener("click", (event) => {
+        const img = event.target.closest("img[data-flip]");
+        if (!img) return;
+        const flipped = img.dataset.flip;
+        img.dataset.flip = img.getAttribute("src");
+        img.src = flipped;
+        img.parentElement.classList.add("flash");
+        setTimeout(() => img.parentElement.classList.remove("flash"), 200);
+        const caption = img.closest("figure").querySelector("figcaption span");
+        caption.textContent = flipped.includes("/before-") ? "Before" : "After";
+      });
+
+      // Records each screenshot's own size on first load, before any flip, to flag stories that grew or shrank.
+      // Both sides then share one scale and one frame, sized to the larger of the two and fitted to the row and the screen,
+      // so that flipping moves nothing. The diff image has that same size, so the highlight fills the frame.
+      document.addEventListener("load", (event) => {
+        if (!event.target.matches?.(".frame img")) return;
+        const img = event.target;
+        if (img.matches(".overlay")) return;
+        const section = img.closest(".variant");
+        if (!img.dataset.size) {
+          img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
+          img.dataset.width = img.naturalWidth;
+          img.dataset.height = img.naturalHeight;
+          const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
+          if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
+        }
+        const screenshots = [...section.querySelectorAll(".frame img:not(.overlay)")];
+        if (!screenshots.every((screenshot) => screenshot.dataset.width)) return;
+        const width = Math.max(...screenshots.map((screenshot) => Number(screenshot.dataset.width)));
+        const height = Math.max(...screenshots.map((screenshot) => Number(screenshot.dataset.height)));
+        const room = (section.querySelector(".images").clientWidth - 16 * (screenshots.length - 1)) / screenshots.length - 2;
+        const scale = Math.min(1, room / width, (innerHeight * 0.8) / height);
+        for (const screenshot of screenshots) {
+          screenshot.style.width = `${screenshot.naturalWidth * scale}px`;
+          Object.assign(screenshot.parentElement.style, { width: `${width * scale}px`, height: `${height * scale}px` });
+        }
+      }, true);
     </script>
   </body>
 </html>
