@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{Mt as t,Nt as n}from"./src-BZdFID2-.js";var r,i;function a(){return(a=e((()=>{t(),r=e=>e.app.route.screen===`settings`,i=e=>{let t=n(e.app.route);return t.screen===`media`?t.mediaFileId:null}})))()}export{i as n,r,a as t};
