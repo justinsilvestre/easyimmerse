@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 383,
+  "storyCount": 440,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -471,6 +471,16 @@
         "dark-phone.png": 41067,
         "dark-desktop.png": 778
       }
+    },
+    {
+      "id": "review-reviewscreen--screenshot-expanded",
+      "title": "Review/ReviewScreen",
+      "name": "Screenshot Expanded",
+      "importPath": "./src/screens/ReviewScreen.stories.tsx",
+      "error": "light-phone: [object Object]",
+      "kind": "errored",
+      "changedVariants": {},
+      "errorBefore": "light-phone: [object Object]"
     },
     {
       "id": "screens-settingsscreen--without-conversion",
