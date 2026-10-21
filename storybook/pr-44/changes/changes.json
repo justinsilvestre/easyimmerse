@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 379,
+  "storyCount": 380,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -228,6 +228,27 @@
       "changedVariants": {}
     },
     {
+      "id": "components-segmentedcontrol--default",
+      "title": "Components/SegmentedControl",
+      "name": "Default",
+      "importPath": "./src/components/SegmentedControl.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 21056,
+        "light-desktop.png": 44738,
+        "dark-phone.png": 20917,
+        "dark-desktop.png": 44749
+      }
+    },
+    {
+      "id": "components-segmentedcontrol--many-options",
+      "title": "Components/SegmentedControl",
+      "name": "Many Options",
+      "importPath": "./src/components/SegmentedControl.stories.tsx",
+      "kind": "added",
+      "changedVariants": {}
+    },
+    {
       "id": "components-segmentedcontrol--in-a-column",
       "title": "Components/SegmentedControl",
       "name": "In A Column",
@@ -382,7 +403,9 @@
       "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
+        "light-phone.png": 36617,
         "light-desktop.png": 770,
+        "dark-phone.png": 39551,
         "dark-desktop.png": 778
       }
     },
@@ -393,7 +416,9 @@
       "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
+        "light-phone.png": 35162,
         "light-desktop.png": 770,
+        "dark-phone.png": 38159,
         "dark-desktop.png": 778
       }
     },
@@ -404,7 +429,9 @@
       "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
+        "light-phone.png": 37723,
         "light-desktop.png": 770,
+        "dark-phone.png": 41041,
         "dark-desktop.png": 778
       }
     },
@@ -415,7 +442,9 @@
       "importPath": "./src/projects/ProjectSettingsView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
+        "light-phone.png": 37661,
         "light-desktop.png": 770,
+        "dark-phone.png": 41067,
         "dark-desktop.png": 778
       }
     },
