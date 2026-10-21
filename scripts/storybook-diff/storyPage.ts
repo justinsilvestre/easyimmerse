@@ -123,6 +123,14 @@ function installRenderRecorder(): void {
         "description" in payload ? ` ${payload.description}` : "";
       return `${payload.title}${description}`;
     }
+    // Storybook sends some errors across its channel as plain objects, which are no longer instances of Error.
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload
+    ) {
+      return String(payload.message);
+    }
     return String(payload);
   };
   const failures = [
