@@ -216,9 +216,9 @@
         margin: 12px 0 0;
       }
       .empty { color: var(--muted); }
-      .note {
-        color: var(--muted);
-        margin: 12px 0 0;
+      :root[data-theme="light"] [data-variants="dark"],
+      :root[data-theme="dark"] [data-variants="light"] {
+        display: none;
       }
     </style>
   </head>
@@ -238,8 +238,10 @@
     <script>
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
+      const themeNames = ["light", "dark"];
       const state = { kind: "all", collapsed: new Set() };
       const theme = () => document.documentElement.dataset.theme;
+      const toolbar = document.getElementById("toolbar");
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
       document.getElementById("summary").textContent =
@@ -259,7 +261,7 @@
       }
 
       const themes = document.getElementById("themes");
-      for (const name of ["light", "dark"]) {
+      for (const name of themeNames) {
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = name === "light" ? "Light" : "Dark";
@@ -268,10 +270,45 @@
         themes.append(button);
       }
 
+      // Both themes are already on the page, so switching only changes which one is visible.
+      // The story at the top of the screen is kept at the same point, in case the two themes' screenshots differ in size.
       function switchTheme(name) {
+        const anchor = findAnchor();
         document.documentElement.dataset.theme = name;
         try { localStorage.setItem("theme", name); } catch {}
-        render();
+        markPressedTheme();
+        document.querySelectorAll("details.story[open]").forEach(layoutStory);
+        restoreAnchor(anchor);
+      }
+
+      function markPressedTheme() {
+        for (const button of themes.children) button.setAttribute("aria-pressed", String(button.dataset.theme === theme()));
+      }
+
+      /** Finds the story under the toolbar's lower edge, and the viewport's screenshots under it if any, with how far down that edge falls. */
+      function findAnchor() {
+        const top = toolbar.offsetHeight;
+        const story = [...document.querySelectorAll("details.story")].find((candidate) => candidate.getBoundingClientRect().bottom > top);
+        if (!story) return null;
+        const section = [...story.querySelectorAll(`[data-variants="${theme()}"] .variant`)].find((candidate) => {
+          const rect = candidate.getBoundingClientRect();
+          return rect.top <= top && rect.bottom > top;
+        });
+        if (!section) return { story, offset: top - story.getBoundingClientRect().top };
+        const rect = section.getBoundingClientRect();
+        return { story, viewport: section.dataset.viewport, ratio: (top - rect.top) / rect.height };
+      }
+
+      function restoreAnchor(anchor) {
+        if (!anchor) return;
+        const top = toolbar.offsetHeight;
+        const section = anchor.viewport && anchor.story.querySelector(`[data-variants="${theme()}"] .variant[data-viewport="${anchor.viewport}"]`);
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          scrollBy(0, rect.top + anchor.ratio * rect.height - top);
+        } else {
+          scrollBy(0, anchor.story.getBoundingClientRect().top + (anchor.offset ?? 0) - top);
+        }
       }
 
       document.getElementById("collapse-all").addEventListener("click", () => {
@@ -283,7 +320,7 @@
 
       new ResizeObserver(([entry]) => {
         document.documentElement.style.setProperty("--toolbar-height", `${entry.borderBoxSize[0].blockSize}px`);
-      }).observe(document.getElementById("toolbar"));
+      }).observe(toolbar);
 
       function storyLink(change) {
         if (!report.storybookUrl) return change.importPath;
@@ -293,43 +330,44 @@
       }
 
       const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
-      const themeFileNames = (name) => report.variants.filter((variant) => variant.theme === name).map(fileNameOf);
-      const pixelsOf = (change) =>
-        themeFileNames(theme()).reduce((sum, fileName) => sum + (change.changedVariants[fileName] ?? 0), 0);
+      const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
+      const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
+      const describeSize = (size) => size && `${size.width}×${size.height}`;
+
+      /** Lists a theme's screenshots that the comparison copied for a story. */
+      const shownVariants = (change, themeName) =>
+        report.variants
+          .filter((variant) => variant.theme === themeName)
+          .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
 
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
+        const size = sizeOf(change, side, fileName);
         const other = side === "before" ? "after" : "before";
-        const hasOther = change.kind === "changed";
+        const flip = change.kind === "changed"
+          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${sizeOf(change, other, fileName)?.width}"` : "";
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
         return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
-          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" ${hasOther ? `data-flip="${change.id}/${other}-${fileName}"` : ""} />${overlay}</div></figure>`;
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
       }
 
-      function variantSection(change, fileName) {
+      function variantSection(change, variant) {
+        const fileName = fileNameOf(variant);
         const pixels = change.changedVariants[fileName];
-        const label = report.variants.find((variant) => fileNameOf(variant) === fileName).viewport.name;
-        const sides = change.kind === "added" ? ["after"] : change.kind === "changed" ? ["before", "after"] : ["before"];
-        const highlight = pixels ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>` : "";
-        return `<section class="variant"><h3><span>${label}</span>${highlight}<span class="resized"></span></h3>
+        const sides = ["before", "after"].filter((side) => sizeOf(change, side, fileName));
+        const status = pixels
+          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>`
+          : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
+        const [before, after] = ["before", "after"].map((side) => describeSize(sizeOf(change, side, fileName)));
+        const resized = before && after && before !== after ? `<span class="resized">Size changed: ${before} → ${after}</span>` : "";
+        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span>${variant.viewport.name}</span>${status}${resized}</h3>
           <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
 
-      /** A changed story shows only the variants that differ in the page's theme; every other kind shows all of the theme's variants. */
-      function variantsOf(change) {
-        const fileNames = themeFileNames(theme());
-        const changed = fileNames.filter((fileName) => fileName in change.changedVariants);
-        const anyChanged = Object.keys(change.changedVariants).length > 0;
-        return change.kind === "changed" && anyChanged ? changed : fileNames;
-      }
-
-      function variantsBody(change) {
-        const fileNames = variantsOf(change);
-        if (fileNames.length > 0) return `<div class="variants">${fileNames.map((fileName) => variantSection(change, fileName)).join("")}</div>`;
-        const otherTheme = theme() === "light" ? "dark" : "light";
-        return `<p class="note">Nothing changed in the ${theme()} theme. Switch to the ${otherTheme} theme to see what did.</p>`;
-      }
+      const variantsBody = (change) =>
+        themeNames.map((themeName) => `<div class="variants" data-variants="${themeName}">
+          ${shownVariants(change, themeName).map((variant) => variantSection(change, variant)).join("")}</div>`).join("");
 
       function card(change) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
@@ -344,13 +382,14 @@
 
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        for (const button of themes.children) button.setAttribute("aria-pressed", String(button.dataset.theme === theme()));
+        markPressedTheme();
         const shown = report.changes
           .filter((change) => state.kind === "all" || change.kind === state.kind)
           .sort((a, b) => pixelsOf(b) - pixelsOf(a));
         document.getElementById("changes").innerHTML = shown.length
           ? shown.map(card).join("")
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
+        document.querySelectorAll("details.story[open]").forEach(layoutStory);
       }
       render();
 
@@ -363,8 +402,7 @@
           layoutStory(story);
         } else {
           state.collapsed.add(story.dataset.id);
-          const toolbarHeight = document.getElementById("toolbar").offsetHeight;
-          if (story.getBoundingClientRect().top < toolbarHeight) story.scrollIntoView({ block: "start" });
+          if (story.getBoundingClientRect().top < toolbar.offsetHeight) story.scrollIntoView({ block: "start" });
         }
       }, true);
 
@@ -374,26 +412,13 @@
         const flipped = img.dataset.flip;
         img.dataset.flip = img.getAttribute("src");
         img.src = flipped;
+        [img.dataset.width, img.dataset.flipWidth] = [img.dataset.flipWidth, img.dataset.width];
+        img.style.width = `${img.dataset.width * img.closest(".variant").dataset.scale}px`;
         img.parentElement.classList.add("flash");
         setTimeout(() => img.parentElement.classList.remove("flash"), 200);
         const caption = img.closest("figure").querySelector("figcaption span");
         caption.textContent = flipped.includes("/before-") ? "Before" : "After";
       });
-
-      // Records each screenshot's own size on first load, before any flip, to flag stories that grew or shrank.
-      document.addEventListener("load", (event) => {
-        if (!event.target.matches?.(".frame img:not(.overlay)")) return;
-        const img = event.target;
-        const section = img.closest(".variant");
-        if (!img.dataset.size) {
-          img.dataset.size = `${img.naturalWidth}×${img.naturalHeight}`;
-          img.dataset.width = img.naturalWidth;
-          img.dataset.height = img.naturalHeight;
-          const [before, after] = ["before", "after"].map((side) => section.querySelector(`[data-side="${side}"] .frame img`)?.dataset.size);
-          if (before && after && before !== after) section.querySelector(".resized").textContent = `Size changed: ${before} → ${after}`;
-        }
-        layoutStory(img.closest("details.story"));
-      }, true);
 
       let resizeFrame = 0;
       addEventListener("resize", () => {
@@ -407,15 +432,15 @@
       /** Variants share a row only when none is shown at less than this scale, or than its scale on a row of its own if that is smaller. */
       const minSharedScale = 0.5;
 
-      // Sizes every screenshot of a story once all of them have loaded.
+      // Sizes the screenshots of a story's visible theme from the sizes the report records, so nothing moves while they load.
       // Within a variant, both sides share one scale and one frame, sized to the larger of the two, so that flipping moves nothing,
       // and the diff image has that same size, so the highlight fills the frame.
       // Variants are packed into rows, such as phone beside desktop, when they fit side by side at a common scale cap without shrinking too far.
       function layoutStory(story) {
-        const room = story.querySelector(".variants")?.clientWidth;
+        const variants = story.querySelector(`.variants[data-variants="${theme()}"]`);
+        const room = variants?.clientWidth;
         if (!room) return;
-        const metrics = [...story.querySelectorAll(".variant")].map((section) => measureVariant(section, room));
-        if (metrics.some((metric) => !metric)) return;
+        const metrics = [...variants.querySelectorAll(".variant")].map((section) => measureVariant(section, room));
         for (const row of packRows(metrics, room)) {
           const cap = largestCap(row, room);
           for (const metric of row) applyScale(metric, Math.min(metric.fullScale, cap));
@@ -424,7 +449,6 @@
 
       function measureVariant(section, room) {
         const shots = [...section.querySelectorAll(".frame img:not(.overlay)")];
-        if (!shots.every((shot) => shot.dataset.width)) return null;
         const width = Math.max(...shots.map((shot) => Number(shot.dataset.width)));
         const height = Math.max(...shots.map((shot) => Number(shot.dataset.height)));
         const fixed = shots.length * border + gap * (shots.length - 1);
@@ -464,8 +488,9 @@
 
       function applyScale(metric, scale) {
         metric.section.style.width = `${variantWidth(metric, scale)}px`;
+        metric.section.dataset.scale = scale;
         for (const shot of metric.shots) {
-          shot.style.width = `${shot.naturalWidth * scale}px`;
+          shot.style.width = `${shot.dataset.width * scale}px`;
           Object.assign(shot.parentElement.style, { width: `${metric.width * scale}px`, height: `${metric.height * scale}px` });
         }
       }

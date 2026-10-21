@@ -5,9 +5,11 @@ import { join } from "node:path";
 import { PNG } from "pngjs";
 
 import { readManifest } from "./captureManifest.ts";
-import { type CaptureVariant, variantFileName } from "./captureVariants.ts";
+import type { CaptureVariant } from "./captureVariants.ts";
 import { classifyStories, type StoryChange } from "./classifyStories.ts";
 import { diffImages, type ImageDiff } from "./diffImages.ts";
+import { pngSize } from "./pngSize.ts";
+import { shownFileNames } from "./shownFileNames.ts";
 
 export interface CompareOptions {
   beforeDir: string;
@@ -20,7 +22,12 @@ export interface ComparisonReport {
   variants: CaptureVariant[];
   /** How many stories the later capture holds. */
   storyCount: number;
-  changes: StoryChange[];
+  changes: ReportedChange[];
+}
+
+export interface ReportedChange extends StoryChange {
+  /** The size of each image beside the report, by its path under the story's directory, such as `before-light-phone.png`. */
+  imageSizes: Record<string, { width: number; height: number }>;
 }
 
 /**
@@ -37,13 +44,20 @@ export async function compareCaptures(
     diffStoredImages(options, diffs, storyId, fileName),
   );
   await mkdir(options.outputDir, { recursive: true });
+  const reported: ReportedChange[] = [];
   for (const change of changes) {
-    await writeChangeImages(options, diffs, change, after.variants);
+    const imageSizes = await writeChangeImages(
+      options,
+      diffs,
+      change,
+      after.variants,
+    );
+    reported.push({ ...change, imageSizes });
   }
   const report = {
     variants: after.variants,
     storyCount: after.stories.length,
-    changes,
+    changes: reported,
   };
   await writeFile(
     join(options.outputDir, "changes.json"),
@@ -70,46 +84,33 @@ function diffStoredImages(
   return diff.pixelsChanged;
 }
 
+/** Copies a story's shown screenshots and writes its diff images, returning the size of each screenshot copied. */
 async function writeChangeImages(
   options: CompareOptions,
   diffs: Map<string, ImageDiff>,
   change: StoryChange,
   variants: CaptureVariant[],
-): Promise<void> {
+): Promise<ReportedChange["imageSizes"]> {
   const dir = join(options.outputDir, change.id);
   await mkdir(dir, { recursive: true });
-  for (const fileName of fileNamesToCopy(change, variants)) {
-    const storyDir = (captureDir: string) =>
-      join(captureDir, change.id, fileName);
+  const sizes: ReportedChange["imageSizes"] = {};
+  const copy = (captureDir: string, side: string, fileName: string) => {
+    const from = join(captureDir, change.id, fileName);
+    if (!existsSync(from)) return Promise.resolve();
+    sizes[`${side}-${fileName}`] = pngSize(readFileSync(from));
+    return copyFile(from, join(dir, `${side}-${fileName}`));
+  };
+  for (const fileName of shownFileNames(change, variants)) {
     if (change.kind !== "added") {
-      await copyIfExists(
-        storyDir(options.beforeDir),
-        join(dir, `before-${fileName}`),
-      );
+      await copy(options.beforeDir, "before", fileName);
     }
     if (change.kind !== "removed" && change.kind !== "errored") {
-      await copyIfExists(
-        storyDir(options.afterDir),
-        join(dir, `after-${fileName}`),
-      );
+      await copy(options.afterDir, "after", fileName);
     }
     const diff = diffs.get(`${change.id}/${fileName}`);
     if (diff !== undefined && diff.pixelsChanged > 0) {
       await writeFile(join(dir, `diff-${fileName}`), PNG.sync.write(diff.diff));
     }
   }
-}
-
-/** A changed story shows only the variants that differ; every other kind shows all of them. */
-function fileNamesToCopy(
-  change: StoryChange,
-  variants: CaptureVariant[],
-): string[] {
-  const changed = Object.keys(change.changedVariants);
-  if (change.kind === "changed" && changed.length > 0) return changed;
-  return variants.map(variantFileName);
-}
-
-async function copyIfExists(from: string, to: string): Promise<void> {
-  if (existsSync(from)) await copyFile(from, to);
+  return sizes;
 }
