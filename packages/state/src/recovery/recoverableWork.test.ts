@@ -110,4 +110,71 @@ describe("parseRecoverableWork", () => {
       "unreadable",
     );
   });
+
+  describe("for a kept save", () => {
+    type KeptSave = {
+      failure: unknown;
+      request: {
+        flashcardId?: string;
+        projectId?: string;
+        purpose: { card: unknown };
+      };
+    };
+    const parsedWith = (change: (save: KeptSave) => void) => {
+      const save = JSON.parse(
+        JSON.stringify(selectRecoverableWork(hundFailed()).saves[0]),
+      );
+      change(save as KeptSave);
+      return parseRecoverableWork(
+        JSON.stringify({ saves: [save], resends: [] }),
+      );
+    };
+
+    it("calls a save with no failure unreadable", () => {
+      expect(parsedWith((save) => (save.failure = null))).toBe("unreadable");
+    });
+
+    it("calls a save with no flashcard id unreadable", () => {
+      expect(parsedWith((save) => delete save.request.flashcardId)).toBe(
+        "unreadable",
+      );
+    });
+
+    it("calls a save with no project id unreadable", () => {
+      expect(parsedWith((save) => delete save.request.projectId)).toBe(
+        "unreadable",
+      );
+    });
+
+    it("calls a save with no card unreadable", () => {
+      expect(parsedWith((save) => (save.request.purpose.card = null))).toBe(
+        "unreadable",
+      );
+    });
+  });
+
+  describe("for a kept resend", () => {
+    const parsedResend = (resend: unknown) =>
+      parseRecoverableWork(JSON.stringify({ saves: [], resends: [resend] }));
+
+    it("calls a save with no purpose unreadable", () => {
+      expect(parsedResend({ kind: "saveFlashcard", flashcardId: "h" })).toBe(
+        "unreadable",
+      );
+    });
+
+    it("calls a save of a card's content unreadable", () => {
+      expect(
+        parsedResend({
+          kind: "saveFlashcard",
+          flashcardId: "h",
+          purpose: { type: "save" },
+        }),
+      ).toBe("unreadable");
+    });
+
+    it("calls a deletion with no flashcard id unreadable", () => {
+      expect(parsedResend({ kind: "deleteFlashcard" })).toBe("unreadable");
+    });
+  });
 });
