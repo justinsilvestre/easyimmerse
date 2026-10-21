@@ -39,3 +39,8 @@ export const FourButtonsOnASmallPhone: Story = {
   globals: { viewport: { value: "iphonex", isRotated: false } },
   args: { stage: "back", buttons: "four" },
 };
+
+/** The user hid the intervals, so the buttons show only the grades. */
+export const FourButtonsWithoutIntervals: Story = {
+  args: { stage: "back", buttons: "four", intervals: null },
+};

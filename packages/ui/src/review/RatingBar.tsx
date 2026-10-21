@@ -31,7 +31,7 @@ const gradeButtons: Record<ReviewButtons, readonly GradeButton[]> = {
 
 /**
  * The bar of controls under the card on the review screen. Before the answer is shown, it offers to show it;
- * after, it offers the grades, each with the interval it would give the card.
+ * after, it offers the grades, each with the interval it would give the card while `intervals` are given.
  */
 export function RatingBar({
   stage,
@@ -42,8 +42,8 @@ export function RatingBar({
 }: {
   stage: "front" | "back";
   buttons: ReviewButtons;
-  /** The time until the next review each grade would schedule, already written out. */
-  intervals: Record<ReviewGrade, string>;
+  /** The time until the next review each grade would schedule, already written out, or null to leave them out. */
+  intervals: Record<ReviewGrade, string> | null;
   onShowAnswer: () => void;
   onRate: (grade: ReviewGrade) => void;
 }) {
@@ -71,7 +71,7 @@ export function RatingBar({
               <GradeButtonView
                 key={button.grade}
                 button={button}
-                interval={intervals[button.grade]}
+                interval={intervals?.[button.grade] ?? null}
                 onRate={onRate}
               />
             ))}
@@ -82,14 +82,14 @@ export function RatingBar({
   );
 }
 
-/** A grade as a comfortable target: its name, its key where a keyboard is likely, and under them the interval it gives. */
+/** A grade as a comfortable target: its name, its key where a keyboard is likely, and under them any interval it gives. */
 function GradeButtonView({
   button,
   interval,
   onRate,
 }: {
   button: GradeButton;
-  interval: string;
+  interval: string | null;
   onRate: (grade: ReviewGrade) => void;
 }) {
   return (
@@ -106,14 +106,16 @@ function GradeButtonView({
         {button.label}
         <KeyHint>{button.keyHint}</KeyHint>
       </span>
-      <span
-        className={clsx(
-          "text-xs font-normal tabular-nums",
-          button.variant === "primary" ? "opacity-75" : "text-fg-muted",
-        )}
-      >
-        {interval}
-      </span>
+      {interval !== null && (
+        <span
+          className={clsx(
+            "text-xs font-normal tabular-nums",
+            button.variant === "primary" ? "opacity-75" : "text-fg-muted",
+          )}
+        >
+          {interval}
+        </span>
+      )}
     </button>
   );
 }

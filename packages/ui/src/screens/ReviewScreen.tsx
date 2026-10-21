@@ -26,12 +26,13 @@ export function ReviewScreen({
   onBury,
   onSuspend,
   onDeleteFlashcard,
+  onToggleIntervals,
   ...session
 }: ComponentProps<typeof ReviewSession> & {
   projectName: string;
   progress: ReviewSessionProgress;
-  /** The time until the next review each grade would schedule, already written out. */
-  intervals: Record<ReviewGrade, string>;
+  /** The time until the next review each grade would schedule, already written out, or null while the user hides them. */
+  intervals: Record<ReviewGrade, string> | null;
   buttons: ReviewButtons;
   canUndo: boolean;
   onShowAnswer: () => void;
@@ -42,6 +43,7 @@ export function ReviewScreen({
   onBury: () => void;
   onSuspend: () => void;
   onDeleteFlashcard: () => void;
+  onToggleIntervals: () => void;
 }) {
   return (
     <div className="flex h-dvh flex-col bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg">
@@ -56,6 +58,8 @@ export function ReviewScreen({
         onBury={onBury}
         onSuspend={onSuspend}
         onDeleteFlashcard={onDeleteFlashcard}
+        areIntervalsShown={intervals !== null}
+        onToggleIntervals={onToggleIntervals}
       />
       <main className="min-h-0 flex-1 overflow-y-auto">
         <ReviewSession

@@ -41,7 +41,7 @@ const meta = {
       learningCount: 1,
       dueCount: 8,
     },
-    intervals: matureIntervals,
+    intervals: null,
     end: null,
     canUndo: false,
     includedFields: fieldsOfPreset("intermediate"),
@@ -62,6 +62,7 @@ const meta = {
     onBury: fn(),
     onSuspend: fn(),
     onDeleteFlashcard: fn(),
+    onToggleIntervals: fn(),
   },
 } satisfies Meta<typeof ReviewScreen>;
 
@@ -79,6 +80,11 @@ export const RevealedWithTwoButtons: Story = {
 /** The answer shown, with Anki's four buttons. */
 export const RevealedWithFourButtons: Story = {
   args: { stage: "back", buttons: "four" },
+};
+
+/** The user chose to show on each button when that answer would bring the card back. */
+export const RevealedWithIntervals: Story = {
+  args: { stage: "back", buttons: "four", intervals: matureIntervals },
 };
 
 /** The card's media file cannot be read on this device, so its audio and screenshot are left out. */

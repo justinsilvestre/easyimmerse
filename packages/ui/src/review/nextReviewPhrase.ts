@@ -4,7 +4,7 @@ const dayMs = 24 * 60 * 60 * 1000;
 const dayStartHour = 4;
 
 /**
- * Says when the next review falls due, to follow "Next review": `tomorrow`, `in 3 days`, or `at 16:40` later today.
+ * Says when the next review falls due, to follow "See you": `tomorrow`, `in 3 days`, or `at 16:40` later today.
  * A day ends at 4 a.m. local time.
  */
 export function nextReviewPhrase(

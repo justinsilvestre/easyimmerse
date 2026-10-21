@@ -1,5 +1,4 @@
 import type { ReviewSessionProgress } from "@easyimmerse/state";
-import clsx from "clsx";
 import {
   ArrowLeft,
   CalendarClock,
@@ -12,10 +11,11 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import type { MenuItem } from "../components/MenuItemButton.tsx";
+import { CardsLeftButton } from "./CardsLeftButton.tsx";
 
 /**
- * The slim row at the top of the review screen: the way back to the project, the cards left by kind,
- * coloured as Anki colours them, and Undo with the card's actions.
+ * The slim row at the top of the review screen: the way back to the project, the count of cards left,
+ * which opens their breakdown by kind, and Undo with the card's actions.
  * Undo stays in place while unavailable so that the row does not shift.
  */
 export function ReviewControlRow({
@@ -29,6 +29,8 @@ export function ReviewControlRow({
   onBury,
   onSuspend,
   onDeleteFlashcard,
+  areIntervalsShown,
+  onToggleIntervals,
 }: {
   projectName: string;
   progress: ReviewSessionProgress;
@@ -44,6 +46,9 @@ export function ReviewControlRow({
   /** Leaves the card out of the review until the user unsuspends it in the editor. */
   onSuspend: () => void;
   onDeleteFlashcard: () => void;
+  /** Whether the answer buttons say when each answer would bring the card back. */
+  areIntervalsShown: boolean;
+  onToggleIntervals: () => void;
 }) {
   const editItem: MenuItem[] = onEditFlashcard
     ? [
@@ -59,15 +64,7 @@ export function ReviewControlRow({
       <IconButton label={`Back to ${projectName}`} onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
       </IconButton>
-      <p className="text-xs text-fg-muted tabular-nums">
-        <CountOf count={progress.newCount} className="text-review-new" /> new ·{" "}
-        <CountOf
-          count={progress.learningCount}
-          className="text-review-learning"
-        />{" "}
-        learning ·{" "}
-        <CountOf count={progress.dueCount} className="text-review-due" /> due
-      </p>
+      <CardsLeftButton progress={progress} />
       <div className="flex items-center gap-1">
         <Button
           variant="subtle"
@@ -94,6 +91,11 @@ export function ReviewControlRow({
               onSelect: onSuspend,
             },
             {
+              label: "Show intervals on answer buttons",
+              isChecked: areIntervalsShown,
+              onSelect: onToggleIntervals,
+            },
+            {
               label: "Delete flashcard",
               icon: <Trash2 className="size-4" aria-hidden />,
               isDestructive: true,
@@ -104,8 +106,4 @@ export function ReviewControlRow({
       </div>
     </div>
   );
-}
-
-function CountOf({ count, className }: { count: number; className: string }) {
-  return <span className={clsx("font-medium", className)}>{count}</span>;
 }

@@ -403,12 +403,12 @@ describe("ProjectFlashcardsPanel", () => {
       ).toBeDefined();
     });
 
-    it("says it is done for today once nothing waits", () => {
+    it("says it is all caught up once nothing waits", () => {
       renderPanel({
         ...reviewing,
         review: { ...reviewing.review, dueCount: 0, newCount: 0 },
       });
-      expect(screen.getByText("Done for today")).toBeDefined();
+      expect(screen.getByText("All caught up")).toBeDefined();
     });
 
     describe("once the day's limit holds reviews back", () => {

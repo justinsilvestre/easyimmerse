@@ -42,6 +42,20 @@ export const DoneWithACardComingBack: Story = {
   },
 };
 
+/** Several cards the user forgot are still being learned and come back later today. */
+export const DoneWithCardsComingBack: Story = {
+  args: {
+    end: {
+      kind: "doneForToday",
+      reviewedCount: 13,
+      comesBack: { count: 3, atMs: Date.now() + 2 * hourMs },
+      moreNewCount: 0,
+      heldBackCount: 0,
+      moreReviewCount: 0,
+    },
+  },
+};
+
 /** The day's limit of reviews is reached, and more are due: they wait for the next days, and new cards are paused. */
 export const DoneWithABacklog: Story = {
   args: {

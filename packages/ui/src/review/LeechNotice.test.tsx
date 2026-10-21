@@ -21,4 +21,16 @@ describe("LeechNotice", () => {
     render(<LeechNotice lapseCount={8} onEdit={null} onSuspend={() => {}} />);
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
+
+  it("does not suggest editing a card that cannot be edited from the review", () => {
+    render(<LeechNotice lapseCount={8} onEdit={null} onSuspend={() => {}} />);
+    expect(screen.queryByText(/editing/)).toBeNull();
+  });
+
+  it("suggests editing the card to make it easier to remember", () => {
+    render(
+      <LeechNotice lapseCount={8} onEdit={() => {}} onSuspend={() => {}} />,
+    );
+    expect(screen.getByText(/easier to remember/)).toBeTruthy();
+  });
 });

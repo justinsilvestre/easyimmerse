@@ -12,7 +12,7 @@ import { QueueSummary } from "./QueueSummary.tsx";
  * Shows the review in easyImmerse while it is how the flashcards are used: what waits to be reviewed today,
  * with a `preview` of the front of the next card, and the button that starts the review.
  * Once the day's limit of reviews holds the rest back, it says so and offers to review more, as the end of a session does.
- * Once nothing is left for today, it says when the next review falls due.
+ * Once nothing is left for today, it says so in place of the button, with when the next review falls due.
  */
 export function ReviewChannel({
   review,
@@ -58,12 +58,7 @@ function actionOf(
         Review {moreReviewCount} more now
       </Button>
     );
-  return (
-    <p className="flex items-center gap-1.5 text-fg-muted">
-      <Check className="size-4" aria-hidden />
-      Done for today
-    </p>
-  );
+  return null;
 }
 
 /** Counts what waits to be reviewed today, or says that the day's limit holds reviews back, or when the next review falls due. */
@@ -74,11 +69,8 @@ function summaryOf({
   nextDueAtMs,
 }: ReviewSync) {
   const newPart = newCount > 0 && <Count>{newCount} new</Count>;
-  const heldBackPart = heldBackCount > 0 && (
-    <span className="text-fg-muted">
-      {pluralize(heldBackCount, "more review")} due, more than the daily limit
-    </span>
-  );
+  const heldBackPart = (text: string) =>
+    heldBackCount > 0 && <span className="text-fg-muted">{text}</span>;
   if (dueCount > 0)
     return (
       <span className="flex flex-col gap-0.5">
@@ -86,23 +78,26 @@ function summaryOf({
           <Count>{dueCount} to review</Count>
           {newPart && <> · {newPart}</>}
         </span>
-        {heldBackPart}
+        {heldBackPart(`${heldBackCount} more due beyond today's limit`)}
       </span>
     );
   if (newCount > 0) return <>All reviews done · {newPart}</>;
-  if (heldBackPart)
+  if (heldBackCount > 0)
     return (
       <span className="flex flex-col gap-0.5">
         <Count>Daily limit reached</Count>
-        {heldBackPart}
+        {heldBackPart(`${pluralize(heldBackCount, "more review")} due`)}
       </span>
     );
   return (
-    <span className="flex flex-col gap-0.5">
-      <Count>All caught up</Count>
+    <span className="flex flex-col items-center gap-0.5">
+      <span className="flex items-center gap-1.5">
+        <Check className="size-4 text-success-fg" aria-hidden />
+        <Count>All caught up</Count>
+      </span>
       {nextDueAtMs !== null && (
         <span className="text-fg-muted">
-          Next review {nextReviewPhrase(nextDueAtMs)}
+          See you {nextReviewPhrase(nextDueAtMs)} for your next review
         </span>
       )}
     </span>

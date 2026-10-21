@@ -6,6 +6,7 @@ import {
 import {
   actions,
   selectAnkiFateOfDeletion,
+  selectPreference,
   selectReviewKeyBinding,
   selectReviewSession,
 } from "@easyimmerse/state";
@@ -18,13 +19,6 @@ import { formatInterval } from "../review/formatInterval.ts";
 import type { ReviewGrade } from "../review/RatingBar.tsx";
 import { useReviewCardView } from "../review/useReviewCardView.ts";
 import { ReviewScreen } from "./ReviewScreen.tsx";
-
-const noIntervals = {
-  again: "",
-  hard: "",
-  good: "",
-  easy: "",
-} satisfies Record<ReviewGrade, string>;
 
 /**
  * The review of a project's flashcards as the store holds it, with its keys, the card's media,
@@ -51,6 +45,8 @@ export function ConnectedReviewScreen({
     (state) =>
       shown && selectAnkiFateOfDeletion(state, projectId, shown.flashcard.id),
   );
+  const areIntervalsShown =
+    useAppSelector(selectPreference("showReviewIntervals")) === "true";
   const showAnswer = () => dispatch(actions.reviewAnswerShown(Date.now()));
   const rate = (rating: ReviewGrade) =>
     dispatch(actions.reviewRated(rating, Date.now()));
@@ -71,7 +67,9 @@ export function ConnectedReviewScreen({
         stage={session.stage}
         end={session.end}
         progress={session.progress}
-        intervals={shown ? intervalsOf(shown.intervals) : noIntervals}
+        intervals={
+          shown && areIntervalsShown ? intervalsOf(shown.intervals) : null
+        }
         buttons="two"
         canUndo={session.canUndo}
         includedFields={settings.flashcard_fields}
@@ -104,6 +102,9 @@ export function ConnectedReviewScreen({
         }
         onDeleteFlashcard={() =>
           dispatch(actions.reviewFlashcardDeleteRequested())
+        }
+        onToggleIntervals={() =>
+          dispatch(actions.preferenceToggled("showReviewIntervals"))
         }
       />
       {session.isConfirmingDelete && shown && (

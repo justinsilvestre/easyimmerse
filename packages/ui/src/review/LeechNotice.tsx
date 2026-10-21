@@ -3,7 +3,7 @@ import { Button } from "../components/Button.tsx";
 
 /**
  * Flags a leech above its card: a card the user keeps forgetting, which costs more reviews than it is worth as it stands.
- * It offers the two ways out that Anki suggests, rewording the card or suspending it.
+ * It offers the two ways out that Anki suggests, editing the card to make it easier to remember or suspending it.
  */
 export function LeechNotice({
   lapseCount,
@@ -24,8 +24,10 @@ export function LeechNotice({
       <p className="flex items-start gap-2">
         <Bug className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          You have forgotten this card {lapseCount} times. Rewording it may
-          help, or you can suspend it.
+          You have forgotten this card {lapseCount} times.{" "}
+          {onEdit
+            ? "Try editing it to make it easier to remember, or suspend it."
+            : "You can suspend it to stop reviewing it."}
         </span>
       </p>
       <div className="flex shrink-0 gap-2">

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { ReviewControlRow } from "./ReviewControlRow.tsx";
 
 const meta = {
@@ -29,6 +29,8 @@ const meta = {
     onBury: fn(),
     onSuspend: fn(),
     onDeleteFlashcard: fn(),
+    areIntervalsShown: false,
+    onToggleIntervals: fn(),
   },
 } satisfies Meta<typeof ReviewControlRow>;
 
@@ -54,5 +56,14 @@ export const SessionEnded: Story = {
       learningCount: 0,
       dueCount: 0,
     },
+  },
+};
+
+/** The breakdown of the cards left by kind, open after a press on the count. */
+export const CardsLeftBreakdown: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "12 left" }),
+    );
   },
 };

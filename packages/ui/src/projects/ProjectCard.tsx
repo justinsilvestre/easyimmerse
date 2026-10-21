@@ -71,6 +71,7 @@ export function ProjectCard({
 /**
  * Opens the project's review: with the count of cards due while any is, those being learned included,
  * or to learn new cards while none is due and some are left for today. Nothing shows otherwise.
+ * At phone width the review button shows only the count, so that the project's details keep their room.
  */
 function ReviewButton({
   projectId,
@@ -87,14 +88,17 @@ function ReviewButton({
     <Button
       size="sm"
       variant={dueCount > 0 ? "primary" : "secondary"}
-      className="mr-3 shrink-0"
+      className="mr-2 shrink-0 sm:mr-3"
       onClick={() => onReview(projectId)}
     >
       <GraduationCap className="size-3.5" aria-hidden />
       {dueCount > 0 ? (
         <>
-          Review
-          <span className="tabular-nums opacity-80">{dueCount} due</span>
+          <span className="max-sm:sr-only">Review</span>
+          <span className="tabular-nums sm:opacity-80">
+            {dueCount}
+            <span className="max-sm:sr-only"> due</span>
+          </span>
         </>
       ) : (
         "Learn"

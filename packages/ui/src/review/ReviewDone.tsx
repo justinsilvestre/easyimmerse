@@ -66,7 +66,7 @@ export function ReviewDone({
           title="Nothing to review"
           lines={[
             end.nextDueAtMs !== null &&
-              `Next review ${nextReviewPhrase(end.nextDueAtMs)}.`,
+              `See you ${nextReviewPhrase(end.nextDueAtMs)} for your next review.`,
           ]}
         >
           {back}
@@ -111,13 +111,16 @@ export function ReviewDone({
 /** Says that the reviews beyond the day's limit come up on the next days, and that new cards wait for them. */
 function heldBackLine(count: number) {
   const verb = count === 1 ? "is" : "are";
-  const pronoun = count === 1 ? "It comes" : "They come";
-  return `Another ${pluralize(count, "review")} ${verb} due, more than the daily limit. ${pronoun} up over the next few days, and new cards are paused until you have caught up.`;
+  const pronoun = count === 1 ? "it" : "them";
+  return `Another ${pluralize(count, "review")} ${verb} due beyond today's limit. You will get to ${pronoun} in the coming days, and new cards are paused until you have caught up.`;
 }
 
+/** Says when the cards still being learned are shown again later today. */
 function comesBackLine({ count, atMs }: { count: number; atMs: number }) {
-  const verb = count === 1 ? "comes" : "come";
-  return `${pluralize(count, "card")} ${verb} back at ${timeOfDay(atMs)}.`;
+  const time = timeOfDay(atMs);
+  return count === 1
+    ? `1 card you are still learning is due again at ${time}.`
+    : `${count} cards you are still learning are due again later today, the first at ${time}.`;
 }
 
 /** Sets an end state's icon in a soft disc, so that it carries the same weight as the card did. */
