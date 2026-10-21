@@ -11,6 +11,7 @@ import {
   exampleReviewCard,
   longReviewCard,
 } from "../review/exampleReviewCards.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { ReviewScreen } from "./ReviewScreen.tsx";
 
 const hourMs = 60 * 60 * 1000;
@@ -144,6 +145,7 @@ export const Leech: Story = {
 /** The card's screenshot, tapped, shown at full size over the review. */
 export const ScreenshotExpanded: Story = {
   args: { isScreenshotExpanded: true },
+  decorators: [withAppStore],
 };
 
 /** More reviews were due than a day shows, so the rest wait for the next days and new cards are paused. */
