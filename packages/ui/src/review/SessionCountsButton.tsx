@@ -1,14 +1,14 @@
 import type { ReviewSessionProgress } from "@easyimmerse/state";
 import clsx from "clsx";
+import { Layers } from "lucide-react";
 import { useId } from "react";
-import { Button } from "../components/Button.tsx";
+import { IconButton } from "../components/IconButton.tsx";
 
 /**
- * Says how many cards are left in the review session.
- * Pressing it shows how many of them are new, being learned, and due, coloured as Anki colours them.
+ * Shows, when pressed, how many cards are left in the review session by kind: new, being learned, and due, coloured as Anki colours them.
  * The breakdown closes on Escape or on a press anywhere else.
  */
-export function CardsLeftButton({
+export function SessionCountsButton({
   progress,
 }: {
   progress: ReviewSessionProgress;
@@ -17,14 +17,9 @@ export function CardsLeftButton({
   const { newCount, learningCount, dueCount } = progress;
   return (
     <>
-      <Button
-        variant="subtle"
-        size="sm"
-        popoverTarget={popoverId}
-        className="tabular-nums"
-      >
-        {newCount + learningCount + dueCount} left
-      </Button>
+      <IconButton label="Cards left" popoverTarget={popoverId}>
+        <Layers className="size-4" aria-hidden />
+      </IconButton>
       <div
         id={popoverId}
         popover="auto"

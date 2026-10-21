@@ -59,11 +59,11 @@ export const SessionEnded: Story = {
   },
 };
 
-/** The breakdown of the cards left by kind, open after a press on the count. */
+/** The cards left by kind, shown after a press on their button. */
 export const CardsLeftBreakdown: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "12 left" }),
+      within(canvasElement).getByRole("button", { name: "Cards left" }),
     );
   },
 };
