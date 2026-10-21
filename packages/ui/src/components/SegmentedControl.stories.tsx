@@ -21,3 +21,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+/** Inside a column that stretches its children, as in a form, where the row keeps to the width of its options. */
+export const InAColumn: Story = {
+  decorators: [
+    (Story) => (
+      <div className="flex max-w-lg flex-col gap-3">
+        <Story />
+      </div>
+    ),
+  ],
+};
