@@ -722,10 +722,11 @@ The built-in review schedules cards with FSRS, the algorithm Anki uses, at a des
 
 As a user:
 - when I start reviewing the flashcards of a project:
-  - [x] the review takes the whole screen, with nothing but the card, the number of cards left (new, learning and due), a way back, Undo and a "More" menu
+  - [x] the review takes the whole screen, with nothing but the card, a way back, Undo and a "More" menu
   - [x] the cards due for review come first, then the cards I am learning, then up to twenty new cards for the day, in the order I made them
 - when a card is shown:
   - [x] I see its front, laid out as my project's flashcard settings say
+  - [x] I can open a "More" menu that shows how many cards are left in the session (new, learning and due), with buttons to edit the card's flashcard, bury the card, suspend it, turn "Show intervals on answer buttons" on or off, and delete the flashcard
   - [ ] its audio plays by itself when the audio is on the front
   - [x] I can replay the audio with its button, or with R
   - [x] I can show the answer with the button, Space or Enter
@@ -733,8 +734,10 @@ As a user:
   - [x] the back appears beneath the front, which stays in view
   - [ ] its audio plays by itself when the audio is on the back
   - [x] I can rate the card Forgot or Remembered, with the buttons or with 1 and 2; Space rates it Remembered
-  - [x] each button tells when the card would come back
   - [x] the next card appears as soon as I rate
+- when I turn on "Show intervals on answer buttons" in the More menu, which is off at first:
+  - [x] each rating button shows the corresponding review interval
+  - [x] the setting stays on for later sessions on this device, until I turn it off
 - when I rate a card Forgot:
   - [x] it comes back ten minutes later, or sooner once nothing else is left in the session
 - when I rate a new card Remembered:
@@ -745,6 +748,8 @@ As a user:
   - [x] the card scrolls, while the counts, the way back and the rating buttons stay in place
 - when the card's media file cannot be read on this device:
   - [x] the audio and the screenshot are left out, and a line under the card says so
+- when the media file the card was made from has been removed from the project:
+  - [x] the More menu does not offer to edit the card's flashcard
 - when I have reviewed every card for today:
   - [x] I see that I am done for today, how many cards I reviewed, and when a card I am learning comes back later today
   - [x] I can go back to the project
@@ -764,13 +769,17 @@ As a user:
   - [x] I can suspend it, so that it stays out of the review until I unsuspend it
   - [x] the next card appears at once
   - [x] Undo takes a bury or a suspension back, as it does a rating
+- when I edit the card's flashcard, from the More menu:
+  - [x] the media file the flashcard was made from opens, with the flashcard in the editor
+- when I delete the card's flashcard, from the More menu:
+  - [x] I am asked to confirm first, and once I do, the next card appears at once
 - when I have forgotten a card under review eight times:
   - [x] it is flagged as a leech above the card, telling me how often I forgot it
-  - [x] I can edit it from the flag, when it can be edited from the review, or suspend it
+  - [x] I can suspend it from the flag
 - when more than 200 reviews are due in a day:
   - [x] a day shows at most 200 reviews, and the reviews due beyond that wait for the next days
   - [x] no new cards are introduced while any wait
-  - [x] at the end of the session I see how many are held back, that they come up over the next few days and that new cards are paused
+  - [x] at the end of the session I see how many are held back, that they will be distributed across the next few days' review sessions and that new cards are paused
   - [x] I can review 100 more now
 - when I tap the card's screenshot:
   - [x] it shows at full size over the review
