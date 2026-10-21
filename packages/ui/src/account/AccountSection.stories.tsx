@@ -20,6 +20,15 @@ const filledIn = actions.signInFormChanged({
   password: "correct horse",
 });
 
+/** Fills in the signup form for the own server with the given password. */
+const signingUpWith = (password: string) =>
+  actions.signInFormChanged({
+    mode: "signup",
+    ownServerUrl: ownServer,
+    email: "someone@example.com",
+    password,
+  });
+
 const answered = (accounts: boolean, openSignup: boolean) =>
   actions.serverAuthInfoReceived(ownServer, {
     accounts,
@@ -85,6 +94,24 @@ export const SignUpClosed: Story = {
       actions.signInSubmitted(),
       answered(true, false),
     ),
+  ],
+};
+
+export const SignUpWithShortPassword: Story = {
+  decorators: [withDispatchedActions(signingUpWith("tulip7"))],
+};
+
+export const SignUpWithWeakPassword: Story = {
+  decorators: [withDispatchedActions(signingUpWith("marigold"))],
+};
+
+export const SignUpWithFairPassword: Story = {
+  decorators: [withDispatchedActions(signingUpWith("Tr0ub4dor&3"))],
+};
+
+export const SignUpWithStrongPassword: Story = {
+  decorators: [
+    withDispatchedActions(signingUpWith("correct horse battery staple")),
   ],
 };
 

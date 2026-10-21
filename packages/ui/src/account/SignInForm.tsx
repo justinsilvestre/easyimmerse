@@ -8,10 +8,12 @@ import {
   actions,
   selectAccountServerOptions,
   selectCanSubmitSignIn,
+  selectPasswordStrength,
   selectSignInForm,
 } from "@easyimmerse/state";
 import { Button } from "../components/Button.tsx";
 import { ChoiceRow } from "../components/ChoiceRow.tsx";
+import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter.tsx";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { TextField } from "../components/TextField.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -33,6 +35,7 @@ export function SignInForm() {
   const form = useAppSelector(selectSignInForm);
   const servers = useAppSelector(selectAccountServerOptions);
   const canSubmit = useAppSelector(selectCanSubmitSignIn);
+  const passwordStrength = useAppSelector(selectPasswordStrength);
   const change = (changes: Parameters<typeof actions.signInFormChanged>[0]) =>
     dispatch(actions.signInFormChanged(changes));
   return (
@@ -82,17 +85,26 @@ export function SignInForm() {
         disabled={form.isBusy}
         onChange={(event) => change({ email: event.target.value })}
       />
-      <TextField
-        label="Password"
-        type="password"
-        autoComplete={
-          form.mode === "login" ? "current-password" : "new-password"
-        }
-        hint={form.mode === "signup" ? "At least 8 characters." : undefined}
-        value={form.password}
-        disabled={form.isBusy}
-        onChange={(event) => change({ password: event.target.value })}
-      />
+      <div className="flex flex-col gap-1.5">
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete={
+            form.mode === "login" ? "current-password" : "new-password"
+          }
+          hint={
+            form.mode === "signup" && passwordStrength === null
+              ? "At least 8 characters."
+              : undefined
+          }
+          value={form.password}
+          disabled={form.isBusy}
+          onChange={(event) => change({ password: event.target.value })}
+        />
+        {passwordStrength !== null && (
+          <PasswordStrengthMeter strength={passwordStrength} />
+        )}
+      </div>
       {form.failureMessage !== null && (
         <p role="alert" className="text-sm text-danger-fg">
           {form.failureMessage}

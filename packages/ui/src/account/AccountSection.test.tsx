@@ -155,6 +155,42 @@ describe("AccountSection", () => {
     });
   });
 
+  describe("while a password is chosen for signing up", () => {
+    /** Renders the section offline in signup mode with the given password typed. */
+    function typeSignupPassword(password: string) {
+      renderWithAppStore(<AccountSection />);
+      fireEvent.click(screen.getByLabelText("Sign up"));
+      type("Password", password);
+    }
+
+    it("shows how strong the password is once one is typed", () => {
+      typeSignupPassword("marigold");
+      expect(
+        screen.getByRole("meter", { name: "Password strength" }),
+      ).toBeDefined();
+    });
+
+    it("shows no strength while logging in", () => {
+      renderWithAppStore(<AccountSection />);
+      type("Password", "marigold");
+      expect(screen.queryByRole("meter")).toBeNull();
+    });
+
+    it("rates a long passphrase strong", () => {
+      typeSignupPassword("correct horse battery staple");
+      expect(screen.queryByText("Strong")).not.toBeNull();
+    });
+
+    it("advises a short password to grow longer", () => {
+      typeSignupPassword("marigold");
+      expect(
+        screen.queryByText(
+          "Add a longer phrase; length matters more than symbols.",
+        ),
+      ).not.toBeNull();
+    });
+  });
+
   describe("while the app is connected", () => {
     it("names the account's role in words", async () => {
       renderConnected({ kind: "account", user: session.user });
