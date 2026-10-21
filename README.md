@@ -32,7 +32,7 @@ mise run web:desktop    # web app with hot reloading, reachable on the local net
 mise run dev            # desktop app, with the web app served to this machine and the local network against its server
 mise run storybook      # UI component stories at http://localhost:6006
 mise run storybook-diff # before and after screenshots of the stories the working tree changes against main
-mise run devtools       # Redux DevTools server for the desktop and mobile apps, at localhost:8000
+mise run devtools       # Redux DevTools server for the desktop and mobile apps; the monitor is at http://localhost:1421/devtools.html
 ```
 
 #### Web app against a local server (`web-dev`)
@@ -88,8 +88,8 @@ mise run devtools       # Redux DevTools server for the desktop and mobile apps,
 #### Redux DevTools for the desktop and mobile apps (`devtools`)
 
 - The Tauri webview cannot run browser extensions, so in development the desktop and mobile apps **send their store to a Redux DevTools server** at `localhost:8000`, which this task starts. Start it before or after the app; the app connects once the server is up.
-- To **watch the store**, open the [Redux DevTools browser extension](https://github.com/reduxjs/redux-devtools/tree/main/extension) in any page, choose **Open Remote DevTools**, and in its settings choose **Use local (custom) server** with host `localhost` and port `8000`. The app appears as `easyImmerse desktop` or `easyImmerse mobile`.
-- The server's own page at `http://localhost:8000` does not load, because it expects React builds that React 19 no longer ships. The extension's remote window replaces it.
+- To **watch the store**, open `http://localhost:1421/devtools.html` in a browser while `mise run desktop` runs. The desktop app's Vite server serves this monitor page, which connects to the server by itself and lists the app as `easyImmerse desktop` or `easyImmerse mobile`.
+- The server's own page at `http://localhost:8000` does not load, and the browser extension's remote monitor fails in Firefox, so use the page above instead.
 - On an **Android emulator**, `localhost` is the emulator itself, so run `adb reverse tcp:8000 tcp:8000` first. The iOS simulator shares the Mac's `localhost`.
 - Release builds contain no DevTools code.
 
