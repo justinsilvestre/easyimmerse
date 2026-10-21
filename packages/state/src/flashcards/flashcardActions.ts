@@ -38,6 +38,9 @@ export const flashcardActions = {
   flashcardClosed: () => ({ type: "flashcardClosed" }) as const,
   flashcardDeleteRequested: () =>
     ({ type: "flashcardDeleteRequested" }) as const,
+  /** The user asked to bring a flashcard they suspended back into the review. */
+  flashcardUnsuspendRequested: (projectId: string, flashcardId: string) =>
+    ({ type: "flashcardUnsuspendRequested", projectId, flashcardId }) as const,
   /** Undo on the notice of a save, which takes the save back. */
   saveUndoRequested: (undo: SaveUndo) =>
     ({ type: "saveUndoRequested", undo }) as const,

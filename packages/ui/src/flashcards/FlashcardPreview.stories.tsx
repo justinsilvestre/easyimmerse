@@ -105,3 +105,8 @@ export const MultilineFields: Story = {
     },
   },
 };
+
+/** The front alone, as the flashcards panel shows the next card to review. */
+export const FrontOnly: Story = {
+  args: { compact: true, frontOnly: true },
+};

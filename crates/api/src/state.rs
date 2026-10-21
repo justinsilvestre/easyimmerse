@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -37,6 +38,8 @@ pub struct AppState {
     pub password_hashing: Arc<Semaphore>,
     /// The session extensions being written.
     pub session_extensions: Arc<PendingExtensions>,
+    /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
+    pub is_fitting_review_parameters: Arc<AtomicBool>,
 }
 
 impl AppState {
@@ -58,6 +61,7 @@ impl AppState {
             login_throttle: Arc::default(),
             password_hashing: Arc::new(Semaphore::new(processor_count())),
             session_extensions: Arc::default(),
+            is_fitting_review_parameters: Arc::default(),
         }
     }
 

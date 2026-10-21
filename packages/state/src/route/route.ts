@@ -5,6 +5,8 @@ export type MainRoute =
   | { screen: "newProject" }
   | { screen: "project"; projectId: string }
   | { screen: "projectSettings"; projectId: string }
+  /** The review of a project's flashcards, which fills the window without the app's frame. */
+  | { screen: "review"; projectId: string }
   /** A media file of a project, shown on the media screen or, for a book, in the reader. */
   | { screen: "media"; projectId: string; mediaFileId: string };
 
@@ -31,6 +33,7 @@ export type Route =
 export type NavigationStep =
   | { type: "openProject"; projectId: string }
   | { type: "openProjectSettings"; projectId: string }
+  | { type: "openReview"; projectId: string }
   | { type: "createProject" }
   | { type: "continueOffline" }
   | { type: "goHome" }
@@ -58,6 +61,8 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return { screen: "project", projectId: step.projectId };
     case "openProjectSettings":
       return { screen: "projectSettings", projectId: step.projectId };
+    case "openReview":
+      return { screen: "review", projectId: step.projectId };
     case "createProject":
       return { screen: "newProject" };
     case "continueOffline":

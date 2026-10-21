@@ -10,8 +10,16 @@ const DEFAULT_DECK_ID: u64 = 1;
 const DEFAULT_OPTIONS_ID: u64 = 1;
 const LATEX_PREAMBLE: &str = "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n";
 
-pub(crate) fn conf_json(note_type_id: u64, note_count: usize) -> String {
+/// The hour at which a day begins in Anki and in easyImmerse.
+pub(crate) const ROLLOVER_HOUR: i64 = 4;
+
+pub(crate) fn conf_json(note_type_id: u64, note_count: usize, utc_offset_min: i32) -> String {
     json!({
+        // The creation offset and the rollover make Anki count due days from the local date of the collection's creation,
+        // with days that begin at 4 a.m., as easyImmerse counts them. Anki takes the offset in minutes west of UTC.
+        "creationOffset": -utc_offset_min,
+        "rollover": ROLLOVER_HOUR,
+        "schedVer": 2,
         "activeDecks": [DEFAULT_DECK_ID],
         "addToCur": true,
         "collapseTime": 1200,

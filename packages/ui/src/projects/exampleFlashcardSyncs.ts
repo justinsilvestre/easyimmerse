@@ -2,6 +2,7 @@ import type {
   AnkiConnectSync,
   AnkiUpdatesQueue,
   FlashcardSync,
+  ReviewSync,
 } from "@easyimmerse/state";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 
@@ -13,6 +14,17 @@ const ankiConnectOff: AnkiConnectSync = {
   pendingDeletionCount: 0,
   isSyncing: false,
   hasSyncFailed: false,
+};
+
+/** A project whose flashcards have never been reviewed in easyImmerse. */
+const noReview: ReviewSync = {
+  dueCount: 0,
+  newCount: 0,
+  heldBackCount: 0,
+  moreReviewCount: 0,
+  nextDueAtMs: null,
+  nextCard: null,
+  hasProgress: false,
 };
 
 /** A project of twelve flashcards never exported, with AnkiConnect off, for stories. */
@@ -30,6 +42,7 @@ export const neverExportedSync: FlashcardSync = {
   },
   ankiConnect: ankiConnectOff,
   nextCard: exampleFlashcard,
+  review: noReview,
 };
 
 /** A project exported before, with five new and two changed flashcards since, and AnkiConnect off, for stories. */
@@ -87,3 +100,20 @@ export const ankiConnectOffAfterSendingSync: FlashcardSync = {
     ankiSearch: '"easyImmerse id:f0"',
   },
 };
+
+/** A project reviewed in easyImmerse, with eight cards due and five new ones left for today unless the given changes say otherwise, for stories. */
+export function reviewSync(changes: Partial<ReviewSync> = {}): FlashcardSync {
+  return {
+    ...neverExportedSync,
+    review: {
+      dueCount: 8,
+      newCount: 5,
+      heldBackCount: 0,
+      moreReviewCount: 0,
+      nextDueAtMs: null,
+      nextCard: exampleFlashcard,
+      hasProgress: true,
+      ...changes,
+    },
+  };
+}

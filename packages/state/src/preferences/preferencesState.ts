@@ -4,6 +4,8 @@ export type PreferenceKey =
   | "showTranslations"
   | "textScale"
   | "losslessAudio"
+  /** Whether the review's answer buttons say when each answer would bring the card back. */
+  | "showReviewIntervals"
   | "conversionNoticeDismissed"
   /** The reader's appearance, as JSON. */
   | "readerPreferences"
@@ -17,6 +19,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
   "textScale",
   "losslessAudio",
+  "showReviewIntervals",
   "conversionNoticeDismissed",
   "readerPreferences",
   "subtitleAppearance",

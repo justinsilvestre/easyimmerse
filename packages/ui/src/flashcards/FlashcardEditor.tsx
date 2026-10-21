@@ -45,6 +45,7 @@ export function FlashcardEditor({
   ankiFate = null,
   onSave,
   onDelete,
+  onUnsuspend = null,
   onClose,
   onPlayClip,
 }: {
@@ -74,6 +75,8 @@ export function FlashcardEditor({
   ankiFate?: AnkiFateOfDeletion | null;
   onSave: () => void;
   onDelete: () => void;
+  /** Brings the suspended flashcard back into the review. Null, the default, for a flashcard that is not suspended. */
+  onUnsuspend?: (() => void) | null;
   onClose: () => void;
   /** Plays the clip on the media player. */
   onPlayClip: (clip: AudioClip) => void;
@@ -106,6 +109,7 @@ export function FlashcardEditor({
             <X className="size-4" />
           </IconButton>
         </div>
+        {onUnsuspend && <SuspendedStrip onUnsuspend={onUnsuspend} />}
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
           <TextFieldBlocks
             state={state}
@@ -223,3 +227,15 @@ const saveStatusTexts = {
   waitingForDefinitions: "Waiting for definitions…",
   saving: "Saving…",
 };
+
+/** Says that the flashcard is suspended and left out of reviews, with the way to bring it back. */
+function SuspendedStrip({ onUnsuspend }: { onUnsuspend: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-muted px-4 py-1.5 text-sm text-fg-muted">
+      <p>This card won't show up in reviews until you unsuspend it.</p>
+      <Button variant="subtle" onClick={onUnsuspend}>
+        Unsuspend
+      </Button>
+    </div>
+  );
+}

@@ -8,6 +8,7 @@ import { licenseNoticesStateOf } from "./components/licenseNoticesStateOf.ts";
 import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useNavigate } from "./hooks/useNavigate.ts";
+import { ConnectedReviewScreen } from "./screens/ConnectedReviewScreen.tsx";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
@@ -43,6 +44,7 @@ function MainScreen({ route }: { route: MainRoute }) {
       return (
         <HomeScreen
           onOpenProject={openProject}
+          onReviewProject={(projectId) => go({ type: "openReview", projectId })}
           onCreateProject={() => go({ type: "createProject" })}
           onContinueOffline={() => go({ type: "continueOffline" })}
         />
@@ -67,6 +69,13 @@ function MainScreen({ route }: { route: MainRoute }) {
         <ProjectSettingsScreen
           projectId={route.projectId}
           onCancel={() => openProject(route.projectId)}
+        />
+      );
+    case "review":
+      return (
+        <ConnectedReviewScreen
+          projectId={route.projectId}
+          onBack={() => openProject(route.projectId)}
         />
       );
   }

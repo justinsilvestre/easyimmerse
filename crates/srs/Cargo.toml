@@ -1,0 +1,13 @@
+[package]
+name = "easyimmerse-srs"
+description = "Spaced-repetition scheduling of flashcard reviews on FSRS-6"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+easyimmerse-core = { workspace = true }
+fsrs = { workspace = true }
+thiserror = { workspace = true }

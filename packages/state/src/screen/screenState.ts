@@ -2,6 +2,10 @@ import type { Cue, TrackSelection } from "@easyimmerse/types";
 import type { AnkiExportDialog } from "../anki/ankiExportDialog.ts";
 import type { FlashcardForm } from "../flashcards/flashcardForm.ts";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
+import {
+  initialReviewScreen,
+  type ReviewScreenState,
+} from "../review/reviewScreenState.ts";
 import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
@@ -66,6 +70,7 @@ export type MainScreenState =
   | { kind: "projectSettings" }
   | OfflineScreenState
   | ProjectScreenState
+  | ReviewScreenState
   | MediaScreenState;
 
 /** State that exists only while a screen is open. */
@@ -120,6 +125,8 @@ export function initialMainScreen(
         ankiExport: null,
         isAnkiConnectSetupOpen: false,
       };
+    case "review":
+      return initialReviewScreen;
     case "media":
       return {
         kind: "media",

@@ -106,9 +106,12 @@ impl From<StorageError> for ApiFailure {
             | StorageError::FlashcardNotFound(_)
             | StorageError::SubtitleTrackNotFound(_)
             | StorageError::AlignmentNotFound(_)
-            | StorageError::UserNotFound(_) => not_found(error.to_string()),
+            | StorageError::UserNotFound(_)
+            | StorageError::ReviewAnswerNotFound(_) => not_found(error.to_string()),
             StorageError::PairedWithItself(_) => bad_request(error.to_string()),
-            StorageError::FlashcardIdTaken(_) => conflict(error.to_string()),
+            StorageError::FlashcardIdTaken(_) | StorageError::ReviewAnswerNotLatest(_) => {
+                conflict(error.to_string())
+            }
             StorageError::EmailTaken(_) => {
                 ApiFailure::new(StatusCode::CONFLICT, "email_taken", error.to_string())
             }

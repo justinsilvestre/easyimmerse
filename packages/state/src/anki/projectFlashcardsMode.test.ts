@@ -22,7 +22,21 @@ const neverDelivered: FlashcardSync = {
   package: { deletions: [], ankiSearch: "" },
   ankiConnect: ankiConnectAs(false),
   nextCard: null,
+  review: {
+    dueCount: 0,
+    newCount: 0,
+    heldBackCount: 0,
+    moreReviewCount: 0,
+    nextDueAtMs: null,
+    nextCard: null,
+    hasProgress: false,
+  },
 };
+
+const reviewed = (sync: FlashcardSync): FlashcardSync => ({
+  ...sync,
+  review: { ...sync.review, dueCount: 3, hasProgress: true },
+});
 
 const deliveredBy = (
   ways: { hasBeenSent?: boolean; hasBeenExported?: boolean },
@@ -80,5 +94,21 @@ describe("projectFlashcardsModeOf", () => {
         deliveredBy({ hasBeenSent: true, hasBeenExported: true }),
       ),
     ).toBe("ankiConnect");
+  });
+
+  it("puts the review first once it has progress", () => {
+    expect(projectFlashcardsModeOf(reviewed(neverDelivered))).toBe("review");
+  });
+
+  it("puts the review before the package once both are in use", () => {
+    expect(
+      projectFlashcardsModeOf(reviewed(deliveredBy({ hasBeenExported: true }))),
+    ).toBe("review");
+  });
+
+  it("puts AnkiConnect before the review while it is on", () => {
+    expect(projectFlashcardsModeOf(reviewed(deliveredBy({}, true)))).toBe(
+      "ankiConnect",
+    );
   });
 });

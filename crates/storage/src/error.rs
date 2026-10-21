@@ -44,6 +44,14 @@ pub enum StorageError {
     UserNotFound(String),
     #[error("the account {0:?} is the last administrator, and the server must keep one")]
     LastAdministrator(String),
+    #[error("no review answer was given at {0} ms in the project")]
+    ReviewAnswerNotFound(u64),
+    #[error(
+        "the review answer given at {0} ms is not the project's latest, and only the latest can be undone"
+    )]
+    ReviewAnswerNotLatest(u64),
+    #[error(transparent)]
+    Scheduling(#[from] easyimmerse_srs::SrsError),
 }
 
 impl From<DictionaryError> for StorageError {

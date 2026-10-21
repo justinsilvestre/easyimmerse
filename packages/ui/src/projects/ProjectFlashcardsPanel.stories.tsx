@@ -11,6 +11,7 @@ import {
   deletionsListedSync,
   exportedSync,
   neverExportedSync,
+  reviewSync,
 } from "./exampleFlashcardSyncs.ts";
 import { ProjectFlashcardsPanel } from "./ProjectFlashcardsPanel.tsx";
 
@@ -33,6 +34,7 @@ const meta = {
     onSetUpAnkiConnect: fn(),
     onTurnOffAnkiConnect: fn(),
     onStartReview: fn(),
+    onReviewMore: fn(),
     onCheckConnection: fn(),
     onTryAnkiSyncAgain: fn(),
     onCopyAnkiSearch: fn(),
@@ -157,5 +159,45 @@ export const AnkiConnectOffAfterSendingEveryFlashcard: Story = {
       package: { deletions: [], ankiSearch: "" },
       nextCard: null,
     },
+  },
+};
+
+export const ReviewsDue: Story = {
+  args: { sync: reviewSync() },
+};
+
+export const OnlyNewCardsLeftToReview: Story = {
+  args: { sync: reviewSync({ dueCount: 0 }) },
+};
+
+export const ReviewDoneForToday: Story = {
+  args: {
+    sync: reviewSync({
+      dueCount: 0,
+      newCount: 0,
+      nextCard: null,
+      nextDueAtMs: Date.now() + 24 * 60 * 60 * 1000,
+    }),
+  },
+};
+
+/** Every card is reviewed and nothing is scheduled, as when every answered card is suspended. */
+export const ReviewCaughtUpWithNothingScheduled: Story = {
+  args: {
+    sync: reviewSync({ dueCount: 0, newCount: 0, nextCard: null }),
+  },
+};
+
+/** The day's limit of reviews is reached, and more are due: they wait for later days unless the user reviews more now. */
+export const ReviewDailyLimitReached: Story = {
+  args: {
+    sync: reviewSync({
+      dueCount: 0,
+      newCount: 0,
+      heldBackCount: 140,
+      moreReviewCount: 100,
+      nextCard: null,
+      nextDueAtMs: Date.now() - 2 * 24 * 60 * 60 * 1000,
+    }),
   },
 };

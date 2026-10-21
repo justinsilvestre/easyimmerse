@@ -30,6 +30,7 @@ pub mod openapi;
 pub mod plugins;
 pub mod preferences;
 pub mod projects;
+pub mod review;
 pub mod sessions;
 pub mod source_form;
 pub mod subtitles;

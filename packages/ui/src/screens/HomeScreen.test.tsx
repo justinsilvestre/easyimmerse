@@ -2,6 +2,8 @@ import type { BackendClient } from "@easyimmerse/backend";
 import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreen } from "./HomeScreen.tsx";
 
@@ -14,6 +16,7 @@ afterEach(cleanup);
 function renderHome(
   callbacks: {
     onOpenProject?: (projectId: string) => void;
+    onReviewProject?: (projectId: string) => void;
     onCreateProject?: () => void;
     onContinueOffline?: () => void;
   } = {},
@@ -22,6 +25,7 @@ function renderHome(
   return renderWithAppStore(
     <HomeScreen
       onOpenProject={callbacks.onOpenProject ?? (() => undefined)}
+      onReviewProject={callbacks.onReviewProject ?? (() => undefined)}
       onCreateProject={callbacks.onCreateProject ?? (() => undefined)}
       onContinueOffline={callbacks.onContinueOffline ?? (() => undefined)}
     />,
@@ -46,6 +50,21 @@ describe("HomeScreen", () => {
       renderHome({ onOpenProject: (id) => opened.push(id) });
       fireEvent.click(await screen.findByRole("button", { name: /Beta/ }));
       expect(opened).toEqual(["p2"]);
+    });
+
+    it("calls onReviewProject with the id of a project whose Review is clicked", async () => {
+      const reviewed: string[] = [];
+      const client = createFakeBackendClient({
+        ...fixtureResponses,
+        "GET /review/counts": {
+          projects: [
+            { project_id: "p1", due_count: 8, learning_count: 0, new_count: 0 },
+          ],
+        },
+      });
+      renderHome({ onReviewProject: (id) => reviewed.push(id) }, client);
+      fireEvent.click(await screen.findByRole("button", { name: /^Review/ }));
+      expect(reviewed).toEqual(["p1"]);
     });
 
     it("calls onCreateProject when New project is clicked", async () => {

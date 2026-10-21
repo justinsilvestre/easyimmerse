@@ -19,7 +19,7 @@ use crate::routes::{
     dictionary_imports, dictionary_lookup, dictionary_media, documents, flashcards, health,
     local_dictionaries, media, media_availability, media_clip, media_frame, media_import,
     media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
-    preferences, projects, sessions, source_form, subtitles, timed_text, users,
+    preferences, projects, review, sessions, source_form, subtitles, timed_text, users,
 };
 use crate::state::AppState;
 
@@ -93,6 +93,13 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::update_flashcard,
             flashcards::delete_flashcard
         ))
+        .routes(routes!(review::get_review_summary))
+        .routes(routes!(review::list_review_counts))
+        .routes(routes!(review::get_review_queue))
+        .routes(routes!(review::answer_review))
+        .routes(routes!(review::undo_review_answer))
+        .routes(routes!(review::raise_review_allowance))
+        .routes(routes!(review::hold_review_card, review::lift_review_hold))
         .routes(routes!(anki_package::export_anki_package))
         .routes(routes!(anki_exported::record_anki_exported))
         .routes(routes!(anki::render_anki_notes))

@@ -110,6 +110,7 @@ describe("ProjectScreen's ways to Anki", () => {
           save_path: "/decks/Alpha.apkg",
           marks_exported: true,
           staged: false,
+          utc_offset_min: expect.any(Number),
         },
       }),
     );

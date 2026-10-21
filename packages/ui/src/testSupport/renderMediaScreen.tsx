@@ -42,6 +42,7 @@ export const savedFlashcard: Flashcard = {
   exported_at_ms: null,
   was_packaged: false,
   sent_at_ms: null,
+  is_suspended: false,
 };
 
 export function dictionarySummary(
