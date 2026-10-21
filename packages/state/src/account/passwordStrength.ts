@@ -92,7 +92,7 @@ function keyboardPosition(character: string): number | null {
 /** Returns the index of every character after the first in a run of three or more whose positions step by the same -1, 0 or 1. */
 function indexesInRuns(positions: (number | null)[]): number[] {
   const steps = positions.map((position, index) =>
-    index === 0 ? null : stepBetween(positions[index - 1], position),
+    index === 0 ? null : stepBetween(positions[index - 1] ?? null, position),
   );
   const indexes: number[] = [];
   let stretch: number[] = [];

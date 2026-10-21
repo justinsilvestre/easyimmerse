@@ -4,8 +4,13 @@ export {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
   selectIsSigningOut,
+  selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
+export type {
+  PasswordStrength,
+  PasswordStrengthLevel,
+} from "./account/passwordStrength.ts";
 export {
   connectionNotKeptCode,
   type SignInAttempt,

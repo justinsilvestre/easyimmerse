@@ -1,6 +1,7 @@
 import { createSelector } from "reselect";
 import type { AppRoot } from "../app/createAppStore.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
+import { assessPasswordStrength } from "./passwordStrength.ts";
 import { signInFailureMessage } from "./signInFailureMessage.ts";
 import {
   canSubmitSignIn,
@@ -56,6 +57,18 @@ export const selectSignInForm = createSelector(
       serverOffer: serverOfferOf(form, serverUrl),
     };
   },
+);
+
+/** Returns how strong the password being chosen is, once one is typed while signing up, and otherwise null. */
+export const selectPasswordStrength = createSelector(
+  [
+    (state: AppRoot) => selectForm(state).mode,
+    (state: AppRoot) => selectForm(state).password,
+  ],
+  (mode, password) =>
+    mode === "signup" && password !== ""
+      ? assessPasswordStrength(password)
+      : null,
 );
 
 /** Returns whether the app knows of an official server, and which server the form names: the person's own whenever there is no official one. */

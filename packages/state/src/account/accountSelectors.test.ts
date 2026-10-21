@@ -7,6 +7,7 @@ import {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
   selectIsSigningOut,
+  selectPasswordStrength,
   selectSignInForm,
 } from "./accountSelectors.ts";
 
@@ -83,6 +84,38 @@ describe("selectCanSubmitSignIn", () => {
       }),
     );
     expect(selectCanSubmitSignIn(store.getState())).toBe(true);
+  });
+});
+
+describe("selectPasswordStrength", () => {
+  it("assesses nothing while the signup password is empty", () => {
+    const store = storeWith(null);
+    store.dispatch(actions.signInFormChanged({ mode: "signup" }));
+    expect(selectPasswordStrength(store.getState())).toBeNull();
+  });
+
+  it("assesses nothing while the form logs in", () => {
+    const store = storeWith(null);
+    store.dispatch(actions.signInFormChanged({ password: "marigold" }));
+    expect(selectPasswordStrength(store.getState())).toBeNull();
+  });
+
+  it("assesses the password typed while signing up", () => {
+    const store = storeWith(null);
+    store.dispatch(
+      actions.signInFormChanged({ mode: "signup", password: "marigold" }),
+    );
+    expect(selectPasswordStrength(store.getState())?.level).toBe("weak");
+  });
+
+  it("keeps its reference while the password does not change", () => {
+    const store = storeWith(null);
+    store.dispatch(
+      actions.signInFormChanged({ mode: "signup", password: "marigold" }),
+    );
+    expect(selectPasswordStrength(store.getState())).toBe(
+      selectPasswordStrength(store.getState()),
+    );
   });
 });
 
