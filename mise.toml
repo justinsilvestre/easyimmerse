@@ -187,8 +187,8 @@ description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]
 run = ["node scripts/web-desktop/guardDesktop.ts", "pnpm --filter @easyimmerse/native dev"]
 
-# The desktop app connects to this server in development. The Redux DevTools browser extension shows its store
-# through the extension's remote monitor, set to the local server at localhost:8000.
+# The desktop app connects to this server in development, and the monitor page that its Vite server serves
+# at http://localhost:1421/devtools.html shows its store through the server.
 # The server is fetched on demand rather than installed with the workspace, because its sqlite3 dependency has no
 # prebuilt binary for some CI platforms and fails to build there. Reading from /dev/null stops pnpm from asking which
 # other install scripts to run, so it skips Electron's, which downloads a desktop window the browser extension

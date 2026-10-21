@@ -11,6 +11,7 @@ import { AppRoot, definitionMarkdown } from "@easyimmerse/ui";
 import { createRoot } from "react-dom/client";
 import { compose } from "redux";
 import "@easyimmerse/ui/styles.css";
+import { reduxDevToolsServer } from "./reduxDevToolsServer.ts";
 
 /** Connects to the embedded server the native shell injected, wires the effects and store, and mounts the app. */
 export async function bootstrap(): Promise<void> {
@@ -33,8 +34,8 @@ export async function bootstrap(): Promise<void> {
 }
 
 /**
- * Connects the store in development to a Redux DevTools server at localhost:8000, which `mise run devtools` starts.
- * The webview cannot run the browser extension, so the extension's remote monitor shows the store through that server instead.
+ * Connects the store in development to the Redux DevTools server, which `mise run devtools` starts.
+ * The webview cannot run the browser extension, so the monitor page at /devtools.html shows the store through that server instead.
  */
 async function findDevToolsComposer(
   platform: NativePlatform,
@@ -43,8 +44,7 @@ async function findDevToolsComposer(
   const { devToolsEnhancer } = await import("@redux-devtools/remote");
   const enhancer = devToolsEnhancer({
     name: `easyImmerse ${platform}`,
-    hostname: "localhost",
-    port: 8000,
+    ...reduxDevToolsServer,
     realtime: true,
   });
   return (...enhancers) => compose(...enhancers, enhancer);
