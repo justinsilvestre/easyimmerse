@@ -1,6 +1,6 @@
 # Storybook screenshot diff
 
-Shows which stories of `packages/ui` a change affects, as before and after screenshots. Every story is captured in the light and dark themes at a phone width (390 × 844) and a desktop width (1280 × 800), two captures are compared, and a report page lists the stories that were added, removed, changed, or broke, with the differing pixels marked in red. There is no hosted service and no stored baseline: the "before" side is captured from a build of the base commit, so the comparison is always against exactly the commit the change branched from.
+Shows which stories of `packages/ui` a change affects, as before and after screenshots. Every story is captured in the light and dark themes at a phone width (390 × 844) and a desktop width (1280 × 800), two captures are compared, and a report page lists the stories that were added, removed, changed, or broke, with the differing pixels marked in red. Each screenshot is cropped to the story's content, including any dialog or menu drawn outside it and any part that extends past the viewport, so a small component is not lost in a mostly empty page. In the report, clicking a screenshot flips it between before and after, and a checkbox lays the changed pixels over the after side. There is no hosted service and no stored baseline: the "before" side is captured from a build of the base commit, so the comparison is always against exactly the commit the change branched from.
 
 ## Locally
 
