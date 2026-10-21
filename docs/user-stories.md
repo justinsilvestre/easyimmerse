@@ -28,7 +28,7 @@ As a user:
   - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
-    - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
+    - File menu: New project, Open project, Export flashcards, Import/export project, Exit
     - Edit menu: Undo, Redo, Cut, Copy, Paste
     - View menu: Toggle fullscreen, Toggle subtitles panel, Toggle waveform visualization
     - Window menu: Minimize, Zoom, Bring all to front
@@ -104,7 +104,6 @@ As a user:
   - [x] the list's heading is a menu that narrows it to videos, audio or ebooks, each choice counting its files
   - [x] I can click on a media file to open it
   - [x] I can remove a media file from the project through the menu on its row
-  - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
   - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
   - [x] I can see the project flashcards panel
@@ -126,18 +125,16 @@ As a user:
   - [x] the new media file is opened
 - when I click "Remove" next to a media file:
   - [x] the media file is removed from the project's list; the user's files are left alone
-- when I save the project via the menu bar or keyboard shortcut:
-  - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
-- while I am working in a project:
-  - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- while I am editing a flashcard:
+  - [x] my changes that are not saved yet are kept on my device as I make them, so an unexpected crash does not lose them
 - when I try to close the app while a flashcard has unsaved changes or is still being saved:
   - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when a flashcard has waited more than about two seconds to be saved, as when the server is slow or unreachable:
   - [x] the footer says how many flashcards are being saved, until their saves land or fail
-- when I open the app after it closed unexpectedly:
-  - [ ] the last automatically saved state of my project is reloaded
-- when the last automatically saved state cannot be loaded:
-  - [ ] I am told about the problem, and the app falls back to the most recent earlier autosave that loads
+- when I open the app after it closed while flashcards had changes that were not saved, were being saved, or had failed to be saved:
+  - [x] a notice says how many flashcards were not saved, and opens a list of them, where I can retry, open or discard each one with the changes I had made
+- when the changes kept on my device cannot be read:
+  - [x] I am told that they could not be recovered
 
 ---
 
@@ -524,8 +521,8 @@ As a user:
   - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
   - [x] the dictionary pop-up prompts me to set up a dictionary
-- when I have made flashcards without having saved my work:
-  - [ ] I see an indication that my work is unsaved, and a button to save it
+- while the open flashcard has changes that are not saved yet:
+  - [x] the form shows that they are not saved yet beside the save button
 - when I have made flashcards without having logged in:
   - [x] I see an indication that my work is not backed up, and a button to log in or sign up
 

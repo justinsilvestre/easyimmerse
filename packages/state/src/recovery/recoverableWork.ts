@@ -144,14 +144,23 @@ function resendsUnderWay(operations: OperationsState): FlashcardRequest[] {
 }
 
 function isResend(request: unknown): request is FlashcardRequest {
-  const { kind, purpose } = (request ?? {}) as {
-    kind?: unknown;
-    purpose?: { type?: unknown };
-  };
+  const { kind, flashcardId, purpose } = asRecord(request);
   return (
-    kind === "deleteFlashcard" ||
-    (kind === "saveFlashcard" && purpose?.type !== "save")
+    typeof flashcardId === "string" &&
+    (kind === "deleteFlashcard" ||
+      (kind === "saveFlashcard" && isUndoOrRollback(purpose)))
   );
+}
+
+function isUndoOrRollback(purpose: unknown): boolean {
+  const { type } = asRecord(purpose);
+  return type === "undo" || type === "rollback";
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function lastPerId(saves: readonly FailedRequest[]): FailedRequest[] {
@@ -160,7 +169,7 @@ function lastPerId(saves: readonly FailedRequest[]): FailedRequest[] {
 }
 
 function isRecoverableWork(value: unknown): value is RecoverableWork {
-  const { saves, resends } = (value ?? {}) as Record<string, unknown>;
+  const { saves, resends } = asRecord(value);
   return (
     Array.isArray(saves) &&
     saves.every(isKeptSave) &&
@@ -170,16 +179,18 @@ function isRecoverableWork(value: unknown): value is RecoverableWork {
 }
 
 function isKeptSave(value: unknown): value is FailedRequest {
-  if (typeof value !== "object" || value === null) return false;
-  const { id, request, failure } = value as Record<string, unknown>;
-  const { kind, purpose } = (request ?? {}) as {
-    kind?: unknown;
-    purpose?: { type?: unknown };
-  };
+  const { id, request, failure } = asRecord(value);
+  const { kind, flashcardId, projectId, purpose } = asRecord(request);
+  const { type, card } = asRecord(purpose);
   return (
     typeof id === "string" &&
     typeof failure === "object" &&
+    failure !== null &&
     kind === "saveFlashcard" &&
-    purpose?.type === "save"
+    typeof flashcardId === "string" &&
+    typeof projectId === "string" &&
+    type === "save" &&
+    typeof card === "object" &&
+    card !== null
   );
 }
