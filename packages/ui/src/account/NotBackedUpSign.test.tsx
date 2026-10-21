@@ -1,17 +1,18 @@
 import { actions, type ServerConfig } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { renderWithAppStore } from "../../testSupport/renderWithAppStore.tsx";
-import { exampleFlashcard } from "../exampleFlashcard.ts";
+import { AppFooter } from "../components/AppFooter.tsx";
+import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 
 afterEach(cleanup);
 
-const notBackedUp =
+const explanation =
   "Your flashcards aren't backed up. They're stored only in this browser, so you'll lose them if its data is cleared.";
 
-/** Renders the notice region and opens a new flashcard with a word typed in, which waits to be saved. */
+/** Renders the footer and opens a new flashcard with a word typed in, which waits to be saved. */
 function renderWithOpenCard(server?: ServerConfig) {
-  const rendered = renderWithAppStore(<p>Screen</p>, undefined, { server });
+  const rendered = renderWithAppStore(<AppFooter />, undefined, { server });
   act(() => {
     rendered.store.dispatch(actions.openMediaFileRequested("p1", "m1"));
     rendered.store.dispatch(
@@ -40,20 +41,29 @@ function renderWithOpenCard(server?: ServerConfig) {
   return rendered;
 }
 
-describe("NotBackedUpStatus", () => {
-  it("tells that flashcards are kept only in this browser while the app runs without a server", () => {
+describe("NotBackedUpSign", () => {
+  it("shows in the footer while flashcards are kept only in this browser", () => {
     renderWithOpenCard();
-    expect(screen.getByText(notBackedUp)).toBeDefined();
+    expect(screen.getByRole("button", { name: "Not backed up" })).toBeDefined();
   });
 
-  it("tells nothing while the app is connected to a server", () => {
+  it("does not show while the app is connected to a server", () => {
     renderWithOpenCard({ serverUrl: "http://127.0.0.1:1", token: "t" });
-    expect(screen.queryByText(notBackedUp)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Not backed up" })).toBeNull();
   });
 
-  it("opens the account settings from its button", () => {
+  it("explains where the flashcards are kept once pressed", () => {
+    renderWithOpenCard();
+    fireEvent.click(screen.getByRole("button", { name: "Not backed up" }));
+    expect(screen.getByText(explanation)).toBeDefined();
+  });
+
+  it("opens the account settings from its menu", () => {
     const { store } = renderWithOpenCard();
-    fireEvent.click(screen.getByRole("button", { name: "Log in or sign up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not backed up" }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Log in or sign up" }),
+    );
     expect(store.getState().app.route).toMatchObject({
       screen: "settings",
       pages: ["general"],
