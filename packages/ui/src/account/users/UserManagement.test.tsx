@@ -135,7 +135,7 @@ describe("UserManagement", () => {
       { target: { value: "library_user" } },
     );
     expect((await screen.findByRole("alert")).textContent).toBe(
-      "This is the server's only administrator account, so it keeps its role. Make another account an administrator first.",
+      "You can't change the role of the server's only administrator. Make another account an administrator first.",
     );
   });
 

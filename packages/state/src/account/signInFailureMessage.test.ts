@@ -10,7 +10,7 @@ describe("signInFailureMessage", () => {
         { status: 401, code: "invalid_credentials", message: "" },
         serverUrl,
       ),
-    ).toBe("The email address or the password is wrong.");
+    ).toBe("Incorrect email address or password.");
   });
 
   it("tells of an email address already taken", () => {

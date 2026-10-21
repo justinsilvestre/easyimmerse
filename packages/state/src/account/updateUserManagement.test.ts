@@ -96,7 +96,7 @@ describe("updateUserManagement", () => {
     });
   });
 
-  it("tells that the only administrator keeps its role", async () => {
+  it("tells that the only administrator's role cannot change", async () => {
     const { server, store } = connectedStore();
     store.dispatch(actions.userRoleChosen("u1", "library_user"));
     server.respond(
@@ -105,7 +105,7 @@ describe("updateUserManagement", () => {
     );
     await vi.waitFor(() =>
       expect(selectUserChangeFailureMessage(store.getState())).toBe(
-        "This is the server's only administrator account, so it keeps its role. Make another account an administrator first.",
+        "You can't change the role of the server's only administrator. Make another account an administrator first.",
       ),
     );
   });

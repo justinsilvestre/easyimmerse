@@ -6,9 +6,9 @@ type UserRequest = "createUser" | UserChange;
 
 const lastAdministratorMessages: Record<UserChange, string> = {
   setUserRole:
-    "This is the server's only administrator account, so it keeps its role. Make another account an administrator first.",
+    "You can't change the role of the server's only administrator. Make another account an administrator first.",
   deleteUser:
-    "This is the server's only administrator account, so it cannot be deleted. Make another account an administrator first.",
+    "You can't delete the server's only administrator. Make another account an administrator first.",
 };
 
 const messagesByCode: Record<string, string> = {

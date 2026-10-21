@@ -71,7 +71,7 @@ function DeletionConfirmation({ email }: { email: string }) {
       className="flex flex-wrap items-center gap-2 rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger-fg"
     >
       <p className="flex-1">
-        Delete {email}? Anyone logged in to this account is logged out.
+        Delete {email}? Anyone using this account will be logged out.
       </p>
       <Button
         size="sm"

@@ -15,7 +15,7 @@ describe("userManagementFailureMessage", () => {
         "deleteUser",
       ),
     ).toBe(
-      "This is the server's only administrator account, so it cannot be deleted. Make another account an administrator first.",
+      "You can't delete the server's only administrator. Make another account an administrator first.",
     );
   });
 

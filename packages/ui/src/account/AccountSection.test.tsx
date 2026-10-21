@@ -148,7 +148,7 @@ describe("AccountSection", () => {
         }),
       );
       expect(screen.getByRole("alert").textContent).toBe(
-        "The email address or the password is wrong.",
+        "Incorrect email address or password.",
       );
     });
   });

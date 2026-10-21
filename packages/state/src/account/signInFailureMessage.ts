@@ -2,7 +2,7 @@ import type { RequestFailure } from "../server/serverRequest.ts";
 import { connectionNotKeptCode } from "./signInAttempt.ts";
 
 const messagesByCode: Record<string, string> = {
-  invalid_credentials: "The email address or the password is wrong.",
+  invalid_credentials: "Incorrect email address or password.",
   email_taken:
     "An account with this email address already exists. Log in instead.",
   password_too_short: "The password must be at least 8 characters long.",
