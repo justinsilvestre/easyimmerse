@@ -356,12 +356,12 @@ describe("FlashcardEditor after a failed save", () => {
 describe("FlashcardEditor with changes not saved yet", () => {
   it("tells that they are not saved yet", () => {
     renderWithLeavingButtons("idle", { hasUnsavedChanges: true });
-    expect(screen.getByRole("status").textContent).toBe("Not saved yet");
+    expect(screen.getByRole("status").textContent).toBe("Not saved");
   });
 
   it("tells that a new flashcard is not saved yet", () => {
     renderWithLeavingButtons("idle", { isNew: true });
-    expect(screen.getByRole("status").textContent).toBe("Not saved yet");
+    expect(screen.getByRole("status").textContent).toBe("Not saved");
   });
 
   it("tells nothing for a saved flashcard left unchanged", () => {

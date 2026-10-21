@@ -90,7 +90,7 @@ export const NewFlashcard: Story = {
   args: { isNew: true },
 };
 
-/** A saved flashcard with changes that are not saved yet, which the line beside Save tells. */
+/** A saved flashcard with changes that are not saved yet, which the badge beside Save shows. */
 export const UnsavedChanges: Story = {
   args: { hasUnsavedChanges: true },
 };
