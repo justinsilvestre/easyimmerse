@@ -523,8 +523,6 @@ As a user:
   - [x] the dictionary pop-up prompts me to set up a dictionary
 - while the open flashcard has changes that are not saved yet:
   - [x] the form shows that they are not saved yet beside the save button
-- when I have made flashcards without having logged in:
-  - [x] I see an indication that my work is not backed up, and a button to log in or sign up
 
 ---
 
@@ -689,6 +687,7 @@ As a user:
 - when I choose to export a project:
   - [ ] I am prompted to choose where to save a project file containing the project's settings, flashcards, and media files registry
   - [ ] I can choose whether to include the media files and dictionaries in the project file
+  - [ ] the project counts as backed up until I next change it, so on its own it no longer keeps the footer's sign that my work is not backed up
 - when I choose to import a project:
   - [ ] I am prompted to select a project file
   - [ ] the imported project appears in my list of projects
@@ -777,6 +776,15 @@ As a user:
   - [x] I can create an account with my email address
   - [x] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
   - [x] I can keep using all offline features of the app without an account
+- while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
+  - [ ] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+  - [ ] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
+- when all my work is backed up:
+  - [ ] the sign is gone
+- a project counts as backed up when any of these is true:
+  - [ ] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
+  - [ ] I have exported it to a project file since I last changed it (in any app)
+  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
 - when I enter the address of a server that does not have accounts:
   - [x] I am told that the server has no accounts, and I stay in offline mode
 - when I try to sign up on a server whose sign-up is closed:
@@ -830,6 +838,7 @@ As a web/mobile app user:
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
   - [ ] the two devices are paired, and my projects, flashcards, and dictionaries are synchronized between them
   - [ ] media files on the desktop can be played on the paired device without copying them
+  - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
 
 ---
 
