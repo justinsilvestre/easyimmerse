@@ -8,7 +8,7 @@ import type {
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
@@ -793,5 +793,110 @@ describe("setAnkiConnect", () => {
       backendApi.endpoints.getProject.select("p1")(store.getState()).data
         ?.uses_anki_connect,
     ).toBe(true);
+  });
+});
+
+describe("the account endpoints", () => {
+  it("send GET /auth/server for getServerAuthInfo", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getServerAuthInfo.initiate(),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/auth/server" }]);
+  });
+
+  it("send GET /auth/me for getCurrentPrincipal", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getCurrentPrincipal.initiate(),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/auth/me" }]);
+  });
+
+  it("send POST /auth/logout for logOut", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(backendApi.endpoints.logOut.initiate());
+    expect(client.requests).toEqual([{ method: "POST", path: "/auth/logout" }]);
+  });
+
+  it("send GET /users for listUsers", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listUsers.initiate(),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/users" }]);
+  });
+
+  it("post the new account for createUser", async () => {
+    const client = createRecordingClient();
+    const request = {
+      email: "someone@example.com",
+      password: "correct horse",
+      role: "privileged",
+    } as const;
+    await createStore(client).dispatch(
+      backendApi.endpoints.createUser.initiate(request),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "POST",
+        path: "/users",
+        body: { kind: "json", value: request },
+      },
+    ]);
+  });
+
+  it("put the role for setUserRole", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setUserRole.initiate({
+        userId: "u1",
+        body: { role: "administrator" },
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "PUT",
+        path: "/users/u1/role",
+        body: { kind: "json", value: { role: "administrator" } },
+      },
+    ]);
+  });
+
+  it("fetch the current principal again once an account's role changes", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(
+      backendApi.endpoints.setUserRole.initiate({
+        userId: "u1",
+        body: { role: "library_user" },
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/me"),
+      ).toHaveLength(2),
+    );
+  });
+
+  it("fetch the current principal again once an account is deleted", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(backendApi.endpoints.deleteUser.initiate("u1"));
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/me"),
+      ).toHaveLength(2),
+    );
+  });
+
+  it("send DELETE /users/{id} for deleteUser", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.deleteUser.initiate("u1"),
+    );
+    expect(client.requests).toEqual([{ method: "DELETE", path: "/users/u1" }]);
   });
 });

@@ -13,7 +13,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, internal};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{probe_media, resolve_source_path};
 use crate::state::AppState;
@@ -46,11 +46,11 @@ pub struct EmbeddedSubtitleTracksResponse {
 )]
 pub async fn get_media_tracks(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<Json<TracksResponse>, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = resolve_source_path(&state, token, &media_file).await?;
+    let path = resolve_source_path(&state, &principal, &media_file).await?;
     let container = probe_media(&state, &path).await?;
     let default_selection = default_track_selection(&container);
     Ok(Json(TracksResponse {
@@ -82,11 +82,11 @@ pub async fn get_media_tracks(
 )]
 pub async fn list_embedded_subtitle_tracks(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<Json<EmbeddedSubtitleTracksResponse>, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = resolve_source_path(&state, token, &media_file).await?;
+    let path = resolve_source_path(&state, &principal, &media_file).await?;
     let container = probe_media(&state, &path).await?;
     Ok(Json(EmbeddedSubtitleTracksResponse {
         tracks: container

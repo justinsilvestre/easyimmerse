@@ -1,36 +1,75 @@
 use std::sync::Arc;
 
 use axum::extract::{MatchedPath, Query, Request, State};
+use axum::http::HeaderMap;
 use axum::http::header::AUTHORIZATION;
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 
-use crate::auth::error_body::unauthorized;
-use crate::auth::token_kind::TokenKind;
+use crate::accounts::{extend_in_background, find_session};
+use crate::auth::error_body::{ApiFailure, unauthorized};
+use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
+use crate::now_ms::now_ms;
 use crate::routes::dictionary_media::DICTIONARY_MEDIA_ROUTE_PATH;
 use crate::routes::media_clip::CLIP_ROUTE_PATH;
 use crate::routes::media_frame::FRAME_ROUTE_PATH;
 use crate::routes::media_stream::STREAM_ROUTE_PATH;
+use crate::state::AppState;
 
-/// Requires `Authorization: Bearer <token>` and records the token's kind on the request.
+/// Requires `Authorization: Bearer <token>` and records on the request the principal the token belongs to:
+/// the launch principal for the launch token, or the user of the session with that token.
 ///
 /// The media stream, frame, clip and dictionary media routes also accept the token as the `token` query parameter,
 /// because media and image elements cannot send headers.
 /// No other route does, since a token in a URL ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
-    State(config): State<Arc<ApiConfig>>,
+    State(state): State<AppState>,
     mut request: Request,
     next: Next,
 ) -> Response {
-    match presented_token(&request) {
-        Some(token) if bytes_are_equal(token.as_bytes(), config.token.as_bytes()) => {
-            request.extensions_mut().insert(TokenKind::Launch);
+    let Some(token) = presented_token(&request) else {
+        return unauthorized().into_response();
+    };
+    match authenticate(&state, token).await {
+        Ok(Some(principal)) => {
+            request.extensions_mut().insert(principal);
             next.run(request).await
         }
-        _ => unauthorized().into_response(),
+        Ok(None) => unauthorized().into_response(),
+        Err(failure) => failure.into_response(),
     }
+}
+
+/// The token of the `Authorization: Bearer <token>` header, if there is one.
+pub fn header_token(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(AUTHORIZATION)?
+        .to_str()
+        .ok()?
+        .strip_prefix("Bearer ")
+}
+
+/// Tries the launch token first, then the sessions when the server has accounts.
+async fn authenticate(state: &AppState, token: String) -> Result<Option<Principal>, ApiFailure> {
+    if is_launch_token(&state.config, &token) {
+        return Ok(Some(Principal::Launch));
+    }
+    if state.config.accounts.is_none() {
+        return Ok(None);
+    }
+    let found = state
+        .with_storage(move |storage| find_session(storage, &token, now_ms()))
+        .await?;
+    let Some(found) = found else {
+        return Ok(None);
+    };
+    if let Some(extension) = found.extension {
+        let storage = Arc::clone(&state.storage);
+        extend_in_background(storage, Arc::clone(&state.session_extensions), extension);
+    }
+    Ok(Some(Principal::of_account(&found.user)))
 }
 
 #[derive(Deserialize)]
@@ -39,18 +78,9 @@ struct TokenQuery {
 }
 
 fn presented_token(request: &Request) -> Option<String> {
-    header_token(request)
+    header_token(request.headers())
         .map(str::to_string)
         .or_else(|| query_token(request))
-}
-
-fn header_token(request: &Request) -> Option<&str> {
-    request
-        .headers()
-        .get(AUTHORIZATION)?
-        .to_str()
-        .ok()?
-        .strip_prefix("Bearer ")
 }
 
 fn query_token(request: &Request) -> Option<String> {
@@ -78,6 +108,13 @@ fn accepts_query_token(request: &Request) -> bool {
         })
 }
 
+fn is_launch_token(config: &ApiConfig, token: &str) -> bool {
+    config
+        .launch_token
+        .as_ref()
+        .is_some_and(|launch_token| bytes_are_equal(token.as_bytes(), launch_token.as_bytes()))
+}
+
 /// Compares in time that depends only on the length of the input, so that a caller cannot
 /// learn how many leading bytes matched. The length itself is not hidden.
 fn bytes_are_equal(presented: &[u8], expected: &[u8]) -> bool {
@@ -102,18 +139,22 @@ mod tests {
     use super::*;
 
     fn app() -> Router {
-        let config = Arc::new(ApiConfig::for_loopback(1, "secret".to_string(), false));
+        let config = ApiConfig::for_loopback(1, "secret".to_string(), false);
+        let storage = easyimmerse_storage::Storage::open_in_memory().unwrap();
+        let state = AppState::new(storage, config, None, None);
         Router::new()
             .route(
                 "/",
-                get(|Extension(kind): Extension<TokenKind>| async move { format!("{kind:?}") }),
+                get(|Extension(principal): Extension<Principal>| async move {
+                    format!("{principal:?}")
+                }),
             )
             .route(STREAM_ROUTE_PATH, get(|| async { "streamed" }))
             .route(FRAME_ROUTE_PATH, get(|| async { "framed" }))
             .route(CLIP_ROUTE_PATH, get(|| async { "clipped" }))
             .route(DICTIONARY_MEDIA_ROUTE_PATH, get(|| async { "image" }))
             .route("/other/{id}", get(|| async { "other" }))
-            .layer(from_fn_with_state(config, require_bearer_token))
+            .layer(from_fn_with_state(state, require_bearer_token))
     }
 
     fn request_with(header: Option<&str>) -> Request {
@@ -139,7 +180,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn records_the_launch_token_kind() {
+    async fn records_the_launch_principal() {
         let response = app()
             .oneshot(request_with(Some("Bearer secret")))
             .await

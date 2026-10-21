@@ -6,6 +6,7 @@ import type {
   SavePathPick,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
+import { createAccountEffects } from "./accountEffects.ts";
 import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
@@ -43,6 +44,8 @@ export function createWebEffects(options: {
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
     savePreference: preferences.save,
     loadPreference: preferences.load,
+    saveOnDevice: preferences.save,
+    loadFromDevice: preferences.load,
     openExternalUrl,
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
@@ -50,6 +53,11 @@ export function createWebEffects(options: {
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
       window.matchMedia("(prefers-color-scheme: dark)"),
+    ),
+    ...createAccountEffects(
+      (input, init) => globalThis.fetch(input, init),
+      localStorage,
+      () => location.reload(),
     ),
   };
 }

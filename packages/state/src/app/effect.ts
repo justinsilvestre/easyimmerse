@@ -1,9 +1,11 @@
+import type { AccountEffect } from "../account/accountEffect.ts";
 import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
 import type { FailedRequestsEffect } from "../operations/failedRequests.ts";
 import type { FreeIdRequestEffect } from "../operations/freeIdRequests.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
+import type { RecoveryEffect } from "../recovery/recoveryEffects.ts";
 import type { ScreenEffect } from "../screen/screenEffect.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { StoredPlacesEffect } from "../storedPlaces/storedPlacesEffect.ts";
@@ -15,6 +17,7 @@ export type Effect =
   | ScreenEffect
   | PreferencesEffect
   | StoredPlacesEffect
+  | RecoveryEffect
   | FlashcardsEffect
   | PlatformEffect
   | TimerEffect
@@ -22,7 +25,8 @@ export type Effect =
   | JobsEffect
   | DispatchEffect
   | FailedRequestsEffect
-  | FreeIdRequestEffect;
+  | FreeIdRequestEffect
+  | AccountEffect;
 
 /** An effect that the middleware performs: every effect except those the root update translates into others. */
 export type PerformedEffect = Exclude<

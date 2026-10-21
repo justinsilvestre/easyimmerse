@@ -68,7 +68,7 @@ describe("picturesProbeOf", () => {
 });
 
 /** No server is connected, as in the app's initial state. */
-const server = { config: null };
+const server = { config: null, cloudUrl: null };
 
 describe("picturesFoundBy", () => {
   it("finds pictures once the probe finds them", () => {

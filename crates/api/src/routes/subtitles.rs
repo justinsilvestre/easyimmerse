@@ -14,7 +14,7 @@ use easyimmerse_core::timed_text::{TimedTextTrack, detect_format, parse_timed_te
 use easyimmerse_storage::NewSubtitleTrack;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::fetched_subtitle_files::remove_subtitle_tracks;
 use crate::local_path::{resolve_local_file, resolve_local_text};
 use crate::routes::media::load_media_file;
@@ -78,12 +78,12 @@ pub async fn list_subtitle_tracks(
 )]
 pub async fn add_subtitle_track(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(request): Json<AddSubtitleTrackRequest>,
 ) -> Result<(StatusCode, Json<SubtitleTrack>), ApiFailure> {
     load_media_file(&state, project_id, media_id.clone()).await?;
-    let track = store_subtitle_track(&state, token, media_id, request).await?;
+    let track = store_subtitle_track(&state, &principal, media_id, request).await?;
     Ok((StatusCode::CREATED, Json(track)))
 }
 
@@ -91,12 +91,12 @@ pub async fn add_subtitle_track(
 /// giving it the requested role. The media file must already be known to exist.
 pub async fn store_subtitle_track(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_id: MediaFileId,
     request: AddSubtitleTrackRequest,
 ) -> Result<SubtitleTrack, ApiFailure> {
-    let source = resolve_text_source(state, token, request.source).await?;
-    let text = read_text(state, token, &source).await?;
+    let source = resolve_text_source(state, principal, request.source).await?;
+    let text = read_text(state, principal, &source).await?;
     let format = request.format.unwrap_or_else(|| detect_format(&text));
     let parsed = parse_timed_text(&text, Some(format))?;
     let new_track = NewSubtitleTrack {
@@ -170,11 +170,11 @@ pub async fn remove_subtitle_track(
 )]
 pub async fn get_subtitle_cues(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id, track_id)): Path<(ProjectId, MediaFileId, SubtitleTrackId)>,
 ) -> Result<Json<TimedTextTrack>, ApiFailure> {
     let stored = load_subtitle_track(&state, project_id, media_id, track_id).await?;
-    let text = read_text(&state, token, &stored.source).await?;
+    let text = read_text(&state, &principal, &stored.source).await?;
     Ok(Json(parse_timed_text(&text, Some(stored.track.format))?))
 }
 
@@ -212,12 +212,12 @@ pub async fn set_subtitle_selection(
 /// path, once the token may read it and the file exists.
 async fn resolve_text_source(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     source: TextSource,
 ) -> Result<TextSource, ApiFailure> {
     match source {
         TextSource::Path { path } => Ok(TextSource::Path {
-            path: resolve_local_file(token, &state.config, &path).await?,
+            path: resolve_local_file(principal, &state.config, &path).await?,
         }),
         source => Ok(source),
     }
@@ -225,12 +225,12 @@ async fn resolve_text_source(
 
 async fn read_text(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     source: &TextSource,
 ) -> Result<String, ApiFailure> {
     match source {
         TextSource::Inline { text } => Ok(text.clone()),
-        TextSource::Path { path } => resolve_local_text(token, &state.config, path).await,
+        TextSource::Path { path } => resolve_local_text(principal, &state.config, path).await,
     }
 }
 

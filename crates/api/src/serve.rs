@@ -21,6 +21,10 @@ pub enum ServeError {
     Io(#[from] std::io::Error),
     #[error("the server task panicked: {0}")]
     Join(#[from] tokio::task::JoinError),
+    #[error(
+        "the server needs a launch token, accounts, or both, or no request could be authenticated"
+    )]
+    NoAuthentication,
 }
 
 /// A running server. Dropping the handle leaves the server running until the runtime
@@ -64,6 +68,9 @@ pub async fn serve(
     storage: Storage,
     options: ServeOptions,
 ) -> Result<ServerHandle, ServeError> {
+    if !config.can_authenticate() {
+        return Err(ServeError::NoAuthentication);
+    }
     let addr = listener.local_addr()?;
     let conversion = options.cache_dir.and_then(open_conversion_service);
     if let Some(conversion) = &conversion {
@@ -87,7 +94,8 @@ pub async fn serve(
         .with_plugins(plugins, media_dir);
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
-    let server = axum::serve(listener, router).with_graceful_shutdown(async {
+    let service = router.into_make_service_with_connect_info::<SocketAddr>();
+    let server = axum::serve(listener, service).with_graceful_shutdown(async {
         let _ = shutdown_requested.await;
     });
     let task = tokio::spawn(server.into_future());

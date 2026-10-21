@@ -55,6 +55,7 @@ export function ConnectedFlashcardEditor({
       isAwaitingLookup={isAwaitingLookup(form.stage)}
       ankiFate={ankiFate}
       hasSaveFailed={form.saveFailure !== null}
+      hasUnsavedChanges={form.card.isChanged}
       onSave={() => dispatch(actions.flashcardSaveRequested())}
       onDelete={() => dispatch(actions.flashcardDeleteRequested())}
       onUnsuspend={

@@ -1,3 +1,4 @@
+mod accounts;
 mod alignments;
 mod anki;
 mod auth;
@@ -19,3 +20,4 @@ mod sidecar_subtitles;
 mod subtitles;
 mod support;
 mod timed_text;
+mod users;

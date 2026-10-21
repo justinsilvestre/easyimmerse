@@ -26,6 +26,7 @@ tauri-plugin-save-copy = { path = "apps/native/tauri-plugin-save-copy" }
 
 adler2 = "2.0"
 anyhow = "1.0"
+argon2 = "0.6"
 axum = "0.8"
 base64 = "0.22"
 bzip2-rs = "0.1"
@@ -119,6 +120,13 @@ opt-level = 3
 opt-level = 3
 
 [profile.dev.package.memchr]
+opt-level = 3
+
+# Optimizes password hashing, which every login and sign-up runs and which is several times slower unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
 opt-level = 3
 
 # Optimizes the storage crate, which serializes and compresses each entry during import.

@@ -38,6 +38,12 @@ pub enum StorageError {
     AlignmentNotFound(String),
     #[error("the media file {0:?} cannot be aligned or paired with itself")]
     PairedWithItself(String),
+    #[error("an account already has the email address {0:?}")]
+    EmailTaken(String),
+    #[error("no account has the id {0:?}")]
+    UserNotFound(String),
+    #[error("the account {0:?} is the last administrator, and the server must keep one")]
+    LastAdministrator(String),
     #[error("no review answer was given at {0} ms in the project")]
     ReviewAnswerNotFound(u64),
     #[error(

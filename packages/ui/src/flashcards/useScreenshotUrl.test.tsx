@@ -57,7 +57,7 @@ function renderBrowserScreenshots() {
   };
   const sourceOf = (name: "clip.mp4" | "other.mp4") => sources[name];
   const { capturer, release } = createReleasedFrameCapturer();
-  const { store } = createTestAppStore(undefined, null, {
+  const { store } = createTestAppStore(undefined, undefined, {
     registry,
     frameCapturer: capturer,
   });

@@ -1,3 +1,4 @@
+pub mod account;
 pub mod alignment;
 pub mod deinflection;
 pub mod dictionary;

@@ -12,7 +12,7 @@ use easyimmerse_media::{
 };
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{conversion_failure, probe_media, resolve_source_path};
 use crate::state::AppState;
@@ -45,12 +45,12 @@ pub const CONVERSIONS_PATH_PREFIX: &str = "/conversions";
 )]
 pub async fn choose_media_playback_method(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(request): Json<PlaybackMethodRequest>,
 ) -> Result<Json<PlaybackMethodResponse>, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = resolve_source_path(&state, token, &media_file).await?;
+    let path = resolve_source_path(&state, &principal, &media_file).await?;
     let container = probe_media(&state, &path).await?;
     let selection = request
         .selection

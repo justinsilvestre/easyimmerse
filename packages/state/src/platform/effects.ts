@@ -1,10 +1,14 @@
 import type {
   Definition,
   MediaFileSource,
+  ServerAuthInfo,
+  SessionCreated,
   TextSource,
 } from "@easyimmerse/types";
+import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { ServerConfig } from "../server/serverState.ts";
 import type { Clock } from "../timers/clock.ts";
 
 export type PickedFile = { name: string; source: TextSource };
@@ -77,6 +81,10 @@ export interface Effects {
   writeDefinitionMarkdown(definition: Definition): string;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
+  /** Keeps a value in this device's own storage, whichever server the app talks to. */
+  saveOnDevice(key: string, value: string): Promise<void>;
+  /** Reads a value kept in this device's own storage, or null when none is kept. */
+  loadFromDevice(key: string): Promise<string | null>;
   openExternalUrl(url: string): void;
   /** Copies text to the clipboard; rejects when the platform refuses. */
   copyText(text: string): Promise<void>;
@@ -97,4 +105,17 @@ export interface Effects {
    * Returns a function that stops the calls.
    */
   subscribeToSystemTheme(listener: (theme: Theme) => void): () => void;
+  /** Asks the server at the address what it offers for signing in. Never rejects. */
+  fetchServerAuthInfo(
+    serverUrl: string,
+  ): Promise<SignInOutcome<ServerAuthInfo>>;
+  /** Logs in to the attempt's server, or signs up on it, and resolves with the session it opens. Never rejects. */
+  createSession(attempt: SignInAttempt): Promise<SignInOutcome<SessionCreated>>;
+  /**
+   * Makes the app talk to the server with the token from now on, which starts the app anew.
+   * Resolves with a failure when the platform cannot keep the server, and never rejects.
+   */
+  connectToServer(server: ServerConfig): Promise<SignInOutcome<null>>;
+  /** Makes the app run offline from now on, forgetting the server it was connected to, which starts the app anew. */
+  disconnectFromServer(): void;
 }

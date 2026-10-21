@@ -4,7 +4,7 @@ use easyimmerse_anki::{AnkiMediaRef, AnkiNote, PackageMedia};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId};
 
 use crate::auth::error_body::ApiFailure;
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media_clip::render_clip;
 use crate::routes::media_frame::render_frame;
 use crate::state::AppState;
@@ -26,11 +26,15 @@ pub struct SkippedMedia {
 
 /// Renders every media file the notes refer to. A media file that cannot be rendered is recorded as skipped,
 /// so that the rest of the package can still be exported.
-pub async fn render_media(state: &AppState, token: TokenKind, notes: &[AnkiNote]) -> RenderedMedia {
+pub async fn render_media(
+    state: &AppState,
+    principal: &Principal,
+    notes: &[AnkiNote],
+) -> RenderedMedia {
     let mut rendered = RenderedMedia::default();
     for media_ref in notes.iter().flat_map(|note| &note.media) {
         let file_name = media_ref.file_name().to_owned();
-        match render_one(state, token, media_ref).await {
+        match render_one(state, principal, media_ref).await {
             Ok(bytes) => rendered.files.push(PackageMedia { file_name, bytes }),
             Err(failure) => rendered.skipped.push(SkippedMedia {
                 file_name,
@@ -55,7 +59,7 @@ pub fn without_skipped_media(notes: Vec<AnkiNote>, skipped: &[SkippedMedia]) -> 
 
 async fn render_one(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_ref: &AnkiMediaRef,
 ) -> Result<Vec<u8>, ApiFailure> {
     match media_ref {
@@ -66,7 +70,7 @@ async fn render_one(
             ..
         } => {
             let media_file = load_media_file(state, media_file_id).await?;
-            render_clip(state, token, &media_file, *start_ms, *end_ms).await
+            render_clip(state, principal, &media_file, *start_ms, *end_ms).await
         }
         AnkiMediaRef::Screenshot {
             media_file_id,
@@ -74,7 +78,7 @@ async fn render_one(
             ..
         } => {
             let media_file = load_media_file(state, media_file_id).await?;
-            render_frame(state, token, &media_file, *at_ms).await
+            render_frame(state, principal, &media_file, *at_ms).await
         }
     }
 }

@@ -15,7 +15,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_path::LOCAL_PATHS_NOT_ALLOWED;
 use crate::routes::media_import::load_project;
 use crate::routes::media_support::resolve_source_path;
@@ -78,7 +78,7 @@ pub enum PathAvailability {
 )]
 pub async fn get_media_availability(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
 ) -> Result<Json<MediaAvailabilityResponse>, ApiFailure> {
     load_project(&state, project_id.clone()).await?;
@@ -87,7 +87,7 @@ pub async fn get_media_availability(
         .await?;
     let path_files = media_files.into_iter().filter(is_path_backed).collect();
     Ok(Json(MediaAvailabilityResponse {
-        media_files: check_all(state, token, path_files).await,
+        media_files: check_all(state, &principal, path_files).await,
     }))
 }
 
@@ -95,13 +95,14 @@ pub async fn get_media_availability(
 /// without the files whose check timed out.
 async fn check_all(
     state: AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_files: Vec<MediaFile>,
 ) -> Vec<MediaFileAvailability> {
     let mut checks = JoinSet::new();
     for (index, media_file) in media_files.into_iter().enumerate() {
         let state = state.clone();
-        checks.spawn(async move { (index, check_one(&state, token, media_file).await) });
+        let principal = principal.clone();
+        checks.spawn(async move { (index, check_one(&state, &principal, media_file).await) });
     }
     let mut answers: Vec<(usize, MediaFileAvailability)> = Vec::new();
     while let Some(joined) = checks.join_next().await {
@@ -117,14 +118,15 @@ async fn check_all(
 /// permit until it finishes.
 async fn check_one(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: MediaFile,
 ) -> Option<MediaFileAvailability> {
     let media_id = media_file.id.clone();
     let state = state.clone();
+    let principal = principal.clone();
     let check = tokio::spawn(async move {
         let _permit = CHECK_PERMITS.acquire().await.ok()?;
-        Some(availability_of(&state, token, &media_file).await)
+        Some(availability_of(&state, &principal, &media_file).await)
     });
     let availability = tokio::time::timeout(CHECK_TIMEOUT, check)
         .await
@@ -138,10 +140,10 @@ async fn check_one(
 
 async fn availability_of(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
 ) -> PathAvailability {
-    match resolve_source_path(state, token, media_file).await {
+    match resolve_source_path(state, principal, media_file).await {
         Ok(path) => open_availability(tokio::fs::File::open(path).await.map(drop)),
         Err(failure) => resolution_availability(&failure),
     }
@@ -205,7 +207,7 @@ mod tests {
     #[test]
     fn maps_the_local_paths_refusal_to_not_allowed() {
         let config = crate::config::ApiConfig::for_loopback(1, "t".to_owned(), false);
-        let failure = ensure_local_paths_allowed(TokenKind::Launch, &config).unwrap_err();
+        let failure = ensure_local_paths_allowed(&Principal::Launch, &config).unwrap_err();
         assert_eq!(
             resolution_availability(&failure),
             PathAvailability::NotAllowed

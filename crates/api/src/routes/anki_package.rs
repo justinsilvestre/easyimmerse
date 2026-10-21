@@ -21,7 +21,7 @@ use crate::anki_media::{render_media, without_skipped_media};
 use crate::anki_package_delivery::{BuiltPackage, package_download, save_package, stage_package};
 use crate::anki_selection::{Selection, deck_spec, load_selection};
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::file_download::safe_file_name;
 use crate::local_path::ensure_local_paths_allowed;
 use crate::now_ms::now_ms;
@@ -88,7 +88,7 @@ pub struct AnkiPackageSaved {
 )]
 pub async fn export_anki_package(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiPackageRequest>,
 ) -> Result<Response, ApiFailure> {
@@ -96,7 +96,7 @@ pub async fn export_anki_package(
         return Err(bad_request("a staged export needs a save path"));
     }
     if let Some(path) = &request.save_path {
-        ensure_local_paths_allowed(token, &state.config)?;
+        ensure_local_paths_allowed(&principal, &state.config)?;
         ensure_absolute(path)?;
     }
     if request.flashcard_ids.is_empty() {
@@ -106,7 +106,7 @@ pub async fn export_anki_package(
     if selection.flashcards.is_empty() {
         return Err(not_found("none of the named flashcards is in the project"));
     }
-    let package = build_package(&state, token, selection, &request).await?;
+    let package = build_package(&state, &principal, selection, &request).await?;
     match request.save_path {
         Some(path) if request.staged => stage_package(package, &path).await,
         Some(path) => save_package(&state, package, &path).await,
@@ -118,13 +118,13 @@ pub async fn export_anki_package(
 /// dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
 async fn build_package(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     selection: Selection,
     request: &AnkiPackageRequest,
 ) -> Result<BuiltPackage, ApiFailure> {
     let marks_exported = request.marks_exported;
     let notes: Vec<AnkiNote> = selection.flashcards.iter().map(render_note).collect();
-    let media = render_media(state, token, &notes).await;
+    let media = render_media(state, principal, &notes).await;
     for skipped in &media.skipped {
         tracing::info!(
             "left {} out of the package: {}",

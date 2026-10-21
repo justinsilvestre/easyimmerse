@@ -39,6 +39,7 @@ export async function bootstrap(): Promise<void> {
       registry: browserFileRegistry,
       frameCapturer: browserFrameCapturer,
     }),
+    import.meta.env.VITE_EASYIMMERSE_CLOUD_URL || null,
     findDevToolsComposer(),
   );
   createRoot(findRootElement()).render(

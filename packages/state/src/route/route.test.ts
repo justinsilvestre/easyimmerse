@@ -62,6 +62,28 @@ describe("navigate", () => {
     expect(navigate(dictionaries, { type: "closeSettings" })).toEqual(project);
   });
 
+  it("opens the account settings over the current screen", () => {
+    expect(navigate(project, { type: "openAccountSettings" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general"],
+    });
+  });
+
+  it("leaves the dictionaries for the account settings", () => {
+    const dictionaries = navigate(project, { type: "openDictionaries" });
+    expect(navigate(dictionaries, { type: "openAccountSettings" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general"],
+    });
+  });
+
+  it("keeps the general settings as they are for the account settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openAccountSettings" })).toBe(settings);
+  });
+
   it("opens a project from home", () => {
     expect(
       navigate(initialRoute, { type: "openProject", projectId: "p2" }),

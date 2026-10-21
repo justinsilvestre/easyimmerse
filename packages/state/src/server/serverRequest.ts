@@ -1,9 +1,12 @@
 import type {
+  AccountRole,
+  AccountUser,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
   AlignmentsResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  CreateUserRequest,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
@@ -199,6 +202,14 @@ export type ServerRequest =
       projectId: string;
       usesAnkiConnect: boolean;
     }
+  /** Ends the session the app's token belongs to. */
+  | { kind: "logOut" }
+  /** Creates an account on the server, as only an administrator may. */
+  | { kind: "createUser"; request: CreateUserRequest }
+  /** Gives an account another role, as only an administrator may. */
+  | { kind: "setUserRole"; userId: string; role: AccountRole }
+  /** Deletes an account and its sessions, as only an administrator may. */
+  | { kind: "deleteUser"; userId: string }
   /** Lists the cards of a review session of the project, in the order they are shown. */
   | { kind: "getReviewQueue"; projectId: string }
   /** Records the user's rating of a card, with the time from the card appearing to the rating. */
@@ -281,6 +292,12 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  logOut: void;
+  createUser: AccountUser;
+  setUserRole: AccountUser;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteUser: void;
   getReviewQueue: ReviewQueue;
   answerReview: ReviewAnswerResponse;
   undoReviewAnswer: ReviewAnswerUndone;
@@ -297,6 +314,8 @@ export type RequestFailure = {
   status: number | "OFFLINE" | "NETWORK" | "ABORTED" | "NO_DATA";
   code?: string;
   message: string;
+  /** How many seconds the server asked the app to wait before trying again, when it said. */
+  retryAfterSeconds?: number;
 };
 
 /** The failure of a request that was aborted, whether in flight or while it waited. */

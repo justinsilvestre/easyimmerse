@@ -24,18 +24,23 @@ mod review_rows;
 #[cfg(test)]
 mod review_test_support;
 mod sample_content;
+mod sessions;
 mod stored_integer;
 mod subtitle_tracks;
+mod users;
 
 pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
 pub use sample_content::SampleContentError;
+pub use sessions::LiveSession;
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
+pub use users::StoredUser;
 
 use std::collections::HashMap;
 use std::path::Path;
 
+use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_core::alignment::{AddAlignmentRequest, Alignment, AlignmentId};
 use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
@@ -471,6 +476,85 @@ impl Storage {
 
     pub fn set_preference(&self, key: &str, value: &str) -> Result<(), StorageError> {
         self.write(|conn| preferences::set_preference(conn, key, value))
+    }
+
+    /// Creates an account, unless one already has the email address in any letter case.
+    /// The password must already be hashed.
+    pub fn create_user(
+        &self,
+        email: &str,
+        password_hash: &str,
+        role: AccountRole,
+    ) -> Result<AccountUser, StorageError> {
+        self.write(|conn| users::create_user(conn, email, password_hash, role))
+    }
+
+    pub fn get_user(&self, id: &str) -> Result<AccountUser, StorageError> {
+        self.read(|conn| users::get_user(conn, id))
+    }
+
+    /// Finds the account with the email address, compared without regard to letter case.
+    pub fn find_user_by_email(&self, email: &str) -> Result<Option<StoredUser>, StorageError> {
+        self.read(|conn| users::find_user_by_email(conn, email))
+    }
+
+    /// Lists every account, oldest first.
+    pub fn list_users(&self) -> Result<Vec<AccountUser>, StorageError> {
+        self.read(users::list_users)
+    }
+
+    pub fn set_user_role(&self, id: &str, role: AccountRole) -> Result<AccountUser, StorageError> {
+        self.write(|conn| users::set_user_role(conn, id, role))
+    }
+
+    /// Replaces the password hash of an account and ends all of its sessions.
+    pub fn set_password_hash(&self, id: &str, password_hash: &str) -> Result<(), StorageError> {
+        self.write(|conn| users::set_password_hash(conn, id, password_hash))
+    }
+
+    /// Deletes an account together with its sessions.
+    pub fn delete_user(&self, id: &str) -> Result<(), StorageError> {
+        self.write(|conn| users::delete_user(conn, id))
+    }
+
+    /// Records a session of the user under the hash of its token.
+    pub fn create_session(
+        &self,
+        token_hash: &str,
+        user_id: &str,
+        expires_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sessions::create_session(conn, token_hash, user_id, expires_at_ms))
+    }
+
+    /// Finds the session stored under the token hash, unless it has expired by `now_ms`.
+    /// An expired session is deleted. The lookup itself does not wait for a write in progress.
+    pub fn find_live_session(
+        &self,
+        token_hash: &str,
+        now_ms: u64,
+    ) -> Result<Option<LiveSession>, StorageError> {
+        match self.read(|conn| sessions::find_session(conn, token_hash))? {
+            Some(session) if session.expires_at_ms > now_ms => Ok(Some(session)),
+            Some(_) => self
+                .write(|conn| sessions::delete_session(conn, token_hash))
+                .map(|()| None),
+            None => Ok(None),
+        }
+    }
+
+    /// Moves the expiry of the session stored under the token hash.
+    pub fn extend_session(&self, token_hash: &str, expires_at_ms: u64) -> Result<(), StorageError> {
+        self.write(|conn| sessions::extend_session(conn, token_hash, expires_at_ms))
+    }
+
+    pub fn delete_session(&self, token_hash: &str) -> Result<(), StorageError> {
+        self.write(|conn| sessions::delete_session(conn, token_hash))
+    }
+
+    /// Deletes every session that expired at or before `now_ms` and returns how many there were.
+    pub fn delete_expired_sessions(&self, now_ms: u64) -> Result<usize, StorageError> {
+        self.write(|conn| sessions::delete_expired_sessions(conn, now_ms))
     }
 
     /// Imports a dictionary from its files in one transaction and returns its new id.

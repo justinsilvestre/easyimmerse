@@ -6,6 +6,9 @@ use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_storage::{Storage, StorageError};
 
+use tokio::sync::Semaphore;
+
+use crate::accounts::{AccountsError, LoginThrottle, PendingExtensions};
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
@@ -29,6 +32,12 @@ pub struct AppState {
     /// Where media-source plugins put what they fetch. None when the server has no media
     /// directory, in which case media cannot be added through a plugin.
     pub media_dir: Option<PathBuf>,
+    /// The recent login attempts, which make further attempts wait.
+    pub login_throttle: Arc<LoginThrottle>,
+    /// Bounds how many passwords are hashed at once, since each hash takes about 19 MiB of memory.
+    pub password_hashing: Arc<Semaphore>,
+    /// The session extensions being written.
+    pub session_extensions: Arc<PendingExtensions>,
     /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
     pub is_fitting_review_parameters: Arc<AtomicBool>,
 }
@@ -49,6 +58,9 @@ impl AppState {
             plugins: Arc::new(PluginRegistry::default()),
             media_source_jobs: Arc::new(MediaSourceJobs::default()),
             media_dir: None,
+            login_throttle: Arc::default(),
+            password_hashing: Arc::new(Semaphore::new(processor_count())),
+            session_extensions: Arc::default(),
             is_fitting_review_parameters: Arc::default(),
         }
     }
@@ -74,6 +86,29 @@ impl AppState {
             .map_err(ApiFailure::from)
     }
 
+    /// Runs an account operation, which hashes a password, on the blocking thread pool.
+    /// At most one such operation per processor runs at once; the others wait their turn.
+    pub async fn with_accounts<T>(
+        &self,
+        operation: impl FnOnce(&Storage) -> Result<T, AccountsError> + Send + 'static,
+    ) -> Result<T, ApiFailure>
+    where
+        T: Send + 'static,
+    {
+        let permit = Arc::clone(&self.password_hashing)
+            .acquire_owned()
+            .await
+            .map_err(|error| internal(format!("password hashing is unavailable: {error}")))?;
+        let storage = Arc::clone(&self.storage);
+        tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            operation(&storage)
+        })
+        .await
+        .map_err(|error| internal(format!("account task failed: {error}")))?
+        .map_err(ApiFailure::from)
+    }
+
     /// The directory a media-source plugin fetched the media file into, when it was imported
     /// through a plugin into the media directory.
     pub fn fetched_item_dir(&self, media_file: &MediaFile) -> Option<PathBuf> {
@@ -83,4 +118,8 @@ impl AppState {
         };
         fetched_item_dir(self.media_dir.as_deref()?, path)
     }
+}
+
+fn processor_count() -> usize {
+    std::thread::available_parallelism().map_or(1, usize::from)
 }

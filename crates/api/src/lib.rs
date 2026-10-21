@@ -1,6 +1,7 @@
 //! The HTTP API: the axum router, authentication, the OpenAPI document, and the server
 //! lifecycle. Used by the standalone server and by the embedded server of the native app.
 
+pub mod accounts;
 pub mod anki_media;
 pub mod anki_package_delivery;
 pub mod anki_selection;
@@ -31,8 +32,8 @@ pub mod state;
 mod typescript_constants;
 
 pub use auth::error_body::{ApiError, ApiFailure};
-pub use auth::token_kind::TokenKind;
-pub use config::ApiConfig;
+pub use auth::principal::Principal;
+pub use config::{AccountsConfig, ApiConfig};
 pub use plugins::PluginRegistry;
 pub use router::{build_router, openapi_document};
 pub use serve::{ServeError, ServeOptions, ServerHandle, serve};

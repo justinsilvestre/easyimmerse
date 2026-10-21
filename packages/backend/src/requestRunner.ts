@@ -228,6 +228,17 @@ export const requestEndpoints = {
       { projectId, usesAnkiConnect },
       { track: false },
     ),
+  logOut: () =>
+    backendApi.endpoints.logOut.initiate(undefined, { track: false }),
+  createUser: ({ request }) =>
+    backendApi.endpoints.createUser.initiate(request, { track: false }),
+  setUserRole: ({ userId, role }) =>
+    backendApi.endpoints.setUserRole.initiate(
+      { userId, body: { role } },
+      { track: false },
+    ),
+  deleteUser: ({ userId }) =>
+    backendApi.endpoints.deleteUser.initiate(userId, { track: false }),
   getReviewQueue: ({ projectId }) =>
     backendApi.endpoints.getReviewQueue.initiate(projectId, { track: false }),
   answerReview: ({ projectId, flashcardId, rating, durationMs }) =>

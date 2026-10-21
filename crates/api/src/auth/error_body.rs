@@ -1,5 +1,6 @@
 use axum::Json;
 use axum::http::StatusCode;
+use axum::http::header::RETRY_AFTER;
 use axum::response::{IntoResponse, Response};
 use easyimmerse_core::dictionary::DictionaryError;
 use easyimmerse_core::document::DocumentError;
@@ -23,6 +24,8 @@ pub struct ApiError {
 pub struct ApiFailure {
     pub status: StatusCode,
     pub error: ApiError,
+    /// Sent as the `Retry-After` header, in seconds, when the client must wait before trying again.
+    pub retry_after_secs: Option<u64>,
 }
 
 impl ApiFailure {
@@ -33,6 +36,14 @@ impl ApiFailure {
                 code: code.to_string(),
                 message: message.into(),
             },
+            retry_after_secs: None,
+        }
+    }
+
+    pub fn with_retry_after(self, retry_after_secs: u64) -> Self {
+        Self {
+            retry_after_secs: Some(retry_after_secs),
+            ..self
         }
     }
 }
@@ -42,7 +53,10 @@ impl IntoResponse for ApiFailure {
         if self.status == StatusCode::INTERNAL_SERVER_ERROR {
             tracing::error!(code = %self.error.code, "{}", self.error.message);
         }
-        (self.status, Json(self.error)).into_response()
+        let retry_after = self
+            .retry_after_secs
+            .map(|seconds| [(RETRY_AFTER, seconds.to_string())]);
+        (self.status, retry_after, Json(self.error)).into_response()
     }
 }
 
@@ -92,11 +106,20 @@ impl From<StorageError> for ApiFailure {
             | StorageError::FlashcardNotFound(_)
             | StorageError::SubtitleTrackNotFound(_)
             | StorageError::AlignmentNotFound(_)
+            | StorageError::UserNotFound(_)
             | StorageError::ReviewAnswerNotFound(_) => not_found(error.to_string()),
             StorageError::PairedWithItself(_) => bad_request(error.to_string()),
             StorageError::FlashcardIdTaken(_) | StorageError::ReviewAnswerNotLatest(_) => {
                 conflict(error.to_string())
             }
+            StorageError::EmailTaken(_) => {
+                ApiFailure::new(StatusCode::CONFLICT, "email_taken", error.to_string())
+            }
+            StorageError::LastAdministrator(_) => ApiFailure::new(
+                StatusCode::CONFLICT,
+                "last_administrator",
+                error.to_string(),
+            ),
             StorageError::DictionaryAlreadyImported(_) => ApiFailure::new(
                 StatusCode::CONFLICT,
                 "dictionary_already_imported",

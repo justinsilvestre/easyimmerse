@@ -13,6 +13,8 @@ export function TextField({
   hint?: string;
   multiline?: boolean;
   className?: string;
+  type?: "text" | "email" | "password" | "url";
+  autoComplete?: string;
   value?: string;
   defaultValue?: string;
   placeholder?: string;

@@ -7,18 +7,21 @@ import { ThemeMenu } from "./ThemeMenu.tsx";
 
 /**
  * The thin bar at the bottom of the window, given its state as props: the way to Settings, the theme menu,
- * and the activities under way at its left edge, and the screen's own buttons, passed as children, at its right edge.
+ * a sign of whether the user's work is backed up, and the activities under way at its left edge,
+ * and the screen's own buttons, passed as children, at its right edge.
  * `AppFooter` gives it its state from the store.
  */
 export function FooterBar({
   isSettingsOpen,
   onOpenSettings,
+  backupSign,
   activities,
   onOpenActivity,
   children,
 }: {
   isSettingsOpen: boolean;
   onOpenSettings: () => void;
+  backupSign?: ReactNode;
   activities: readonly FooterActivity[];
   onOpenActivity: (activity: FooterActivity) => void;
   children?: ReactNode;
@@ -36,6 +39,7 @@ export function FooterBar({
             <Settings className="size-4" />
           </IconButton>
           <ThemeMenu />
+          {backupSign}
           <FooterActivities activities={activities} onOpen={onOpenActivity} />
         </div>
         {children && (

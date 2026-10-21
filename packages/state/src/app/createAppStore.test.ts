@@ -33,7 +33,18 @@ describe("createAppStore", () => {
       createRecordingEffects(),
       createFakeServerStoreParts(server),
     );
-    expect(store.getState().app.server).toEqual({ config: server });
+    expect(store.getState().app.server.config).toEqual(server);
+  });
+
+  it("seeds the official server's address", () => {
+    const store = createAppStore(
+      createRecordingEffects(),
+      createFakeServerStoreParts(),
+      "https://cloud.example.com",
+    );
+    expect(store.getState().app.server.cloudUrl).toBe(
+      "https://cloud.example.com",
+    );
   });
 
   it("mounts the server cache under backend", () => {
@@ -125,6 +136,7 @@ describe("createAppStore", () => {
     createAppStore(
       createRecordingEffects(),
       createFakeServerStoreParts(),
+      null,
       (...enhancers) => {
         composed.push(enhancers);
         return (next) => next;

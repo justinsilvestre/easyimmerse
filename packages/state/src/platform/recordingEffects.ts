@@ -1,6 +1,14 @@
+import type { ServerAuthInfo, SessionCreated } from "@easyimmerse/types";
+import {
+  connectionNotKeptCode,
+  type SignInAttempt,
+  type SignInOutcome,
+} from "../account/signInAttempt.ts";
 import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { RequestFailure } from "../server/serverRequest.ts";
+import type { ServerConfig } from "../server/serverState.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
 import { createManualClock } from "../timers/manualClock.ts";
 import type {
@@ -36,10 +44,16 @@ type EffectCall =
   | { type: "downloadFile"; fileName: string; bytes: Uint8Array<ArrayBuffer> }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
+  | { type: "saveOnDevice"; key: string; value: string }
+  | { type: "loadFromDevice"; key: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
-  | { type: "applyAppearance"; appearance: Appearance };
+  | { type: "applyAppearance"; appearance: Appearance }
+  | { type: "fetchServerAuthInfo"; serverUrl: string }
+  | { type: "createSession"; attempt: SignInAttempt }
+  | { type: "connectToServer"; server: ServerConfig }
+  | { type: "disconnectFromServer" };
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -48,6 +62,8 @@ export type RecordingEffects = Effects & {
   calls: EffectCall[];
   /** The store behind savePreference and loadPreference. Tests may seed it. */
   preferences: Map<string, string>;
+  /** The store behind saveOnDevice and loadFromDevice. Tests may seed it. */
+  deviceValues: Map<string, string>;
   /** Settles the pending pickFile promise. Throws when no pick is pending. */
   resolvePickFile(file: PickedFile | null): void;
   /** Rejects the pending pickFile promise. Throws when no pick is pending. */
@@ -72,6 +88,12 @@ export type RecordingEffects = Effects & {
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
   releasePreferenceLoads(): void;
+  /** Settles the pending fetchServerAuthInfo promise. Throws when no question is pending. */
+  resolveServerAuthInfo(outcome: SignInOutcome<ServerAuthInfo>): void;
+  /** Settles the pending createSession promise. Throws when no sign-in is pending. */
+  resolveSession(outcome: SignInOutcome<SessionCreated>): void;
+  /** Makes every later connection to a server fail, as a browser whose storage is full does. */
+  refuseConnections(): void;
 };
 
 type PendingPick<R> = {
@@ -96,6 +118,13 @@ function createPendingPick<R>(description: string) {
   };
 }
 
+/** The failure of a connection the recording effects refuse. */
+const connectionNotKept: RequestFailure = {
+  status: "NO_DATA",
+  code: connectionNotKeptCode,
+  message: "The storage is full.",
+};
+
 /** Writes a definition as its plain text, which is all a test of the state needs; the UI's tests pass the app's own writer. */
 const plainDefinitionText: DefinitionWriter = (definition) =>
   definition.kind === "text" ? definition.text.trim() : "";
@@ -112,6 +141,7 @@ export function createRecordingEffects(
 ): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map(Object.entries(storedPreferences));
+  const deviceValues = new Map<string, string>();
   const preferenceLoads = Promise.withResolvers<void>();
   if (!holdsPreferenceLoads) preferenceLoads.resolve();
   const filePick = createPendingPick<PickedFile | null>("file pick");
@@ -123,13 +153,19 @@ export function createRecordingEffects(
   );
   const savePathPick = createPendingPick<SavePathPick>("save path pick");
   const copy = createPendingPick<SaveCopyOutcome>("copy");
+  const serverAuthInfo = createPendingPick<SignInOutcome<ServerAuthInfo>>(
+    "server auth info question",
+  );
+  const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
+  let refusesConnections = false;
   return {
     clock: createManualClock(),
     calls,
     preferences,
+    deviceValues,
     seekPlayer: (seconds) => {
       calls.push({ type: "seekPlayer", seconds });
     },
@@ -185,6 +221,14 @@ export function createRecordingEffects(
       await preferenceLoads.promise;
       return preferences.get(key) ?? null;
     },
+    saveOnDevice: async (key, value) => {
+      calls.push({ type: "saveOnDevice", key, value });
+      deviceValues.set(key, value);
+    },
+    loadFromDevice: async (key) => {
+      calls.push({ type: "loadFromDevice", key });
+      return deviceValues.get(key) ?? null;
+    },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });
     },
@@ -205,6 +249,23 @@ export function createRecordingEffects(
     subscribeToSystemTheme: (listener) => {
       systemThemeListeners.add(listener);
       return () => systemThemeListeners.delete(listener);
+    },
+    fetchServerAuthInfo: (serverUrl) => {
+      calls.push({ type: "fetchServerAuthInfo", serverUrl });
+      return serverAuthInfo.start();
+    },
+    createSession: (attempt) => {
+      calls.push({ type: "createSession", attempt });
+      return session.start();
+    },
+    connectToServer: async (server) => {
+      calls.push({ type: "connectToServer", server });
+      return refusesConnections
+        ? { ok: false, error: connectionNotKept }
+        : { ok: true, data: null };
+    },
+    disconnectFromServer: () => {
+      calls.push({ type: "disconnectFromServer" });
     },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
@@ -240,5 +301,14 @@ export function createRecordingEffects(
       refusesCopies = true;
     },
     releasePreferenceLoads: () => preferenceLoads.resolve(),
+    resolveServerAuthInfo: (outcome) => {
+      serverAuthInfo.take().resolve(outcome);
+    },
+    resolveSession: (outcome) => {
+      session.take().resolve(outcome);
+    },
+    refuseConnections: () => {
+      refusesConnections = true;
+    },
   };
 }

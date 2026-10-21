@@ -34,7 +34,7 @@ const responses = {
 function renderAppRoot() {
   const { effects, playerRegistry, store } = createTestAppStore(
     createFakeBackendClient(responses, directPlaybackRoutes),
-    fakeServer,
+    { config: fakeServer, cloudUrl: null },
   );
   render(<AppRoot store={store} playerRegistry={playerRegistry} />);
   return { effects, playerRegistry, store };

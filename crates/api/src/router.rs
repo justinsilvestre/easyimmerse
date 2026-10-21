@@ -14,40 +14,50 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    alignments, anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache,
-    conversions, dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup,
-    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_availability,
-    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
-    media_waveform, openapi, plugins, preferences, projects, review, source_form, subtitles,
-    timed_text,
+    alignments, anki, anki_exported, anki_package, anki_pending_deletions, auth_server,
+    conversion_cache, conversions, current_principal, dictionaries, dictionary_batch_lookup,
+    dictionary_imports, dictionary_lookup, dictionary_media, documents, flashcards, health,
+    local_dictionaries, media, media_availability, media_clip, media_frame, media_import,
+    media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
+    preferences, projects, review, sessions, source_form, subtitles, timed_text, users,
 };
 use crate::state::AppState;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
+/// The routes that need no token take only small JSON bodies.
+const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 
 /// Builds the complete application router together with its OpenAPI document.
 ///
-/// Every route checks the `Host` header. Every route except `/health` requires the bearer
-/// token.
+/// Every route checks the `Host` header. Every route except `/health`, `/auth/server`,
+/// `/auth/signup` and `/auth/login` requires a bearer token.
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
     let (protected, _) = protected_routes().split_for_parts();
     let protected = protected
         .layer(Extension(Arc::new(document.clone())))
-        .layer(from_fn_with_state(
-            Arc::clone(&state.config),
-            require_bearer_token,
-        ));
+        .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
+    let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));
     let router = protected
         .merge(public)
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
-        .layer(TraceLayer::new_for_http())
+        .layer(TraceLayer::new_for_http().make_span_with(request_span))
         .with_state(state);
     (router, document)
+}
+
+/// Records the method and the path of a request, but not its query,
+/// since the media routes accept a token as a query parameter.
+fn request_span(request: &axum::extract::Request) -> tracing::Span {
+    tracing::debug_span!(
+        "request",
+        method = %request.method(),
+        path = %request.uri().path(),
+    )
 }
 
 /// Allows any origin, since the bearer token is what protects the API.
@@ -158,10 +168,19 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(dictionary_lookup::lookup_text))
         .routes(routes!(dictionary_batch_lookup::lookup_texts))
         .routes(routes!(dictionary_media::get_dictionary_media))
+        .routes(routes!(current_principal::get_current_principal))
+        .routes(routes!(sessions::log_out))
+        .routes(routes!(users::list_users, users::create_user))
+        .routes(routes!(users::set_user_role))
+        .routes(routes!(users::delete_user))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(health::get_health))
+    OpenApiRouter::new()
+        .routes(routes!(health::get_health))
+        .routes(routes!(auth_server::get_server_auth_info))
+        .routes(routes!(sessions::sign_up))
+        .routes(routes!(sessions::log_in))
 }
 
 #[derive(utoipa::OpenApi)]

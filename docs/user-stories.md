@@ -28,7 +28,7 @@ As a user:
   - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
-    - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
+    - File menu: New project, Open project, Export flashcards, Import/export project, Exit
     - Edit menu: Undo, Redo, Cut, Copy, Paste
     - View menu: Toggle fullscreen, Toggle subtitles panel, Toggle waveform visualization
     - Window menu: Minimize, Zoom, Bring all to front
@@ -110,7 +110,6 @@ As a user:
   - [x] the list's heading is a menu that narrows it to videos, audio or ebooks, each choice counting its files
   - [x] I can click on a media file to open it
   - [x] I can remove a media file from the project through the menu on its row
-  - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
   - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
   - [x] I can see the project flashcards panel
@@ -132,18 +131,16 @@ As a user:
   - [x] the new media file is opened
 - when I click "Remove" next to a media file:
   - [x] the media file is removed from the project's list; the user's files are left alone
-- when I save the project via the menu bar or keyboard shortcut:
-  - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
-- while I am working in a project:
-  - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- while I am editing a flashcard:
+  - [x] my changes that are not saved yet are kept on my device as I make them, so an unexpected crash does not lose them
 - when I try to close the app while a flashcard has unsaved changes or is still being saved:
   - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when a flashcard has waited more than about two seconds to be saved, as when the server is slow or unreachable:
   - [x] the footer says how many flashcards are being saved, until their saves land or fail
-- when I open the app after it closed unexpectedly:
-  - [ ] the last automatically saved state of my project is reloaded
-- when the last automatically saved state cannot be loaded:
-  - [ ] I am told about the problem, and the app falls back to the most recent earlier autosave that loads
+- when I open the app after it closed while flashcards had changes that were not saved, were being saved, or had failed to be saved:
+  - [x] a notice says how many flashcards were not saved, and opens a list of them, where I can retry, open or discard each one with the changes I had made
+- when the changes kept on my device cannot be read:
+  - [x] I am told that they could not be recovered
 
 ---
 
@@ -530,10 +527,8 @@ As a user:
   - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
   - [x] the dictionary pop-up prompts me to set up a dictionary
-- when I have made flashcards without having saved my work:
-  - [ ] I see an indication that my work is unsaved, and a button to save it
-- when I have made flashcards without having logged in:
-  - [ ] I see an indication that my work is not backed up, and a button to log in or sign up
+- while the open flashcard has changes that are not saved yet:
+  - [x] the form shows that they are not saved yet beside the save button
 
 ---
 
@@ -708,6 +703,7 @@ As a user:
 - when I choose to export a project:
   - [ ] I am prompted to choose where to save a project file containing the project's settings, flashcards, and media files registry
   - [ ] I can choose whether to include the media files and dictionaries in the project file
+  - [ ] the project counts as backed up until I next change it, so on its own it no longer keeps the footer's sign that my work is not backed up
 - when I choose to import a project:
   - [ ] I am prompted to select a project file
   - [ ] the imported project appears in my list of projects
@@ -870,9 +866,51 @@ As a web/mobile app user who is not logged in:
 
 As a user:
 - when I choose to sign up or log in:
-  - [ ] I can create an account with my email address
-  - [ ] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
-  - [ ] I can keep using all offline features of the app without an account
+  - [x] I can create an account with my email address
+  - [x] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
+  - [x] I can keep using all offline features of the app without an account
+- while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
+  - [ ] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+  - [ ] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
+- when all my work is backed up:
+  - [ ] the sign is gone
+- a project counts as backed up when any of these is true:
+  - [ ] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
+  - [ ] I have exported it to a project file since I last changed it (in any app)
+  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
+- when I enter the address of a server that does not have accounts:
+  - [x] I am told that the server has no accounts, and I stay in offline mode
+- when I try to sign up on a server whose sign-up is closed:
+  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I choose a password while signing up:
+  - [ ] I see how strong it is as I type, and how to make it stronger
+- when I sign up on a server that can send email:
+  - [ ] I confirm my email address by following a link sent to it
+- when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
+  - [x] I am told which of the two is wrong
+- when I try to log in with a wrong password:
+  - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
+- when I fail to log in too many times in a row:
+  - [x] I am told how many minutes to wait before trying again
+- when I have forgotten my password, on a server that can send email:
+  - [ ] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
+- when I am logged in:
+  - [x] I see my email address and my role, and a button to log out
+  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+  - [ ] I see the devices I am logged in on, and can log out any of them from here
+  - [ ] my projects, flashcards and dictionaries are my own: other accounts on the same server cannot see or change them
+- when I log out:
+  - [x] the web app returns to offline mode, using only the data stored on this device
+- when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
+  - [x] the account settings tell me that the app keeps my work on this device, so I do not need an account
+  - [ ] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
+- when I am an administrator and open the Account section:
+  - [x] I see the server's accounts with their roles
+  - [x] I can create an account by giving an email address, a password and a role
+  - [x] I can change an account's role
+  - [x] I can delete an account after confirming, which logs out anyone using it
+- when I try to demote or delete the server's only administrator:
+  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
 - when I subscribe:
   - [ ] I can choose the amount I pay on a sliding scale
   - [ ] I can manage or cancel my subscription from the account settings
@@ -902,6 +940,7 @@ As a web/mobile app user:
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
   - [ ] the two devices are paired, and my projects, flashcards, and dictionaries are synchronized between them
   - [ ] media files on the desktop can be played on the paired device without copying them
+  - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
 
 ---
 
@@ -915,6 +954,7 @@ As a desktop app user:
   - [ ] I can see the server's status, including whether it is running and whether it is reachable from other devices on the local network
   - [ ] I can see the server's logs, including any errors or warnings
   - [ ] I can configure whether to start the server automatically when the app starts
+  - [ ] I can choose whether the server serves the complete web app or only the API
 - when I close the app with the server running:
   - [ ] the server continues to run in the background, and I can see its status in the system tray or menu bar
 - when I use the CLI:
@@ -939,6 +979,23 @@ As a standalone server user:
 - when I install the server without the desktop app:
   - [ ] I can start and stop it from the command line, and configure it through a config file or command-line options
   - [ ] the server offers the same user account management as the desktop app's server
+- when I start the server:
+  - [ ] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
+- when I start the server with `--accounts`:
+  - [x] people can log in to it with an email address and password
+  - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
+- when I start the server with `--accounts --open-signup`:
+  - [x] anyone who can reach the server can sign up for an account, and is a library user
+- when I start the server with `--accounts` but not `--open-signup`:
+  - [x] nobody can sign up, and only an administrator can add accounts
+- when I start the server with neither `--accounts` nor `--token`:
+  - [x] it makes a random launch token and prints it to standard error
+- when I run `easyimmerse-server users create` with an email address and a role:
+  - [x] an account is created in the server's database, with the password I give on standard input or in `EASYIMMERSE_PASSWORD`, so that I can create the first administrator without the server running
+- when I run `easyimmerse-server users list`, `users set-role` or `users delete`:
+  - [x] I see the accounts with their roles, change an account's role, or delete an account together with its sessions
+- when I run `easyimmerse-server users set-password` with an email address:
+  - [x] the account gets the new password, and everyone logged in to it is logged out
 
 ---
 

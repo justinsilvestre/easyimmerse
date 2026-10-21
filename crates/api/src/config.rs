@@ -3,8 +3,11 @@ use std::path::{Path, PathBuf};
 /// Settings the router needs to authenticate requests.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ApiConfig {
-    /// The bearer token every request except the health check must present.
-    pub token: String,
+    /// The token whose holder owns the machine the server runs on, and may do anything.
+    /// None when only accounts may use the server.
+    pub launch_token: Option<String>,
+    /// Whether the server has accounts, and how new ones are made. None when it has none.
+    pub accounts: Option<AccountsConfig>,
     /// Whether requests may name files on the server's own file system.
     pub allow_local_paths: bool,
     /// Values the `Host` header must equal exactly, such as `127.0.0.1:8787`.
@@ -14,15 +17,37 @@ pub struct ApiConfig {
     pub server_dirs: Vec<PathBuf>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AccountsConfig {
+    /// Whether anyone may create an account, rather than only an administrator.
+    pub open_signup: bool,
+}
+
 impl ApiConfig {
-    /// Builds the configuration for a server bound to the loopback interface on `port`.
-    pub fn for_loopback(port: u16, token: String, allow_local_paths: bool) -> Self {
+    /// Builds the configuration for a server bound to the loopback interface on `port`,
+    /// with a launch token and no accounts.
+    pub fn for_loopback(port: u16, launch_token: String, allow_local_paths: bool) -> Self {
         Self {
-            token,
+            launch_token: Some(launch_token),
+            ..Self::for_loopback_hosts(port, allow_local_paths)
+        }
+    }
+
+    /// Builds the configuration for a server bound to the loopback interface on `port`,
+    /// with neither a launch token nor accounts, which the caller sets.
+    pub fn for_loopback_hosts(port: u16, allow_local_paths: bool) -> Self {
+        Self {
+            launch_token: None,
+            accounts: None,
             allow_local_paths,
             expected_hosts: vec![format!("127.0.0.1:{port}"), format!("localhost:{port}")],
             server_dirs: Vec::new(),
         }
+    }
+
+    /// Whether some token can authenticate: the launch token, or the session of an account.
+    pub fn can_authenticate(&self) -> bool {
+        self.launch_token.is_some() || self.accounts.is_some()
     }
 
     /// Whether `path` names an existing file inside one of the server's own directories.
@@ -74,6 +99,23 @@ mod tests {
         std::fs::create_dir(&inside).unwrap();
         let escaping = inside.join("..").join("escaped.txt");
         assert!(!config_with_server_dir(&inside).is_server_path(&escaping.to_string_lossy()));
+    }
+
+    #[test]
+    fn a_config_with_a_launch_token_can_authenticate() {
+        assert!(ApiConfig::for_loopback(1, "t".to_string(), false).can_authenticate());
+    }
+
+    #[test]
+    fn a_config_with_only_accounts_can_authenticate() {
+        let mut config = ApiConfig::for_loopback_hosts(1, false);
+        config.accounts = Some(AccountsConfig { open_signup: false });
+        assert!(config.can_authenticate());
+    }
+
+    #[test]
+    fn a_config_without_a_launch_token_or_accounts_cannot_authenticate() {
+        assert!(!ApiConfig::for_loopback_hosts(1, false).can_authenticate());
     }
 
     #[test]

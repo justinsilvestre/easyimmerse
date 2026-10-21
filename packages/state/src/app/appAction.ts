@@ -1,4 +1,6 @@
 import type { Action } from "redux";
+import type { AccountAction } from "../account/accountActions.ts";
+import { accountActions } from "../account/accountActions.ts";
 import type { AnkiAction } from "../anki/ankiActions.ts";
 import { ankiActions } from "../anki/ankiActions.ts";
 import type { FlashcardAction } from "../flashcards/flashcardActions.ts";
@@ -11,6 +13,8 @@ import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
+import type { RecoveryAction } from "../recovery/recoveryActions.ts";
+import { recoveryActions } from "../recovery/recoveryActions.ts";
 import type { ReviewAction } from "../review/reviewActions.ts";
 import { reviewActions } from "../review/reviewActions.ts";
 import type { RouteAction } from "../route/routeActions.ts";
@@ -39,12 +43,14 @@ const featureActionCreators = [
   readerScreenActions,
   preferencesActions,
   storedPlacesActions,
+  recoveryActions,
   flashcardActions,
   platformActions,
   serverActions,
   noticesActions,
   operationsActions,
   ankiActions,
+  accountActions,
   reviewActions,
 ] as const;
 
@@ -74,12 +80,14 @@ export type AppAction =
   | ReaderScreenAction
   | PreferencesAction
   | StoredPlacesAction
+  | RecoveryAction
   | FlashcardAction
   | PlatformAction
   | ServerAction
   | NoticesAction
   | OperationsAction
   | AnkiAction
+  | AccountAction
   | ReviewAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */

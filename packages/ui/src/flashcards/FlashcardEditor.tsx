@@ -7,6 +7,7 @@ import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
+import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
@@ -39,6 +40,7 @@ export function FlashcardEditor({
   saveStatus = "idle",
   isNew = false,
   hasSaveFailed = false,
+  hasUnsavedChanges = false,
   isAwaitingLookup = false,
   ankiFate = null,
   onSave,
@@ -65,6 +67,8 @@ export function FlashcardEditor({
   isNew?: boolean;
   /** Whether the last save failed, which the status line tells until Save is pressed again. */
   hasSaveFailed?: boolean;
+  /** Whether the flashcard has changes that are not saved yet, which a badge beside Save shows, as it does for a new flashcard. */
+  hasUnsavedChanges?: boolean;
   /** Whether the word's lookup has yet to answer, which the fields it fills say while they are empty. */
   isAwaitingLookup?: boolean;
   /** What deleting the flashcard does to its note in Anki, which Delete's confirmation tells, or null when that is not known. */
@@ -82,6 +86,7 @@ export function FlashcardEditor({
   const isSaveInert = saveStatus !== "idle";
   const [isConfirmingDelete, setConfirmingDelete] = useState(false);
   const showsFailure = hasSaveFailed && saveStatus === "idle";
+  const isUnsaved = (isNew || hasUnsavedChanges) && saveStatus === "idle";
   return (
     <>
       <form
@@ -143,7 +148,14 @@ export function FlashcardEditor({
               showsFailure ? "text-danger-fg" : "text-fg-muted",
             )}
           >
-            {showsFailure ? saveFailedText : saveStatusTexts[saveStatus]}
+            {showsFailure ? (
+              saveFailedText
+            ) : isUnsaved ? (
+              // The badge beside Save shows this; the line still announces it.
+              <span className="sr-only">{unsavedText}</span>
+            ) : (
+              saveStatusTexts[saveStatus]
+            )}
           </p>
           <div className="flex items-center justify-between gap-2">
             <MenuButton
@@ -162,6 +174,11 @@ export function FlashcardEditor({
               More fields
             </MenuButton>
             <div className="flex items-center gap-2">
+              {isUnsaved && !showsFailure && (
+                <span aria-hidden>
+                  <Badge tone="warning">{unsavedText}</Badge>
+                </span>
+              )}
               {!isNew && (
                 <Button
                   variant="danger"
@@ -202,6 +219,8 @@ export function FlashcardEditor({
 }
 
 const saveFailedText = "Could not save the flashcard. Press Save to try again.";
+
+const unsavedText = "Not saved";
 
 const saveStatusTexts = {
   idle: "",

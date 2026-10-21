@@ -28,7 +28,7 @@ export const Discarded: Story = {
 export const SaveRejected: Story = {
   args: {
     tone: "danger",
-    message: "The server refused the flashcard for “fressen”.",
+    message: "The flashcard for “fressen” can't be saved.",
     actions: [
       { label: "Open", onSelect: fn() },
       { label: "Discard", onSelect: fn() },

@@ -17,6 +17,8 @@ import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 type AppStoreParameters = {
   client?: BackendClient;
   server?: ServerConfig;
+  /** The address of the official server, which the app offers to log in to. */
+  cloudUrl?: string;
   browserFileRegistry?: BrowserFileRegistry<File>;
   /** Where the store reads and writes its preferences, such as the reading place; in memory by default. */
   preferenceStorage?: Pick<Effects, "loadPreference" | "savePreference">;
@@ -73,7 +75,7 @@ function createTestAppStoreFollowing(
   };
   const testAppStore = createTestAppStore(
     appStore.client,
-    appStore.server,
+    { config: appStore.server ?? null, cloudUrl: appStore.cloudUrl ?? null },
     appStore.browserFileRegistry && {
       registry: appStore.browserFileRegistry,
       frameCapturer: browserFrameCapturer,

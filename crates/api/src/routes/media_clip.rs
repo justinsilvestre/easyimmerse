@@ -13,7 +13,7 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
     chosen_audio_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
@@ -68,12 +68,19 @@ pub struct ClipQuery {
 )]
 pub async fn get_media_clip(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Query(query): Query<ClipQuery>,
 ) -> Result<Response, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let clip = render_clip(&state, token, &media_file, query.start_ms, query.end_ms).await?;
+    let clip = render_clip(
+        &state,
+        &principal,
+        &media_file,
+        query.start_ms,
+        query.end_ms,
+    )
+    .await?;
     Ok(rendered_media_response("audio/mp4", clip))
 }
 
@@ -81,7 +88,7 @@ pub async fn get_media_clip(
 /// else its default audio track, as AAC in a fragmented MP4 file.
 pub async fn render_clip(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     start_ms: u64,
     end_ms: u64,
@@ -89,7 +96,7 @@ pub async fn render_clip(
     if end_ms <= start_ms {
         return Err(bad_request("the clip must end after it starts"));
     }
-    let path = resolve_source_path(state, token, media_file).await?;
+    let path = resolve_source_path(state, principal, media_file).await?;
     let container = probe_media(state, &path).await?;
     let duration_ms = clip_duration_ms(start_ms, end_ms, container.duration_ms)?;
     let track = chosen_audio_track(&container, media_file)

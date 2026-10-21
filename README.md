@@ -107,6 +107,23 @@ mise exec -- pnpm --filter @easyimmerse/extension build:firefox    # Firefox, in
 
 Set `VITE_EASYIMMERSE_SERVER_URL` and `VITE_EASYIMMERSE_TOKEN` before building to point the extension at a server. Without them it runs offline through the WebAssembly module.
 
+Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app or the extension to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
+
+### Running a server of your own
+
+To run an instance of the easyImmerse server, build its release binary and start it on a database file:
+
+```sh
+cargo build --release -p easyimmerse-server
+target/release/easyimmerse-server serve --db server.sqlite
+```
+
+- Without `--db`, the server keeps its **data in memory**, and the data is lost when the server stops.
+- The server **listens at `127.0.0.1:8787`** by default. To reach it from other machines, bind it to every interface with `--bind 0.0.0.0:8787`, and name each address that clients use with `--expected-host`, for example `--expected-host 192.168.1.5:8787`. The server refuses a request whose Host header names any other address.
+- The server's **directories and ffmpeg** are set as described under `web-dev` above. `easyimmerse-server serve --help` lists every flag.
+- The server is meant to serve the web app at its own address, but **does not serve it yet**. Until it does, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and serve `apps/web/dist` with any static file server.
+- By default every client presents the server's launch token. To let several people log in with their own accounts, see [docs/self-hosting.md](docs/self-hosting.md).
+
 ### Generated code
 
 Rust types are the source of truth for everything that crosses HTTP or WebAssembly. After changing one, regenerate the TypeScript types and the OpenAPI document and commit the output. CI fails when it is stale.
@@ -257,6 +274,7 @@ Notes on the internals of individual parts live beside them:
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
 - [scripts/storybook-diff/README.md](scripts/storybook-diff/README.md): the Storybook screenshot diff, locally and on pull requests, and how its captures stay deterministic.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
+- [docs/self-hosting.md](docs/self-hosting.md): running the standalone server with accounts, and managing them with the `users` command.
 - [docs/](docs/): the product documentation: overview, user stories, UX refinements, bug reports, and the [alignment data](docs/alignment-data.md) format.
 
 ## License

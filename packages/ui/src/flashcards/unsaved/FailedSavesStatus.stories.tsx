@@ -10,15 +10,19 @@ import {
 import { fixtureResponses } from "../../testSupport/fixtureResponses.ts";
 import { exampleFlashcard } from "../exampleFlashcard.ts";
 
-/** A backend that answers every flashcard save with the failure of the given status. */
-const failingSaves = (status: number) =>
-  createFakeBackendClient({
-    ...fixtureResponses,
-    "POST /projects/p1/flashcards": fakeFailure({
-      status,
-      message: "The flashcard could not be saved.",
+/** A connected server that answers every flashcard save with the failure of the given status. */
+const failingSaves = (status: number) => ({
+  appStore: {
+    server: { serverUrl: "https://books.example.org", token: "t" },
+    client: createFakeBackendClient({
+      ...fixtureResponses,
+      "POST /projects/p1/flashcards": fakeFailure({
+        status,
+        message: "The flashcard could not be saved.",
+      }),
     }),
-  });
+  },
+});
 
 /**
  * Saves a flashcard for each word on m1 of the fixture project, whose saves the story's backend does not accept,
@@ -53,7 +57,7 @@ const meta = {
   component: FailedSaves,
   decorators: [withAppStore],
   args: { words: ["fressen", "schlafen"] },
-  parameters: { appStore: { client: failingSaves(500) } },
+  parameters: failingSaves(500),
 } satisfies Meta<typeof FailedSaves>;
 
 export default meta;
@@ -63,5 +67,5 @@ export const SeveralNotSaved: Story = {};
 
 export const OneRefusedByTheServer: Story = {
   args: { words: ["fressen"] },
-  parameters: { appStore: { client: failingSaves(422) } },
+  parameters: failingSaves(422),
 };
