@@ -149,7 +149,7 @@ export const DoneWithABacklog: Story = {
       kind: "doneForToday",
       reviewedCount: 200,
       comesBack: null,
-      moreNewCount: 20,
+      moreNewCount: 0,
       heldBackCount: 340,
       moreReviewCount: 100,
     },
