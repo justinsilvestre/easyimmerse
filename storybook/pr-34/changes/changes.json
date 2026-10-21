@@ -254,6 +254,16 @@
       }
     },
     {
+      "id": "media-mediaview--looking-up-a-word-in-the-subtitles-panel",
+      "title": "Media/MediaView",
+      "name": "Looking Up A Word In The Subtitles Panel",
+      "importPath": "./src/media/MediaView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "dark-desktop.png": 32676
+      }
+    },
+    {
       "id": "projects-mediasection--loading",
       "title": "Projects/MediaSection",
       "name": "Loading",
