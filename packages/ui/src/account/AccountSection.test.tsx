@@ -1,3 +1,4 @@
+import type { NativePlatform } from "@easyimmerse/state";
 import type { CurrentPrincipal } from "@easyimmerse/types";
 import {
   act,
@@ -57,6 +58,7 @@ async function submittedToOpenServer() {
 /** Renders the section connected to a server that answers who the app's token belongs to as given. */
 function renderConnected(
   principal: CurrentPrincipal | ReturnType<typeof fakeFailure>,
+  bundledIn?: NativePlatform,
 ) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
@@ -66,7 +68,7 @@ function renderConnected(
   return {
     client,
     ...renderWithAppStore(<AccountSection />, client, {
-      server: { serverUrl: ownServer, token: "session-token" },
+      server: { serverUrl: ownServer, token: "session-token", bundledIn },
     }),
   };
 }
@@ -162,7 +164,21 @@ describe("AccountSection", () => {
     it("tells that the app's own server needs no account", async () => {
       renderConnected({ kind: "launch" });
       expect(
-        await screen.findByText(/This app uses its own easyImmerse server/),
+        await screen.findByText(/set up to use its own easyImmerse server/),
+      ).toBeDefined();
+    });
+
+    it("tells that the desktop app keeps the work on the computer", async () => {
+      renderConnected({ kind: "launch" }, "desktop");
+      expect(
+        await screen.findByText(/desktop app keeps your work on this computer/),
+      ).toBeDefined();
+    });
+
+    it("tells that the mobile app keeps the work on the device", async () => {
+      renderConnected({ kind: "launch" }, "mobile");
+      expect(
+        await screen.findByText(/mobile app keeps your work on this device/),
       ).toBeDefined();
     });
 

@@ -297,8 +297,15 @@ export type {
   ServerResponses,
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
-export { selectServerConfig } from "./server/serverSelectors.ts";
-export type { ServerConfig, ServerState } from "./server/serverState.ts";
+export {
+  selectBundledServerPlatform,
+  selectServerConfig,
+} from "./server/serverSelectors.ts";
+export type {
+  NativePlatform,
+  ServerConfig,
+  ServerState,
+} from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
 export type { Clock } from "./timers/clock.ts";

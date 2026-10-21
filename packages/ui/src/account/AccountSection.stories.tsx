@@ -1,3 +1,4 @@
+import type { NativePlatform } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import type { CurrentPrincipal } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -26,9 +27,9 @@ const answered = (accounts: boolean, openSignup: boolean) =>
   });
 
 /** A connected server that answers who the app's token belongs to as given, and never answers a log-out. */
-const connectedAs = (principal: FakeResponse) => ({
+const connectedAs = (principal: FakeResponse, bundledIn?: NativePlatform) => ({
   appStore: {
-    server: { serverUrl: ownServer, token: "session-token" },
+    server: { serverUrl: ownServer, token: "session-token", bundledIn },
     client: createFakeBackendClient({
       ...fixtureResponses,
       "GET /auth/me": principal,
@@ -161,6 +162,15 @@ export const SignInNoLongerAccepted: Story = {
   ),
 };
 
+/** A build set up with its server's own token, as a self-hoster's may be. */
 export const LaunchPrincipal: Story = {
   parameters: connectedAs({ kind: "launch" }),
+};
+
+export const DesktopApp: Story = {
+  parameters: connectedAs({ kind: "launch" }, "desktop"),
+};
+
+export const MobileApp: Story = {
+  parameters: connectedAs({ kind: "launch" }, "mobile"),
 };

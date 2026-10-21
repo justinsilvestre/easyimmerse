@@ -41,7 +41,10 @@ function readInjectedConfig(): {
       "The native shell did not inject window.__EASYIMMERSE__ before the app started.",
     );
   }
-  return { server, platform: injected.platform };
+  return {
+    server: { ...server, bundledIn: injected.platform },
+    platform: injected.platform,
+  };
 }
 
 function findRootElement(): HTMLElement {

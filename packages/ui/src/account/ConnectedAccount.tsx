@@ -2,7 +2,12 @@ import {
   useGetCurrentPrincipalQuery,
   useGetServerAuthInfoQuery,
 } from "@easyimmerse/backend";
-import { actions, selectIsSigningOut } from "@easyimmerse/state";
+import type { NativePlatform } from "@easyimmerse/state";
+import {
+  actions,
+  selectBundledServerPlatform,
+  selectIsSigningOut,
+} from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -27,16 +32,27 @@ export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
 /** The server's owner, who needs no account, and who manages the server's accounts when it has any. */
 function LaunchAccount() {
   const authInfo = useGetServerAuthInfoQuery();
+  const bundledIn = useAppSelector(selectBundledServerPlatform);
   return (
     <>
       <p className="text-sm text-fg-muted">
-        This app uses its own easyImmerse server, which needs no account.
-        Logging in to an account is not available here yet.
+        {bundledIn === null ? launchText : bundledLaunchTexts[bundledIn]}
       </p>
       {authInfo.data?.accounts === true && <UserManagement />}
     </>
   );
 }
+
+/** Tells the owner of a server reached over the network, such as one a build was set up with, why they need no account. */
+const launchText =
+  "This app is set up to use its own easyImmerse server, so you don't need an account. You can't log in to an account from this app yet.";
+
+const bundledLaunchTexts: Record<NativePlatform, string> = {
+  desktop:
+    "The desktop app keeps your work on this computer, so you don't need an account. Logging in from the desktop app isn't available yet.",
+  mobile:
+    "The mobile app keeps your work on this device, so you don't need an account. Logging in from the mobile app isn't available yet.",
+};
 
 function AccountDetails({
   user,

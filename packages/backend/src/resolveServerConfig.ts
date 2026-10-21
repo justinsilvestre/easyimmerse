@@ -1,8 +1,7 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import type { NativePlatform, ServerConfig } from "@easyimmerse/state";
 import { serverConfigStorageKey } from "@easyimmerse/state";
 
-/** Whether the native shell runs on a desktop or on a phone. */
-export type NativePlatform = "desktop" | "mobile";
+export type { NativePlatform };
 
 declare global {
   /** Injected by a native shell before the app's script runs: its embedded server, and the platform it runs on. */
