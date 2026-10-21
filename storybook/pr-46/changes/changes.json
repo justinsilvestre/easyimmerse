@@ -40,11 +40,27 @@
       "title": "Review/ReviewScreen",
       "name": "Screenshot Expanded",
       "importPath": "./src/screens/ReviewScreen.stories.tsx",
-      "error": "light-phone: [object Object]",
-      "kind": "errored",
+      "kind": "changed",
       "changedVariants": {},
-      "errorBefore": "light-phone: [object Object]",
-      "imageSizes": {}
+      "errorBefore": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
     }
   ]
 }
