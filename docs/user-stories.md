@@ -789,19 +789,28 @@ As a user:
   - [x] I am told that the server has no accounts, and I stay in offline mode
 - when I try to sign up on a server whose sign-up is closed:
   - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I choose a password while signing up:
+  - [ ] I see how strong it is as I type, and how to make it stronger
+- when I sign up on a server that can send email:
+  - [ ] I confirm my email address by following a link sent to it
 - when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
   - [x] I am told which of the two is wrong
 - when I try to log in with a wrong password:
   - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
 - when I fail to log in too many times in a row:
   - [x] I am told how many minutes to wait before trying again
+- when I have forgotten my password, on a server that can send email:
+  - [ ] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
 - when I am logged in:
   - [x] I see my email address and my role, and a button to log out
   - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+  - [ ] I see the devices I am logged in on, and can log out any of them from here
+  - [ ] my projects, flashcards and dictionaries are my own: other accounts on the same server cannot see or change them
 - when I log out:
   - [x] the web app returns to offline mode, using only the data stored on this device
-- when the app is using its own built-in server and no account:
-  - [x] the account settings say so, and do not offer to log in
+- when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
+  - [x] the account settings tell me that the app keeps my work on this device, so I do not need an account
+  - [ ] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
 - when I am an administrator and open the Account section:
   - [x] I see the server's accounts with their roles
   - [x] I can create an account by giving an email address, a password and a role
