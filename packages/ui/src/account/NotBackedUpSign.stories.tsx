@@ -2,6 +2,7 @@ import { actions, type ServerConfig } from "@easyimmerse/state";
 import type { SyncLinkState } from "@easyimmerse/types";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { INITIAL_VIEWPORTS } from "storybook/viewport";
 import { FooterBar } from "../components/FooterBar.tsx";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
@@ -141,6 +142,19 @@ export const DeviceOnlyWithoutOfficialServer: Story = {
   parameters: {
     appStore: { client: notBackedUp, server: builtInServer("desktop") },
   },
+};
+
+/** At phone width, the sign shows only its icon, and its panel is placed against the footer. */
+export const DeviceOnlyOnAPhone: Story = {
+  parameters: {
+    viewport: { options: INITIAL_VIEWPORTS },
+    appStore: {
+      client: notBackedUp,
+      server: builtInServer("mobile"),
+      cloudUrl: "https://cloud.example.org",
+    },
+  },
+  globals: { viewport: { value: "iphonex", isRotated: false } },
 };
 
 export const LinkUnreachable: Story = {
