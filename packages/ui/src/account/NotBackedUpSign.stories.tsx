@@ -1,4 +1,4 @@
-import { actions } from "@easyimmerse/state";
+import { actions, type ServerConfig } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
@@ -8,7 +8,10 @@ import {
   createFakeBackendClient,
   fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import {
+  fixtureProject,
+  fixtureResponses,
+} from "../testSupport/fixtureResponses.ts";
 
 /** A backend that saves no flashcard, as one that runs offline cannot. */
 const offlineSaves = createFakeBackendClient({
@@ -18,6 +21,35 @@ const offlineSaves = createFakeBackendClient({
     message:
       "POST /projects/p1/flashcards needs a server, and none is configured.",
   }),
+});
+
+/** A server that fails to save any flashcard. */
+const failingSaves = createFakeBackendClient({
+  ...fixtureResponses,
+  "POST /projects/p1/flashcards": fakeFailure({
+    status: 500,
+    message: "The server failed.",
+  }),
+});
+
+/** A built-in server whose projects have all been copied to a linked server. */
+const allBackedUp = createFakeBackendClient({
+  ...fixtureResponses,
+  "GET /projects": { projects: [{ ...fixtureProject, is_backed_up: true }] },
+});
+
+/** A built-in server whose fixture projects are not backed up. */
+const notBackedUp = createFakeBackendClient(fixtureResponses);
+
+const accountServer: ServerConfig = {
+  serverUrl: "https://books.example.org",
+  token: "t",
+};
+
+const builtInServer = (bundledIn: "desktop" | "mobile"): ServerConfig => ({
+  serverUrl: "http://127.0.0.1:4000",
+  token: "launch",
+  bundledIn,
 });
 
 const savedWord = actions.flashcardStarted(
@@ -34,6 +66,11 @@ const savedWord = actions.flashcardStarted(
   "save",
 );
 
+const savingWord = withDispatchedActions(
+  actions.openMediaFileRequested("p1", "m1"),
+  savedWord,
+);
+
 /** A screen with the app's footer at its bottom, where the sign shows. */
 function ScreenWithFooter() {
   return (
@@ -47,17 +84,51 @@ function ScreenWithFooter() {
 const meta = {
   title: "Account/NotBackedUpSign",
   component: ScreenWithFooter,
-  decorators: [
-    withDispatchedActions(
-      actions.openMediaFileRequested("p1", "m1"),
-      savedWord,
-    ),
-    withAppStore,
-  ],
-  parameters: { layout: "fullscreen", appStore: { client: offlineSaves } },
+  decorators: [withAppStore],
+  parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof ScreenWithFooter>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NotBackedUp: Story = {};
+export const BrowserOnly: Story = {
+  decorators: [savingWord],
+  parameters: { appStore: { client: offlineSaves } },
+};
+
+export const FailedSaves: Story = {
+  decorators: [savingWord],
+  parameters: { appStore: { client: failingSaves, server: accountServer } },
+};
+
+export const DeviceOnlyDesktop: Story = {
+  parameters: {
+    appStore: {
+      client: notBackedUp,
+      server: builtInServer("desktop"),
+      cloudUrl: "https://cloud.example.org",
+    },
+  },
+};
+
+export const DeviceOnlyMobile: Story = {
+  parameters: {
+    appStore: {
+      client: notBackedUp,
+      server: builtInServer("mobile"),
+      cloudUrl: "https://cloud.example.org",
+    },
+  },
+};
+
+export const DeviceOnlyWithoutOfficialServer: Story = {
+  parameters: {
+    appStore: { client: notBackedUp, server: builtInServer("desktop") },
+  },
+};
+
+export const Hidden: Story = {
+  parameters: {
+    appStore: { client: allBackedUp, server: builtInServer("desktop") },
+  },
+};

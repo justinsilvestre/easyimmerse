@@ -1,20 +1,26 @@
-import { actions, selectIsWorkNotBackedUp } from "@easyimmerse/state";
+import { useListProjectsQuery } from "@easyimmerse/backend";
+import { actions, selectBackupSign, selectWorkHome } from "@easyimmerse/state";
 import { CloudOff } from "lucide-react";
 import { useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { MenuShell } from "../components/MenuShell.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { backupSignTexts } from "./backupSignTexts.ts";
 
 /**
- * A quiet sign in the footer while the user's work is kept only on this device, which opens an explanation with a way to log in.
+ * A quiet sign in the footer while some of the user's work is kept only on this device,
+ * which opens an explanation of how the work could be lost and, where the app offers one, a way to back it up.
  * On a narrow screen it shows only its icon.
  */
 export function NotBackedUpSign() {
-  const isNotBackedUp = useAppSelector(selectIsWorkNotBackedUp);
+  const isOnBuiltInServer = useAppSelector(selectWorkHome) === "builtInServer";
+  // Keeps the project list cached, since whether each project is backed up decides the sign.
+  useListProjectsQuery(undefined, { skip: !isOnBuiltInServer });
+  const texts = backupSignTexts(useAppSelector(selectBackupSign));
   const dispatch = useAppDispatch();
   const explanationId = useId();
-  if (!isNotBackedUp) return null;
+  if (texts === null) return null;
   return (
     <MenuShell
       className="shrink-0"
@@ -38,20 +44,21 @@ export function NotBackedUpSign() {
           className="absolute bottom-full left-0 z-20 mb-1 flex w-72 max-w-[calc(100vw-1rem)] flex-col gap-2 rounded-md border border-line bg-surface p-3 text-sm shadow-lg"
         >
           <p id={explanationId} className="text-fg-muted">
-            Your flashcards aren't backed up. They're stored only in this
-            browser, so you'll lose them if its data is cleared.
+            {texts.explanation}
           </p>
-          <Button
-            size="sm"
-            role="menuitem"
-            className="self-start"
-            onClick={() => {
-              close();
-              dispatch(actions.navigated({ type: "openAccountSettings" }));
-            }}
-          >
-            Log in or sign up
-          </Button>
+          {texts.offersLogIn && (
+            <Button
+              size="sm"
+              role="menuitem"
+              className="self-start"
+              onClick={() => {
+                close();
+                dispatch(actions.navigated({ type: "openAccountSettings" }));
+              }}
+            >
+              Log in or sign up
+            </Button>
+          )}
         </div>
       )}
     />
