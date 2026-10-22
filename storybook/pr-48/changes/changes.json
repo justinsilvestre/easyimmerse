@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 512,
+  "storyCount": 513,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -233,7 +233,7 @@
         "light-phone.png": 29431,
         "light-desktop.png": 46484,
         "dark-phone.png": 30705,
-        "dark-desktop.png": 48089
+        "dark-desktop.png": 48088
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -475,8 +475,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 15470,
-        "light-desktop.png": 25237,
+        "light-phone.png": 15469,
+        "light-desktop.png": 25241,
         "dark-phone.png": 15963,
         "dark-desktop.png": 26500
       },
@@ -523,7 +523,7 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 17410,
-        "light-desktop.png": 27151,
+        "light-desktop.png": 27155,
         "dark-phone.png": 18298,
         "dark-desktop.png": 28786
       },
@@ -1978,6 +1978,32 @@
       }
     },
     {
+      "id": "account-notbackedupsign--device-only-on-a-phone",
+      "title": "Account/NotBackedUpSign",
+      "name": "Device Only On A Phone",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
       "id": "account-notbackedupsign--link-unreachable",
       "title": "Account/NotBackedUpSign",
       "name": "Link Unreachable",
@@ -2609,7 +2635,7 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 43560,
+        "light-phone.png": 43562,
         "light-desktop.png": 93962,
         "dark-phone.png": 45872,
         "dark-desktop.png": 96662
