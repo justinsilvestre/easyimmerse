@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t,t as n}from"./LeechNotice-b_986Voc.js";var r,i,a,o;function s(){return(s=e((()=>{t(),{fn:r}=__STORYBOOK_MODULE_TEST__,i={title:`Review/LeechNotice`,component:n,args:{lapseCount:8,onSuspend:r()}},a={},o=[`Leech`]})))()}s();export{a as Leech,o as __namedExportsOrder,i as default};
