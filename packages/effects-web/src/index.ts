@@ -78,4 +78,5 @@ function ignoreSettingsRequests(): () => void {
 }
 
 export { createApplyAppearance } from "./applyAppearance.ts";
+export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";

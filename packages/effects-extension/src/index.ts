@@ -26,3 +26,4 @@ export function createExtensionEffects(options: {
     ),
   };
 }
+export { openMailedLink } from "@easyimmerse/effects-web";
