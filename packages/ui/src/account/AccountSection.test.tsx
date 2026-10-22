@@ -116,12 +116,8 @@ describe("AccountSection", () => {
       expect(screen.queryByLabelText("Server address")).toBeNull();
     });
 
-    it("turns back into a log-in form from creating an account", () => {
+    it("is headed Log in", () => {
       renderWithAppStore(<AccountSection />);
-      fireEvent.click(
-        screen.getByRole("button", { name: "Create an account" }),
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Log in" }));
       expect(screen.getByRole("heading", { name: "Log in" })).toBeDefined();
     });
 
@@ -140,15 +136,13 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells when the server lets nobody create an account", async () => {
+    it("tells when the server lets nobody sign up", async () => {
       const { effects } = renderWithAppStore(<AccountSection />);
       type("Server address", ownServer);
-      fireEvent.click(
-        screen.getByRole("button", { name: "Create an account" }),
-      );
+      fireEvent.click(screen.getByLabelText("Sign up"));
       type("Email", "someone@example.com");
       type("Password", "correct horse");
-      fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+      fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
       await act(async () =>
         effects.resolveServerAuthInfo({
           ok: true,
@@ -157,7 +151,7 @@ describe("AccountSection", () => {
       );
       expect(
         screen.getByText(
-          "This server does not let anyone create an account. Ask its administrator for one, then log in.",
+          "This server does not let anyone sign up. Ask its administrator for an account, then log in.",
         ),
       ).toBeDefined();
     });
@@ -191,9 +185,7 @@ describe("AccountSection", () => {
     /** Renders the section offline in signup mode with the given password typed. */
     function typeSignupPassword(password: string) {
       renderWithAppStore(<AccountSection />);
-      fireEvent.click(
-        screen.getByRole("button", { name: "Create an account" }),
-      );
+      fireEvent.click(screen.getByLabelText("Sign up"));
       type("Password", password);
     }
 
@@ -226,6 +218,13 @@ describe("AccountSection", () => {
   });
 
   describe("while the app is connected", () => {
+    it("is headed Account", async () => {
+      renderConnected({ kind: "account", user: session.user });
+      expect(
+        await screen.findByRole("heading", { name: "Account" }),
+      ).toBeDefined();
+    });
+
     it("names the account's role in words", async () => {
       renderConnected({ kind: "account", user: session.user });
       expect(await screen.findByText("library user")).toBeDefined();
@@ -264,6 +263,13 @@ describe("AccountSection", () => {
       renderWithAppStore(<AccountSection />, createBuiltInServerClient(link), {
         server: builtInServerOn("desktop"),
       });
+
+    it("is headed Log in while no server keeps a copy of the work", async () => {
+      renderBuiltIn(null);
+      expect(
+        await screen.findByRole("heading", { name: "Log in" }),
+      ).toBeDefined();
+    });
 
     it("offers to log in to a server that backs up the work", async () => {
       renderBuiltIn(null);
