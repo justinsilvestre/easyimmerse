@@ -366,6 +366,7 @@ export {
 export { type SyncAction, syncActions } from "./sync/syncActions.ts";
 export {
   selectIsDismissingSyncConflicts,
+  selectIsShowingAllSyncConflicts,
   selectIsStoredCopyFetching,
   selectIsStoredCopyUploading,
   selectIsSyncRunRequested,

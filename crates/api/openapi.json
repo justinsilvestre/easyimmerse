@@ -7418,6 +7418,60 @@
       }
     },
     "/sync/conflicts": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Lists every conflict of the link, newest first, where the status lists only the most recent.",
+        "operationId": "listSyncConflicts",
+        "responses": {
+          "200": {
+            "description": "Every conflict, newest first; none when nothing is linked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSyncConflictsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may sync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
       "delete": {
         "tags": [
           "sync"
@@ -10873,6 +10927,21 @@
           }
         }
       },
+      "ListSyncConflictsResponse": {
+        "type": "object",
+        "description": "Every conflict of the link, newest first.",
+        "required": [
+          "conflicts"
+        ],
+        "properties": {
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncConflict"
+            }
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -12956,7 +13025,7 @@
         "properties": {
           "description": {
             "type": "string",
-            "description": "Names the row for the person, such as \"a flashcard in Spanish practice\"."
+            "description": "Names the row itself for the person, such as \"a flashcard\" or \"the reading position\"."
           },
           "detected_at_ms": {
             "type": "integer",
@@ -12968,6 +13037,20 @@
           },
           "kept": {
             "$ref": "#/components/schemas/ConflictKept"
+          },
+          "media_file_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded."
+          },
+          "project_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded."
           }
         }
       },

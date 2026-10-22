@@ -44,6 +44,7 @@ import type {
   ListPluginsResponse,
   ListProjectsResponse,
   ListReviewCountsResponse,
+  ListSyncConflictsResponse,
   LookupQuery,
   LookupResponse,
   MediaAvailabilityResponse,
@@ -419,6 +420,7 @@ export const backendApi = createApi({
     "Sessions",
     "Review",
     "SyncStatus",
+    "SyncConflicts",
     "StorageStatus",
   ],
   endpoints: (build) => ({
@@ -1290,12 +1292,16 @@ export const backendApi = createApi({
         if (data.pulled_revision !== before.pulled_revision)
           dispatch(actions.syncPulledChanges());
         const latestConflictId = data.link?.conflicts[0]?.id;
-        if (
-          latestConflictId !== undefined &&
-          latestConflictId !== before.link?.conflicts[0]?.id
-        )
+        if (latestConflictId === before.link?.conflicts[0]?.id) return;
+        dispatch(backendApi.util.invalidateTags(["SyncConflicts"]));
+        if (latestConflictId !== undefined)
           dispatch(actions.syncConflictsReported(latestConflictId));
       },
+    }),
+    /** Every conflict the built-in server recorded, where the status lists only the most recent. */
+    listSyncConflicts: build.query<ListSyncConflictsResponse, void>({
+      query: () => ({ method: "GET", path: "/sync/conflicts" }),
+      providesTags: ["SyncConflicts"],
     }),
     /** Logs the built-in server in to a remote, or signs up there, to keep a copy of the device's data on it. */
     linkSyncRemote: build.mutation<SyncStatus, LinkRemoteRequest>({
@@ -1319,7 +1325,7 @@ export const backendApi = createApi({
     /** Forgets the conflicts the built-in server recorded while syncing. */
     dismissSyncConflicts: build.mutation<void, void>({
       query: () => ({ method: "DELETE", path: "/sync/conflicts" }),
-      invalidatesTags: ["SyncStatus"],
+      invalidatesTags: ["SyncStatus", "SyncConflicts"],
     }),
   }),
 });
@@ -1357,6 +1363,7 @@ export const {
   useListUsersQuery,
   useListSessionsQuery,
   useGetSyncStatusQuery,
+  useListSyncConflictsQuery,
   useGetStorageStatusQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,

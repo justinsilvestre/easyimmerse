@@ -121,6 +121,19 @@ describe("updateSync", () => {
     expect(effects).toEqual([]);
   });
 
+  it("shows every conflict once the person asks", () => {
+    const [sync] = syncAfter(actions.allSyncConflictsShown());
+    expect(sync.isShowingAllConflicts).toBe(true);
+  });
+
+  it("stops showing every conflict once they are dismissed", () => {
+    const [sync] = syncAfter(
+      actions.allSyncConflictsShown(),
+      actions.syncConflictsDismissed(),
+    );
+    expect(sync.isShowingAllConflicts).toBe(false);
+  });
+
   it("asks the built-in server to dismiss the conflicts", () => {
     const [, effects] = syncAfter(actions.syncConflictsDismissed());
     expect(effects).toEqual([

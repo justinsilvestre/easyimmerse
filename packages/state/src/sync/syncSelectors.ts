@@ -30,6 +30,10 @@ export const selectIsSyncRunRequested = (root: RootState) =>
 export const selectIsDismissingSyncConflicts = (root: RootState) =>
   selectIsRequestInFlight(root.app, dismissSyncConflictsRequestId);
 
+/** Tells whether the person asked to see every conflict, not only the most recent ones. */
+export const selectIsShowingAllSyncConflicts = (root: RootState) =>
+  root.app.sync.isShowingAllConflicts;
+
 /** Returns the media file whose copy on the server waits for the person to confirm its deletion, or null. */
 export const selectStoredCopyDeletionToConfirm = (root: RootState) =>
   root.app.sync.storedCopyDeletionToConfirm;

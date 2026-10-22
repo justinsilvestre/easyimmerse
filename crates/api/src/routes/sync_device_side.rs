@@ -6,7 +6,7 @@ use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
-use easyimmerse_core::sync::{LinkRemoteRequest, SyncStatus};
+use easyimmerse_core::sync::{LinkRemoteRequest, ListSyncConflictsResponse, SyncStatus};
 use easyimmerse_storage::{OwnerId, RemoteKind};
 use serde::Deserialize;
 use utoipa::IntoParams;
@@ -169,6 +169,36 @@ pub async fn run_sync(
         .ok_or_else(not_linked)?;
     state.sync.request_round();
     Ok(StatusCode::ACCEPTED)
+}
+
+/// Lists every conflict of the link, newest first, where the status lists only the most recent.
+#[utoipa::path(
+    get,
+    path = "/sync/conflicts",
+    tag = "sync",
+    operation_id = "listSyncConflicts",
+    security(("bearer_token" = [])),
+    responses(
+        (status = 200, description = "Every conflict, newest first; none when nothing is linked", body = ListSyncConflictsResponse),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 403, description = "`forbidden`: only the launch token may sync", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn list_sync_conflicts(
+    State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
+) -> Result<Json<ListSyncConflictsResponse>, ApiFailure> {
+    require_launch(&principal)?;
+    let conflicts = state
+        .with_storage(|storage| {
+            match storage.get_sync_remote(&OwnerId::launch(), RemoteKind::Account)? {
+                Some(remote) => storage.list_every_sync_conflict(&remote.id),
+                None => Ok(Vec::new()),
+            }
+        })
+        .await?;
+    Ok(Json(ListSyncConflictsResponse { conflicts }))
 }
 
 /// Forgets the conflicts of the link, once the person has read of them.

@@ -993,7 +993,9 @@ describe("accountPath", () => {
 
 const conflict = (id: string): SyncConflict => ({
   id,
-  description: "a flashcard in Spanish practice",
+  description: "a flashcard",
+  project_name: "Spanish practice",
+  media_file_name: null,
   kept: "other_device",
   detected_at_ms: 0,
 });
@@ -1180,6 +1182,14 @@ describe("getSyncStatus", () => {
     expect(
       dispatched.filter(({ type }) => type === "syncConflictsReported"),
     ).toEqual([{ type: "syncConflictsReported", conflictId: "c2" }]);
+  });
+
+  it("makes the full list of conflicts stale when a new latest conflict arrives", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c1")] },
+    });
+    expect(invalidatedTags(dispatched)).toContain("SyncConflicts");
   });
 
   it("does not report the same latest conflict again", async () => {

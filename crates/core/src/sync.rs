@@ -229,10 +229,21 @@ pub enum ConflictKept {
 #[ts(export)]
 pub struct SyncConflict {
     pub id: String,
-    /// Names the row for the person, such as "a flashcard in Spanish practice".
+    /// Names the row itself for the person, such as "a flashcard" or "the reading position".
     pub description: String,
+    /// The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded.
+    pub project_name: Option<String>,
+    /// The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded.
+    pub media_file_name: Option<String>,
     pub kept: ConflictKept,
     pub detected_at_ms: u64,
+}
+
+/// Every conflict of the link, newest first.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ListSyncConflictsResponse {
+    pub conflicts: Vec<SyncConflict>,
 }
 
 /// Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it.
