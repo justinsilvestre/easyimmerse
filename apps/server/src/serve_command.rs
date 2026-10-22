@@ -168,12 +168,19 @@ fn open_storage(settings: &ServeSettings) -> anyhow::Result<Storage> {
         storage.seed_placeholder_projects()?;
     }
     if settings.seed_sample_content {
-        let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
-        storage
-            .seed_sample_content(&fixtures_dir)
-            .context("could not add the sample content")?;
+        seed_sample_content(&storage);
     }
     Ok(storage)
+}
+
+/// Adds sample media and dictionaries from the fixtures of the repository the server was built from.
+/// A failure is only logged, because the server works without them,
+/// and a build that runs on another device, such as a phone, cannot reach that repository.
+fn seed_sample_content(storage: &Storage) {
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+    if let Err(error) = storage.seed_sample_content(&fixtures_dir) {
+        tracing::warn!("could not add the sample content: {error}");
+    }
 }
 
 #[cfg(test)]

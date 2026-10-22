@@ -15,11 +15,18 @@ const WEB_APP_RESOURCE: &str = "web";
 const WEB_APP_BUILD_DIR: &str = "apps/web/dist";
 
 /// The locations Tauri gives the running app.
+/// Only the server config file lives in the config directory, and the app starts without it,
+/// so the data directory stands in when the config directory cannot be found.
 pub fn from_app(app: &AppHandle) -> tauri::Result<AppLocations> {
     let path = app.path();
+    let data_dir = path.app_data_dir()?;
+    let config_dir = path.app_config_dir().unwrap_or_else(|error| {
+        tracing::warn!("could not find the app config directory: {error}");
+        data_dir.clone()
+    });
     Ok(locations(
-        path.app_config_dir()?,
-        path.app_data_dir()?,
+        config_dir,
+        data_dir,
         path.app_cache_dir()?,
         path.resource_dir().ok(),
     ))

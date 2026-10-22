@@ -304,6 +304,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+      # The emulator shuts down when this step ends, so the device's log is collected inside the script.
+      # The runner runs each script line in its own shell, so the collection after a failure fits on one line.
+      # A larger log buffer keeps the app's startup from scrolling out while Appium waits for the webview.
       - name: End-to-end tests through Appium
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -313,14 +316,20 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: pnpm --filter @easyimmerse/native e2e:android
-      - name: Upload the Appium logs
+          script: |
+            mkdir -p android-diagnostics
+            adb logcat -G 16M || true
+            pnpm --filter @easyimmerse/native e2e:android || { adb logcat -d > android-diagnostics/logcat.txt; adb logcat -d -b crash > android-diagnostics/crash.txt; adb exec-out screencap -p > android-diagnostics/screen.png; exit 1; }
+      - name: Collect the Appium logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        run: |
+          mkdir -p android-diagnostics
+          cp apps/native/e2e/logs/* android-diagnostics/ || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          name: appium-android-logs
-          path: apps/native/e2e/logs
-          if-no-files-found: ignore
+          name: android-diagnostics
+          path: android-diagnostics
 
   ios:
     needs: gate
