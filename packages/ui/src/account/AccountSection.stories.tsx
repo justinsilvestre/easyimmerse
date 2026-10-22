@@ -1,15 +1,21 @@
-import type { NativePlatform } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import type { CurrentPrincipal, SessionList } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
 import {
+  builtInServerOn,
+  createBuiltInServerClient,
+} from "../testSupport/createBuiltInServerClient.ts";
+import {
   createFakeBackendClient,
   type FakeResponse,
   fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import {
+  fixtureResponses,
+  fixtureSyncLink,
+} from "../testSupport/fixtureResponses.ts";
 import { AccountSection } from "./AccountSection.tsx";
 
 const ownServer = "https://books.example.org";
@@ -82,11 +88,10 @@ const never = () => new Promise(() => undefined);
  */
 const connectedAs = (
   principal: FakeResponse,
-  bundledIn?: NativePlatform,
   answers: Record<string, FakeResponse> = {},
 ) => ({
   appStore: {
-    server: { serverUrl: ownServer, token: "session-token", bundledIn },
+    server: { serverUrl: ownServer, token: "session-token" },
     client: createFakeBackendClient({
       ...fixtureResponses,
       "GET /auth/me": principal,
@@ -278,12 +283,29 @@ export const LaunchPrincipal: Story = {
   parameters: connectedAs({ kind: "launch" }),
 };
 
-export const DesktopApp: Story = {
-  parameters: connectedAs({ kind: "launch" }, "desktop"),
+/** The desktop app, whose built-in server keeps the work on the computer and is not logged in to any server. */
+export const DesktopAppNotLinked: Story = {
+  parameters: {
+    appStore: {
+      server: builtInServerOn("desktop"),
+      cloudUrl,
+      client: createBuiltInServerClient(null),
+    },
+  },
 };
 
-export const MobileApp: Story = {
-  parameters: connectedAs({ kind: "launch" }, "mobile"),
+/** The desktop app, whose built-in server keeps a copy of the work on the easyImmerse cloud. */
+export const DesktopAppLinked: Story = {
+  parameters: {
+    appStore: {
+      server: builtInServerOn("desktop"),
+      cloudUrl,
+      client: createBuiltInServerClient({
+        ...fixtureSyncLink,
+        last_synced_at_ms: Date.now(),
+      }),
+    },
+  },
 };
 
 export const LoggedInWithDevices: Story = {
@@ -291,7 +313,7 @@ export const LoggedInWithDevices: Story = {
 };
 
 export const LoggingOutAnotherDevice: Story = {
-  parameters: connectedAs(someone, undefined, {
+  parameters: connectedAs(someone, {
     "DELETE /auth/sessions/s2": never,
   }),
   decorators: [
@@ -300,19 +322,19 @@ export const LoggingOutAnotherDevice: Story = {
 };
 
 export const EmailNotConfirmed: Story = {
-  parameters: connectedAs(someone, undefined, {
+  parameters: connectedAs(someone, {
     "GET /auth/server": mailingServer,
   }),
 };
 
 export const EmailConfirmed: Story = {
-  parameters: connectedAs(confirmed, undefined, {
+  parameters: connectedAs(confirmed, {
     "GET /auth/server": mailingServer,
   }),
 };
 
 export const ConfirmationLinkSent: Story = {
-  parameters: connectedAs(someone, undefined, {
+  parameters: connectedAs(someone, {
     "GET /auth/server": mailingServer,
     "POST /auth/confirmation-email": null,
   }),
@@ -320,7 +342,7 @@ export const ConfirmationLinkSent: Story = {
 };
 
 export const ResendTooSoon: Story = {
-  parameters: connectedAs(someone, undefined, {
+  parameters: connectedAs(someone, {
     "GET /auth/server": mailingServer,
     "POST /auth/confirmation-email": fakeFailure({
       status: 429,

@@ -31,8 +31,8 @@ const serverOptions = [
   { value: "own", label: "Your own server" },
 ] satisfies { value: SignInServerChoice; label: string }[];
 
-/** The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. */
-export function SignInForm() {
+/** The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. `intro` tells what logging in does. */
+export function SignInForm({ intro }: { intro?: string }) {
   const dispatch = useAppDispatch();
   const form = useAppSelector(selectSignInForm);
   const servers = useAppSelector(selectAccountServerOptions);
@@ -50,10 +50,7 @@ export function SignInForm() {
         dispatch(actions.signInSubmitted());
       }}
     >
-      <p className="text-sm text-fg-muted">
-        This app is not connected to a server. Log in to an easyImmerse server
-        to keep your projects, media and flashcards there.
-      </p>
+      {intro !== undefined && <p className="text-sm text-fg-muted">{intro}</p>}
       <SegmentedControl
         label="Log in or sign up"
         options={modeOptions}

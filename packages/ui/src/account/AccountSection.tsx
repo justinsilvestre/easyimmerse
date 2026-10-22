@@ -1,6 +1,7 @@
 import { selectMailedLink, selectServerConfig } from "@easyimmerse/state";
 import { useId } from "react";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { BuiltInServerAccount } from "./BuiltInServerAccount.tsx";
 import { ConnectedAccount } from "./ConnectedAccount.tsx";
 import { EmailConfirmationByLink } from "./EmailConfirmationByLink.tsx";
 import { NewPasswordForm } from "./NewPasswordForm.tsx";
@@ -8,6 +9,7 @@ import { SignInForm } from "./SignInForm.tsx";
 
 /**
  * The Account section of Settings: the form that logs in to a server while the app runs offline,
+ * the server the native app's built-in server keeps a copy of the work on,
  * and otherwise who the app's server knows it as.
  * A reset link the app was opened with shows the form for a new password instead, and a confirmation link shows what came of it.
  */
@@ -26,12 +28,17 @@ export function AccountSection() {
         <>
           {link !== null && <EmailConfirmationByLink link={link} />}
           {server === null ? (
-            <SignInForm />
-          ) : (
+            <SignInForm intro={offlineIntro} />
+          ) : server.bundledIn === undefined ? (
             <ConnectedAccount serverUrl={server.serverUrl} />
+          ) : (
+            <BuiltInServerAccount />
           )}
         </>
       )}
     </section>
   );
 }
+
+const offlineIntro =
+  "This app is not connected to a server. Log in to an easyImmerse server to keep your projects, media and flashcards there.";

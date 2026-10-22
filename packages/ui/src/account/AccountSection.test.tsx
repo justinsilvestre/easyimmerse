@@ -1,5 +1,4 @@
-import type { NativePlatform } from "@easyimmerse/state";
-import type { CurrentPrincipal } from "@easyimmerse/types";
+import type { CurrentPrincipal, SyncLink } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -9,10 +8,17 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  builtInServerOn,
+  createBuiltInServerClient,
+} from "../testSupport/createBuiltInServerClient.ts";
+import {
   createFakeBackendClient,
   fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import {
+  fixtureResponses,
+  fixtureSyncLink,
+} from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { AccountSection } from "./AccountSection.tsx";
 
@@ -59,7 +65,6 @@ async function submittedToOpenServer() {
 /** Renders the section connected to a server that answers who the app's token belongs to as given. */
 function renderConnected(
   principal: CurrentPrincipal | ReturnType<typeof fakeFailure>,
-  bundledIn?: NativePlatform,
 ) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
@@ -69,7 +74,7 @@ function renderConnected(
   return {
     client,
     ...renderWithAppStore(<AccountSection />, client, {
-      server: { serverUrl: ownServer, token: "session-token", bundledIn },
+      server: { serverUrl: ownServer, token: "session-token" },
     }),
   };
 }
@@ -205,20 +210,6 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells that the desktop app keeps the work on the computer", async () => {
-      renderConnected({ kind: "launch" }, "desktop");
-      expect(
-        await screen.findByText(/desktop app keeps your work on this computer/),
-      ).toBeDefined();
-    });
-
-    it("tells that the mobile app keeps the work on the device", async () => {
-      renderConnected({ kind: "launch" }, "mobile");
-      expect(
-        await screen.findByText(/mobile app keeps your work on this device/),
-      ).toBeDefined();
-    });
-
     it("tells when the server no longer accepts the app's sign-in", async () => {
       renderConnected(
         fakeFailure({ status: 401, code: "unauthorized", message: "" }),
@@ -237,6 +228,29 @@ describe("AccountSection", () => {
       await waitFor(() =>
         expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
       );
+    });
+  });
+
+  describe("while the app runs on its built-in server", () => {
+    const renderBuiltIn = (link: SyncLink | null) =>
+      renderWithAppStore(<AccountSection />, createBuiltInServerClient(link), {
+        server: builtInServerOn("desktop"),
+      });
+
+    it("offers to log in to a server that keeps a copy of the work", async () => {
+      renderBuiltIn(null);
+      expect(
+        await screen.findByText(/to keep a copy of your work there as well/),
+      ).toBeDefined();
+    });
+
+    it("shows the account on the server that keeps a copy of the work", async () => {
+      renderBuiltIn(fixtureSyncLink);
+      expect(
+        await screen.findByRole("button", {
+          name: "Log out of cloud.example.org",
+        }),
+      ).toBeDefined();
     });
   });
 });
