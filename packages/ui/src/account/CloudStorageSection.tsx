@@ -5,8 +5,9 @@ import {
 } from "@easyimmerse/backend";
 import {
   type AccountVia,
-  hostOf,
+  selectCloudUrl,
   selectServerConfig,
+  serverNameOf,
 } from "@easyimmerse/state";
 import type { StorageStatus } from "@easyimmerse/types";
 import { formatByteSize } from "../components/formatByteSize.ts";
@@ -33,6 +34,7 @@ export function CloudStorageSection() {
 /** The server that keeps the person's copies, and the way requests reach it, or null when none does. */
 function useStorageServer(): { via: AccountVia; host: string } | null {
   const server = useAppSelector(selectServerConfig);
+  const cloudUrl = useAppSelector(selectCloudUrl);
   const isBuiltIn = server?.bundledIn !== undefined;
   const principal = useGetCurrentPrincipalQuery("self", {
     skip: server === null || isBuiltIn,
@@ -41,9 +43,11 @@ function useStorageServer(): { via: AccountVia; host: string } | null {
     ?.link;
   if (server === null) return null;
   if (isBuiltIn)
-    return link ? { via: "linkedRemote", host: hostOf(link.server_url) } : null;
+    return link
+      ? { via: "linkedRemote", host: serverNameOf(link.server_url, cloudUrl) }
+      : null;
   return principal.data?.kind === "account"
-    ? { via: "self", host: hostOf(server.serverUrl) }
+    ? { via: "self", host: serverNameOf(server.serverUrl, cloudUrl) }
     : null;
 }
 

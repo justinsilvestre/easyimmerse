@@ -73,16 +73,18 @@ const meta = {
   component: MediaUploadChoice,
   decorators: [withAppStore],
   args: { mediaFileId: "m1", copy: notKept },
-  parameters: onBuiltInServer(),
 } satisfies Meta<typeof MediaUploadChoice>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NotKept: Story = {};
+export const NotKept: Story = {
+  parameters: onBuiltInServer(),
+};
 
 export const Kept: Story = {
   args: { copy: { ...notKept, isUploadChosen: true } },
+  parameters: onBuiltInServer(),
 };
 
 export const Uploading: Story = {
@@ -102,10 +104,12 @@ export const Uploading: Story = {
 /** The remote keeps a copy of a file this device cannot read. */
 export const DownloadOffered: Story = {
   args: { copy: { ...notKept, isUploadChosen: true, isUnreadableHere: true } },
+  parameters: onBuiltInServer(),
 };
 
 export const Downloading: Story = {
   args: DownloadOffered.args,
+  parameters: onBuiltInServer(),
   decorators: [
     withDispatchedActions(actions.storedCopyFetchRequested("p1", "m1")),
   ],

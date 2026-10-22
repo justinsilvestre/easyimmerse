@@ -3,6 +3,7 @@
 use easyimmerse_core::sync::{ConflictKept, SyncConflict};
 use rusqlite::{Connection, Row, params};
 
+use super::conflict_descriptions::RowNames;
 use super::tables::SyncTable;
 use crate::error::StorageError;
 use crate::new_row::generate_id;
@@ -14,7 +15,7 @@ pub struct NewConflict {
     pub table: SyncTable,
     pub key: String,
     pub kept: ConflictKept,
-    pub description: String,
+    pub names: RowNames,
     pub detected_at_ms: u64,
 }
 
@@ -24,31 +25,35 @@ pub fn record_conflict(
     conflict: &NewConflict,
 ) -> Result<(), StorageError> {
     conn.execute(
-        "INSERT INTO sync_conflicts (id, remote_id, table_name, row_key, kept, description, detected_at_ms) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO sync_conflicts (id, remote_id, table_name, row_key, kept, description, \
+         project_name, media_file_name, detected_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             generate_id(),
             remote_id,
             conflict.table.as_str(),
             conflict.key,
             kept_name(conflict.kept),
-            conflict.description,
+            conflict.names.description,
+            conflict.names.project_name,
+            conflict.names.media_file_name,
             to_stored_integer(conflict.detected_at_ms),
         ],
     )?;
     Ok(())
 }
 
-/// The remote's most recent conflicts, newest first, at most `limit` of them.
+/// The remote's most recent conflicts, newest first: at most `limit` of them, or all of them when there is no limit.
 pub fn list_conflicts(
     conn: &Connection,
     remote_id: &str,
-    limit: u32,
+    limit: Option<u32>,
 ) -> Result<Vec<SyncConflict>, StorageError> {
     let mut statement = conn.prepare(
-        "SELECT id, description, kept, detected_at_ms FROM sync_conflicts WHERE remote_id = ?1 \
-         ORDER BY detected_at_ms DESC, rowid DESC LIMIT ?2",
+        "SELECT id, description, project_name, media_file_name, kept, detected_at_ms \
+         FROM sync_conflicts WHERE remote_id = ?1 ORDER BY detected_at_ms DESC, rowid DESC LIMIT ?2",
     )?;
+    // SQLite reads a negative limit as no limit.
+    let limit = limit.map_or(-1, i64::from);
     let conflicts = statement
         .query_map(params![remote_id, limit], read_conflict)?
         .collect::<Result<_, _>>()?;
@@ -90,10 +95,10 @@ fn parse_kept(name: &str) -> Option<ConflictKept> {
 }
 
 fn read_conflict(row: &Row) -> rusqlite::Result<SyncConflict> {
-    let kept: String = row.get(2)?;
+    let kept: String = row.get(4)?;
     let kept = parse_kept(&kept).ok_or_else(|| {
         rusqlite::Error::FromSqlConversionFailure(
-            2,
+            4,
             rusqlite::types::Type::Text,
             format!("unknown value {kept:?}").into(),
         )
@@ -101,8 +106,10 @@ fn read_conflict(row: &Row) -> rusqlite::Result<SyncConflict> {
     Ok(SyncConflict {
         id: row.get(0)?,
         description: row.get(1)?,
+        project_name: row.get(2)?,
+        media_file_name: row.get(3)?,
         kept,
-        detected_at_ms: read_unsigned(row, 3)?,
+        detected_at_ms: read_unsigned(row, 5)?,
     })
 }
 
@@ -116,7 +123,11 @@ mod tests {
             table: SyncTable::Flashcards,
             key: "card".to_string(),
             kept: ConflictKept::OtherDevice,
-            description: description.to_string(),
+            names: RowNames {
+                description: description.to_string(),
+                project_name: Some("Deutsch".to_string()),
+                media_file_name: Some("Der Prozess.epub".to_string()),
+            },
             detected_at_ms,
         }
     }
@@ -125,10 +136,33 @@ mod tests {
     fn lists_a_recorded_conflict() {
         let (storage, remote) = storage_with_remote();
         storage
-            .record_sync_conflict(&remote.id, &conflict("a flashcard in Deutsch", 5))
+            .record_sync_conflict(&remote.id, &conflict("a flashcard", 5))
             .unwrap();
         let listed = storage.list_sync_conflicts(&remote.id, 20).unwrap();
-        assert_eq!(listed[0].description, "a flashcard in Deutsch");
+        assert_eq!(listed[0].description, "a flashcard");
+    }
+
+    #[test]
+    fn lists_the_project_of_a_recorded_conflict() {
+        let (storage, remote) = storage_with_remote();
+        storage
+            .record_sync_conflict(&remote.id, &conflict("a flashcard", 5))
+            .unwrap();
+        let listed = storage.list_sync_conflicts(&remote.id, 20).unwrap();
+        assert_eq!(listed[0].project_name.as_deref(), Some("Deutsch"));
+    }
+
+    #[test]
+    fn lists_the_media_file_of_a_recorded_conflict() {
+        let (storage, remote) = storage_with_remote();
+        storage
+            .record_sync_conflict(&remote.id, &conflict("a flashcard", 5))
+            .unwrap();
+        let listed = storage.list_sync_conflicts(&remote.id, 20).unwrap();
+        assert_eq!(
+            listed[0].media_file_name.as_deref(),
+            Some("Der Prozess.epub")
+        );
     }
 
     #[test]
@@ -153,6 +187,20 @@ mod tests {
                 .unwrap();
         }
         assert_eq!(storage.list_sync_conflicts(&remote.id, 2).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn lists_every_conflict_without_a_limit() {
+        let (storage, remote) = storage_with_remote();
+        for at in 0..3 {
+            storage
+                .record_sync_conflict(&remote.id, &conflict("c", at))
+                .unwrap();
+        }
+        assert_eq!(
+            storage.list_every_sync_conflict(&remote.id).unwrap().len(),
+            3
+        );
     }
 
     #[test]

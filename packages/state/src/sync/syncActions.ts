@@ -7,6 +7,8 @@ export const syncActions = {
     ({ type: "syncConflictsReported", conflictId }) as const,
   /** The person asked the built-in server to sync with the remote now. */
   syncRunRequested: () => ({ type: "syncRunRequested" }) as const,
+  /** The person asked to see every conflict, not only the most recent ones the status lists. */
+  allSyncConflictsShown: () => ({ type: "allSyncConflictsShown" }) as const,
   /** The person dismissed the conflicts the built-in server recorded. */
   syncConflictsDismissed: () => ({ type: "syncConflictsDismissed" }) as const,
   /** The person chose whether a server keeps a copy of a media file's bytes. */

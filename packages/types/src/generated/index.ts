@@ -103,6 +103,7 @@ export type * from "./ListMediaFilesResponse";
 export type * from "./ListPluginsResponse";
 export type * from "./ListProjectsResponse";
 export type * from "./ListReviewCountsResponse";
+export type * from "./ListSyncConflictsResponse";
 export type * from "./LoginRequest";
 export type * from "./LookupQuery";
 export type * from "./LookupResponse";

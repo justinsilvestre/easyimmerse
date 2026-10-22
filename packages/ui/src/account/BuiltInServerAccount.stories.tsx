@@ -1,5 +1,5 @@
 import { actions, type NativePlatform } from "@easyimmerse/state";
-import type { SyncConflict, SyncLink } from "@easyimmerse/types";
+import type { SyncLink } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
@@ -9,6 +9,7 @@ import {
 } from "../testSupport/createBuiltInServerClient.ts";
 import type { FakeResponse } from "../testSupport/createFakeBackendClient.ts";
 import { fixtureSyncLink } from "../testSupport/fixtureResponses.ts";
+import { fixtureSyncConflicts } from "../testSupport/fixtureSyncConflicts.ts";
 import { BuiltInServerAccount } from "./BuiltInServerAccount.tsx";
 
 const cloudUrl = "https://cloud.example.org";
@@ -22,27 +23,6 @@ const linked: SyncLink = {
   ...fixtureSyncLink,
   last_synced_at_ms: Date.now() - 4 * minuteMs,
 };
-
-const conflicts: SyncConflict[] = [
-  {
-    id: "c3",
-    description: "a flashcard in Spanish practice",
-    kept: "other_device",
-    detected_at_ms: Date.now() - minuteMs,
-  },
-  {
-    id: "c2",
-    description: "the settings of Spanish practice",
-    kept: "this_device",
-    detected_at_ms: Date.now() - 2 * minuteMs,
-  },
-  {
-    id: "c1",
-    description: "a review answer in Spanish practice",
-    kept: "deletion",
-    detected_at_ms: Date.now() - 3 * minuteMs,
-  },
-];
 
 /** The desktop app's built-in server, which reports the given link and gives the other answers given. */
 const builtInServer = (
@@ -80,13 +60,14 @@ const meta = {
   title: "Account/BuiltInServerAccount",
   component: BuiltInServerAccount,
   decorators: [withAppStore],
-  parameters: builtInServer(null),
 } satisfies Meta<typeof BuiltInServerAccount>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NotLinked: Story = {};
+export const NotLinked: Story = {
+  parameters: builtInServer(null),
+};
 
 export const NotLinkedOnMobile: Story = {
   parameters: builtInServer(null, {}, "mobile"),
@@ -99,13 +80,23 @@ export const NotLinkedWithoutCloud: Story = {
   },
 };
 
+/** More options opened, which asks for the address of the person's own server. */
+export const OwnServerChosen: Story = {
+  parameters: builtInServer(null),
+  decorators: [
+    withDispatchedActions(actions.signInFormChanged({ serverChoice: "own" })),
+  ],
+};
+
 export const Linking: Story = {
+  parameters: builtInServer(null),
   decorators: [
     withDispatchedActions(filledIn, actions.signInSubmitted(), cloudAnswered),
   ],
 };
 
 export const LinkingFailed: Story = {
+  parameters: builtInServer(null),
   decorators: [
     withDispatchedActions(
       filledIn,
@@ -165,8 +156,8 @@ export const LoggingOut: Story = {
 export const WithConflicts: Story = {
   parameters: builtInServer({
     ...linked,
-    conflicts,
-    conflict_count: conflicts.length,
+    conflicts: fixtureSyncConflicts,
+    conflict_count: fixtureSyncConflicts.length,
   }),
 };
 
@@ -195,13 +186,15 @@ export const LoggingInAgain: Story = {
   ],
 };
 
+/** A round the server answered in a way this app does not understand, as a server of another version might. */
 export const Failed: Story = {
   parameters: builtInServer({
     ...linked,
     state: {
       kind: "failed",
-      code: "forbidden",
-      message: "This account may not keep a copy of its work on this server.",
+      code: "remote_protocol",
+      message:
+        "the remote answered /sync/pull with missing field `changes` at line 1 column 52",
     },
   }),
 };

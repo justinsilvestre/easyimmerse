@@ -66,7 +66,8 @@ CREATE TABLE sync_inbox (
 ) WITHOUT ROWID;
 
 -- Changes made on two servers at once, of which the more recent was kept.
--- `kept` is this_device, other_device or deletion; `description` names the row for the person, such as "a flashcard in Spanish practice".
+-- `kept` is this_device, other_device or deletion; `description` names the row itself for the person, such as "a flashcard".
+-- `project_name` and `media_file_name` name what the row belonged to when the conflict was recorded, since either may be gone later.
 CREATE TABLE sync_conflicts (
     id TEXT PRIMARY KEY,
     remote_id TEXT NOT NULL REFERENCES sync_remotes(id) ON DELETE CASCADE,
@@ -74,6 +75,8 @@ CREATE TABLE sync_conflicts (
     row_key TEXT NOT NULL,
     kept TEXT NOT NULL,
     description TEXT NOT NULL,
+    project_name TEXT,
+    media_file_name TEXT,
     detected_at_ms INTEGER NOT NULL
 );
 CREATE INDEX sync_conflicts_by_time ON sync_conflicts (remote_id, detected_at_ms);

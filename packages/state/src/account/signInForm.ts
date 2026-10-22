@@ -39,6 +39,8 @@ export type SignInForm = {
   serverAuthInfo: { serverUrl: string; info: ServerAuthInfo } | null;
   /** The request for a password reset link, while the form asks for one instead of logging in, or null. */
   passwordReset: PasswordResetStatus | null;
+  /** Whether logging out waits for the person to confirm that the flashcards not yet saved are dropped. */
+  isConfirmingLogOut: boolean;
 };
 
 /** The fields of the sign-in form that a person edits. */
@@ -62,6 +64,7 @@ export const initialSignInForm: SignInForm = {
   status: { kind: "idle" },
   serverAuthInfo: null,
   passwordReset: null,
+  isConfirmingLogOut: false,
 };
 
 /** The address of the server the form signs in to, or null when the own server's address is not an HTTP or HTTPS URL. */

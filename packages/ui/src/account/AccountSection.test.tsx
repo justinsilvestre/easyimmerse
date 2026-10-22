@@ -93,12 +93,26 @@ describe("AccountSection", () => {
       expect(screen.queryByLabelText("Server address")).toBeNull();
     });
 
-    it("asks for an address once the person chooses their own server", () => {
+    it("asks for an address once More options is opened", () => {
       renderWithAppStore(<AccountSection />, undefined, {
         cloudUrl: "https://cloud.example.com",
       });
-      fireEvent.click(screen.getByLabelText("Your own server"));
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
       expect(screen.getByLabelText("Server address")).toBeDefined();
+    });
+
+    it("goes back to the easyImmerse cloud once More options is closed", () => {
+      renderWithAppStore(<AccountSection />, undefined, {
+        cloudUrl: "https://cloud.example.com",
+      });
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
+      expect(screen.queryByLabelText("Server address")).toBeNull();
+    });
+
+    it("is headed Log in", () => {
+      renderWithAppStore(<AccountSection />);
+      expect(screen.getByRole("heading", { name: "Log in" })).toBeDefined();
     });
 
     it("asks the server what it offers when the form is sent", () => {
@@ -198,6 +212,13 @@ describe("AccountSection", () => {
   });
 
   describe("while the app is connected", () => {
+    it("is headed Account", async () => {
+      renderConnected({ kind: "account", user: session.user });
+      expect(
+        await screen.findByRole("heading", { name: "Account" }),
+      ).toBeDefined();
+    });
+
     it("names the account's role in words", async () => {
       renderConnected({ kind: "account", user: session.user });
       expect(await screen.findByText("library user")).toBeDefined();
@@ -210,12 +231,24 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells when the server no longer accepts the app's sign-in", async () => {
+    it("tells when the server has logged the app out", async () => {
       renderConnected(
         fakeFailure({ status: 401, code: "unauthorized", message: "" }),
       );
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "The server no longer accepts this app's sign-in. Log out, then log in again.",
+        "You were logged out of books.example.org. Log in again to keep using your account here.",
+      );
+    });
+
+    it("goes back to the form to log in again once the server has logged the app out", async () => {
+      const { effects } = renderConnected(
+        fakeFailure({ status: 401, code: "unauthorized", message: "" }),
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Log in again" }),
+      );
+      await waitFor(() =>
+        expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
       );
     });
 
@@ -237,11 +270,16 @@ describe("AccountSection", () => {
         server: builtInServerOn("desktop"),
       });
 
-    it("offers to log in to a server that keeps a copy of the work", async () => {
+    it("is headed Log in while no server keeps a copy of the work", async () => {
       renderBuiltIn(null);
       expect(
-        await screen.findByText(/to keep a copy of your work there as well/),
+        await screen.findByRole("heading", { name: "Log in" }),
       ).toBeDefined();
+    });
+
+    it("offers to log in to a server that backs up the work", async () => {
+      renderBuiltIn(null);
+      expect(await screen.findByText(/Log in to back it up to/)).toBeDefined();
     });
 
     it("shows the account on the server that keeps a copy of the work", async () => {

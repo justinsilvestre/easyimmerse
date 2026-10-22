@@ -1,4 +1,5 @@
 import type { AppRoot } from "../app/createAppStore.ts";
+import { isCloudServer, serverNameOf } from "./serverNameOf.ts";
 import type { ServerConfig } from "./serverState.ts";
 
 /**
@@ -35,4 +36,20 @@ export function selectAccountVia(state: AppRoot): AccountVia {
 /** Returns which server the account requests of an app connected to the given server reach. */
 export function accountViaOf(config: ServerConfig | null): AccountVia {
   return config?.bundledIn === undefined ? "self" : "linkedRemote";
+}
+
+/** Returns the address of the easyImmerse cloud this build knows of, or null. */
+export const selectCloudUrl = (state: AppRoot) => state.app.server.cloudUrl;
+
+/** Returns how the copy names the server at this address: the easyImmerse cloud by that name, any other server by its host. */
+export function selectServerName(state: AppRoot, serverUrl: string): string {
+  return serverNameOf(serverUrl, state.app.server.cloudUrl);
+}
+
+/** Tells whether the server at this address is the easyImmerse cloud. */
+export function selectIsCloudServer(
+  state: AppRoot,
+  serverUrl: string,
+): boolean {
+  return isCloudServer(serverUrl, state.app.server.cloudUrl);
 }

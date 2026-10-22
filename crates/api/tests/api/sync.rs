@@ -396,6 +396,24 @@ mod conflicts {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn the_conflict_names_the_flashcard_by_its_word() {
+        let (_remote, device, ..) = edited_on_both_sides().await;
+        let status = sync_round(&device).await;
+        assert_eq!(
+            status["link"]["conflicts"][0]["description"],
+            "the flashcard \u{201c}Garten\u{201d}"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn listing_the_conflicts_returns_every_one() {
+        let (_remote, device, ..) = edited_on_both_sides().await;
+        sync_round(&device).await;
+        let listed = device.get("/sync/conflicts").await.json();
+        assert_eq!(listed["conflicts"].as_array().map(Vec::len), Some(1));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn dismissing_forgets_the_conflicts() {
         let (_remote, device, ..) = edited_on_both_sides().await;
         sync_round(&device).await;

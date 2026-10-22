@@ -32,20 +32,22 @@ type MenuPopupProps = {
  * Opening the menu focuses its selected item, or its first, and the up and down arrows, Home, and End move between the items.
  * The menu closes on Escape, on a choice, when focus moves to an element outside it,
  * or when the pointer presses anywhere outside it, which matters on browsers that give a clicked button no focus.
- * While `isUnavailable`, the menu stays closed.
+ * While `isUnavailable`, the menu stays closed. With `isInitiallyOpen`, it starts open.
  */
 export function MenuShell({
   trigger,
   menu,
   isUnavailable = false,
+  isInitiallyOpen = false,
   className,
 }: {
   trigger: (props: MenuTriggerProps) => ReactNode;
   menu: (props: MenuPopupProps) => ReactNode;
   isUnavailable?: boolean;
+  isInitiallyOpen?: boolean;
   className?: string;
 }) {
-  const [isOpen, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(isInitiallyOpen);
   const menuId = useId();
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);

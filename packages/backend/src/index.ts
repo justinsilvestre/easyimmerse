@@ -31,6 +31,7 @@ export {
   useListReviewCountsQuery,
   useListSessionsQuery,
   useListSubtitleTracksQuery,
+  useListSyncConflictsQuery,
   useListUsersQuery,
   useLookupTextQuery,
   useOpenBookQuery,

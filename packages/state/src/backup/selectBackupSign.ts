@@ -3,6 +3,7 @@ import type { RootState } from "../app/createAppStore.ts";
 import { selectFailedSaves } from "../flashcards/failedSave.ts";
 import { selectRecoverableWork } from "../recovery/recoverableWork.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
+import { serverNameOf } from "../server/serverNameOf.ts";
 import {
   selectBundledServerPlatform,
   selectWorkHome,
@@ -23,21 +24,30 @@ export type BackupSign =
       platform: NativePlatform;
       hasOfficialServer: boolean;
     }
-  /**
-   * Some project is not yet copied to the remote the built-in server is linked to, because syncing with it fails:
-   * the remote could not be reached since `sinceMs`, or it refused to sync, when `sinceMs` is null.
-   */
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the remote could not be reached since `sinceMs`. */
   | {
-      kind: "linkFailing";
+      kind: "linkUnreachable";
       platform: NativePlatform;
       serverUrl: string;
-      sinceMs: number | null;
+      /** How the copy names the server: the easyImmerse cloud by that name, any other by its host. */
+      serverName: string;
+      sinceMs: number;
     }
-  /** Some project is not yet copied to the remote the built-in server is linked to, because the remote logged out the account with this email address. */
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the last round failed with the error `code`. */
+  | {
+      kind: "linkFailed";
+      platform: NativePlatform;
+      serverUrl: string;
+      /** How the copy names the server: the easyImmerse cloud by that name, any other by its host. */
+      serverName: string;
+      code: string;
+    }
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the remote logged out the account with this email address. */
   | {
       kind: "loggedOut";
       platform: NativePlatform;
       serverUrl: string;
+      serverName: string;
       email: string;
     };
 
@@ -74,28 +84,41 @@ function builtInServerSign(root: RootState): BackupSign {
   const status = selectSyncStatus(root);
   if (status === null || !hasProjectNotBackedUp(root)) return hidden;
   if (status.link === null) return deviceOnlySign(root);
-  return linkSign(status.link, platformOf(root));
+  return linkSign(status.link, platformOf(root), root.app.server.cloudUrl);
 }
 
-function linkSign(link: SyncLink, platform: NativePlatform): BackupSign {
+function linkSign(
+  link: SyncLink,
+  platform: NativePlatform,
+  cloudUrl: string | null,
+): BackupSign {
   const { server_url: serverUrl, state } = link;
+  const serverName = serverNameOf(serverUrl, cloudUrl);
   switch (state.kind) {
     case "logged_out":
       return {
         kind: "loggedOut",
         platform,
         serverUrl,
+        serverName,
         email: link.account_email,
       };
     case "unreachable":
       return {
-        kind: "linkFailing",
+        kind: "linkUnreachable",
         platform,
         serverUrl,
+        serverName,
         sinceMs: state.since_ms,
       };
     case "failed":
-      return { kind: "linkFailing", platform, serverUrl, sinceMs: null };
+      return {
+        kind: "linkFailed",
+        platform,
+        serverUrl,
+        serverName,
+        code: state.code,
+      };
     case "idle":
     case "syncing":
       return hidden;

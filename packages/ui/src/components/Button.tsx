@@ -2,7 +2,8 @@ import clsx from "clsx";
 import type { ComponentProps } from "react";
 
 type ButtonProps = ComponentProps<"button"> & {
-  variant?: "primary" | "secondary" | "subtle" | "danger";
+  /** `overVideo` suits a button drawn over the black stage behind the video, in both themes. */
+  variant?: "primary" | "secondary" | "subtle" | "danger" | "overVideo";
   size?: "sm" | "md";
 };
 
@@ -30,6 +31,8 @@ export function Button({
         variant === "secondary" && "border border-line-strong bg-surface",
         variant === "subtle" && "text-fg-muted",
         variant === "danger" && "border border-danger-line text-danger-fg",
+        variant === "overVideo" &&
+          "border border-gray-600 bg-black/50 text-white",
         !isUnavailable && hoverStyles[variant],
         className,
       )}
@@ -43,4 +46,5 @@ const hoverStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
   secondary: "hover:bg-surface-muted",
   subtle: "hover:bg-surface-muted hover:text-fg",
   danger: "hover:bg-danger-soft",
+  overVideo: "hover:bg-gray-800",
 };

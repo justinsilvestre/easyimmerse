@@ -1,9 +1,9 @@
 import {
   actions,
-  hostOf,
   type NativePlatform,
   selectIsSignInFormStarted,
   selectIsSyncRunRequested,
+  selectServerName,
 } from "@easyimmerse/state";
 import type { RefusedUpload, SyncLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
@@ -13,8 +13,9 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
 import { SignInForm } from "./SignInForm.tsx";
+import { syncFailureReason } from "./syncFailureReason.ts";
 
-/** Explains why the work, or one of its media files, is not being copied to the linked server, if it is not, and offers what can be done about it. */
+/** Explains why the work, or one of its media files, is not being backed up to the linked server, if it is not, and offers what can be done about it. */
 export function SyncLinkProblem({
   link,
   platform,
@@ -22,7 +23,9 @@ export function SyncLinkProblem({
   link: SyncLink;
   platform: NativePlatform;
 }) {
-  const host = hostOf(link.server_url);
+  const host = useAppSelector((state) =>
+    selectServerName(state, link.server_url),
+  );
   const device = deviceNames[platform];
   switch (link.state.kind) {
     case "idle":
@@ -37,23 +40,22 @@ export function SyncLinkProblem({
     case "unreachable":
       return (
         <Problem
-          text={`Couldn't reach ${host} since ${formatSinceTime(link.state.since_ms)}. Your work is kept on ${device} and will be copied there when the server can be reached.`}
+          text={`Couldn't reach ${host} since ${formatSinceTime(link.state.since_ms)}. Your work will be stored offline on ${device} and backed up to ${host} once it can be reached.`}
         >
           <TryAgain />
         </Problem>
       );
     case "failed":
       return (
-        <Problem
-          text={`Your work is kept on ${device} until it can be copied to ${host}.`}
-        >
+        <Problem text={syncFailureReason(link.state.code, host, device)}>
+          <p className="text-xs text-fg-muted">Details: {link.state.message}</p>
           <TryAgain />
         </Problem>
       );
     case "logged_out":
       return (
         <Problem
-          text={`You were logged out of ${host} on ${device}, so your work isn't being copied there.`}
+          text={`You were logged out of ${host} on ${device}, so your work isn't being backed up there.`}
         >
           <LogInAgain link={link} />
         </Problem>
@@ -62,7 +64,7 @@ export function SyncLinkProblem({
 }
 
 function refusedUploadText(refused: RefusedUpload, host: string) {
-  const prefix = `Couldn't keep a copy of ${refused.name} on ${host}`;
+  const prefix = `Couldn't upload ${refused.name} to ${host}`;
   switch (refused.code) {
     case "quota_exceeded":
       return `${prefix}: there isn't enough room there.`;

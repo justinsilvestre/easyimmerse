@@ -12,10 +12,12 @@ import { storedCopyEffects } from "./storedCopies.ts";
 
 /**
  * Which conflict the person was last told of, so that the same conflict raises its notice only once,
+ * whether the person asked to see every conflict,
  * and the media file whose copy on the server waits for the person to confirm its deletion.
  */
 export type SyncState = {
   notifiedConflictId: string | null;
+  isShowingAllConflicts: boolean;
   storedCopyDeletionToConfirm: string | null;
 };
 
@@ -72,9 +74,11 @@ export const updateSync: FeatureUpdate<
         sync,
         ...sendOnce(operations, runSyncRequestId, { kind: "runSync" }),
       );
+    case "allSyncConflictsShown":
+      return updated({ ...sync, isShowingAllConflicts: true });
     case "syncConflictsDismissed":
       return updated(
-        sync,
+        { ...sync, isShowingAllConflicts: false },
         ...sendOnce(operations, dismissSyncConflictsRequestId, {
           kind: "dismissSyncConflicts",
         }),
@@ -101,7 +105,11 @@ export const syncFeature: Feature<
   SyncState,
   "operations" | "server" | "backend"
 > = {
-  initialState: { notifiedConflictId: null, storedCopyDeletionToConfirm: null },
+  initialState: {
+    notifiedConflictId: null,
+    isShowingAllConflicts: false,
+    storedCopyDeletionToConfirm: null,
+  },
   update: updateSync,
 };
 

@@ -208,7 +208,10 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             sync_device_side::unlink_sync_remote
         ))
         .routes(routes!(sync_device_side::run_sync))
-        .routes(routes!(sync_device_side::dismiss_sync_conflicts))
+        .routes(routes!(
+            sync_device_side::list_sync_conflicts,
+            sync_device_side::dismiss_sync_conflicts
+        ))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {

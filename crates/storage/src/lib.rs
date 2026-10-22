@@ -50,6 +50,7 @@ pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 pub use sync::apply_pushed::{PushRejection, PushVerdict, PushedChange};
 pub use sync::changes::{PendingRow, SyncChange, SyncChangesPage};
 pub use sync::codec::RowData;
+pub use sync::conflict_descriptions::RowNames;
 pub use sync::conflicts::NewConflict;
 pub use sync::inbox::{AppliedInbox, PulledRow};
 pub use sync::push_answers::{AnsweredPush, PushAnswer};
@@ -979,7 +980,15 @@ impl Storage {
         remote_id: &str,
         limit: u32,
     ) -> Result<Vec<SyncConflict>, StorageError> {
-        self.read(|conn| sync::conflicts::list_conflicts(conn, remote_id, limit))
+        self.read(|conn| sync::conflicts::list_conflicts(conn, remote_id, Some(limit)))
+    }
+
+    /// Every conflict of the remote, newest first.
+    pub fn list_every_sync_conflict(
+        &self,
+        remote_id: &str,
+    ) -> Result<Vec<SyncConflict>, StorageError> {
+        self.read(|conn| sync::conflicts::list_conflicts(conn, remote_id, None))
     }
 
     pub fn count_sync_conflicts(&self, remote_id: &str) -> Result<u64, StorageError> {

@@ -1,6 +1,10 @@
-import { actions } from "@easyimmerse/state";
+import { actions, selectStatusLineSaves } from "@easyimmerse/state";
 import type { CurrentPrincipal, SessionList } from "@easyimmerse/types";
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
+import { type ReactNode, useEffect } from "react";
+import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
 import {
@@ -266,6 +270,50 @@ export const LoggedIn: Story = {
 export const LoggingOut: Story = {
   parameters: connectedAs(someone),
   decorators: [withDispatchedActions(actions.signOutRequested())],
+};
+
+/** Asks to log out once a flashcard save has failed, so that logging out asks to confirm dropping it. */
+function LogOutOnceSaveFailed({ children }: { children: ReactNode }) {
+  const dispatch = useAppDispatch();
+  const hasFailedSave = useAppSelector(selectStatusLineSaves).length > 0;
+  useEffect(() => {
+    if (hasFailedSave) dispatch(actions.signOutRequested());
+  }, [dispatch, hasFailedSave]);
+  return children;
+}
+
+const loggingOutWithFailedSave: Decorator = (Story) => (
+  <LogOutOnceSaveFailed>
+    <Story />
+  </LogOutOnceSaveFailed>
+);
+
+export const ConfirmingLogOut: Story = {
+  parameters: connectedAs(someone, {
+    "POST /projects/p1/flashcards": fakeFailure({
+      status: 500,
+      message: "The server failed.",
+    }),
+  }),
+  decorators: [
+    loggingOutWithFailedSave,
+    withDispatchedActions(
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.flashcardStarted(
+        {
+          id: "story-fressen",
+          draft: {
+            media_file_id: "m1",
+            cue_index: 1,
+            word_start: null,
+            content: { ...exampleFlashcard, word: "fressen" },
+            included_fields: ["word"],
+          },
+        },
+        "save",
+      ),
+    ),
+  ],
 };
 
 export const SignInNoLongerAccepted: Story = {

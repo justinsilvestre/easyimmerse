@@ -70,20 +70,20 @@ async function submitToCloud() {
 
 describe("BuiltInServerAccount", () => {
   describe("while no server keeps a copy of the work", () => {
-    it("tells that the desktop app keeps the work on this computer", async () => {
+    it("tells that the work is saved only on this computer", async () => {
       renderBuiltIn(null);
       expect(
         await screen.findByText(
-          "The desktop app keeps your work on this computer. Log in to the easyImmerse cloud or to your own server to keep a copy of your work there as well.",
+          "Your work is currently saved only on this computer. Log in to back it up to the easyImmerse cloud and use it on your other devices.",
         ),
       ).toBeDefined();
     });
 
-    it("tells that the mobile app keeps the work on this device", async () => {
+    it("tells that the work is saved only on this device", async () => {
       renderBuiltIn(null, { platform: "mobile" });
       expect(
         await screen.findByText(
-          "The mobile app keeps your work on this device. Log in to the easyImmerse cloud or to your own server to keep a copy of your work there as well.",
+          "Your work is currently saved only on this device. Log in to back it up to the easyImmerse cloud and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -92,7 +92,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(null, { hasCloud: false });
       expect(
         await screen.findByText(
-          "The desktop app keeps your work on this computer. Log in to your own easyImmerse server to keep a copy of your work there as well.",
+          "Your work is currently saved only on this computer. Log in to back it up to an easyImmerse server and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -121,7 +121,7 @@ describe("BuiltInServerAccount", () => {
       last_synced_at_ms: null,
     });
     expect(
-      await screen.findByText("Copying your work to cloud.example.org…"),
+      await screen.findByText("Backing up your work to the easyImmerse cloud…"),
     ).toBeDefined();
   });
 
@@ -144,7 +144,7 @@ describe("BuiltInServerAccount", () => {
     it("links to the storage the account has on the server", async () => {
       renderBuiltIn(linked);
       const link = await screen.findByRole("link", {
-        name: "Storage on cloud.example.org",
+        name: "Storage on the easyImmerse cloud",
       });
       expect(link.getAttribute("href")).toBe("#settings-storage");
     });
@@ -161,7 +161,7 @@ describe("BuiltInServerAccount", () => {
       });
       expect(
         await screen.findByText(
-          "Couldn't keep a copy of Episode 4.mp4 on cloud.example.org: there isn't enough room there.",
+          "Couldn't upload Episode 4.mp4 to the easyImmerse cloud: there isn't enough room there.",
         ),
       ).toBeDefined();
     });
@@ -178,10 +178,12 @@ describe("BuiltInServerAccount", () => {
       ).toBeDefined();
     });
 
-    it("tells that logging out keeps the work on this computer", async () => {
+    it("tells that logging out keeps the work on this computer but stops copying it", async () => {
       renderBuiltIn(linked);
       expect(
-        await screen.findByText("Your work stays on this computer."),
+        await screen.findByText(
+          "After you log out, your work stays on this computer, but new changes won't be backed up to the easyImmerse cloud.",
+        ),
       ).toBeDefined();
     });
 
@@ -189,7 +191,7 @@ describe("BuiltInServerAccount", () => {
       const { client } = renderBuiltIn(linked);
       fireEvent.click(
         await screen.findByRole("button", {
-          name: "Log out of cloud.example.org",
+          name: "Log out of the easyImmerse cloud",
         }),
       );
       await waitFor(() =>
@@ -206,11 +208,11 @@ describe("BuiltInServerAccount", () => {
       since_ms: new Date(2026, 9, 21, 9, 0).getTime(),
     });
 
-    it("tells since when and that the work is kept on this computer", async () => {
+    it("tells since when and that the work will be stored offline on this computer", async () => {
       renderBuiltIn(unreachable);
       expect(
         await screen.findByText(
-          "Couldn't reach cloud.example.org since Oct 21, 2026, 9:00 AM. Your work is kept on this computer and will be copied there when the server can be reached.",
+          "Couldn't reach the easyImmerse cloud since Oct 21, 2026, 9:00 AM. Your work will be stored offline on this computer and backed up to the easyImmerse cloud once it can be reached.",
         ),
       ).toBeDefined();
     });
@@ -229,11 +231,11 @@ describe("BuiltInServerAccount", () => {
   describe("while the server has logged this device out", () => {
     const loggedOut = linkIn({ kind: "logged_out" });
 
-    it("tells that the work is not being copied there", async () => {
+    it("tells that the work is not being backed up there", async () => {
       renderBuiltIn(loggedOut);
       expect(
         await screen.findByText(
-          "You were logged out of cloud.example.org on this computer, so your work isn't being copied there.",
+          "You were logged out of the easyImmerse cloud on this computer, so your work isn't being backed up there.",
         ),
       ).toBeDefined();
     });
@@ -249,10 +251,27 @@ describe("BuiltInServerAccount", () => {
     });
   });
 
-  it("tells why the server refused to synchronize", async () => {
+  it("leaves out the address of the easyImmerse cloud", async () => {
+    renderBuiltIn(linked);
+    await screen.findByText("Up to date");
+    expect(screen.queryByText("https://cloud.example.org")).toBeNull();
+  });
+
+  it("tells why the last round failed", async () => {
+    renderBuiltIn(
+      linkIn({ kind: "failed", code: "internal", message: "Database locked." }),
+    );
+    expect(
+      await screen.findByText(
+        "Something went wrong on the easyImmerse cloud. Trying again later may help.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("gives the failure's own message as a detail", async () => {
     renderBuiltIn(
       linkIn({ kind: "failed", code: "forbidden", message: "Not allowed." }),
     );
-    expect(await screen.findByText("Not allowed.")).toBeDefined();
+    expect(await screen.findByText("Details: Not allowed.")).toBeDefined();
   });
 });

@@ -4,12 +4,14 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
-  hostOf,
+  selectCloudUrl,
   selectIsStoredCopyFetching,
   selectIsStoredCopyUploading,
   selectIsUploadChoiceChanging,
   selectServerConfig,
+  selectServerName,
   selectWorkHome,
+  serverNameOf,
 } from "@easyimmerse/state";
 import type { SyncLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
@@ -36,6 +38,7 @@ export function MediaUploadChoice({
 }) {
   const workHome = useAppSelector(selectWorkHome);
   const server = useAppSelector(selectServerConfig);
+  const cloudUrl = useAppSelector(selectCloudUrl);
   const link = useGetSyncStatusQuery(undefined, {
     skip: workHome !== "builtInServer",
   }).data?.link;
@@ -53,7 +56,7 @@ export function MediaUploadChoice({
     <BrowserFileUpload
       mediaFileId={mediaFileId}
       copy={copy}
-      host={hostOf(server.serverUrl)}
+      host={serverNameOf(server.serverUrl, cloudUrl)}
     />
   );
 }
@@ -68,7 +71,9 @@ function RemoteCopyChoice({
   link: SyncLink;
 }) {
   const dispatch = useAppDispatch();
-  const host = hostOf(link.server_url);
+  const host = useAppSelector((state) =>
+    selectServerName(state, link.server_url),
+  );
   const isChanging = useAppSelector((state) =>
     selectIsUploadChoiceChanging(state, mediaFileId),
   );
@@ -136,7 +141,7 @@ function BrowserFileUpload({ mediaFileId, copy, host }: ChoiceProps) {
         <span className="text-xs text-fg-muted">Kept on {host}</span>
         <Button
           size="sm"
-          variant="subtle"
+          aria-label={`${isRemoving ? "Removing" : "Remove"} from ${host}`}
           aria-disabled={isRemoving || undefined}
           onClick={() => {
             if (!isRemoving)
@@ -145,7 +150,7 @@ function BrowserFileUpload({ mediaFileId, copy, host }: ChoiceProps) {
               );
           }}
         >
-          {isRemoving ? "Removing…" : `Remove from ${host}`}
+          {isRemoving ? "Removing…" : "Remove"}
         </Button>
       </ChoiceRow>
     );
@@ -178,7 +183,7 @@ function UploadButton({ mediaFileId, copy, host }: ChoiceProps) {
           id={`${mediaFileId}-upload-hint`}
           className="text-xs text-fg-muted"
         >
-          Add the file again to upload it
+          This file is no longer open in the browser. Add it again to upload it.
         </span>
       )}
     </ChoiceRow>

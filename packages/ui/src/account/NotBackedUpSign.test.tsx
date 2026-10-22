@@ -140,7 +140,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Your flashcards aren't backed up. They're stored only in this browser, so you'll lose them if its data is cleared.",
+          "Your flashcards are currently only stored in this browser. If your browser data gets cleared, you may lose all your work.",
         ),
       ).toBeDefined();
     });
@@ -176,7 +176,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Some flashcards couldn't be saved to your server yet. They're kept in this browser until they're saved, so you'll lose them if its data is cleared.",
+          "Some flashcards haven't been saved to your server yet. Until they are, they're stored only in this browser, and you may lose them if your browser data gets cleared.",
         ),
       ).toBeDefined();
     });
@@ -199,7 +199,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Your work is kept only on this computer, so you'll lose it if the computer is lost or its disk fails. Log in to your own easyImmerse server to keep a copy there.",
+          "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to an easyImmerse server to back it up there.",
         ),
       ).toBeDefined();
     });
@@ -212,7 +212,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Your work is kept only on this device, so you'll lose it if the device is lost or the app is deleted. Log in to the easyImmerse cloud or to your own server to keep a copy there.",
+          "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work. Log in to the easyImmerse cloud to back it up there.",
         ),
       ).toBeDefined();
     });
@@ -237,21 +237,21 @@ describe("NotBackedUpSign", () => {
       ).toBeNull();
     });
 
-    it("explains that the remote refused to synchronize", async () => {
+    it("explains why the work couldn't be backed up to the remote", async () => {
       renderBundled(
         linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
       await openSign();
       expect(
         screen.getByText(
-          "Your latest work is kept only on this computer, because cloud.example.org refused to synchronize. Open the account settings to see why.",
+          "Your latest work hasn't been backed up to cloud.example.org. easyImmerse couldn't read its own data on this computer.",
         ),
       ).toBeDefined();
     });
 
-    it("opens the account settings while the remote cannot be reached", async () => {
+    it("opens the account settings after a round failed", async () => {
       const { store } = renderBundled(
-        linkedIn({ kind: "unreachable", since_ms: Date.now() }),
+        linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
       await openSign();
       fireEvent.click(
@@ -268,7 +268,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "You were logged out of cloud.example.org on this computer, so your latest work is kept only here. Log in again to keep a copy there.",
+          "You were logged out of cloud.example.org on this computer, so your latest work hasn't been backed up there. Log in again to back it up.",
         ),
       ).toBeDefined();
     });

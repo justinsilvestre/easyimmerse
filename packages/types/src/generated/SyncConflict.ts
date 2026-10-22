@@ -6,6 +6,14 @@ import type { ConflictKept } from "./ConflictKept";
  */
 export type SyncConflict = { id: string, 
 /**
- * Names the row for the person, such as "a flashcard in Spanish practice".
+ * Names the row itself for the person, such as "a flashcard" or "the reading position".
  */
-description: string, kept: ConflictKept, detected_at_ms: number, };
+description: string, 
+/**
+ * The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded.
+ */
+project_name: string | null, 
+/**
+ * The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded.
+ */
+media_file_name: string | null, kept: ConflictKept, detected_at_ms: number, };

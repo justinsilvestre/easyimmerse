@@ -7,7 +7,12 @@ import { SyncStateLine } from "./SyncStateLine.tsx";
 afterEach(cleanup);
 
 const renderIn = (state: SyncLinkState) =>
-  render(<SyncStateLine link={{ ...fixtureSyncLink, state }} />);
+  render(
+    <SyncStateLine
+      link={{ ...fixtureSyncLink, state }}
+      serverName="cloud.example.org"
+    />,
+  );
 
 describe("SyncStateLine", () => {
   it("tells that the copy is up to date while idle", () => {
@@ -32,8 +37,10 @@ describe("SyncStateLine", () => {
     expect(screen.getByRole("status").textContent).toBe("Logged out");
   });
 
-  it("gives the server's reason for refusing", () => {
+  it("names the server it couldn't back up to", () => {
     renderIn({ kind: "failed", code: "forbidden", message: "Not allowed." });
-    expect(screen.getByRole("status").textContent).toBe("Not allowed.");
+    expect(screen.getByRole("status").textContent).toBe(
+      "Couldn't back up to cloud.example.org",
+    );
   });
 });

@@ -5,7 +5,7 @@ import { SyncStateLine } from "./SyncStateLine.tsx";
 const meta = {
   title: "Account/SyncStateLine",
   component: SyncStateLine,
-  args: { link: fixtureSyncLink },
+  args: { link: fixtureSyncLink, serverName: "the easyImmerse cloud" },
 } satisfies Meta<typeof SyncStateLine>;
 
 export default meta;
@@ -40,14 +40,16 @@ export const LoggedOut: Story = {
   args: { link: { ...fixtureSyncLink, state: { kind: "logged_out" } } },
 };
 
+/** A round the server answered in a way this app does not understand, as a server of another version might. */
 export const Failed: Story = {
   args: {
     link: {
       ...fixtureSyncLink,
       state: {
         kind: "failed",
-        code: "forbidden",
-        message: "This account may not keep a copy of its work on this server.",
+        code: "remote_protocol",
+        message:
+          "the remote answered /sync/pull with missing field `changes` at line 1 column 52",
       },
     },
   },

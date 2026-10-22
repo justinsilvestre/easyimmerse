@@ -1486,7 +1486,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Lists every conflict of the link, newest first, where the status lists only the most recent. */
+        get: operations["listSyncConflicts"];
         put?: never;
         post?: never;
         /** Forgets the conflicts of the link, once the person has read of them. */
@@ -2475,6 +2476,10 @@ export interface components {
         ListReviewCountsResponse: {
             projects: components["schemas"]["ReviewCounts"][];
         };
+        /** @description Every conflict of the link, newest first. */
+        ListSyncConflictsResponse: {
+            conflicts: components["schemas"]["SyncConflict"][];
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -3241,12 +3246,16 @@ export interface components {
         };
         /** @description A row that this device and another changed at once. */
         SyncConflict: {
-            /** @description Names the row for the person, such as "a flashcard in Spanish practice". */
+            /** @description Names the row itself for the person, such as "a flashcard" or "the reading position". */
             description: string;
             /** Format: int64 */
             detected_at_ms: number;
             id: string;
             kept: components["schemas"]["ConflictKept"];
+            /** @description The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded. */
+            media_file_name?: string | null;
+            /** @description The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded. */
+            project_name?: string | null;
         };
         /** @description A link to a remote, and how far syncing with it has come. */
         SyncLink: {
@@ -9034,6 +9043,53 @@ export interface operations {
             };
             /** @description The body is larger than 16 MiB */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSyncConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every conflict, newest first; none when nothing is linked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListSyncConflictsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

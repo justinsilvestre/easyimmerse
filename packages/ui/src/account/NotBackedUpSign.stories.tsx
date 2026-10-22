@@ -1,7 +1,8 @@
 import { actions, type ServerConfig } from "@easyimmerse/state";
 import type { SyncLinkState } from "@easyimmerse/types";
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { AppFooter } from "../components/AppFooter.tsx";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+import { FooterBar } from "../components/FooterBar.tsx";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
@@ -15,6 +16,7 @@ import {
   fixtureSyncLink,
   fixtureSyncStatus,
 } from "../testSupport/fixtureResponses.ts";
+import { NotBackedUpSign } from "./NotBackedUpSign.tsx";
 
 /** A backend that saves no flashcard, as one that runs offline cannot. */
 const offlineSaves = createFakeBackendClient({
@@ -81,22 +83,26 @@ const savingWord = withDispatchedActions(
   savedWord,
 );
 
-/** A screen with the app's footer at its bottom, where the sign shows. */
-function ScreenWithFooter() {
-  return (
-    <div className="flex h-screen flex-col">
-      <p className="flex-1 p-4 text-fg-muted">The screen above.</p>
-      <AppFooter />
-    </div>
-  );
-}
+/** Draws the sign in the footer bar, with room above it for the explanation it opens. */
+const inFooter: Decorator = (Story) => (
+  <div className="flex min-h-64 flex-col justify-end">
+    <FooterBar
+      isSettingsOpen={false}
+      onOpenSettings={fn()}
+      backupSign={<Story />}
+      activities={[]}
+      onOpenActivity={fn()}
+    />
+  </div>
+);
 
 const meta = {
   title: "Account/NotBackedUpSign",
-  component: ScreenWithFooter,
-  decorators: [withAppStore],
+  component: NotBackedUpSign,
+  decorators: [inFooter, withAppStore],
+  args: { isInitiallyOpen: true },
   parameters: { layout: "fullscreen" },
-} satisfies Meta<typeof ScreenWithFooter>;
+} satisfies Meta<typeof NotBackedUpSign>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -137,7 +143,7 @@ export const DeviceOnlyWithoutOfficialServer: Story = {
   },
 };
 
-export const LinkFailing: Story = {
+export const LinkUnreachable: Story = {
   parameters: {
     appStore: {
       client: linkedIn({ kind: "unreachable", since_ms: Date.now() - 600_000 }),
@@ -147,13 +153,14 @@ export const LinkFailing: Story = {
   },
 };
 
-export const LinkRefused: Story = {
+export const LinkFailed: Story = {
   parameters: {
     appStore: {
       client: linkedIn({
         kind: "failed",
-        code: "quota_exceeded",
-        message: "The account has no room left.",
+        code: "remote_protocol",
+        message:
+          "the remote answered /sync/pull with missing field `changes` at line 1 column 52",
       }),
       server: builtInServer("desktop"),
       cloudUrl: "https://cloud.example.org",

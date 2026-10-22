@@ -8,7 +8,7 @@ use serde_json::Value;
 use super::apply_pushed::{owner_of_row, parents_of, rejection_of, text_of};
 use super::changes::change_of;
 use super::codec::{delete_row, read_row, stamp, write_row};
-use super::conflict_descriptions::describe_row;
+use super::conflict_descriptions::{RowNames, describe_row};
 use super::conflicts::{NewConflict, record_conflict};
 use super::inbox::{AppliedInbox, PulledRow, keep_in_inbox};
 use super::plain_keys::unplain_key_reason;
@@ -60,7 +60,7 @@ impl<'a> Puller<'a> {
     }
 
     /// Names the row for a conflict notice, while its project is still here to name it.
-    pub fn describe(&self, conn: &Connection, row: &PulledRow) -> Result<String, StorageError> {
+    pub fn describe(&self, conn: &Connection, row: &PulledRow) -> Result<RowNames, StorageError> {
         describe_row(conn, self.owner, row.table, &row.key, row.data.as_ref())
     }
 
@@ -70,8 +70,12 @@ impl<'a> Puller<'a> {
         row: &PulledRow,
         kept: ConflictKept,
     ) -> Result<(), StorageError> {
-        let description = self.describe(conn, row)?;
-        self.record(conn, row, kept, description)
+        // When this device's change is kept, the row here names the item as it now is.
+        let names = match kept {
+            ConflictKept::ThisDevice => describe_row(conn, self.owner, row.table, &row.key, None)?,
+            _ => self.describe(conn, row)?,
+        };
+        self.record(conn, row, kept, names)
     }
 
     pub fn record(
@@ -79,13 +83,13 @@ impl<'a> Puller<'a> {
         conn: &Connection,
         row: &PulledRow,
         kept: ConflictKept,
-        description: String,
+        names: RowNames,
     ) -> Result<(), StorageError> {
         let conflict = NewConflict {
             table: row.table,
             key: row.key.clone(),
             kept,
-            description,
+            names,
             detected_at_ms: self.now_ms,
         };
         record_conflict(conn, self.remote_id, &conflict)?;
@@ -153,7 +157,7 @@ pub(crate) fn write_upsert(
     let Some(data) = &row.data else {
         return puller.settle(transaction, row);
     };
-    let description = conflict
+    let names = conflict
         .map(|_| puller.describe(transaction, row))
         .transpose()?;
     let savepoint = transaction.savepoint()?;
@@ -175,7 +179,7 @@ pub(crate) fn write_upsert(
     {
         refresh_flashcard(transaction, puller, FlashcardId(flashcard_id))?;
     }
-    finish(transaction, puller, row, conflict.zip(description))
+    finish(transaction, puller, row, conflict.zip(names))
 }
 
 /// Deletes the row a pulled tombstone names, together with whatever its foreign keys cascade to, and settles it.
@@ -186,7 +190,7 @@ pub(crate) fn apply_deletion(
     conflict: Option<ConflictKept>,
 ) -> Result<(), StorageError> {
     let spec = row.table.spec();
-    let description = conflict.map(|_| puller.describe(conn, row)).transpose()?;
+    let names = conflict.map(|_| puller.describe(conn, row)).transpose()?;
     let answered_flashcard = if row.table == SyncTable::ReviewLog {
         read_row(conn, puller.owner, spec, &row.key)?
             .and_then(|data| text_of(&data, "flashcard_id"))
@@ -198,7 +202,7 @@ pub(crate) fn apply_deletion(
     if let Some(flashcard_id) = answered_flashcard {
         refresh_flashcard(conn, puller, FlashcardId(flashcard_id))?;
     }
-    finish(conn, puller, row, conflict.zip(description))
+    finish(conn, puller, row, conflict.zip(names))
 }
 
 /// Applies a row that the remote kept over this server's change, as a push answered:
@@ -246,10 +250,10 @@ fn finish(
     conn: &Connection,
     puller: &mut Puller,
     row: &PulledRow,
-    conflict: Option<(ConflictKept, String)>,
+    conflict: Option<(ConflictKept, RowNames)>,
 ) -> Result<(), StorageError> {
-    if let Some((kept, description)) = conflict {
-        puller.record(conn, row, kept, description)?;
+    if let Some((kept, names)) = conflict {
+        puller.record(conn, row, kept, names)?;
     }
     puller.applied.applied_count += 1;
     puller.settle(conn, row)

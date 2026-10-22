@@ -1,5 +1,5 @@
 import { actions } from "@easyimmerse/state";
-import type { AccountRole, AccountUser } from "@easyimmerse/types";
+import type { AccountRole, AccountUser, SessionList } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../../storybook/withDispatchedActions.tsx";
@@ -27,6 +27,20 @@ const severalUsers = [
   user("u3", "reader@example.com", "privileged"),
 ];
 
+/** The one device the account is logged in on: this one. */
+const thisDeviceOnly: SessionList = {
+  sessions: [
+    {
+      id: "s1",
+      created_at_ms: Date.now(),
+      last_used_at_ms: Date.now(),
+      user_agent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      is_current: true,
+    },
+  ],
+};
+
 /** Answers an account creation with the account the form asked for. */
 const createdAccount = (request: { body?: { value: unknown } }) => ({
   id: "u9",
@@ -37,7 +51,7 @@ const createdAccount = (request: { body?: { value: unknown } }) => ({
 /** Never answers, so that the request stays under way. */
 const neverAnswered = () => new Promise(() => undefined);
 
-/** A server where the app is logged in as the given account, which lists the given accounts and answers the other routes as given. */
+/** A server where the app is logged in as the given account, on this device only, which lists the given accounts and answers the other routes as given. */
 const serverWith = (
   me: AccountUser,
   users: FakeResponse,
@@ -48,6 +62,7 @@ const serverWith = (
     client: createFakeBackendClient({
       ...fixtureResponses,
       "GET /auth/me": { kind: "account", user: me },
+      "GET /auth/sessions": thisDeviceOnly,
       "GET /users": users,
       "POST /users": createdAccount,
       ...responses,
