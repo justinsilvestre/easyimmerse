@@ -1,5 +1,6 @@
 import { accountFeature } from "../account/updateAccount.ts";
 import { ankiCommands } from "../anki/ankiCommands.ts";
+import { desktopServerFeature } from "../desktopServer/updateDesktopServer.ts";
 import { dictionaryImportFeature } from "../dictionaryImport/dictionaryImportFeature.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
 import { mediaImportsFeature } from "../mediaImports/mediaImportsFeature.ts";
@@ -52,6 +53,7 @@ const features = {
   mediaImports: mediaImportsFeature,
   account: accountFeature,
   pairing: pairingFeature,
+  desktopServer: desktopServerFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];

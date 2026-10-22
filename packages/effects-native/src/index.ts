@@ -6,10 +6,14 @@ import type {
   PlayerRegistry,
   ServerConfig,
 } from "@easyimmerse/state";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
+import { createDesktopServerControls } from "./desktopServerEffects.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
+import { pickExecutable } from "./pickExecutable.ts";
 import { pickPath } from "./pickPath.ts";
 import { createPlatformSaveEffects } from "./platformSaveEffects.ts";
 import { createScanPairingCode } from "./scanPairingCode.ts";
@@ -22,7 +26,8 @@ import { createWindowCloseGuard } from "./windowCloseGuard.ts";
  * Native dialogs and external links go through Tauri plugins;
  * a desktop saves files through its save dialog, and a phone lets the user keep a copy of a file written inside the app;
  * preferences are stored by the embedded server, and values kept on the device in the web view's own storage; the Settings menu item reaches the page as a Tauri event;
- * and closing the window while a flashcard has unsaved changes or is being saved asks first.
+ * closing the window while a flashcard has unsaved changes or is being saved asks first;
+ * and on a desktop, the page manages the server the app runs through the shell's commands, and picks programs such as ffmpeg in its file dialog.
  */
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -51,6 +56,10 @@ export function createNativeEffects(options: {
     ),
     subscribeToSettingsRequests,
     scanPairingCode: createScanPairingCode(options.platform),
+    ...(options.platform === "desktop" && {
+      pickExecutable,
+      ...createDesktopServerControls(invoke, listen),
+    }),
   };
 }
 

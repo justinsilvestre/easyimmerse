@@ -1,7 +1,8 @@
 //! The pairing code that lets another device on the local network obtain the launch token.
 //!
 //! At most one code is active at a time. It is single-use and expires.
-//! Failed claims are counted per peer address, so that a device cannot guess codes quickly.
+//! Failed claims are counted per peer address and across all peers,
+//! so that neither one device nor many addresses together can guess codes quickly.
 
 use std::collections::HashMap;
 use std::net::IpAddr;
@@ -9,11 +10,13 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use thiserror::Error;
 
-/// How long a pairing code stays valid: ten minutes.
+/// How long a pairing code stays valid.
 pub const PAIRING_CODE_VALIDITY_MS: u64 = 10 * 60 * 1000;
 /// How many failed claims a peer may make within the window.
 const FAILED_CLAIM_LIMIT: usize = 10;
-/// How long a failed claim counts against its peer: fifteen minutes.
+/// How many failed claims all peers together may make within the window.
+const FAILED_CLAIM_LIMIT_OF_ALL_PEERS: usize = 100;
+/// How long a failed claim counts against its peer and against all peers.
 const FAILED_CLAIM_WINDOW_MS: u64 = 15 * 60 * 1000;
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -33,24 +36,25 @@ pub struct IssuedCode {
 
 /// The active pairing code and the recent failed claims, kept in memory.
 #[derive(Debug)]
-pub struct PairingCodes {
+pub struct PairingCodeState {
     validity_ms: u64,
-    inner: Mutex<PairingState>,
+    inner: Mutex<CodeAndFailures>,
 }
 
 #[derive(Debug, Default)]
-struct PairingState {
+struct CodeAndFailures {
     active: Option<IssuedCode>,
     failed_claims: HashMap<Option<IpAddr>, Vec<u64>>,
+    failed_claims_of_all_peers: Vec<u64>,
 }
 
-impl Default for PairingCodes {
+impl Default for PairingCodeState {
     fn default() -> Self {
         Self::with_validity_ms(PAIRING_CODE_VALIDITY_MS)
     }
 }
 
-impl PairingCodes {
+impl PairingCodeState {
     /// Builds the state with codes that stay valid for `validity_ms`.
     pub fn with_validity_ms(validity_ms: u64) -> Self {
         Self {
@@ -76,12 +80,12 @@ impl PairingCodes {
     }
 
     /// A panic while the state was held leaves it consistent, so its lock is used even when poisoned.
-    fn locked(&self) -> MutexGuard<'_, PairingState> {
+    fn locked(&self) -> MutexGuard<'_, CodeAndFailures> {
         self.inner.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
 
-impl PairingState {
+impl CodeAndFailures {
     fn claim(&mut self, code: &str, peer: Option<IpAddr>, now_ms: u64) -> Result<(), PairingError> {
         self.forget_old_failures(now_ms);
         if let Some(retry_after_ms) = self.retry_after_ms(peer) {
@@ -94,6 +98,7 @@ impl PairingState {
             return Ok(());
         }
         self.failed_claims.entry(peer).or_default().push(now_ms);
+        self.failed_claims_of_all_peers.push(now_ms);
         Err(PairingError::InvalidCode)
     }
 
@@ -106,9 +111,15 @@ impl PairingState {
 
     /// When the peer may claim again, or None when it may claim now.
     fn retry_after_ms(&self, peer: Option<IpAddr>) -> Option<u64> {
-        let failures = self.failed_claims.get(&peer)?;
-        let oldest_counted = failures.len().checked_sub(FAILED_CLAIM_LIMIT)?;
-        Some(failures[oldest_counted] + FAILED_CLAIM_WINDOW_MS)
+        let of_peer = self
+            .failed_claims
+            .get(&peer)
+            .and_then(|failures| retry_after_failures_ms(failures, FAILED_CLAIM_LIMIT));
+        let of_all_peers = retry_after_failures_ms(
+            &self.failed_claims_of_all_peers,
+            FAILED_CLAIM_LIMIT_OF_ALL_PEERS,
+        );
+        of_peer.max(of_all_peers)
     }
 
     fn forget_old_failures(&mut self, now_ms: u64) {
@@ -116,7 +127,15 @@ impl PairingState {
             failures.retain(|&at_ms| now_ms < at_ms.saturating_add(FAILED_CLAIM_WINDOW_MS));
             !failures.is_empty()
         });
+        self.failed_claims_of_all_peers
+            .retain(|&at_ms| now_ms < at_ms.saturating_add(FAILED_CLAIM_WINDOW_MS));
     }
+}
+
+/// When enough of the failures, oldest first, have left the window to bring them under `limit`.
+fn retry_after_failures_ms(failures: &[u64], limit: usize) -> Option<u64> {
+    let oldest_counted = failures.len().checked_sub(limit)?;
+    Some(failures[oldest_counted] + FAILED_CLAIM_WINDOW_MS)
 }
 
 /// Six random decimal digits.
@@ -144,13 +163,17 @@ mod tests {
         Some(IpAddr::from([192, 0, 2, last]))
     }
 
-    fn codes_with_active_code() -> PairingCodes {
-        let codes = PairingCodes::default();
+    fn peer_among_many(number: u16) -> Option<IpAddr> {
+        Some(IpAddr::from([0x2001, 0xdb8, 0, 0, 0, 0, 0, number]))
+    }
+
+    fn codes_with_active_code() -> PairingCodeState {
+        let codes = PairingCodeState::default();
         codes.issue(CODE.to_string(), 1_000);
         codes
     }
 
-    fn codes_after_failed_claims(count: usize) -> PairingCodes {
+    fn codes_after_failed_claims(count: usize) -> PairingCodeState {
         let codes = codes_with_active_code();
         for _ in 0..count {
             let _ = codes.claim("000000", peer(1), 2_000);
@@ -158,9 +181,17 @@ mod tests {
         codes
     }
 
+    fn codes_after_one_failed_claim_from_each_of(peer_count: u16) -> PairingCodeState {
+        let codes = codes_with_active_code();
+        for number in 0..peer_count {
+            let _ = codes.claim("000000", peer_among_many(number), 2_000);
+        }
+        codes
+    }
+
     #[test]
     fn a_code_expires_ten_minutes_after_it_is_issued() {
-        let codes = PairingCodes::default();
+        let codes = PairingCodeState::default();
         let issued = codes.issue(CODE.to_string(), 1_000);
         assert_eq!(issued.expires_at_ms, 1_000 + PAIRING_CODE_VALIDITY_MS);
     }
@@ -212,7 +243,7 @@ mod tests {
 
     #[test]
     fn refuses_any_code_when_none_was_issued() {
-        let codes = PairingCodes::default();
+        let codes = PairingCodeState::default();
         assert_eq!(
             codes.claim(CODE, peer(1), 1_000),
             Err(PairingError::InvalidCode)
@@ -251,8 +282,38 @@ mod tests {
     }
 
     #[test]
-    fn generates_six_digits() {
+    fn lets_a_new_peer_try_after_ninety_nine_failures_across_peers() {
+        let codes = codes_after_one_failed_claim_from_each_of(99);
+        assert_eq!(codes.claim(CODE, peer(1), 3_000), Ok(()));
+    }
+
+    #[test]
+    fn refuses_every_peer_after_a_hundred_failures_across_peers() {
+        let codes = codes_after_one_failed_claim_from_each_of(100);
+        assert_eq!(
+            codes.claim(CODE, peer(1), 3_000),
+            Err(PairingError::TooManyAttempts {
+                retry_after_secs: 899
+            })
+        );
+    }
+
+    #[test]
+    fn lets_every_peer_try_again_once_the_failures_across_peers_leave_the_window() {
+        let codes = codes_after_one_failed_claim_from_each_of(100);
+        let later = 2_000 + FAILED_CLAIM_WINDOW_MS;
+        codes.issue(CODE.to_string(), later);
+        assert_eq!(codes.claim(CODE, peer(1), later), Ok(()));
+    }
+
+    #[test]
+    fn generates_six_characters() {
+        assert_eq!(generate_pairing_code().len(), 6);
+    }
+
+    #[test]
+    fn generates_only_digits() {
         let code = generate_pairing_code();
-        assert!(code.len() == 6 && code.bytes().all(|byte| byte.is_ascii_digit()));
+        assert!(code.bytes().all(|byte| byte.is_ascii_digit()), "{code}");
     }
 }

@@ -88,6 +88,27 @@ describe("navigate", () => {
     });
   });
 
+  it("opens the general settings at the media conversion section", () => {
+    expect(navigate(project, { type: "openMediaConversionSettings" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general"],
+      scrollTarget: "mediaConversion",
+    });
+  });
+
+  it("leaves the dictionaries for the media conversion settings", () => {
+    const dictionaries = navigate(project, { type: "openDictionaries" });
+    expect(
+      navigate(dictionaries, { type: "openMediaConversionSettings" }),
+    ).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general"],
+      scrollTarget: "mediaConversion",
+    });
+  });
+
   it("keeps the general settings as they are for the account settings", () => {
     const settings = navigate(project, { type: "openSettings" });
     expect(navigate(settings, { type: "openAccountSettings" })).toBe(settings);

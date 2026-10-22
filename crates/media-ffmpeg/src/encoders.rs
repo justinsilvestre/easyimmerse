@@ -20,8 +20,8 @@ pub const H264_HARDWARE_ENCODERS: [&str; 6] = [
     "h264_vaapi",
 ];
 
-/// Software H.264 encoders, tried after every hardware encoder. The bundled ffmpeg builds have
-/// neither, but a build the person chooses may.
+/// Software H.264 encoders.
+/// They are tried after every hardware encoder because they are slower.
 pub const H264_SOFTWARE_ENCODERS: [&str; 2] = ["libx264", "libopenh264"];
 
 /// A one-frame encode takes well under a second. A driver that hangs would otherwise stall

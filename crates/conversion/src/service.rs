@@ -46,10 +46,10 @@ pub(crate) struct ServiceInner {
 }
 
 impl ConversionService {
-    /// Prepares the cache directory and reads the ffmpeg version. Fails when ffmpeg or ffprobe
-    /// cannot be found or ffmpeg does not run, in which case the server runs without a
-    /// conversion service. Call `start_encoder_discovery` and
-    /// `start_cache_cleanup` afterwards from within the async runtime.
+    /// Prepares the cache directory and reads the ffmpeg version.
+    /// Fails when ffmpeg or ffprobe cannot be found or ffmpeg does not run,
+    /// in which case the server runs without a conversion service.
+    /// Call `start_encoder_discovery` and `start_cache_cleanup` afterwards from within the async runtime.
     pub fn open(cache_dir: PathBuf, paths: FfmpegPaths) -> Result<Self, ConversionError> {
         let ffmpeg = locate_binary(BinaryName::Ffmpeg, &paths)?;
         locate_binary(BinaryName::Ffprobe, &paths)?;
@@ -109,8 +109,10 @@ impl ConversionService {
         self.inner.encoders.status()
     }
 
-    /// The settings the playback method choice uses: the preferred audio target, else AAC, the
-    /// discovered video encoder when there is one, and the video quality, else balanced.
+    /// The settings the playback method choice uses:
+    /// the preferred audio target, else AAC,
+    /// the discovered video encoder when there is one,
+    /// and the video quality, else balanced.
     pub async fn settings(
         &self,
         preferred_audio_target: Option<AudioTarget>,

@@ -1,5 +1,5 @@
-//! The TOML file that holds a server's settings, so that they need not be repeated on the
-//! command line. Every key is optional; a flag or an environment variable overrides it.
+//! The TOML file that holds a server's settings, so that they need not be repeated on the command line.
+//! Every key is optional; a flag or an environment variable overrides it.
 
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
@@ -21,8 +21,9 @@ pub enum ConfigFileError {
     },
 }
 
-/// The contents of a config file. The paths are relative to the file's directory until
-/// [`ServerFileConfig::resolved_against`] makes them absolute or relative to the working directory.
+/// The contents of a config file.
+/// The paths are relative to the file's directory
+/// until [`ServerFileConfig::resolved_against`] makes them absolute or relative to the working directory.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ServerFileConfig {
@@ -65,8 +66,8 @@ impl ServerFileConfig {
         Self::parse(&text, path)
     }
 
-    /// Reads the file at `path` like [`ServerFileConfig::load`], or returns an empty config
-    /// when there is no such file.
+    /// Reads the file at `path` like [`ServerFileConfig::load`],
+    /// or returns an empty config when there is no such file.
     pub fn load_or_default(path: &Path) -> Result<Self, ConfigFileError> {
         if path.exists() {
             Self::load(path)
@@ -100,8 +101,8 @@ impl ServerFileConfig {
         }
     }
 
-    /// Fills each key this config leaves out from `defaults`, such as the desktop app's own
-    /// locations for the database and the directories.
+    /// Fills each key this config leaves out from `defaults`,
+    /// such as the desktop app's own locations for the database and the directories.
     pub fn with_defaults(self, defaults: Self) -> Self {
         Self {
             bind: self.bind.or(defaults.bind),
@@ -122,7 +123,7 @@ impl ServerFileConfig {
     }
 
     /// Whether the desktop app starts its server for other devices when it starts. False by default.
-    pub fn autostarts(&self) -> bool {
+    pub fn should_autostart(&self) -> bool {
         self.desktop
             .as_ref()
             .and_then(|desktop| desktop.autostart)
@@ -194,12 +195,12 @@ mod tests {
     #[test]
     fn reads_autostart_from_the_desktop_table() {
         let config = parse("[desktop]\nautostart = true").unwrap();
-        assert!(config.autostarts());
+        assert!(config.should_autostart());
     }
 
     #[test]
     fn does_not_autostart_by_default() {
-        assert!(!parse("").unwrap().autostarts());
+        assert!(!parse("").unwrap().should_autostart());
     }
 
     #[test]

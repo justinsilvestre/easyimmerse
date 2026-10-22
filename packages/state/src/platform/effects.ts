@@ -1,8 +1,11 @@
 import type {
   Definition,
+  DesktopServerSettings,
+  DesktopServerStatus,
   MediaFileSource,
   PairingGrant,
   ServerAuthInfo,
+  ServerLogEntry,
   SessionCreated,
   TextSource,
 } from "@easyimmerse/types";
@@ -129,4 +132,30 @@ export interface Effects {
    * or with null when the platform has no scanner or the person cancelled. Never rejects.
    */
   scanPairingCode(): Promise<string | null>;
+  /**
+   * Opens the platform's file dialog for a program and resolves with its path, or with null when the person cancelled
+   * or the platform has no such dialog.
+   */
+  pickExecutable(): Promise<string | null>;
+  /**
+   * The desktop app's server controls. Each rejects with the reason as an error's message when the controls refuse,
+   * and in an app without them.
+   */
+  readDesktopServerSettings(): Promise<DesktopServerSettings>;
+  /** Saves the settings, restarting the server when a change needs it, and resolves with its status afterwards. */
+  saveDesktopServerSettings(
+    settings: DesktopServerSettings,
+  ): Promise<DesktopServerStatus>;
+  startDesktopServer(): Promise<DesktopServerStatus>;
+  stopDesktopServer(): Promise<DesktopServerStatus>;
+  readDesktopServerStatus(): Promise<DesktopServerStatus>;
+  /** Reads the server's recent log records, oldest first. */
+  readDesktopServerLogs(): Promise<readonly ServerLogEntry[]>;
+  /**
+   * Calls the listener with the server's status whenever it changes. An app without server controls never calls it.
+   * Returns a function that stops the calls.
+   */
+  subscribeToDesktopServerStatus(
+    listener: (status: DesktopServerStatus) => void,
+  ): () => void;
 }

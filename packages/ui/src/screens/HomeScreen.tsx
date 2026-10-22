@@ -2,11 +2,15 @@ import {
   useListProjectsQuery,
   useListReviewCountsQuery,
 } from "@easyimmerse/backend";
+import { ConnectedEncoderNotice } from "../conversion/ConnectedEncoderNotice.tsx";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 import { isOfflineError } from "./isOfflineError.ts";
 
-/** The home screen with the projects the server lists, most recently opened first. */
+/**
+ * The home screen with the projects the server lists, most recently opened first.
+ * On the desktop app, it tells the person once when no video encoder works.
+ */
 export function HomeScreen({
   onOpenProject,
   onReviewProject,
@@ -26,16 +30,19 @@ export function HomeScreen({
     refetchOnMountOrArgChange: true,
   }).data?.projects;
   return (
-    <HomeView
-      status={statusOf(isLoading, error)}
-      projects={data?.projects ?? []}
-      reviewCounts={reviewCounts ?? []}
-      onOpenProject={onOpenProject}
-      onReviewProject={onReviewProject}
-      onCreateProject={onCreateProject}
-      onContinueOffline={onContinueOffline}
-      onOpenDictionaries={openDictionaries}
-    />
+    <>
+      <HomeView
+        status={statusOf(isLoading, error)}
+        projects={data?.projects ?? []}
+        reviewCounts={reviewCounts ?? []}
+        onOpenProject={onOpenProject}
+        onReviewProject={onReviewProject}
+        onCreateProject={onCreateProject}
+        onContinueOffline={onContinueOffline}
+        onOpenDictionaries={openDictionaries}
+      />
+      <ConnectedEncoderNotice />
+    </>
   );
 }
 

@@ -12,11 +12,19 @@ export type PlayerStatus =
       frameRate: Rational | null;
       hasVideo: boolean;
     }
-  | { status: "error"; cause: string };
+  | {
+      status: "error";
+      cause: string;
+      /** Set when the video needs converting and no video encoder works, which another ffmpeg build can change. */
+      needsVideoEncoder?: true;
+    };
 
 export const loadingPlayback: PlayerStatus = { status: "loading" };
 
-export const failedPlayback = (cause: string): PlayerStatus => ({
-  status: "error",
-  cause,
-});
+export const failedPlayback = (
+  cause: string,
+  needsVideoEncoder = false,
+): PlayerStatus =>
+  needsVideoEncoder
+    ? { status: "error", cause, needsVideoEncoder }
+    : { status: "error", cause };

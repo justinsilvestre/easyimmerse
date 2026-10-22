@@ -47,9 +47,10 @@ fn can_copy_audio(track: &TrackInfo, environment: &PlaybackEnvironment) -> bool 
         .is_some_and(|codec_string| environment.accepts_in_mse(codec_string))
 }
 
-/// Copies video the client decodes from fragmented MP4, and otherwise transcodes it to H.264
-/// when the server has an encoder and the client plays the result. Without an encoder the
-/// reason is `NoVideoEncoder`; when the client cannot play H.264 it is `VideoCodecUnsupported`.
+/// Copies video the client decodes from fragmented MP4,
+/// and otherwise transcodes it to H.264 when the client plays H.264 and the server has an encoder.
+/// When the client cannot play H.264 the reason is `VideoCodecUnsupported`;
+/// when it can but the server has no encoder, the reason is `NoVideoEncoder`.
 pub(crate) fn choose_video_action(
     track: &TrackInfo,
     container: &ContainerInfo,
@@ -59,13 +60,13 @@ pub(crate) fn choose_video_action(
     if can_copy_video(track, environment) {
         return Ok(VideoAction::Copy { index: track.index });
     }
+    if !environment.accepts_in_mse(VideoTarget::CODEC_STRING) {
+        return Err(UnsupportedReason::VideoCodecUnsupported);
+    }
     let target = settings
         .video_target
         .as_ref()
         .ok_or(UnsupportedReason::NoVideoEncoder)?;
-    if !environment.accepts_in_mse(VideoTarget::CODEC_STRING) {
-        return Err(UnsupportedReason::VideoCodecUnsupported);
-    }
     let source_size = picture_size(track);
     let scale_to = source_size
         .map(fit_picture)
@@ -327,6 +328,17 @@ mod tests {
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &[]),
             &settings(AudioTarget::Aac, Some("h264_videotoolbox")),
+        );
+        assert_eq!(action, Err(UnsupportedReason::VideoCodecUnsupported));
+    }
+
+    #[test]
+    fn refuses_video_the_client_cannot_play_even_as_h264_when_there_is_no_encoder() {
+        let action = choose_video_action(
+            &video_track(None),
+            &empty_container(),
+            &environment(PlaybackEngine::Chromium, &[]),
+            &settings(AudioTarget::Aac, None),
         );
         assert_eq!(action, Err(UnsupportedReason::VideoCodecUnsupported));
     }

@@ -1846,7 +1846,7 @@
             }
           },
           "429": {
-            "description": "`too_many_attempts`: ten failed claims from this peer within fifteen minutes",
+            "description": "`too_many_attempts`: too many failed claims recently, from this peer or from all peers",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -1873,7 +1873,7 @@
         "tags": [
           "pairing"
         ],
-        "summary": "Issues a pairing code valid for ten minutes, replacing any earlier one.\nOnly the launch token may do so, and only on a server without accounts.",
+        "summary": "Issues a pairing code, replacing any earlier one.\nOnly the launch token may do so, and only on a server without accounts.",
         "operationId": "issuePairingCode",
         "responses": {
           "200": {
@@ -8481,12 +8481,12 @@
         "required": [
           "path",
           "version",
-          "custom"
+          "is_custom"
         ],
         "properties": {
-          "custom": {
+          "is_custom": {
             "type": "boolean",
-            "description": "True when the build is not the bundled sidecar."
+            "description": "True when the server was given an ffmpeg directory, and false when it searched the usual places."
           },
           "path": {
             "type": "string",

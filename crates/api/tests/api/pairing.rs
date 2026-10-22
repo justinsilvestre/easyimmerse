@@ -3,7 +3,7 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use easyimmerse_api::pairing_codes::PairingCodes;
+use easyimmerse_api::pairing_codes::PairingCodeState;
 use easyimmerse_api::{ApiConfig, AppState, build_router};
 use serde_json::json;
 use tokio::net::TcpListener;
@@ -43,7 +43,7 @@ async fn spawn_server_with_expiring_codes() -> String {
     let port = listener.local_addr().expect("a bound address").port();
     let config = ApiConfig::for_loopback(port, TOKEN.to_string(), false);
     let mut state = AppState::new(seeded_storage(), config, None, None);
-    state.pairing_codes = Arc::new(PairingCodes::with_validity_ms(0));
+    state.pairing_code = Arc::new(PairingCodeState::with_validity_ms(0));
     let (router, _) = build_router(state);
     let service = router.into_make_service_with_connect_info::<SocketAddr>();
     tokio::spawn(axum::serve(listener, service).into_future());

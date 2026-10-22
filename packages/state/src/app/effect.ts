@@ -1,4 +1,5 @@
 import type { AccountEffect } from "../account/accountEffect.ts";
+import type { DesktopServerEffect } from "../desktopServer/desktopServerEffect.ts";
 import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
 import type { FailedRequestsEffect } from "../operations/failedRequests.ts";
 import type { FreeIdRequestEffect } from "../operations/freeIdRequests.ts";
@@ -28,7 +29,8 @@ export type Effect =
   | FailedRequestsEffect
   | FreeIdRequestEffect
   | AccountEffect
-  | PairingEffect;
+  | PairingEffect
+  | DesktopServerEffect;
 
 /** An effect that the middleware performs: every effect except those the root update translates into others. */
 export type PerformedEffect = Exclude<

@@ -465,7 +465,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Issues a pairing code valid for ten minutes, replacing any earlier one.
+         * Issues a pairing code, replacing any earlier one.
          *     Only the launch token may do so, and only on a server without accounts.
          */
         post: operations["issuePairingCode"];
@@ -1879,8 +1879,8 @@ export interface components {
             tracks: components["schemas"]["TrackInfo"][];
         };
         FfmpegBuild: {
-            /** @description True when the build is not the bundled sidecar. */
-            custom: boolean;
+            /** @description True when the server was given an ffmpeg directory, and false when it searched the usual places. */
+            is_custom: boolean;
             /** @description The path of the ffmpeg executable. */
             path: string;
             /** @description The version that `ffmpeg -version` reports, such as `8.1.2`. */
@@ -4522,7 +4522,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `too_many_attempts`: ten failed claims from this peer within fifteen minutes */
+            /** @description `too_many_attempts`: too many failed claims recently, from this peer or from all peers */
             429: {
                 headers: {
                     /** @description The seconds to wait before trying again */

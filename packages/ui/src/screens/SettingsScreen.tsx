@@ -1,3 +1,7 @@
+import {
+  selectBundledServerPlatform,
+  selectSettingsScrollTarget,
+} from "@easyimmerse/state";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { AccountSection } from "../account/AccountSection.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
@@ -6,9 +10,13 @@ import {
   type LicenseNoticesState,
   LicensesPage,
 } from "../components/LicensesPage.tsx";
-import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import type { FfmpegBuildControls } from "../conversion/FfmpegBuildBlock.tsx";
+import { MediaConversionSection } from "../conversion/MediaConversionSection.tsx";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { SubtitleAppearanceSection } from "../media/SubtitleAppearanceSection.tsx";
+import { accountSectionId } from "../server/ServerAccountsInfo.tsx";
+import { ServerSection } from "../server/ServerSection.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
@@ -21,18 +29,26 @@ export function SettingsScreen({
   onBack,
   onOpenDictionaries,
   conversionCache = unavailableConversionCache,
+  ffmpegBuild = null,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
   /** Closes Settings to the screen beneath, whichever it is, so its button says only Back. */
   onBack: () => void;
   onOpenDictionaries: () => void;
   conversionCache?: ConversionCacheControls;
+  /** The desktop app's ffmpeg build, or null where the app has none to choose. */
+  ffmpegBuild?: FfmpegBuildControls | null;
   licenseNotices?: LicenseNoticesState;
 }) {
+  const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
+  const scrollTarget = useAppSelector(selectSettingsScrollTarget);
   return (
     <ScreenLayout onBack={onBack}>
       <h1 className="text-xl font-semibold">Settings</h1>
-      <AccountSection />
+      <div id={accountSectionId} className="scroll-mt-4">
+        <AccountSection />
+      </div>
+      {isDesktop && <ServerSection />}
       <button
         type="button"
         onClick={onOpenDictionaries}
@@ -48,19 +64,10 @@ export function SettingsScreen({
         <ChevronRight className="size-4 text-fg-muted" aria-hidden />
       </button>
       <SubtitleAppearanceSection />
-      <section
-        aria-labelledby="settings-conversion"
-        className="flex flex-col gap-3"
-      >
-        <h2 id="settings-conversion" className="text-base font-semibold">
-          Conversion
-        </h2>
-        <PreferenceToggle
-          preferenceKey="losslessAudio"
-          label="Keep audio lossless when converting"
-          hint="Converted audio keeps its full quality but takes more disk space."
-        />
-      </section>
+      <MediaConversionSection
+        ffmpegBuild={ffmpegBuild}
+        isScrollTarget={scrollTarget === "mediaConversion"}
+      />
       <ConversionCacheSection {...conversionCache} />
       <LicensesPage notices={licenseNotices} />
     </ScreenLayout>

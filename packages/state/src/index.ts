@@ -66,6 +66,22 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export { readBindAddress } from "./desktopServer/bindAddress.ts";
+export {
+  type DesktopPairingServer,
+  type DesktopServerLogsView,
+  type DesktopServerSettingsFormView,
+  type DesktopServerStatusView,
+  type FfmpegBuildChoiceView,
+  selectDesktopPairingServer,
+  selectDesktopServerLogs,
+  selectDesktopServerSettingsForm,
+  selectDesktopServerStatus,
+  selectDoesDesktopServerUseAccounts,
+  selectFfmpegBuildChoice,
+  selectIsDesktopServerUnauthenticatedOnLan,
+} from "./desktopServer/desktopServerSelectors.ts";
+export type { DesktopServerSettingsFields } from "./desktopServer/desktopServerState.ts";
 export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
@@ -179,12 +195,14 @@ export type {
   MainRoute,
   NavigationStep,
   SettingsPage,
+  SettingsSection,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";
 export {
   selectCurrentMediaFileId,
   selectIsSettingsOpen,
   selectRoute,
+  selectSettingsScrollTarget,
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";

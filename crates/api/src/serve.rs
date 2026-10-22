@@ -30,13 +30,15 @@ pub enum ServeError {
     NoAuthentication,
 }
 
-/// A running server. Dropping the handle leaves the server running until the runtime
-/// shuts down; call `shutdown` to stop it gracefully.
+/// A running server.
+/// Dropping the handle leaves the server running until the runtime shuts down;
+/// call `shutdown` to stop it gracefully.
 pub struct ServerHandle {
     pub addr: SocketAddr,
     router: Router,
-    /// Tells every listener of the server to stop. Each listener's task holds a receiver
-    /// until it has finished, so the sender's `closed` waits for all of them.
+    /// Tells every listener of the server to stop.
+    /// Each listener's task holds a receiver until it has finished,
+    /// so the sender's `closed` waits for all of them.
     stop: watch::Sender<bool>,
     task: JoinHandle<std::io::Result<()>>,
     conversion: Option<ConversionService>,
@@ -66,8 +68,8 @@ impl ServerHandle {
         })
     }
 
-    /// Stops the conversions, stops accepting connections on every listener, waits for
-    /// in-flight requests, and returns.
+    /// Stops the conversions, stops accepting connections on every listener,
+    /// waits for in-flight requests, and returns.
     pub async fn shutdown(self) -> Result<(), ServeError> {
         if let Some(conversion) = &self.conversion {
             conversion.shutdown().await;
@@ -80,8 +82,8 @@ impl ServerHandle {
     }
 }
 
-/// A listener added with [`ServerHandle::serve_also`]. Dropping the handle stops the listener
-/// as `shutdown` does, without waiting for it.
+/// A listener added with [`ServerHandle::serve_also`].
+/// Dropping the handle stops the listener as `shutdown` does, without waiting for it.
 pub struct ListenerHandle {
     pub addr: SocketAddr,
     shutdown: oneshot::Sender<()>,
@@ -89,8 +91,8 @@ pub struct ListenerHandle {
 }
 
 impl ListenerHandle {
-    /// Stops accepting connections on this listener only, waits for its in-flight requests,
-    /// and returns. The server's other listeners keep running.
+    /// Stops accepting connections on this listener only, waits for its in-flight requests, and returns.
+    /// The server's other listeners keep running.
     pub async fn shutdown(self) -> Result<(), ServeError> {
         // The receiver is gone only if the listener already stopped, which is fine.
         let _ = self.shutdown.send(());
@@ -118,7 +120,7 @@ pub struct ServeOptions {
 /// Serves the API on an already bound listener, so that the caller knows the port.
 pub async fn serve(
     listener: TcpListener,
-    mut config: ApiConfig,
+    config: ApiConfig,
     storage: Storage,
     options: ServeOptions,
 ) -> Result<ServerHandle, ServeError> {
@@ -126,6 +128,49 @@ pub async fn serve(
         return Err(ServeError::NoAuthentication);
     }
     let addr = listener.local_addr()?;
+    let state = build_app_state(config, storage, options)?;
+    let conversion = state.conversion.clone();
+    let (router, _) = build_router(state);
+    let (stop, stop_requested) = watch::channel(false);
+    let stop_signal = {
+        let mut stop_requested = stop_requested.clone();
+        async move {
+            let _ = stop_requested.wait_for(|stop| *stop).await;
+        }
+    };
+    let task = spawn_listener(listener, router.clone(), stop_requested, stop_signal);
+    Ok(ServerHandle {
+        addr,
+        router,
+        stop,
+        task,
+        conversion,
+    })
+}
+
+/// Serves `router` on `listener` until `stop_signal` completes.
+/// The task keeps `guard` until the in-flight requests have finished,
+/// so that the server knows when every listener is done.
+fn spawn_listener(
+    listener: TcpListener,
+    router: Router,
+    guard: watch::Receiver<bool>,
+    stop_signal: impl Future<Output = ()> + Send + 'static,
+) -> JoinHandle<std::io::Result<()>> {
+    let service = router.into_make_service_with_connect_info::<SocketAddr>();
+    let server = axum::serve(listener, service).with_graceful_shutdown(stop_signal);
+    tokio::spawn(async move {
+        let _guard = guard;
+        server.await
+    })
+}
+
+/// Opens the services that `options` ask for and gathers them with the storage and the config.
+fn build_app_state(
+    mut config: ApiConfig,
+    storage: Storage,
+    options: ServeOptions,
+) -> std::io::Result<AppState> {
     let ffmpeg_paths = options
         .ffmpeg_dir
         .as_deref()
@@ -152,42 +197,10 @@ pub async fn serve(
         .map(PluginRegistry::scan)
         .unwrap_or_default();
     let probes = open_probe_cache(ffmpeg_paths.clone());
-    let state = AppState::new(storage, config, probes, conversion.clone())
+    Ok(AppState::new(storage, config, probes, conversion)
         .with_plugins(plugins, media_dir)
         .with_ffmpeg_paths(ffmpeg_paths)
-        .with_web_app_dir(existing_web_app_dir(options.web_app_dir));
-    let (router, _) = build_router(state);
-    let (stop, stop_requested) = watch::channel(false);
-    let stop_signal = {
-        let mut stop_requested = stop_requested.clone();
-        async move {
-            let _ = stop_requested.wait_for(|stop| *stop).await;
-        }
-    };
-    let task = spawn_listener(listener, router.clone(), stop_requested, stop_signal);
-    Ok(ServerHandle {
-        addr,
-        router,
-        stop,
-        task,
-        conversion,
-    })
-}
-
-/// Serves `router` on `listener` until `stop_signal` completes. The task keeps `guard` until
-/// the in-flight requests have finished, so that the server knows when every listener is done.
-fn spawn_listener(
-    listener: TcpListener,
-    router: Router,
-    guard: watch::Receiver<bool>,
-    stop_signal: impl Future<Output = ()> + Send + 'static,
-) -> JoinHandle<std::io::Result<()>> {
-    let service = router.into_make_service_with_connect_info::<SocketAddr>();
-    let server = axum::serve(listener, service).with_graceful_shutdown(stop_signal);
-    tokio::spawn(async move {
-        let _guard = guard;
-        server.await
-    })
+        .with_web_app_dir(existing_web_app_dir(options.web_app_dir)))
 }
 
 fn existing_web_app_dir(web_app_dir: Option<PathBuf>) -> Option<PathBuf> {
@@ -204,16 +217,16 @@ fn existing_web_app_dir(web_app_dir: Option<PathBuf>) -> Option<PathBuf> {
     }
 }
 
-/// Creates the directory if needed and returns its absolute path, so that plugin grants
-/// do not depend on the server's working directory. On Windows the path keeps its ordinary
-/// form rather than the `\\?\` form, in which a plugin's `/` separators would not count.
+/// Creates the directory if needed and returns its absolute path,
+/// so that plugin grants do not depend on the server's working directory.
+/// On Windows the path keeps its ordinary form rather than the `\\?\` form,
+/// in which a plugin's `/` separators would not count.
 fn create_absolute_dir(dir: &Path) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
     dunce::canonicalize(dir)
 }
 
-/// Binaries that `paths` does not name are looked up through `EASYIMMERSE_FFMPEG_DIR`,
-/// next to the executable, and on `PATH`.
+/// Binaries that `paths` does not name are looked up through `EASYIMMERSE_FFMPEG_DIR`, next to the executable, and on `PATH`.
 fn open_probe_cache(paths: FfmpegPaths) -> Option<ProbeCache> {
     match locate_binary(BinaryName::Ffprobe, &paths) {
         Ok(_) => Some(ProbeCache::new(paths)),
@@ -234,8 +247,8 @@ fn open_conversion_service(cache_dir: PathBuf, paths: FfmpegPaths) -> Option<Con
     }
 }
 
-/// Encoder discovery and cache cleanup run in the background, so that they never delay the
-/// first request.
+/// Encoder discovery and cache cleanup run in the background,
+/// so that they never delay the first request.
 fn start_background_work(conversion: &ConversionService, storage: &Storage) {
     restore_cache_budget(conversion, storage);
     conversion.start_encoder_discovery();

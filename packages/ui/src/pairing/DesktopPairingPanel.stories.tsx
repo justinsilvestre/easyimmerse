@@ -32,7 +32,9 @@ type Story = StoryObj<typeof meta>;
 
 export const ServerStopped: Story = { args: { server: { kind: "stopped" } } };
 
-/** The server runs, but listens only on a loopback address, where no other device reaches it. */
+export const ServerStarting: Story = { args: { server: { kind: "starting" } } };
+
+/** The server runs, but listens only on a loopback address, where no other device reaches it; starting it on the local network rebinds it. */
 export const LoopbackOnly: Story = {
   args: { server: { kind: "loopbackOnly" } },
 };

@@ -86,4 +86,46 @@ describe("SettingsScreen", () => {
       ),
     ).toBeDefined();
   });
+
+  it("shows the lossless audio toggle in a Media conversion section", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(
+      within(
+        screen.getByRole("region", { name: "Media conversion" }),
+      ).getByRole("checkbox", { name: "Keep audio lossless when converting" }),
+    ).toBeDefined();
+  });
+
+  it("shows the server settings on the desktop app", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+      undefined,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:5000",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    expect(screen.getByRole("region", { name: "Server" })).toBeDefined();
+  });
+
+  it("shows no server settings elsewhere", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole("region", { name: "Server" })).toBeNull();
+  });
 });

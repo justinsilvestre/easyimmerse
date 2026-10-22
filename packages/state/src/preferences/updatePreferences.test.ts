@@ -68,6 +68,7 @@ describe("updatePreferences", () => {
           "videoQuality",
           "showReviewIntervals",
           "conversionNoticeDismissed",
+          "encoderNoticeDismissed",
           "readerPreferences",
           "subtitleAppearance",
           "theme",

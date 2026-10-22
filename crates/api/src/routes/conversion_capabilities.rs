@@ -3,15 +3,13 @@
 use axum::Json;
 use axum::extract::State;
 use easyimmerse_conversion::ConversionService;
+use easyimmerse_media_ffmpeg::FfmpegPaths;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::ApiError;
 use crate::state::AppState;
-
-/// The file names of the bundled ffmpeg sidecars start with this.
-const BUNDLED_SIDECAR_PREFIX: &str = "easyimmerse-";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
@@ -31,8 +29,8 @@ pub struct FfmpegBuild {
     pub path: String,
     /// The version that `ffmpeg -version` reports, such as `8.1.2`.
     pub version: String,
-    /// True when the build is not the bundled sidecar.
-    pub custom: bool,
+    /// True when the server was given an ffmpeg directory, and false when it searched the usual places.
+    pub is_custom: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -64,7 +62,9 @@ pub async fn get_conversion_capabilities(
         state
             .conversion
             .as_ref()
-            .map_or_else(no_conversion, capabilities_of),
+            .map_or_else(no_conversion, |service| {
+                capabilities_of(service, is_custom_build(&state.ffmpeg_paths))
+            }),
     )
 }
 
@@ -76,22 +76,42 @@ fn no_conversion() -> ConversionCapabilities {
     }
 }
 
-fn capabilities_of(service: &ConversionService) -> ConversionCapabilities {
+fn capabilities_of(service: &ConversionService, is_custom: bool) -> ConversionCapabilities {
     let discovery = service.encoder_discovery();
-    let path = service.ffmpeg_path();
-    let bundled = path
-        .file_name()
-        .is_some_and(|name| name.to_string_lossy().starts_with(BUNDLED_SIDECAR_PREFIX));
     ConversionCapabilities {
         ffmpeg: Some(FfmpegBuild {
-            path: path.to_string_lossy().into_owned(),
+            path: service.ffmpeg_path().to_string_lossy().into_owned(),
             version: service.ffmpeg_version().to_owned(),
-            custom: !bundled,
+            is_custom,
         }),
         encoder_discovery_finished: discovery.finished,
         video_encoder: discovery.encoder.map(|encoder| VideoEncoder {
             name: encoder.name,
             software: encoder.software,
         }),
+    }
+}
+
+/// The server names the ffmpeg binary only when it was given an ffmpeg directory.
+fn is_custom_build(paths: &FfmpegPaths) -> bool {
+    paths.ffmpeg.is_some()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::*;
+
+    #[test]
+    fn counts_a_build_found_in_the_usual_places_as_not_custom() {
+        assert!(!is_custom_build(&FfmpegPaths::default()));
+    }
+
+    #[test]
+    fn counts_a_build_in_a_given_directory_as_custom() {
+        assert!(is_custom_build(&FfmpegPaths::in_dir(Path::new(
+            "/opt/homebrew/bin"
+        ))));
     }
 }

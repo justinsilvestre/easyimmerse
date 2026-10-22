@@ -40,6 +40,19 @@ async fn get_without_token(server: &TestServer, path: &str) -> crate::support::T
     server.request("GET", path).without_token().send().await
 }
 
+async fn get_page_without_token(
+    server: &TestServer,
+    path: &str,
+    accept: &str,
+) -> crate::support::TestResponse {
+    server
+        .request("GET", path)
+        .without_token()
+        .header("Accept", accept)
+        .send()
+        .await
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn serves_index_html_at_the_root() {
     let fixture = serve_web_app().await;
@@ -72,10 +85,17 @@ async fn makes_browsers_revalidate_index_html() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn serves_index_html_at_an_unknown_path_without_an_extension() {
+async fn serves_index_html_at_an_unknown_path_without_an_extension_to_a_browser() {
     let fixture = serve_web_app().await;
-    let response = get_without_token(&fixture.server, "/some/page").await;
+    let response = get_page_without_token(&fixture.server, "/some/page", "text/html").await;
     assert_eq!(response.text(), INDEX);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn answers_404_at_an_unknown_path_without_an_extension_to_a_request_for_json() {
+    let fixture = serve_web_app().await;
+    let response = get_page_without_token(&fixture.server, "/some/page", "application/json").await;
+    assert_eq!(response.status, 404);
 }
 
 #[tokio::test(flavor = "multi_thread")]

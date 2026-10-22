@@ -1,8 +1,8 @@
 import { useIssuePairingCodeQuery } from "@easyimmerse/backend";
+import type { DesktopPairingServer } from "@easyimmerse/state";
 import {
   type DesktopPairingCode,
   DesktopPairingPanel,
-  type DesktopPairingServer,
 } from "./DesktopPairingPanel.tsx";
 
 /** How often a new pairing code is asked for: as often as the server's codes expire, ten minutes after they are issued. */

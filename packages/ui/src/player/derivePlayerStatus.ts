@@ -58,7 +58,10 @@ function methodState(
 ): PlayerStatus {
   const { method } = playback;
   if (method.kind === "unsupported")
-    return failedPlayback(describeUnsupportedReason(method.reason));
+    return failedPlayback(
+      describeUnsupportedReason(method.reason),
+      method.reason === "no_video_encoder",
+    );
   const media = {
     frameRate: selectedFrameRate(tracks.container, inputs.selection),
     hasVideo: tracksOfKind(tracks.container, "video").length > 0,

@@ -14,7 +14,7 @@ use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
 use crate::media_source_jobs::MediaSourceJobs;
-use crate::pairing_codes::PairingCodes;
+use crate::pairing_codes::PairingCodeState;
 use crate::plugins::{PluginRegistry, fetched_item_dir};
 
 #[derive(Clone)]
@@ -25,8 +25,8 @@ pub struct AppState {
     pub probes: Option<Arc<ProbeCache>>,
     /// Converts media while it plays. None without ffmpeg or a cache directory.
     pub conversion: Option<ConversionService>,
-    /// The ffmpeg and ffprobe binaries chosen in the server settings. Either may be absent,
-    /// in which case the binary is searched for.
+    /// The ffmpeg and ffprobe binaries in the directory given to ServeOptions,
+    /// or None to search the usual places.
     pub ffmpeg_paths: FfmpegPaths,
     /// The directory holding the built web app, which the server serves beside the API.
     /// None when the server serves only the API.
@@ -49,7 +49,7 @@ pub struct AppState {
     /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
     pub is_fitting_review_parameters: Arc<AtomicBool>,
     /// The active pairing code and the recent failed claims of one.
-    pub pairing_codes: Arc<PairingCodes>,
+    pub pairing_code: Arc<PairingCodeState>,
 }
 
 impl AppState {
@@ -74,7 +74,7 @@ impl AppState {
             password_hashing: Arc::new(Semaphore::new(processor_count())),
             session_extensions: Arc::default(),
             is_fitting_review_parameters: Arc::default(),
-            pairing_codes: Arc::default(),
+            pairing_code: Arc::default(),
         }
     }
 

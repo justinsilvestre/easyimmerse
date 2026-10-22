@@ -1,16 +1,25 @@
-import { actions } from "@easyimmerse/state";
+import { actions, selectBundledServerPlatform } from "@easyimmerse/state";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { playbackFailureHeading } from "./playbackFailure.ts";
 
 /**
  * Tells the user that playback failed, and why, in plain words, and offers the way back to the project.
+ * When no video encoder works, the desktop app also offers its media conversion settings, where another ffmpeg build is chosen.
  * It is drawn over the black stage in both themes, so it uses palette colors.
  * The alert holds only the message, so a screen reader announces the failure without the button's label.
  */
-export function PlayerFailure({ cause }: { cause: string }) {
+export function PlayerFailure({
+  cause,
+  needsVideoEncoder = false,
+}: {
+  cause: string;
+  needsVideoEncoder?: boolean;
+}) {
   const dispatch = useAppDispatch();
+  const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
   return (
     <div className="flex max-w-md gap-3 rounded-lg bg-black/80 p-4 text-gray-200 shadow-lg">
       <AlertTriangle
@@ -22,13 +31,28 @@ export function PlayerFailure({ cause }: { cause: string }) {
           <p className="font-medium text-white">{playbackFailureHeading}</p>{" "}
           <p>{cause}</p>
         </div>
-        <Button
-          size="sm"
-          className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
-          onClick={() => dispatch(actions.closeMedia())}
-        >
-          Back to the project
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
+            onClick={() => dispatch(actions.closeMedia())}
+          >
+            Back to the project
+          </Button>
+          {needsVideoEncoder && isDesktop && (
+            <Button
+              size="sm"
+              className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
+              onClick={() =>
+                dispatch(
+                  actions.navigated({ type: "openMediaConversionSettings" }),
+                )
+              }
+            >
+              Open media conversion settings
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

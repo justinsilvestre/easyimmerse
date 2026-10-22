@@ -1,8 +1,10 @@
-import { selectBundledServerPlatform } from "@easyimmerse/state";
+import {
+  type DesktopPairingServer,
+  selectBundledServerPlatform,
+} from "@easyimmerse/state";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ConnectedDesktopPairingPanel } from "./ConnectedDesktopPairingPanel.tsx";
-import type { DesktopPairingServer } from "./DesktopPairingPanel.tsx";
 import { PairingScannerPanel } from "./PairingScannerPanel.tsx";
 
 /**

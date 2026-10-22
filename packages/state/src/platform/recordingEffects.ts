@@ -1,6 +1,9 @@
 import type {
+  DesktopServerSettings,
+  DesktopServerStatus,
   PairingGrant,
   ServerAuthInfo,
+  ServerLogEntry,
   SessionCreated,
 } from "@easyimmerse/types";
 import {
@@ -59,7 +62,27 @@ type EffectCall =
   | { type: "connectToServer"; server: ServerConfig }
   | { type: "disconnectFromServer" }
   | { type: "claimPairingCode"; serverUrl: string; code: string }
-  | { type: "scanPairingCode" };
+  | { type: "scanPairingCode" }
+  | { type: "pickExecutable" }
+  | { type: "readDesktopServerSettings" }
+  | { type: "saveDesktopServerSettings"; settings: DesktopServerSettings }
+  | { type: "startDesktopServer" }
+  | { type: "stopDesktopServer" }
+  | { type: "readDesktopServerStatus" }
+  | { type: "readDesktopServerLogs" };
+
+/** What each of the desktop server controls answers. */
+type DesktopServerAnswers = {
+  readDesktopServerSettings: DesktopServerSettings;
+  saveDesktopServerSettings: DesktopServerStatus;
+  startDesktopServer: DesktopServerStatus;
+  stopDesktopServer: DesktopServerStatus;
+  readDesktopServerStatus: DesktopServerStatus;
+  readDesktopServerLogs: readonly ServerLogEntry[];
+};
+
+/** A desktop server control, named as the effects name it. */
+export type DesktopServerControl = keyof DesktopServerAnswers;
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -104,6 +127,17 @@ export type RecordingEffects = Effects & {
   resolvePairingClaim(outcome: SignInOutcome<PairingGrant>): void;
   /** Settles the pending scanPairingCode promise. Throws when no scan is pending. */
   resolvePairingScan(text: string | null): void;
+  /** Settles the pending pickExecutable promise. Throws when no pick is pending. */
+  resolvePickExecutable(path: string | null): void;
+  /** Settles the pending call of a desktop server control with its answer. Throws when none is pending. */
+  resolveDesktopServer<C extends DesktopServerControl>(
+    control: C,
+    answer: DesktopServerAnswers[C],
+  ): void;
+  /** Rejects the pending call of a desktop server control with the message. Throws when none is pending. */
+  rejectDesktopServer(control: DesktopServerControl, message: string): void;
+  /** Acts as the server controls reporting a new status, by calling every subscribed listener. */
+  changeDesktopServerStatus(status: DesktopServerStatus): void;
 };
 
 type PendingPick<R> = {
@@ -170,6 +204,11 @@ export function createRecordingEffects(
   const pairingClaim =
     createPendingPick<SignInOutcome<PairingGrant>>("pairing claim");
   const pairingScan = createPendingPick<string | null>("pairing scan");
+  const executablePick = createPendingPick<string | null>("executable pick");
+  const desktopServerCalls = createDesktopServerCalls();
+  const desktopServerListeners = new Set<
+    (status: DesktopServerStatus) => void
+  >();
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -288,6 +327,38 @@ export function createRecordingEffects(
       calls.push({ type: "scanPairingCode" });
       return pairingScan.start();
     },
+    pickExecutable: () => {
+      calls.push({ type: "pickExecutable" });
+      return executablePick.start();
+    },
+    readDesktopServerSettings: () => {
+      calls.push({ type: "readDesktopServerSettings" });
+      return desktopServerCalls.readDesktopServerSettings.start();
+    },
+    saveDesktopServerSettings: (settings) => {
+      calls.push({ type: "saveDesktopServerSettings", settings });
+      return desktopServerCalls.saveDesktopServerSettings.start();
+    },
+    startDesktopServer: () => {
+      calls.push({ type: "startDesktopServer" });
+      return desktopServerCalls.startDesktopServer.start();
+    },
+    stopDesktopServer: () => {
+      calls.push({ type: "stopDesktopServer" });
+      return desktopServerCalls.stopDesktopServer.start();
+    },
+    readDesktopServerStatus: () => {
+      calls.push({ type: "readDesktopServerStatus" });
+      return desktopServerCalls.readDesktopServerStatus.start();
+    },
+    readDesktopServerLogs: () => {
+      calls.push({ type: "readDesktopServerLogs" });
+      return desktopServerCalls.readDesktopServerLogs.start();
+    },
+    subscribeToDesktopServerStatus: (listener) => {
+      desktopServerListeners.add(listener);
+      return () => desktopServerListeners.delete(listener);
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -337,5 +408,48 @@ export function createRecordingEffects(
     resolvePairingScan: (text) => {
       pairingScan.take().resolve(text);
     },
+    resolvePickExecutable: (path) => {
+      executablePick.take().resolve(path);
+    },
+    resolveDesktopServer: (control, answer) => {
+      const pending = desktopServerCalls[control].take() as PendingPick<
+        typeof answer
+      >;
+      pending.resolve(answer);
+    },
+    rejectDesktopServer: (control, message) => {
+      desktopServerCalls[control].take().reject(new Error(message));
+    },
+    changeDesktopServerStatus: (status) => {
+      for (const listener of desktopServerListeners) listener(status);
+    },
+  };
+}
+
+/** One pending call for each desktop server control. */
+function createDesktopServerCalls() {
+  return {
+    readDesktopServerSettings: createPendingPick<DesktopServerSettings>(
+      "desktop server settings read",
+    ),
+    saveDesktopServerSettings: createPendingPick<DesktopServerStatus>(
+      "desktop server settings save",
+    ),
+    startDesktopServer: createPendingPick<DesktopServerStatus>(
+      "desktop server start",
+    ),
+    stopDesktopServer: createPendingPick<DesktopServerStatus>(
+      "desktop server stop",
+    ),
+    readDesktopServerStatus: createPendingPick<DesktopServerStatus>(
+      "desktop server status read",
+    ),
+    readDesktopServerLogs: createPendingPick<readonly ServerLogEntry[]>(
+      "desktop server log read",
+    ),
+  } satisfies {
+    [C in DesktopServerControl]: ReturnType<
+      typeof createPendingPick<DesktopServerAnswers[C]>
+    >;
   };
 }

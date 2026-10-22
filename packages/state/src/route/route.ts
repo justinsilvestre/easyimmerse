@@ -16,6 +16,9 @@ export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 /** A page of the settings, which open over a main screen. */
 export type SettingsPage = "general" | "dictionaries" | "pairing";
 
+/** A section of the general settings page that the page scrolls to when it opens. */
+export type SettingsSection = "mediaConversion";
+
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it so that going back restores it, player state included.
  * The settings pages form a stack: Back leaves the top page, and the last page returns to the main screen.
@@ -27,6 +30,8 @@ export type Route =
       screen: "settings";
       beneath: MainRoute;
       pages: readonly [SettingsPage, ...SettingsPage[]];
+      /** The section of the general settings to bring into view, when they were opened for it. */
+      scrollTarget?: SettingsSection;
     };
 
 /** A move from one place in the app to another. */
@@ -40,6 +45,8 @@ export type NavigationStep =
   | { type: "openSettings" }
   /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
   | { type: "openAccountSettings" }
+  /** Opens the general settings page at its Media conversion section, over the main screen, leaving any page above it. */
+  | { type: "openMediaConversionSettings" }
   | { type: "openDictionaries" }
   /** Opens the page for pairing with another easyImmerse app on the local network. */
   | { type: "openPairing" }
@@ -84,6 +91,17 @@ function stepTarget(current: Route, step: NavigationStep): Route {
             screen: "settings",
             beneath: mainScreenOf(current),
             pages: ["general"],
+          };
+    case "openMediaConversionSettings":
+      return current.screen === "settings" &&
+        current.pages.length === 1 &&
+        current.scrollTarget === "mediaConversion"
+        ? current
+        : {
+            screen: "settings",
+            beneath: mainScreenOf(current),
+            pages: ["general"],
+            scrollTarget: "mediaConversion",
           };
     case "openDictionaries":
       return openSettingsPage(current, "dictionaries");

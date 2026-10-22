@@ -10,6 +10,6 @@ path: string,
  */
 version: string, 
 /**
- * True when the build is not the bundled sidecar.
+ * True when the server was given an ffmpeg directory, and false when it searched the usual places.
  */
-custom: boolean, };
+is_custom: boolean, };

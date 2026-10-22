@@ -38,7 +38,7 @@ pub struct PairingGrant {
     pub token: String,
 }
 
-/// Issues a pairing code valid for ten minutes, replacing any earlier one.
+/// Issues a pairing code, replacing any earlier one.
 /// Only the launch token may do so, and only on a server without accounts.
 #[utoipa::path(
     post,
@@ -60,7 +60,7 @@ pub async fn issue_pairing_code(
     if principal != Principal::Launch || state.config.accounts.is_some() {
         return Err(needs_launch_token());
     }
-    let issued = state.pairing_codes.issue(generate_pairing_code(), now_ms());
+    let issued = state.pairing_code.issue(generate_pairing_code(), now_ms());
     Ok(Json(PairingCode {
         code: issued.code,
         expires_at: issued.expires_at_ms,
@@ -78,7 +78,7 @@ pub async fn issue_pairing_code(
         (status = 200, description = "The code was used up", body = PairingGrant),
         (status = 404, description = "`pairing_code_invalid`: the code is wrong, used up or expired", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 429, description = "`too_many_attempts`: ten failed claims from this peer within fifteen minutes", body = ApiError,
+        (status = 429, description = "`too_many_attempts`: too many failed claims recently, from this peer or from all peers", body = ApiError,
             headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
     ),
 )]
@@ -92,7 +92,7 @@ pub async fn claim_pairing_code(
     let Some(token) = token.filter(|_| state.config.accounts.is_none()) else {
         return Err(PairingError::InvalidCode.into());
     };
-    state.pairing_codes.claim(&claim.code, peer, now_ms())?;
+    state.pairing_code.claim(&claim.code, peer, now_ms())?;
     Ok(Json(PairingGrant { token }))
 }
 

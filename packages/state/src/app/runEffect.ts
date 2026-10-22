@@ -1,4 +1,5 @@
 import { accountEffectRunners } from "../account/accountEffectRunners.ts";
+import { desktopServerEffectRunners } from "../desktopServer/desktopServerEffectRunners.ts";
 import { flashcardsEffectRunners } from "../flashcards/flashcardsEffectRunners.ts";
 import { pairingEffectRunners } from "../pairing/pairingEffectRunners.ts";
 import type { Effects } from "../platform/effects.ts";
@@ -43,6 +44,7 @@ const effectRunners = {
   ...dispatchEffectRunners,
   ...accountEffectRunners,
   ...pairingEffectRunners,
+  ...desktopServerEffectRunners,
 } satisfies EffectRunners<PerformedEffect>;
 
 /** Performs one effect through the context's collaborators. */

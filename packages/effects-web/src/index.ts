@@ -19,6 +19,7 @@ import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
+import { unavailableDesktopServerEffects } from "./unavailableDesktopServerEffects.ts";
 
 /** Builds the browser implementation of the app's side effects. */
 export function createWebEffects(options: {
@@ -61,6 +62,7 @@ export function createWebEffects(options: {
       () => location.reload(),
     ),
     ...createPairingEffects((input, init) => globalThis.fetch(input, init)),
+    ...unavailableDesktopServerEffects,
   };
 }
 

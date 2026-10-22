@@ -33,13 +33,13 @@ async fn reports_the_ffmpeg_version() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn reports_whether_the_ffmpeg_build_is_custom() {
+async fn reports_a_build_found_in_the_usual_places_as_not_custom() {
     if !ffmpeg_available() {
         return;
     }
     let (server, _cache_dir) = spawn_test_server_with_cache(true).await;
     let response = server.get(PATH).await;
-    assert!(response.json()["ffmpeg"]["custom"].is_boolean());
+    assert_eq!(response.json()["ffmpeg"]["is_custom"], false);
 }
 
 #[tokio::test(flavor = "multi_thread")]

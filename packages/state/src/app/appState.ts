@@ -1,4 +1,5 @@
 import type { AccountState } from "../account/updateAccount.ts";
+import type { DesktopServerState } from "../desktopServer/desktopServerState.ts";
 import type { DictionaryImportWizard } from "../dictionaryImport/dictionaryImportWizard.ts";
 import type { MediaImports } from "../mediaImports/mediaImportWizard.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
@@ -32,4 +33,6 @@ export type AppState = {
   account: AccountState;
   /** The pairing of a web or mobile app with a desktop app on the local network. */
   pairing: PairingForm;
+  /** The server that the desktop app runs inside itself, as its server controls report it. */
+  desktopServer: DesktopServerState;
 };

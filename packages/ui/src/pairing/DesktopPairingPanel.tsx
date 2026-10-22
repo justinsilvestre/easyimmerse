@@ -1,19 +1,9 @@
-import { pairingUrlOf } from "@easyimmerse/state";
+import { type DesktopPairingServer, pairingUrlOf } from "@easyimmerse/state";
 import type { PairingCode } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { QrCode } from "./QrCode.tsx";
 import { spacedCode } from "./spacedCode.ts";
-
-/**
- * The desktop server as pairing sees it: not running, running where only this computer reaches it,
- * or running on the local network, with accounts or with the launch token.
- * `url` is the address other devices use.
- */
-export type DesktopPairingServer =
-  | { kind: "stopped" }
-  | { kind: "loopbackOnly" }
-  | { kind: "running"; url: string; hasAccounts: boolean };
 
 /** The pairing code of a server with the launch token: being issued, issued, or refused. */
 export type DesktopPairingCode =
@@ -51,13 +41,24 @@ export function DesktopPairingPanel({
           </Button>
         </div>
       );
+    case "starting":
+      return (
+        <p role="status" className="text-sm text-fg-muted">
+          The server is starting…
+        </p>
+      );
     case "loopbackOnly":
       return (
-        <p className="text-sm text-fg-muted">
-          The server is running, but only this computer can reach it. To pair
-          another device, set the server's address to 0.0.0.0 in the server
-          settings, so that it listens on your local network.
-        </p>
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-sm text-fg-muted">
+            The server is running, but only this computer can reach it. Start it
+            on your local network to pair a phone or another computer; this
+            restarts the server.
+          </p>
+          <Button variant="primary" onClick={onStartServer}>
+            Start the server
+          </Button>
+        </div>
       );
     case "running":
       return server.hasAccounts ? (

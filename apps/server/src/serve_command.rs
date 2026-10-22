@@ -15,13 +15,19 @@ use crate::serve_settings::{ServeSettings, resolve_serve_settings};
 /// A server that has started, with what the person starting it needs to know.
 pub struct StartedServer {
     pub handle: ServerHandle,
-    /// The random launch token made because none was configured, which the person needs to
-    /// connect a client.
+    /// The random launch token made because none was configured,
+    /// which the person needs to connect a client.
     pub generated_token: Option<String>,
 }
 
 pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
-    let file = load_file_config(&args)?;
+    run_with_defaults(args, &ServerFileConfig::default()).await
+}
+
+/// Runs the server like [`run`],
+/// taking each setting that neither the command line nor the config file gives from `defaults`.
+pub async fn run_with_defaults(args: ServeArgs, defaults: &ServerFileConfig) -> anyhow::Result<()> {
+    let file = load_file_config(&args)?.with_defaults(defaults.clone());
     let settings = resolve_serve_settings(&args, &file);
     let started = start_server(&settings).await?;
     if let Some(token) = &started.generated_token {
@@ -36,8 +42,8 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Reads the config file that `--config` or `EASYIMMERSE_CONFIG` names, or returns an empty
-/// config when neither does.
+/// Reads the config file that `--config` or `EASYIMMERSE_CONFIG` names,
+/// or returns an empty config when neither does.
 pub fn load_file_config(args: &ServeArgs) -> anyhow::Result<ServerFileConfig> {
     match &args.config {
         Some(path) => Ok(ServerFileConfig::load(path)?),
@@ -51,7 +57,7 @@ pub async fn start_server(settings: &ServeSettings) -> anyhow::Result<StartedSer
     let listener = TcpListener::bind(settings.bind)
         .await
         .with_context(|| format!("could not bind {}", settings.bind))?;
-    start_server_on(listener, settings).await
+    start_accepted_server_on(listener, settings).await
 }
 
 /// Starts a server on a listener the caller bound, such as one on a random loopback port.
@@ -61,6 +67,14 @@ pub async fn start_server_on(
     settings: &ServeSettings,
 ) -> anyhow::Result<StartedServer> {
     refuse_unauthenticated_settings(settings)?;
+    start_accepted_server_on(listener, settings).await
+}
+
+/// Starts a server whose settings passed `refuse_unauthenticated_settings`.
+async fn start_accepted_server_on(
+    listener: TcpListener,
+    settings: &ServeSettings,
+) -> anyhow::Result<StartedServer> {
     let addr = listener.local_addr()?;
     let (config, generated_token) = build_config(settings, addr);
     let storage = open_storage(settings)?;
@@ -101,8 +115,8 @@ fn refuse_unreachable_accounts(settings: &ServeSettings) -> anyhow::Result<()> {
 }
 
 /// Accepts the loopback hosts, the bound address itself, and every expected host.
-/// A random launch token is made only when there is neither a token nor accounts, and is
-/// returned beside the config.
+/// A random launch token is made only when there is neither a token nor accounts,
+/// and is returned beside the config.
 /// A server bound to an unspecified address such as `0.0.0.0`
 /// is reached through interface addresses it cannot know,
 /// so those must be passed with `--expected-host`.

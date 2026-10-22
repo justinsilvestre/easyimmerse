@@ -23,22 +23,23 @@ pub enum Command {
     Config(ConfigCommand),
 }
 
-/// Each setting may come from a flag, an environment variable, or the config file, which
-/// count in that order. A flag that turns something on cannot turn off what the config file
-/// turns on.
+/// Each setting may come from a flag, an environment variable, or the config file,
+/// which count in that order.
+/// A flag that turns something on cannot turn off what the config file turns on.
 #[derive(Debug, Clone, Default, Args)]
 pub struct ServeArgs {
-    /// A TOML file with the settings below, under the names the flags have, with underscores
-    /// for dashes, such as `cache_dir = "cache"`. Relative paths in it are relative to the
-    /// file's directory.
+    /// A TOML file with the settings below,
+    /// under the names the flags have, with underscores for dashes, such as `cache_dir = "cache"`.
+    /// Relative paths in it are relative to the file's directory.
     #[arg(long, env = "EASYIMMERSE_CONFIG")]
     pub config: Option<PathBuf>,
-    /// The address to listen on. Defaults to 127.0.0.1:8787, which only this machine can reach;
+    /// The address to listen on.
+    /// Defaults to 127.0.0.1:8787, which only this machine can reach;
     /// 0.0.0.0:8787 lets other devices on the network reach the server.
     #[arg(long)]
     pub bind: Option<SocketAddr>,
-    /// The launch token, whose holder may do anything. Without it and without `--accounts`,
-    /// a random one is generated and printed to standard error.
+    /// The launch token, whose holder may do anything.
+    /// Without it and without `--accounts`, a random one is generated and printed to standard error.
     #[arg(long, env = "EASYIMMERSE_TOKEN")]
     pub token: Option<String>,
     /// Lets people log in to accounts, which `easyimmerse-server users` creates.
@@ -47,8 +48,8 @@ pub struct ServeArgs {
     /// Lets anyone create an account through the API. Needs `--accounts`.
     #[arg(long)]
     pub open_signup: bool,
-    /// The SQLite database file, or `:memory:` for a database that lives only while the
-    /// server runs, which is the default.
+    /// The SQLite database file,
+    /// or `:memory:` for a database that lives only while the server runs, which is the default.
     #[arg(long)]
     pub db: Option<PathBuf>,
     /// Lets requests name files on this machine.
@@ -58,32 +59,33 @@ pub struct ServeArgs {
     #[arg(long)]
     pub seed_placeholders: bool,
     /// Gives the example projects a sample video with subtitles, and imports small dictionaries,
-    /// all from the fixtures of the repository this server was built from. Runs once per database.
+    /// all from the fixtures of the repository this server was built from.
+    /// Runs once per database.
     #[arg(long)]
     pub seed_sample_content: bool,
     /// Where converted media is cached. Without it, media is never converted.
     #[arg(long, env = "EASYIMMERSE_CACHE_DIR")]
     pub cache_dir: Option<PathBuf>,
-    /// Where installed plugins live, one package per subdirectory. Without it, or when the
-    /// directory is missing, no plugin is installed.
+    /// Where installed plugins live, one package per subdirectory.
+    /// Without it, or when the directory is missing, no plugin is installed.
     #[arg(long, env = "EASYIMMERSE_PLUGINS_DIR")]
     pub plugins_dir: Option<PathBuf>,
-    /// Where media-source plugins put the media they fetch. Without it, media cannot be
-    /// added through a plugin.
+    /// Where media-source plugins put the media they fetch.
+    /// Without it, media cannot be added through a plugin.
     #[arg(long, env = "EASYIMMERSE_MEDIA_DIR")]
     pub media_dir: Option<PathBuf>,
-    /// The directory holding the `ffmpeg` and `ffprobe` that the server uses to read and
-    /// convert media. Without it, they are looked for next to the server's executable and
-    /// then on `PATH`.
+    /// The directory holding the `ffmpeg` and `ffprobe` that the server uses to read and convert media.
+    /// Without it, they are looked for next to the server's executable and then on `PATH`.
     #[arg(long, env = "EASYIMMERSE_FFMPEG_DIR")]
     pub ffmpeg_dir: Option<PathBuf>,
-    /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
-    /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
+    /// A `Host` header value clients will send, such as `192.168.1.5:8787`.
+    /// Needed when the server is bound to `0.0.0.0` or `[::]`.
+    /// May be repeated.
     #[arg(long = "expected-host")]
     pub expected_hosts: Vec<String>,
-    /// The directory holding the built web app, which the server then serves at every address
-    /// the API does not use. Without it, the server serves the directory named `web` next to
-    /// its executable, when there is one.
+    /// The directory holding the built web app,
+    /// which the server then serves at every address the API does not use.
+    /// Without it, the server serves the directory named `web` next to its executable, when there is one.
     #[arg(long)]
     pub web_app_dir: Option<PathBuf>,
     /// Serves only the API, even when there is a web app directory.
@@ -118,15 +120,15 @@ pub struct ConfigSetArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum UsersCommand {
-    /// Creates an account. The password is read from standard input with `--password-stdin`,
-    /// or else from `EASYIMMERSE_PASSWORD`.
+    /// Creates an account.
+    /// The password is read from standard input with `--password-stdin`, or else from `EASYIMMERSE_PASSWORD`.
     Create(CreateUserArgs),
     /// Lists every account, oldest first.
     List(DatabaseArgs),
     /// Changes the role of an account.
     SetRole(SetRoleArgs),
-    /// Gives an account a new password and ends all of its sessions. The password is read
-    /// from standard input with `--password-stdin`, or else from `EASYIMMERSE_PASSWORD`.
+    /// Gives an account a new password and ends all of its sessions.
+    /// The password is read from standard input with `--password-stdin`, or else from `EASYIMMERSE_PASSWORD`.
     SetPassword(SetPasswordArgs),
     /// Deletes an account together with its sessions.
     Delete(DeleteUserArgs),
@@ -136,7 +138,20 @@ pub enum UsersCommand {
 pub struct DatabaseArgs {
     /// The SQLite database file the server uses. It is created when missing.
     #[arg(long)]
-    pub db: PathBuf,
+    pub db: Option<PathBuf>,
+}
+
+impl UsersCommand {
+    /// The database the command works on, so that a caller can fill in a default one.
+    pub fn database_mut(&mut self) -> &mut DatabaseArgs {
+        match self {
+            Self::Create(args) => &mut args.database,
+            Self::List(args) => args,
+            Self::SetRole(args) => &mut args.database,
+            Self::SetPassword(args) => &mut args.database,
+            Self::Delete(args) => &mut args.database,
+        }
+    }
 }
 
 #[derive(Debug, Args)]

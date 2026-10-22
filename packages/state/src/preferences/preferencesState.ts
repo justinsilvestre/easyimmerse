@@ -9,6 +9,8 @@ export type PreferenceKey =
   /** Whether the review's answer buttons say when each answer would bring the card back. */
   | "showReviewIntervals"
   | "conversionNoticeDismissed"
+  /** Whether the desktop app's notice that no video encoder works was put aside, "true" once it was. */
+  | "encoderNoticeDismissed"
   /** The reader's appearance, as JSON. */
   | "readerPreferences"
   /** How the subtitles over the video look, as JSON. */
@@ -24,6 +26,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "videoQuality",
   "showReviewIntervals",
   "conversionNoticeDismissed",
+  "encoderNoticeDismissed",
   "readerPreferences",
   "subtitleAppearance",
   "theme",

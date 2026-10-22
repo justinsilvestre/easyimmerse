@@ -28,7 +28,7 @@ pub struct DesktopServerSettings {
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum ServerAuthMode {
-    /// A token generated at each launch, shared through a pairing link.
+    /// A token generated at each launch, handed to a paired device through a pairing code.
     LaunchToken,
     /// Accounts with passwords.
     Accounts,

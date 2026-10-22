@@ -14,21 +14,25 @@ pub struct PictureSize {
     pub height: u32,
 }
 
-/// The hardware encoder rejects narrow pictures at heights under 480, so anything narrower
-/// than this is scaled up to this width.
+// These picture-size limits are those of the hardware encoders.
+// They apply to every encoder for now, software encoders included.
+
+/// The hardware encoders reject narrow pictures at heights under 480,
+/// so anything narrower than this is scaled up to this width.
 const MIN_WIDTH: u32 = 640;
-/// The hardware encoder's widest picture; wider sources are scaled down to it.
+/// The widest picture; wider sources are scaled down to it.
 const MAX_WIDTH: u32 = 4096;
-/// The hardware encoder's tallest picture.
+/// The tallest picture.
 const MAX_HEIGHT: u32 = 4080;
 
 const HIGH_FRAME_RATE_THRESHOLD: Rational = Rational::new(30, 1);
 const MIN_BIT_RATE: u64 = 1_000_000;
 
 /// The size to scale a picture to before encoding, or `None` to keep the source size.
-/// Pictures narrower than 640 px are scaled up to 640 wide and pictures wider than 4096 px are
-/// scaled down to 4096 wide, both keeping the aspect ratio with an even height. A resulting
-/// height over 4080 px is refused, since the encoder cannot produce it.
+/// Pictures narrower than 640 px are scaled up to 640 wide,
+/// and pictures wider than 4096 px are scaled down to 4096 wide,
+/// both keeping the aspect ratio with an even height.
+/// A resulting height over 4080 px is refused, since the encoder cannot produce it.
 pub fn fit_picture(source: PictureSize) -> Result<Option<PictureSize>, PictureTooTall> {
     let scaled = if source.width < MIN_WIDTH {
         Some(scale_to_width(source, MIN_WIDTH))
@@ -55,11 +59,8 @@ fn scale_to_width(source: PictureSize, width: u32) -> PictureSize {
 }
 
 /// Bits per second for each pixel of the picture, by quality.
-///
-/// Balanced gives about 6.2 Mbps at 1080p, the rate that was evaluated with the hardware
-/// encoder. Compact uses two thirds of that, about 4.1 Mbps at 1080p, and so two thirds of the
-/// cache space. Best uses five thirds of it, about 10.4 Mbps at 1080p, which leaves room for
-/// detailed or grainy sources, where an encoder held to a fixed bit rate loses detail first.
+/// At 1080p, Compact gives about 4.1 Mbps, Balanced about 6.2 Mbps, and Best about 10.4 Mbps.
+/// The bit rate used is never above the source's own.
 fn bits_per_pixel_per_second(quality: VideoQuality) -> u64 {
     match quality {
         VideoQuality::Compact => 2,
@@ -68,9 +69,10 @@ fn bits_per_pixel_per_second(quality: VideoQuality) -> u64 {
     }
 }
 
-/// The bit rate for transcoded video: the quality's bits per pixel per second, one and a half
-/// times that above 30 frames per second, at least 1 Mbps, and never above the source's own
-/// bit rate. Without a picture size only the floor applies.
+/// The bit rate for transcoded video: the quality's bits per pixel per second,
+/// one and a half times that above 30 frames per second, at least 1 Mbps,
+/// and never above the source's own bit rate.
+/// Without a picture size only the floor applies.
 pub fn transcode_bit_rate(
     picture: Option<PictureSize>,
     frame_rate: Option<Rational>,
@@ -145,6 +147,19 @@ mod tests {
                 VideoQuality::Balanced
             ),
             4_147_200
+        );
+    }
+
+    #[test]
+    fn raises_the_best_quality_rate_by_half_above_30_frames_per_second() {
+        assert_eq!(
+            transcode_bit_rate(
+                Some(size(1280, 720)),
+                Some(Rational::new(60, 1)),
+                None,
+                VideoQuality::Best
+            ),
+            6_912_000
         );
     }
 
