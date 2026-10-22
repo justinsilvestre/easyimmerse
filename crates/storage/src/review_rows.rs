@@ -136,6 +136,35 @@ pub fn latest_log_row(
     Ok(row)
 }
 
+/// Rebuilds the schedule of a flashcard from its latest answer, or makes it a new card again when it has none,
+/// after answers were removed or arrived from another server. Returns the schedule it saved.
+pub fn refresh_review_card(
+    conn: &Connection,
+    flashcard_id: &FlashcardId,
+) -> Result<Option<ReviewCardState>, StorageError> {
+    let project_id: Option<String> = conn
+        .query_row(
+            "SELECT project_id FROM flashcards WHERE id = ?1",
+            params![flashcard_id.0],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let latest = latest_log_row(conn, flashcard_id)?.map(|(_, state)| state);
+    match (project_id, latest) {
+        (Some(project_id), Some(state)) => {
+            save_review_card(conn, &ProjectId(project_id), flashcard_id, &state)?;
+            Ok(Some(state))
+        }
+        _ => {
+            conn.execute(
+                "DELETE FROM review_cards WHERE flashcard_id = ?1",
+                params![flashcard_id.0],
+            )?;
+            Ok(None)
+        }
+    }
+}
+
 /// Every answer given in any project of the owner, oldest first.
 pub fn list_all_log_entries(
     conn: &Connection,

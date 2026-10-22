@@ -15,7 +15,7 @@ use crate::new_row::generate_id;
 use crate::projects::{ensure_project_exists, project_owner};
 use crate::review_holds::forget_ended_burials;
 use crate::review_parameters::load_scheduler;
-use crate::review_rows::{get_review_card, insert_log_row, latest_log_row, save_review_card};
+use crate::review_rows::{get_review_card, insert_log_row, refresh_review_card, save_review_card};
 
 /// Answers a flashcard of the project in one transaction, adding the answer to the log and saving the card's new schedule.
 /// The answer is stamped at `now_ms`, or just after the project's latest answer when that is later,
@@ -77,8 +77,7 @@ pub fn undo_review_answer(
     let transaction = conn.transaction()?;
     let flashcard_id = latest_answer(&transaction, project_id, answer_id)?;
     transaction.execute("DELETE FROM review_log WHERE id = ?1", params![answer_id.0])?;
-    let restored = latest_log_row(&transaction, &flashcard_id)?.map(|(_, state)| state);
-    restore_review_card(&transaction, project_id, &flashcard_id, restored.as_ref())?;
+    let restored = refresh_review_card(&transaction, &flashcard_id)?;
     let scheduler = load_scheduler(&transaction, &project_owner(&transaction, project_id)?)?;
     transaction.commit()?;
     let intervals = intervals_at(&scheduler, &flashcard_id, restored.as_ref(), moment)?;
@@ -175,24 +174,6 @@ fn is_answer_of_project(
         params![project_id.0, answer_id.0],
         |row| row.get(0),
     )?)
-}
-
-fn restore_review_card(
-    conn: &Connection,
-    project_id: &ProjectId,
-    flashcard_id: &FlashcardId,
-    restored: Option<&ReviewCardState>,
-) -> Result<(), StorageError> {
-    match restored {
-        Some(state) => save_review_card(conn, project_id, flashcard_id, state),
-        None => {
-            conn.execute(
-                "DELETE FROM review_cards WHERE flashcard_id = ?1",
-                params![flashcard_id.0],
-            )?;
-            Ok(())
-        }
-    }
 }
 
 fn intervals_at(
