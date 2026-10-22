@@ -42,6 +42,7 @@ const linkedStatus: SyncStatus = {
     pushed_through_seq: 0,
     state: { kind: "idle" },
     transfer: null,
+    refused_upload: null,
     conflicts: [],
     conflict_count: 0,
   },
