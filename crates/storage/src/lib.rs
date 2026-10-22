@@ -14,6 +14,7 @@ mod flashcards;
 mod media_files;
 mod migrations;
 mod new_row;
+mod owned_paths;
 mod owners;
 mod preferences;
 mod projects;
@@ -36,6 +37,7 @@ pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use email_tokens::{EmailTokenPurpose, NewEmailToken};
 pub use error::StorageError;
+pub use owned_paths::OwnedPath;
 pub use owners::{LAUNCH_OWNER, OwnerId};
 pub use preferences::is_synced_preference;
 pub use sample_content::SampleContentError;
@@ -104,6 +106,12 @@ impl Storage {
         operation: impl FnOnce(&Connection) -> Result<T, StorageError>,
     ) -> Result<T, StorageError> {
         self.connections.read(operation)
+    }
+
+    /// Checks that every row the path names exists and belongs to the owner,
+    /// answering a row of another owner with the same not-found error as a missing one.
+    pub fn check_owned_path(&self, owner: &OwnerId, path: &OwnedPath) -> Result<(), StorageError> {
+        self.read(|conn| owned_paths::check_owned_path(conn, owner, path))
     }
 
     /// Lists the owner's projects, most recently opened first.
