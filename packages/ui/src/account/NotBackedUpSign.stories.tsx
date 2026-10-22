@@ -90,6 +90,8 @@ const inFooter: Decorator = (Story) => (
     <FooterBar
       isSettingsOpen={false}
       onOpenSettings={fn()}
+      isPairingOpen={false}
+      onOpenPairing={fn()}
       backupSign={<Story />}
       activities={[]}
       onOpenActivity={fn()}

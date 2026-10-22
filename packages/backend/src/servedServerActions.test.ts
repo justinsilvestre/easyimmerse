@@ -10,7 +10,7 @@ describe("servedServerActions", () => {
       servedServerActions({
         kind: "serverFound",
         serverUrl: origin,
-        info: { accounts: true, open_signup: false },
+        info: { accounts: true, open_signup: false, sends_email: false },
       }),
     ).toEqual([
       actions.signInFormChanged({ serverChoice: "own", ownServerUrl: origin }),
@@ -22,7 +22,7 @@ describe("servedServerActions", () => {
       servedServerActions({
         kind: "serverFound",
         serverUrl: origin,
-        info: { accounts: false, open_signup: false },
+        info: { accounts: false, open_signup: false, sends_email: false },
       }),
     ).toEqual([actions.pairingFormChanged({ address: origin })]);
   });

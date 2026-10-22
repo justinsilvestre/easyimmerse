@@ -12,7 +12,11 @@ const filledIn = actions.pairingFormChanged({
 });
 
 const checked = (accounts: boolean) =>
-  actions.pairingServerChecked(desktop, { accounts, open_signup: false });
+  actions.pairingServerChecked(desktop, {
+    accounts,
+    open_signup: false,
+    sends_email: false,
+  });
 
 /** The steps up to the claim of the code at a server without accounts. */
 const claiming = [filledIn, actions.pairingSubmitted(), checked(false)];
