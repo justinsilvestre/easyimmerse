@@ -58,6 +58,46 @@ impl FromStr for SyncTable {
     }
 }
 
+impl From<easyimmerse_core::sync::SyncTable> for SyncTable {
+    fn from(table: easyimmerse_core::sync::SyncTable) -> Self {
+        use easyimmerse_core::sync::SyncTable as Wire;
+        match table {
+            Wire::Projects => SyncTable::Projects,
+            Wire::MediaFiles => SyncTable::MediaFiles,
+            Wire::SubtitleTracks => SyncTable::SubtitleTracks,
+            Wire::Alignments => SyncTable::Alignments,
+            Wire::Flashcards => SyncTable::Flashcards,
+            Wire::ReviewLog => SyncTable::ReviewLog,
+            Wire::ReviewHolds => SyncTable::ReviewHolds,
+            Wire::ReviewDayAllowances => SyncTable::ReviewDayAllowances,
+            Wire::AnkiPendingDeletions => SyncTable::AnkiPendingDeletions,
+            Wire::Dictionaries => SyncTable::Dictionaries,
+            Wire::Preferences => SyncTable::Preferences,
+            Wire::ReviewParameters => SyncTable::ReviewParameters,
+        }
+    }
+}
+
+impl From<SyncTable> for easyimmerse_core::sync::SyncTable {
+    fn from(table: SyncTable) -> Self {
+        use easyimmerse_core::sync::SyncTable as Wire;
+        match table {
+            SyncTable::Projects => Wire::Projects,
+            SyncTable::MediaFiles => Wire::MediaFiles,
+            SyncTable::SubtitleTracks => Wire::SubtitleTracks,
+            SyncTable::Alignments => Wire::Alignments,
+            SyncTable::Flashcards => Wire::Flashcards,
+            SyncTable::ReviewLog => Wire::ReviewLog,
+            SyncTable::ReviewHolds => Wire::ReviewHolds,
+            SyncTable::ReviewDayAllowances => Wire::ReviewDayAllowances,
+            SyncTable::AnkiPendingDeletions => Wire::AnkiPendingDeletions,
+            SyncTable::Dictionaries => Wire::Dictionaries,
+            SyncTable::Preferences => Wire::Preferences,
+            SyncTable::ReviewParameters => Wire::ReviewParameters,
+        }
+    }
+}
+
 /// How the codec reads and writes the rows of one synced table.
 #[derive(Debug)]
 pub struct SyncTableSpec {
@@ -310,6 +350,18 @@ mod tests {
             "review_day_allowances".parse::<SyncTable>().unwrap(),
             SyncTable::ReviewDayAllowances
         );
+    }
+
+    #[test]
+    fn names_each_table_on_the_wire_as_in_the_database() {
+        let mismatched: Vec<SyncTable> = SyncTable::ALL
+            .into_iter()
+            .filter(|table| {
+                let wire = easyimmerse_core::sync::SyncTable::from(*table);
+                serde_json::to_value(wire).unwrap() != table.as_str()
+            })
+            .collect();
+        assert_eq!(mismatched, vec![]);
     }
 
     #[test]

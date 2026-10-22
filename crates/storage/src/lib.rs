@@ -43,6 +43,7 @@ pub use preferences::is_synced_preference;
 pub use sample_content::SampleContentError;
 pub use sessions::{LiveSession, NewSession, StoredSession};
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
+pub use sync::apply_pushed::{PushRejection, PushVerdict, PushedChange};
 pub use sync::changes::{PendingRow, SyncChange, SyncChangesPage};
 pub use sync::codec::RowData;
 pub use sync::remotes::{NewRemote, RemoteKind, StoredRemote};
@@ -739,6 +740,17 @@ impl Storage {
         limit: u32,
     ) -> Result<SyncChangesPage, StorageError> {
         self.read(|conn| sync::changes::changes_since(conn, owner, cursor, limit))
+    }
+
+    /// Applies the rows a device pushed as the owner's, in one transaction, and answers each in order.
+    /// A modification time more than a minute ahead of `now_ms` is taken as `now_ms`.
+    pub fn apply_pushed_batch(
+        &self,
+        owner: &OwnerId,
+        rows: &[PushedChange],
+        now_ms: u64,
+    ) -> Result<Vec<PushVerdict>, StorageError> {
+        self.write(|conn| sync::apply_pushed::apply_pushed_batch(conn, owner, rows, now_ms))
     }
 
     /// The last change sequence this server gave out.

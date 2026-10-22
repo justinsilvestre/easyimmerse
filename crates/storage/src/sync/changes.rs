@@ -1,6 +1,6 @@
 //! What changed in an owner's synced rows: a page of changes after a cursor, and the changes a remote has yet to receive.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use super::codec::{RowData, read_row};
 use super::tables::SyncTable;
@@ -70,6 +70,26 @@ pub fn changes_since(
         next_cursor,
         has_more,
     })
+}
+
+/// The owner's registry entry of one row, with the row's current data, or None when the row was never seen here.
+pub fn change_of(
+    conn: &Connection,
+    owner: &OwnerId,
+    table: SyncTable,
+    key: &str,
+) -> Result<Option<SyncChange>, StorageError> {
+    let entry = conn
+        .query_row(
+            "SELECT table_name, row_key, change_seq, updated_at_ms, is_deleted FROM sync_rows \
+             WHERE table_name = ?1 AND row_key = ?2 AND owner_id = ?3",
+            params![table.as_str(), key, owner.0],
+            read_entry,
+        )
+        .optional()?;
+    entry
+        .map(|entry| entry.into_change(conn, owner))
+        .transpose()
 }
 
 /// The last change sequence this server gave out.
