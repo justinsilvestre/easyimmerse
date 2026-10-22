@@ -7,6 +7,7 @@ import type {
   ConversionCacheBudget,
   ConversionCacheStatus,
   CreateUserRequest,
+  CurrentPrincipal,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
@@ -210,6 +211,12 @@ export type ServerRequest =
   | { kind: "setUserRole"; userId: string; role: AccountRole }
   /** Deletes an account and its sessions, as only an administrator may. */
   | { kind: "deleteUser"; userId: string }
+  /** Fetches anew who the app's token belongs to, as after the account's email address is confirmed. */
+  | { kind: "getCurrentPrincipal" }
+  /** Logs the account out on one of its devices. `isCurrent` tells whether it is this one; it is not sent. */
+  | { kind: "deleteSession"; sessionId: string; isCurrent: boolean }
+  /** Mails the account another link that confirms its email address. */
+  | { kind: "requestConfirmationEmail" }
   /** Lists the cards of a review session of the project, in the order they are shown. */
   | { kind: "getReviewQueue"; projectId: string }
   /** Records the user's rating of a card, with the time from the card appearing to the rating. */
@@ -298,6 +305,11 @@ export type ServerResponses = {
   setUserRole: AccountUser;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteUser: void;
+  getCurrentPrincipal: CurrentPrincipal;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteSession: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  requestConfirmationEmail: void;
   getReviewQueue: ReviewQueue;
   answerReview: ReviewAnswerResponse;
   undoReviewAnswer: ReviewAnswerUndone;

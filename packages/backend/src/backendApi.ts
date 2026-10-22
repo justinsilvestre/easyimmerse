@@ -64,6 +64,7 @@ import type {
   ReviewRating,
   ReviewSummary,
   ServerAuthInfo,
+  SessionList,
   SetUserRoleRequest,
   SourceStepRequest,
   SourceStepResponse,
@@ -332,6 +333,14 @@ const mediaFileAddedTags = (projectId: string) =>
     "Projects",
   ] as const;
 
+/** The server whose accounts an endpoint reaches: the one the app is connected to. */
+export type AccountVia = "self";
+
+/** The path of an account route on the server that `via` names. */
+export function accountPath(_via: AccountVia, path: string): string {
+  return path;
+}
+
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
   reducerPath: serverCachePath,
@@ -350,6 +359,7 @@ export const backendApi = createApi({
     "ConversionCache",
     "Users",
     "CurrentPrincipal",
+    "Sessions",
     "Review",
   ],
   endpoints: (build) => ({
@@ -1128,6 +1138,33 @@ export const backendApi = createApi({
       // The account may be the app's own, whose session then ends.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
+    /** The devices the app's account is logged in on, which only an account may list. */
+    listSessions: build.query<SessionList, void>({
+      query: () => ({
+        method: "GET",
+        path: accountPath("self", "/auth/sessions"),
+      }),
+      providesTags: ["Sessions"],
+    }),
+    /** Logs the account out on one of its devices. */
+    deleteSession: build.mutation<void, string>({
+      query: (sessionId) => ({
+        method: "DELETE",
+        path: accountPath(
+          "self",
+          `/auth/sessions/${encodeURIComponent(sessionId)}`,
+        ),
+      }),
+      // A session that is already gone fails, and the list is then out of date as well.
+      invalidatesTags: () => ["Sessions"],
+    }),
+    /** Mails the account another link that confirms its email address. */
+    requestConfirmationEmail: build.mutation<void, void>({
+      query: () => ({
+        method: "POST",
+        path: accountPath("self", "/auth/confirmation-email"),
+      }),
+    }),
   }),
 });
 
@@ -1162,6 +1199,7 @@ export const {
   useGetCurrentPrincipalQuery,
   useGetServerAuthInfoQuery,
   useListUsersQuery,
+  useListSessionsQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
 } = backendApi;

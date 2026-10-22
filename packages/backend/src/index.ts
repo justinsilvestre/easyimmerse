@@ -27,6 +27,7 @@ export {
   useListPluginsQuery,
   useListProjectsQuery,
   useListReviewCountsQuery,
+  useListSessionsQuery,
   useListSubtitleTracksQuery,
   useListUsersQuery,
   useLookupTextQuery,

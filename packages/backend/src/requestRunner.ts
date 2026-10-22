@@ -42,7 +42,7 @@ type StartRequest<K extends ServerRequestKind> = (
  * Starts each kind of request through its endpoint, so that its cache tags and lifecycle apply as for any other caller.
  * Queries subscribe until they settle, so a tag invalidated meanwhile refetches the entry instead of removing it, and the entry then expires as any unused entry does.
  * Mutations are not tracked, so they leave no entry.
- * A job's status and the connection to Anki are always fetched anew, since the cached answer is the one the request wants to replace.
+ * A job's status, the connection to Anki and the current principal are always fetched anew, since the cached answer is the one the request wants to replace.
  */
 export const requestEndpoints = {
   listSubtitleTracks: ({ projectId, mediaFileId }) =>
@@ -239,6 +239,16 @@ export const requestEndpoints = {
     ),
   deleteUser: ({ userId }) =>
     backendApi.endpoints.deleteUser.initiate(userId, { track: false }),
+  getCurrentPrincipal: () =>
+    backendApi.endpoints.getCurrentPrincipal.initiate(undefined, {
+      forceRefetch: true,
+    }),
+  deleteSession: ({ sessionId }) =>
+    backendApi.endpoints.deleteSession.initiate(sessionId, { track: false }),
+  requestConfirmationEmail: () =>
+    backendApi.endpoints.requestConfirmationEmail.initiate(undefined, {
+      track: false,
+    }),
   getReviewQueue: ({ projectId }) =>
     backendApi.endpoints.getReviewQueue.initiate(projectId, { track: false }),
   answerReview: ({ projectId, flashcardId, rating, durationMs }) =>

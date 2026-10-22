@@ -899,4 +899,46 @@ describe("the account endpoints", () => {
     );
     expect(client.requests).toEqual([{ method: "DELETE", path: "/users/u1" }]);
   });
+
+  it("send GET /auth/sessions for listSessions", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listSessions.initiate(),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/auth/sessions" },
+    ]);
+  });
+
+  it("send DELETE /auth/sessions/{id} for deleteSession", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.deleteSession.initiate("s1"),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/auth/sessions/s1" },
+    ]);
+  });
+
+  it("list the sessions again once one is deleted", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listSessions.initiate());
+    await store.dispatch(backendApi.endpoints.deleteSession.initiate("s1"));
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/sessions"),
+      ).toHaveLength(2),
+    );
+  });
+
+  it("send POST /auth/confirmation-email for requestConfirmationEmail", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.requestConfirmationEmail.initiate(),
+    );
+    expect(client.requests).toEqual([
+      { method: "POST", path: "/auth/confirmation-email" },
+    ]);
+  });
 });
