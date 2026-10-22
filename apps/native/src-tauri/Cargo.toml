@@ -27,10 +27,13 @@ webdriver = ["dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
 tauri-build = { workspace = true }
 
 [dependencies]
+anyhow = { workspace = true }
 easyimmerse-api = { workspace = true }
 easyimmerse-plugins = { workspace = true }
-easyimmerse-storage = { workspace = true }
+easyimmerse-server = { workspace = true }
+gethostname = { workspace = true }
 hex = { workspace = true }
+if-addrs = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -40,9 +43,19 @@ tauri-plugin-notification = { workspace = true }
 tauri-plugin-opener = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
+toml_edit = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 ureq = { workspace = true }
+
+# The tray icon and the command line that runs the server's commands without a window exist only on desktop.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+clap = { workspace = true }
+dirs = { workspace = true }
+tauri = { workspace = true, features = ["tray-icon", "image-png"] }
+# The webdriver feature turns these on. The mobile end-to-end tests go through Appium instead.
+tauri-plugin-wdio = { workspace = true, optional = true }
+tauri-plugin-wdio-webdriver = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { workspace = true }
@@ -56,8 +69,3 @@ tauri-plugin-save-copy = { workspace = true }
 # iOS forbids just-in-time compilation, so plugins run there only through the Pulley interpreter.
 [target.'cfg(target_os = "ios")'.dependencies]
 easyimmerse-plugins = { workspace = true, features = ["interpreter"] }
-
-# The webdriver feature turns these on. The mobile end-to-end tests go through Appium instead.
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-wdio = { workspace = true, optional = true }
-tauri-plugin-wdio-webdriver = { workspace = true, optional = true }

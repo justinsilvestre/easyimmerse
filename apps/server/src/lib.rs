@@ -27,7 +27,7 @@ pub async fn run_with_defaults(
     defaults: &ServerFileConfig,
 ) -> anyhow::Result<()> {
     match command {
-        Command::Serve(args) => serve_command::run_with_defaults(args, defaults).await,
+        Command::Serve(args) => serve_command::run_with_defaults(*args, defaults).await,
         Command::Users(command) => users_command::run(command),
         Command::Config(command) => config_command::run_with_defaults(command, defaults),
     }

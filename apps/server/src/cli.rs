@@ -14,7 +14,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Starts the HTTP server.
-    Serve(ServeArgs),
+    Serve(Box<ServeArgs>),
     /// Manages the accounts in a database, without a running server.
     #[command(subcommand)]
     Users(UsersCommand),

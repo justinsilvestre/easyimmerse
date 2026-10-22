@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "server-control",
+  "description": "Lets the main window configure, start, stop and observe the server that other devices reach, and read its log. Only the desktop app has these commands.",
+  "platforms": ["macOS", "windows", "linux"],
+  "windows": ["main"],
+  "permissions": [
+    "allow-get-desktop-server-settings",
+    "allow-save-desktop-server-settings",
+    "allow-start-desktop-server",
+    "allow-stop-desktop-server",
+    "allow-get-desktop-server-status",
+    "allow-get-desktop-server-logs"
+  ]
+}
