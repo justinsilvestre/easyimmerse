@@ -9,6 +9,7 @@ export {
 } from "./account/accountSelectors.ts";
 export {
   selectConfirmationEmailMessage,
+  selectHasSentConfirmationEmail,
   selectIsSendingConfirmationEmail,
 } from "./account/confirmationEmailSelectors.ts";
 export { describeDevice } from "./account/describeDevice.ts";

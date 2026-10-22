@@ -53,11 +53,7 @@ function renderAccount(
 describe("EmailConfirmation", () => {
   it("tells that the address is not confirmed yet on a server that sends email", async () => {
     renderAccount(unconfirmed, true);
-    expect(
-      await screen.findByText(
-        "Not confirmed yet. We sent a link to someone@example.com.",
-      ),
-    ).toBeDefined();
+    expect(await screen.findByText("Not confirmed yet.")).toBeDefined();
   });
 
   it("tells nothing of confirmation on a server that sends no email", async () => {
@@ -75,7 +71,7 @@ describe("EmailConfirmation", () => {
   it("asks the server to mail another link", async () => {
     const client = renderAccount(unconfirmed, true);
     fireEvent.click(
-      await screen.findByRole("button", { name: "Send the link again" }),
+      await screen.findByRole("button", { name: "Send a confirmation link" }),
     );
     await waitFor(() =>
       expect(client.requests).toContainEqual({
@@ -83,6 +79,26 @@ describe("EmailConfirmation", () => {
         path: "/auth/confirmation-email",
       }),
     );
+  });
+
+  it("tells where it sent the link once the server mailed it", async () => {
+    renderAccount(unconfirmed, true, null);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Send a confirmation link" }),
+    );
+    expect(
+      await screen.findByText("We sent a link to someone@example.com."),
+    ).toBeDefined();
+  });
+
+  it("offers to send the link again once the server mailed it", async () => {
+    renderAccount(unconfirmed, true, null);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Send a confirmation link" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Send it again" }),
+    ).toBeDefined();
   });
 
   it("tells how long to wait when the server refuses another link so soon", async () => {
@@ -97,7 +113,7 @@ describe("EmailConfirmation", () => {
       }),
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: "Send the link again" }),
+      await screen.findByRole("button", { name: "Send a confirmation link" }),
     );
     expect(
       await screen.findByText("Wait 42 seconds before asking again."),

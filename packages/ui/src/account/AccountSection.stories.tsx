@@ -311,6 +311,14 @@ export const EmailConfirmed: Story = {
   }),
 };
 
+export const ConfirmationLinkSent: Story = {
+  parameters: connectedAs(someone, undefined, {
+    "GET /auth/server": mailingServer,
+    "POST /auth/confirmation-email": null,
+  }),
+  decorators: [withDispatchedActions(actions.confirmationEmailRequested())],
+};
+
 export const ResendTooSoon: Story = {
   parameters: connectedAs(someone, undefined, {
     "GET /auth/server": mailingServer,

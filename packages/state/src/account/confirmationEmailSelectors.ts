@@ -7,16 +7,21 @@ import { signInFailureMessage } from "./signInFailureMessage.ts";
 export const selectIsSendingConfirmationEmail = (state: AppRoot) =>
   selectIsRequestInFlight(state.app, confirmationEmailRequestId);
 
-/** Tells what came of the last request for another confirmation link, or returns null before any. */
+/** Tells whether the server mailed a confirmation link in answer to the last request for one. */
+export const selectHasSentConfirmationEmail = (state: AppRoot) =>
+  state.app.account.confirmationEmail.kind === "sent";
+
+/** Tells what came of the last request for a confirmation link to the given address, or returns null before any. */
 export function selectConfirmationEmailMessage(
   state: AppRoot,
+  email: string,
 ): { tone: "success" | "danger"; text: string } | null {
   const status = state.app.account.confirmationEmail;
   switch (status.kind) {
     case "idle":
       return null;
     case "sent":
-      return { tone: "success", text: "We sent a new link." };
+      return { tone: "success", text: `We sent a link to ${email}.` };
     case "tooSoon":
       return { tone: "danger", text: waitMessage(status.retryAfterSeconds) };
     case "failed":

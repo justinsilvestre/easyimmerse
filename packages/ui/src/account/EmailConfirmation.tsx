@@ -2,6 +2,7 @@ import { useGetServerAuthInfoQuery } from "@easyimmerse/backend";
 import {
   actions,
   selectConfirmationEmailMessage,
+  selectHasSentConfirmationEmail,
   selectIsSendingConfirmationEmail,
 } from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
@@ -10,7 +11,7 @@ import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 
-/** Whether the account's email address is confirmed, with a button that mails another link while it is not. Shows nothing on a server that sends no email. */
+/** Whether the account's email address is confirmed, with a button that mails a confirmation link while it is not. Shows nothing on a server that sends no email. */
 export function EmailConfirmation({ user }: { user: AccountUser }) {
   const authInfo = useGetServerAuthInfoQuery();
   if (authInfo.data?.sends_email !== true) return null;
@@ -22,12 +23,13 @@ export function EmailConfirmation({ user }: { user: AccountUser }) {
 function NotConfirmed({ email }: { email: string }) {
   const dispatch = useAppDispatch();
   const isSending = useAppSelector(selectIsSendingConfirmationEmail);
-  const message = useAppSelector(selectConfirmationEmailMessage);
+  const hasSent = useAppSelector(selectHasSentConfirmationEmail);
+  const message = useAppSelector((state) =>
+    selectConfirmationEmailMessage(state, email),
+  );
   return (
     <div className="mt-1 flex flex-col items-start gap-1">
-      <p className="text-xs text-fg-muted">
-        Not confirmed yet. We sent a link to {email}.
-      </p>
+      <p className="text-xs text-fg-muted">Not confirmed yet.</p>
       <Button
         size="sm"
         aria-disabled={isSending}
@@ -35,7 +37,7 @@ function NotConfirmed({ email }: { email: string }) {
           if (!isSending) dispatch(actions.confirmationEmailRequested());
         }}
       >
-        {isSending ? "Sending…" : "Send the link again"}
+        {sendButtonLabel(isSending, hasSent)}
       </Button>
       {message !== null && (
         <p
@@ -50,4 +52,9 @@ function NotConfirmed({ email }: { email: string }) {
       )}
     </div>
   );
+}
+
+function sendButtonLabel(isSending: boolean, hasSent: boolean): string {
+  if (isSending) return "Sending…";
+  return hasSent ? "Send it again" : "Send a confirmation link";
 }
