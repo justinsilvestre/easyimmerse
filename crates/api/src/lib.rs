@@ -26,6 +26,7 @@ pub mod plugins;
 pub mod router;
 pub mod routes;
 pub mod serve;
+pub mod server_control;
 pub mod sidecar_subtitle_tracks;
 mod source_update;
 pub mod state;
