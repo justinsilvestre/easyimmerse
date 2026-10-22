@@ -1,6 +1,11 @@
 import type { BackendClient } from "@easyimmerse/backend";
-import { actions, cacheEntry, type ServerConfig } from "@easyimmerse/state";
-import type { FlashcardDraft } from "@easyimmerse/types";
+import {
+  type AppStore,
+  actions,
+  cacheEntry,
+  type ServerConfig,
+} from "@easyimmerse/state";
+import type { FlashcardDraft, SyncLinkState } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -18,6 +23,8 @@ import {
 import {
   fixtureProject,
   fixtureResponses,
+  fixtureSyncLink,
+  fixtureSyncStatus,
 } from "../testSupport/fixtureResponses.ts";
 import {
   type RenderOptions,
@@ -93,6 +100,24 @@ function renderBundled(
   options: RenderOptions = { server: desktopServer },
 ) {
   return renderWithAppStore(<AppFooter />, client, options);
+}
+
+/** A built-in server whose projects are not backed up, because its link to the easyImmerse cloud is in the given state. */
+const linkedIn = (state: SyncLinkState) =>
+  createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /sync/status": fixtureSyncStatus({ ...fixtureSyncLink, state }),
+  });
+
+/** Waits until the built-in server has listed its projects and reported its sync status. */
+function waitUntilFetched(store: AppStore) {
+  return waitFor(() => {
+    const { backend } = store.getState();
+    const isFetched =
+      cacheEntry(backend, "listProjects", undefined)?.status === "fulfilled" &&
+      cacheEntry(backend, "getSyncStatus", undefined)?.status === "fulfilled";
+    if (!isFetched) throw new Error("Not fetched yet.");
+  });
 }
 
 const findSign = () => screen.findByRole("button", { name: "Not backed up" });
@@ -206,14 +231,61 @@ describe("NotBackedUpSign", () => {
 
     it("does not show while every project is backed up", async () => {
       const { store } = renderBundled(allBackedUp);
-      await waitFor(() => {
-        const listed = cacheEntry(
-          store.getState().backend,
-          "listProjects",
-          undefined,
-        );
-        if (listed?.status !== "fulfilled") throw new Error("Not listed yet.");
+      await waitUntilFetched(store);
+      expect(
+        screen.queryByRole("button", { name: "Not backed up" }),
+      ).toBeNull();
+    });
+
+    it("explains that the remote refused to synchronize", async () => {
+      renderBundled(
+        linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
+      );
+      await openSign();
+      expect(
+        screen.getByText(
+          "Your latest work is kept only on this computer, because cloud.example.org refused to synchronize. Open the account settings to see why.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("opens the account settings while the remote cannot be reached", async () => {
+      const { store } = renderBundled(
+        linkedIn({ kind: "unreachable", since_ms: Date.now() }),
+      );
+      await openSign();
+      fireEvent.click(
+        screen.getByRole("menuitem", { name: "Open account settings" }),
+      );
+      expect(store.getState().app.route).toMatchObject({
+        screen: "settings",
+        pages: ["general"],
       });
+    });
+
+    it("explains that the remote logged the app out", async () => {
+      renderBundled(linkedIn({ kind: "logged_out" }));
+      await openSign();
+      expect(
+        screen.getByText(
+          "You were logged out of cloud.example.org on this computer, so your latest work is kept only here. Log in again to keep a copy there.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("fills in the remote and the account to log in again", async () => {
+      const { store } = renderBundled(linkedIn({ kind: "logged_out" }));
+      await openSign();
+      fireEvent.click(screen.getByRole("menuitem", { name: "Log in again" }));
+      expect(store.getState().app.account.signInForm).toMatchObject({
+        ownServerUrl: "https://cloud.example.org",
+        email: "someone@example.org",
+      });
+    });
+
+    it("does not show while the link to the remote is working", async () => {
+      const { store } = renderBundled(linkedIn({ kind: "idle" }));
+      await waitUntilFetched(store);
       expect(
         screen.queryByRole("button", { name: "Not backed up" }),
       ).toBeNull();

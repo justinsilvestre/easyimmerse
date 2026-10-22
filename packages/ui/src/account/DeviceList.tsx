@@ -2,6 +2,7 @@ import { useListSessionsQuery } from "@easyimmerse/backend";
 import {
   actions,
   describeDevice,
+  selectAccountVia,
   selectDeviceLogOutFailureMessage,
   selectIsLoggingOutDevice,
 } from "@easyimmerse/state";
@@ -16,7 +17,7 @@ import { formatRelativeDate } from "../projects/formatRelativeDate.ts";
 /** The devices the account is logged in on, each with a button that logs it out. */
 export function DeviceList() {
   const headingId = useId();
-  const sessions = useListSessionsQuery();
+  const sessions = useListSessionsQuery(useAppSelector(selectAccountVia));
   const failure = useAppSelector(selectDeviceLogOutFailureMessage);
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">

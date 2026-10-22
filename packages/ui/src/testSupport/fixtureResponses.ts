@@ -8,6 +8,8 @@ import type {
   ProjectSettings,
   ReviewAnswerRequest,
   SubtitleTracksResponse,
+  SyncLink,
+  SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
 import {
@@ -157,8 +159,33 @@ export const fixtureImportedMediaFiles: ListMediaFilesResponse = {
   ),
 };
 
+/** A built-in server's link to the easyImmerse cloud, idle after a round that began at the Unix epoch. */
+export const fixtureSyncLink: SyncLink = {
+  kind: "account",
+  server_url: "https://cloud.example.org",
+  account_email: "someone@example.org",
+  account_role: "library_user",
+  linked_at_ms: 0,
+  last_synced_at_ms: 0,
+  pushed_through_seq: 0,
+  state: { kind: "idle" },
+  transfer: null,
+  conflicts: [],
+  conflict_count: 0,
+};
+
+/** The sync status of a built-in server with the given link, or with none. */
+export const fixtureSyncStatus = (
+  link: SyncLink | null = null,
+): SyncStatus => ({
+  link,
+  pulled_revision: 0,
+  local_change_seq: 0,
+});
+
 export const fixtureResponses = {
   "GET /plugins": { plugins: [] },
+  "GET /sync/status": fixtureSyncStatus(),
   "GET /projects": fixtureProjects,
   "GET /review/counts": { projects: [] },
   "GET /projects/p1": fixtureProject,

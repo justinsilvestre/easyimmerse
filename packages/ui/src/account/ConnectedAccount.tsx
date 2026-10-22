@@ -5,6 +5,7 @@ import {
 import type { NativePlatform } from "@easyimmerse/state";
 import {
   actions,
+  isOwnTokenRefused,
   selectBundledServerPlatform,
   selectIsSigningOut,
 } from "@easyimmerse/state";
@@ -19,7 +20,7 @@ import { UserManagement } from "./users/UserManagement.tsx";
 
 /** Tells who the app's server knows it as: an account, which may log out, or the server's owner, who needs none. */
 export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
-  const principal = useGetCurrentPrincipalQuery();
+  const principal = useGetCurrentPrincipalQuery("self");
   if (principal.isError) return <PrincipalFailure error={principal.error} />;
   if (principal.data === undefined)
     return (
@@ -33,7 +34,7 @@ export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
 
 /** The server's owner, who needs no account, and who manages the server's accounts when it has any. */
 function LaunchAccount() {
-  const authInfo = useGetServerAuthInfoQuery();
+  const authInfo = useGetServerAuthInfoQuery("self");
   const bundledIn = useAppSelector(selectBundledServerPlatform);
   return (
     <>
@@ -116,7 +117,7 @@ function LogOut() {
 }
 
 function principalFailureMessage(error: PrincipalError): string {
-  if (error !== undefined && "status" in error && error.status === 401)
+  if (error !== undefined && "status" in error && isOwnTokenRefused(error))
     return "The server no longer accepts this app's sign-in. Log out, then log in again.";
   const detail = error?.message ? `: ${error.message}` : ".";
   return `Couldn't tell which account this app uses${detail}`;

@@ -1,6 +1,7 @@
 import { useGetServerAuthInfoQuery } from "@easyimmerse/backend";
 import {
   actions,
+  selectAccountVia,
   selectConfirmationEmailMessage,
   selectHasSentConfirmationEmail,
   selectIsSendingConfirmationEmail,
@@ -13,7 +14,7 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 
 /** Whether the account's email address is confirmed, with a button that mails a confirmation link while it is not. Shows nothing on a server that sends no email. */
 export function EmailConfirmation({ user }: { user: AccountUser }) {
-  const authInfo = useGetServerAuthInfoQuery();
+  const authInfo = useGetServerAuthInfoQuery(useAppSelector(selectAccountVia));
   if (authInfo.data?.sends_email !== true) return null;
   if (user.email_confirmed_at_ms !== null)
     return <p className="text-xs text-success-fg">Confirmed</p>;

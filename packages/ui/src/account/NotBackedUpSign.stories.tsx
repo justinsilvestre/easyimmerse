@@ -1,4 +1,5 @@
 import { actions, type ServerConfig } from "@easyimmerse/state";
+import type { SyncLinkState } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
@@ -11,6 +12,8 @@ import {
 import {
   fixtureProject,
   fixtureResponses,
+  fixtureSyncLink,
+  fixtureSyncStatus,
 } from "../testSupport/fixtureResponses.ts";
 
 /** A backend that saves no flashcard, as one that runs offline cannot. */
@@ -40,6 +43,13 @@ const allBackedUp = createFakeBackendClient({
 
 /** A built-in server whose fixture projects are not backed up. */
 const notBackedUp = createFakeBackendClient(fixtureResponses);
+
+/** A built-in server whose projects are not backed up, because its link to the easyImmerse cloud is in the given state. */
+const linkedIn = (state: SyncLinkState) =>
+  createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /sync/status": fixtureSyncStatus({ ...fixtureSyncLink, state }),
+  });
 
 const accountServer: ServerConfig = {
   serverUrl: "https://books.example.org",
@@ -124,6 +134,40 @@ export const DeviceOnlyMobile: Story = {
 export const DeviceOnlyWithoutOfficialServer: Story = {
   parameters: {
     appStore: { client: notBackedUp, server: builtInServer("desktop") },
+  },
+};
+
+export const LinkFailing: Story = {
+  parameters: {
+    appStore: {
+      client: linkedIn({ kind: "unreachable", since_ms: Date.now() - 600_000 }),
+      server: builtInServer("desktop"),
+      cloudUrl: "https://cloud.example.org",
+    },
+  },
+};
+
+export const LinkRefused: Story = {
+  parameters: {
+    appStore: {
+      client: linkedIn({
+        kind: "failed",
+        code: "quota_exceeded",
+        message: "The account has no room left.",
+      }),
+      server: builtInServer("desktop"),
+      cloudUrl: "https://cloud.example.org",
+    },
+  },
+};
+
+export const LoggedOut: Story = {
+  parameters: {
+    appStore: {
+      client: linkedIn({ kind: "logged_out" }),
+      server: builtInServer("desktop"),
+      cloudUrl: "https://cloud.example.org",
+    },
   },
 };
 
