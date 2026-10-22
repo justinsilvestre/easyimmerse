@@ -3,8 +3,8 @@
 use serde_json::json;
 
 use crate::support::{
-    PUBLIC_URL, TestResponse, TestServer, link_token, spawn_test_server_with_accounts,
-    spawn_test_server_with_mail, wait_for_mails,
+    PUBLIC_URL, TestResponse, TestServer, link_token, mail_with_link,
+    spawn_test_server_with_accounts, spawn_test_server_with_mail, wait_for_mails,
 };
 
 const PASSWORD: &str = "correct horse";
@@ -186,7 +186,7 @@ mod password_reset {
         let session = sign_up(&server).await;
         request_reset(&server, EMAIL).await;
         let mails = wait_for_mails(&recorded, 2).await;
-        let token = link_token(&mails[1], "reset_password");
+        let token = link_token(mail_with_link(&mails, "reset_password"), "reset_password");
         (server, session, token)
     }
 

@@ -156,6 +156,16 @@ pub async fn wait_for_mails(recorded: &RecordedMails, count: usize) -> Vec<Outgo
     recorded.sent()
 }
 
+/// The recorded mail that holds a link with the query parameter, such as `reset_password`,
+/// whatever the order in which the server's background tasks recorded the mails.
+pub fn mail_with_link<'a>(mails: &'a [OutgoingMail], parameter: &str) -> &'a OutgoingMail {
+    let prefix = format!("{PUBLIC_URL}/?{parameter}=");
+    mails
+        .iter()
+        .find(|mail| mail.text.contains(&prefix))
+        .unwrap_or_else(|| panic!("a recorded mail with a `{parameter}` link"))
+}
+
 /// The token of the link in the mail that names the query parameter, such as `confirm_email`.
 pub fn link_token(mail: &OutgoingMail, parameter: &str) -> String {
     let prefix = format!("{PUBLIC_URL}/?{parameter}=");
