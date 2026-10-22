@@ -12,7 +12,7 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::auth::principal::Principal;
 use crate::now_ms::now_ms;
-use crate::pairing_codes::{PairingError, generate_pairing_code};
+use crate::pairing_codes::{IssuedCode, PairingError, generate_pairing_code};
 use crate::state::AppState;
 
 /// A pairing code that another device can exchange for the launch token once.
@@ -61,10 +61,36 @@ pub async fn issue_pairing_code(
         return Err(needs_launch_token());
     }
     let issued = state.pairing_code.issue(generate_pairing_code(), now_ms());
-    Ok(Json(PairingCode {
-        code: issued.code,
-        expires_at: issued.expires_at_ms,
-    }))
+    Ok(Json(issued.into()))
+}
+
+/// Returns the active pairing code, or issues a new one when none is active,
+/// the active one has been used, or it expires within fifteen seconds.
+/// Only the launch token may call it, and only on a server without accounts.
+#[utoipa::path(
+    post,
+    path = "/pairing/code/current",
+    tag = "pairing",
+    operation_id = "currentPairingCode",
+    security(("bearer_token" = [])),
+    responses(
+        (status = 200, description = "The pairing code to show", body = PairingCode),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 409, description = "`pairing_needs_launch_token`: the server has accounts, or the token is an account's", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn current_pairing_code(
+    State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
+) -> Result<Json<PairingCode>, ApiFailure> {
+    if principal != Principal::Launch || state.config.accounts.is_some() {
+        return Err(needs_launch_token());
+    }
+    let current = state
+        .pairing_code
+        .current_or_issue(generate_pairing_code, now_ms());
+    Ok(Json(current.into()))
 }
 
 /// Exchanges the active pairing code for the launch token. Needs no token.
@@ -76,7 +102,8 @@ pub async fn issue_pairing_code(
     request_body = PairingClaim,
     responses(
         (status = 200, description = "The code was used up", body = PairingGrant),
-        (status = 404, description = "`pairing_code_invalid`: the code is wrong, used up or expired", body = ApiError),
+        (status = 404, description = "`pairing_code_invalid`: the code is wrong, expired or replaced", body = ApiError),
+        (status = 409, description = "`pairing_code_used`: the code was the most recently used one", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 429, description = "`too_many_attempts`: too many failed claims recently, from this peer or from all peers", body = ApiError,
             headers(("Retry-After" = u64, description = "The seconds to wait before trying again"))),
@@ -96,6 +123,15 @@ pub async fn claim_pairing_code(
     Ok(Json(PairingGrant { token }))
 }
 
+impl From<IssuedCode> for PairingCode {
+    fn from(issued: IssuedCode) -> Self {
+        Self {
+            code: issued.code,
+            expires_at: issued.expires_at_ms,
+        }
+    }
+}
+
 fn needs_launch_token() -> ApiFailure {
     ApiFailure::new(
         StatusCode::CONFLICT,
@@ -110,6 +146,9 @@ impl From<PairingError> for ApiFailure {
         match error {
             PairingError::InvalidCode => {
                 ApiFailure::new(StatusCode::NOT_FOUND, "pairing_code_invalid", message)
+            }
+            PairingError::UsedCode => {
+                ApiFailure::new(StatusCode::CONFLICT, "pairing_code_used", message)
             }
             PairingError::TooManyAttempts { retry_after_secs } => {
                 ApiFailure::new(StatusCode::TOO_MANY_REQUESTS, "too_many_attempts", message)

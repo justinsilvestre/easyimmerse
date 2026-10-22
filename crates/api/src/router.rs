@@ -184,6 +184,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(users::set_user_role))
         .routes(routes!(users::delete_user))
         .routes(routes!(pairing::issue_pairing_code))
+        .routes(routes!(pairing::current_pairing_code))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {
