@@ -5,6 +5,7 @@
 
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use easyimmerse_conversion::manifest::{Manifest, write_manifest};
 use easyimmerse_conversion::source_identity::SourceIdentity;
@@ -13,11 +14,14 @@ use easyimmerse_conversion::{
 };
 use easyimmerse_media::{AudioAction, Rational, Segment, SegmentPlan};
 use easyimmerse_media_ffmpeg::FfmpegPaths;
+use easyimmerse_media_ffmpeg::error::FfmpegError;
 use tempfile::TempDir;
 
 use crate::support::{audio_only_plan, selection_of};
 
 const STDERR_TEXT: &str = "stand-in ffmpeg wrote nothing";
+/// How many times opening the service is tried while the stand-in script is busy.
+const OPEN_ATTEMPTS: u32 = 50;
 
 struct StandIn {
     service: ConversionService,
@@ -53,12 +57,34 @@ fn stand_in() -> StandIn {
         ffmpeg: Some(script.clone()),
         ffprobe: Some(script),
     };
-    let service = ConversionService::open(dir.path().join("cache"), paths).expect("service");
+    let service = open_service(&dir.path().join("cache"), &paths);
     let key = ConversionKey::parse(&"b".repeat(64)).expect("key");
     let test = StandIn { service, key, dir };
     std::fs::create_dir_all(test.entry_dir()).expect("entry dir");
     write_manifest(&test.entry_dir(), &manifest()).expect("manifest");
     test
+}
+
+/// Opens the service, whose first ffmpeg run is the version query.
+/// Linux refuses to run a file that some process holds open for writing,
+/// and a child forked by a test on another thread holds the script's write handle until it runs its own program,
+/// so a run that lands in that moment is tried again.
+fn open_service(cache_dir: &Path, paths: &FfmpegPaths) -> ConversionService {
+    for _ in 1..OPEN_ATTEMPTS {
+        match ConversionService::open(cache_dir.to_path_buf(), paths.clone()) {
+            Err(error) if is_script_busy(&error) => std::thread::sleep(Duration::from_millis(10)),
+            result => return result.expect("service"),
+        }
+    }
+    ConversionService::open(cache_dir.to_path_buf(), paths.clone()).expect("service")
+}
+
+fn is_script_busy(error: &ConversionError) -> bool {
+    matches!(
+        error,
+        ConversionError::Ffmpeg(FfmpegError::Spawn { source, .. })
+            if source.kind() == std::io::ErrorKind::ExecutableFileBusy
+    )
 }
 
 fn write_stand_in_ffmpeg(dir: &Path) -> PathBuf {
