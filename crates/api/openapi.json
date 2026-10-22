@@ -6809,6 +6809,160 @@
         ]
       }
     },
+    "/sync/changes": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Lists the principal's changes after a cursor, oldest first, each with the row's data or as a tombstone.",
+        "operationId": "listSyncChanges",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "description": "The `next_cursor` of the previous page; 0 or absent for the first page.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The most rows to return: 500 when absent, at most 2,000.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the principal's changes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncChangesPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The cursor or the limit is not a number, or the limit is 0 or above 2,000",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Applies a device's changed rows as the principal's, and answers each in the order sent.\nOf two changes made to a row at once, the one with the later `updated_at_ms` is kept;\na time more than a minute ahead of the server's clock counts as the server's time.",
+        "operationId": "pushSyncChanges",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "What the server did with each row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPushOutcomes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "More than 500 rows, a table that does not sync, or a malformed body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is larger than 16 MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/timed-text/parse": {
       "post": {
         "tags": [
@@ -10649,6 +10803,78 @@
           }
         }
       },
+      "PushOutcome": {
+        "type": "object",
+        "description": "What the server did with one pushed row.",
+        "required": [
+          "table",
+          "key",
+          "kind"
+        ],
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncRow",
+                "description": "The server's row when it kept its own version, or the tombstone of the deleted parent."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PushOutcomeKind"
+          },
+          "remote_updated_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The modification time the server now has for the row: the pushed time, or the server's time when that was in the future.\nNone when the row was rejected, or when the server kept a version of its own, which `current` carries.",
+            "minimum": 0
+          },
+          "table": {
+            "$ref": "#/components/schemas/SyncTable"
+          }
+        }
+      },
+      "PushOutcomeKind": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "applied_over_concurrent",
+          "unchanged",
+          "superseded",
+          "parent_deleted",
+          "rejected"
+        ]
+      },
+      "PushedRow": {
+        "type": "object",
+        "description": "A row that a device sends to a server, with the modification time the server had for it when the device last heard of it.",
+        "required": [
+          "row"
+        ],
+        "properties": {
+          "base_updated_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "None when the device has never had the server's version of the row.",
+            "minimum": 0
+          },
+          "row": {
+            "$ref": "#/components/schemas/SyncRow"
+          }
+        }
+      },
       "Rational": {
         "type": "object",
         "description": "A positive ratio of two integers, such as a timebase of `1/90000` or a frame rate of `30000/1001`.",
@@ -11484,6 +11710,115 @@
             }
           }
         }
+      },
+      "SyncChangesPage": {
+        "type": "object",
+        "description": "One page of an owner's changes on a server, in the order they were made.",
+        "required": [
+          "rows",
+          "next_cursor",
+          "has_more"
+        ],
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `since` to ask for the next page with.",
+            "minimum": 0
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncRow"
+            }
+          }
+        }
+      },
+      "SyncPushBatch": {
+        "type": "object",
+        "description": "The rows a device sends to a server in one request.",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PushedRow"
+            }
+          }
+        }
+      },
+      "SyncPushOutcomes": {
+        "type": "object",
+        "description": "What the server did with each pushed row, in the order the rows were sent.",
+        "required": [
+          "outcomes"
+        ],
+        "properties": {
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PushOutcome"
+            }
+          }
+        }
+      },
+      "SyncRow": {
+        "type": "object",
+        "description": "A synced row as it stands after its latest change, or its tombstone when it was deleted.",
+        "required": [
+          "table",
+          "key",
+          "updated_at_ms",
+          "is_deleted"
+        ],
+        "properties": {
+          "data": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "The row's synced columns by name. None for a deleted row."
+          },
+          "is_deleted": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "description": "The row's id, or for a table with a composite key, its parts joined by `:`."
+          },
+          "table": {
+            "$ref": "#/components/schemas/SyncTable"
+          },
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the row last changed on any server, in milliseconds since the Unix epoch.\nOf two changes made to a row at once, the later is kept.",
+            "minimum": 0
+          }
+        }
+      },
+      "SyncTable": {
+        "type": "string",
+        "description": "A table whose rows sync between servers. Each name is the table's name in the server's database.",
+        "enum": [
+          "projects",
+          "media_files",
+          "subtitle_tracks",
+          "alignments",
+          "flashcards",
+          "review_log",
+          "review_holds",
+          "review_day_allowances",
+          "anki_pending_deletions",
+          "dictionaries",
+          "preferences",
+          "review_parameters"
+        ]
       },
       "TableLayout": {
         "type": "object",

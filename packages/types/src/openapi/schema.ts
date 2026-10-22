@@ -1375,6 +1375,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sync/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the principal's changes after a cursor, oldest first, each with the row's data or as a tombstone. */
+        get: operations["listSyncChanges"];
+        put?: never;
+        /**
+         * Applies a device's changed rows as the principal's, and answers each in the order sent.
+         *     Of two changes made to a row at once, the one with the later `updated_at_ms` is kept;
+         *     a time more than a minute ahead of the server's clock counts as the server's time.
+         */
+        post: operations["pushSyncChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timed-text/parse": {
         parameters: {
             query?: never;
@@ -2554,6 +2576,30 @@ export interface components {
             /** @description The language translations and definitions are in, as a BCP 47 code. */
             translation_language: string;
         };
+        /** @description What the server did with one pushed row. */
+        PushOutcome: {
+            current?: components["schemas"]["SyncRow"] | null;
+            key: string;
+            kind: components["schemas"]["PushOutcomeKind"];
+            /**
+             * Format: int64
+             * @description The modification time the server now has for the row: the pushed time, or the server's time when that was in the future.
+             *     None when the row was rejected, or when the server kept a version of its own, which `current` carries.
+             */
+            remote_updated_at_ms?: number | null;
+            table: components["schemas"]["SyncTable"];
+        };
+        /** @enum {string} */
+        PushOutcomeKind: "applied" | "applied_over_concurrent" | "unchanged" | "superseded" | "parent_deleted" | "rejected";
+        /** @description A row that a device sends to a server, with the modification time the server had for it when the device last heard of it. */
+        PushedRow: {
+            /**
+             * Format: int64
+             * @description None when the device has never had the server's version of the row.
+             */
+            base_updated_at_ms?: number | null;
+            row: components["schemas"]["SyncRow"];
+        };
         /** @description A positive ratio of two integers, such as a timebase of `1/90000` or a frame rate of `30000/1001`. */
         Rational: {
             /** Format: int64 */
@@ -2912,6 +2958,44 @@ export interface components {
             selection: components["schemas"]["SubtitleSelection"];
             tracks: components["schemas"]["SubtitleTrack"][];
         };
+        /** @description One page of an owner's changes on a server, in the order they were made. */
+        SyncChangesPage: {
+            has_more: boolean;
+            /**
+             * Format: int64
+             * @description The `since` to ask for the next page with.
+             */
+            next_cursor: number;
+            rows: components["schemas"]["SyncRow"][];
+        };
+        /** @description The rows a device sends to a server in one request. */
+        SyncPushBatch: {
+            rows: components["schemas"]["PushedRow"][];
+        };
+        /** @description What the server did with each pushed row, in the order the rows were sent. */
+        SyncPushOutcomes: {
+            outcomes: components["schemas"]["PushOutcome"][];
+        };
+        /** @description A synced row as it stands after its latest change, or its tombstone when it was deleted. */
+        SyncRow: {
+            /** @description The row's synced columns by name. None for a deleted row. */
+            data?: Record<string, never> | null;
+            is_deleted: boolean;
+            /** @description The row's id, or for a table with a composite key, its parts joined by `:`. */
+            key: string;
+            table: components["schemas"]["SyncTable"];
+            /**
+             * Format: int64
+             * @description When the row last changed on any server, in milliseconds since the Unix epoch.
+             *     Of two changes made to a row at once, the later is kept.
+             */
+            updated_at_ms: number;
+        };
+        /**
+         * @description A table whose rows sync between servers. Each name is the table's name in the server's database.
+         * @enum {string}
+         */
+        SyncTable: "projects" | "media_files" | "subtitle_tracks" | "alignments" | "flashcards" | "review_log" | "review_holds" | "review_day_allowances" | "anki_pending_deletions" | "dictionaries" | "preferences" | "review_parameters";
         /** @description What each column of a table holds, and whether its first row is a header. */
         TableLayout: {
             columns: components["schemas"]["ColumnRole"][];
@@ -8163,6 +8247,118 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSyncChanges: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; 0 or absent for the first page. */
+                since?: number;
+                /** @description The most rows to return: 500 when absent, at most 2,000. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the principal's changes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncChangesPage"];
+                };
+            };
+            /** @description The cursor or the limit is not a number, or the limit is 0 or above 2,000 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    pushSyncChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncPushBatch"];
+            };
+        };
+        responses: {
+            /** @description What the server did with each row */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncPushOutcomes"];
+                };
+            };
+            /** @description More than 500 rows, a table that does not sync, or a malformed body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 16 MiB */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
