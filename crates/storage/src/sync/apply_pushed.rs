@@ -245,12 +245,16 @@ pub(crate) fn text_of(data: &RowData, column: &str) -> Option<String> {
 }
 
 /// Whether a registry entry or a stored row with the key belongs to another owner.
+/// Every owner has rows of their own with the same keys in the tables keyed by owner, so those never belong to another.
 fn is_under_another_owner(
     conn: &Connection,
     owner: &OwnerId,
     table: SyncTable,
     key: &str,
 ) -> Result<bool, StorageError> {
+    if matches!(table, SyncTable::Preferences | SyncTable::ReviewParameters) {
+        return Ok(false);
+    }
     let has_foreign_entry: bool = conn.query_row(
         "SELECT EXISTS (SELECT 1 FROM sync_rows WHERE table_name = ?1 AND row_key = ?2 AND owner_id <> ?3)",
         params![table.as_str(), key, owner.0],

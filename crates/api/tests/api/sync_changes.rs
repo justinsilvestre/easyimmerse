@@ -549,6 +549,42 @@ mod rejections {
     }
 }
 
+mod keys_shared_by_every_account {
+    use super::*;
+
+    fn preference_row() -> Value {
+        json!({
+            "table": "preferences", "key": "showTranslations", "updated_at_ms": now_ms(),
+            "is_deleted": false, "data": { "key": "showTranslations", "value": "true" },
+        })
+    }
+
+    fn review_parameters_row() -> Value {
+        json!({
+            "table": "review_parameters", "key": "review_parameters", "updated_at_ms": now_ms(),
+            "is_deleted": false, "data": { "weights_json": "[0.4, 1.2]", "fitted_at_ms": 1_000 },
+        })
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn applies_a_preference_that_another_account_also_pushed() {
+        let (server, token) = server_with_account().await;
+        push_one(&server, &token, preference_row(), None).await;
+        let other = sign_up(&server, "other@example.com").await;
+        let outcome = push_one(&server, &other, preference_row(), None).await;
+        assert_eq!(outcome["kind"], "applied");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn applies_review_parameters_that_another_account_also_pushed() {
+        let (server, token) = server_with_account().await;
+        push_one(&server, &token, review_parameters_row(), None).await;
+        let other = sign_up(&server, "other@example.com").await;
+        let outcome = push_one(&server, &other, review_parameters_row(), None).await;
+        assert_eq!(outcome["kind"], "applied");
+    }
+}
+
 mod review_answers {
     use super::*;
 
