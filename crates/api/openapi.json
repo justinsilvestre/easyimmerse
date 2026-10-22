@@ -3728,7 +3728,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Checks whether each path-backed media file of a project can be opened. Files the browser\nholds are left out, since only the browser can tell whether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.\nAt most eight files are checked at once, across all requests.",
+        "summary": "Checks whether each path-backed media file of a project can be opened, or else played from this server's copy.\nFiles the browser holds are left out unless this server keeps a copy, since only the browser can tell\nwhether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.\nAt most eight files are checked at once, across all requests.",
         "operationId": "getMediaAvailability",
         "parameters": [
           {
@@ -5109,12 +5109,334 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/stored-copy": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Serves this server's copy of the media file's bytes, with range requests.",
+        "operationId": "getStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The copy's bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "The requested byte range",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, or `no_stored_copy`: this server keeps no copy of it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Stores the request body as this server's copy of the media file's bytes, replacing any earlier copy,\nand records the choice to keep a copy. `Content-Length` is required, so that the quota is checked before the upload.",
+        "operationId": "putStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The media file's bytes",
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The copy was stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredCopy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was shorter or longer than its `Content-Length`, or broke off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`uploads_unavailable`: this server keeps no copies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "`length_required`: the request has no `Content-Length`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`quota_exceeded`: the copy would take the principal past their quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/stored-copy/fetch": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Downloads the linked remote's copy of the media file into this server's uploads directory,\nso that the media file plays here although its original is elsewhere. The request lasts as long as the download.",
+        "operationId": "fetchStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The copy is stored here",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredCopy"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`remote_logged_out`: the linked server ended this device's session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may fetch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, `not_linked`, or `no_stored_copy` on the remote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`uploads_unavailable`: this server keeps no copies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`remote_unreachable` or `remote_failed`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/stream": {
       "get": {
         "tags": [
           "media"
         ],
-        "summary": "Streams the file's bytes. Honors `Range` with 206 and 416 responses and advertises\n`Accept-Ranges: bytes`. The content type is guessed from the file extension.",
+        "summary": "Streams the file's bytes, or this server's copy of them when the file cannot be read. Honors `Range` with 206 and 416 responses and advertises\n`Accept-Ranges: bytes`. The content type is guessed from the file extension.",
         "operationId": "streamMediaFile",
         "parameters": [
           {
@@ -6011,6 +6333,92 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/upload-choice": {
+      "put": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Records whether the person wants a copy of the media file kept on a server, and returns the media file.\nTurning it off deletes this server's copy; a device that syncs passes the choice on, and the remote then deletes its copy too.",
+        "operationId": "setUploadChoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadChoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The media file with the choice recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/waveform": {
       "get": {
         "tags": [
@@ -6777,6 +7185,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListReviewCountsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/storage": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Lists the principal's stored copies with their sizes, and the quota they count against.\nA server without an uploads directory reports a quota of 0, since it keeps no copies.",
+        "operationId": "getStorageStatus",
+        "responses": {
+          "200": {
+            "description": "The principal's copies and quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageStatus"
                 }
               }
             }
@@ -10561,7 +11015,8 @@
           "name",
           "source",
           "created_at_ms",
-          "is_upload_chosen"
+          "is_upload_chosen",
+          "has_stored_copy"
         ],
         "properties": {
           "created_at_ms": {
@@ -10569,6 +11024,10 @@
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
+          },
+          "has_stored_copy": {
+            "type": "boolean",
+            "description": "Whether this server keeps a copy of the file's bytes, which it plays when the original cannot be read."
           },
           "id": {
             "$ref": "#/components/schemas/MediaFileId"
@@ -10990,7 +11449,8 @@
           "available",
           "missing",
           "not_allowed",
-          "unreadable"
+          "unreadable",
+          "stored_copy"
         ]
       },
       "PictureSize": {
@@ -12271,6 +12731,75 @@
         ],
         "description": "The plugin's answer to an action in its media interface: the next form to show, or the\nchanges the server applied."
       },
+      "StorageStatus": {
+        "type": "object",
+        "description": "How much of the principal's upload allowance their stored copies take, and which copies they are.",
+        "required": [
+          "used_bytes",
+          "copies"
+        ],
+        "properties": {
+          "copies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoredCopy"
+            },
+            "description": "The copies, largest first."
+          },
+          "quota_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The most bytes the principal may keep in copies; null when there is no limit.",
+            "minimum": 0
+          },
+          "used_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "StoredCopy": {
+        "type": "object",
+        "description": "A copy of a media file's bytes that this server keeps.",
+        "required": [
+          "media_file_id",
+          "project_id",
+          "project_name",
+          "name",
+          "size_bytes",
+          "stored_at_ms"
+        ],
+        "properties": {
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "name": {
+            "type": "string",
+            "description": "The media file's name, as its project's media list shows it."
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "project_name": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "stored_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the copy was stored, in milliseconds since the Unix epoch.",
+            "minimum": 0
+          }
+        }
+      },
       "SubtitleRole": {
         "type": "string",
         "description": "Which role a subtitle track plays for its media file.",
@@ -13298,6 +13827,18 @@
           "conversion_unavailable",
           "picture_too_tall"
         ]
+      },
+      "UploadChoiceRequest": {
+        "type": "object",
+        "description": "The person's choice whether to keep a copy of a media file's bytes on a server.",
+        "required": [
+          "is_upload_chosen"
+        ],
+        "properties": {
+          "is_upload_chosen": {
+            "type": "boolean"
+          }
+        }
       },
       "VideoAction": {
         "oneOf": [

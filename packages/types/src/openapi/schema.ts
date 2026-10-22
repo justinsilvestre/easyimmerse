@@ -827,8 +827,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Checks whether each path-backed media file of a project can be opened. Files the browser
-         *     holds are left out, since only the browser can tell whether it still has them. A
+         * Checks whether each path-backed media file of a project can be opened, or else played from this server's copy.
+         *     Files the browser holds are left out unless this server keeps a copy, since only the browser can tell
+         *     whether it still has them. A
          *     path-backed file is also left out when its check takes longer than two seconds, as can
          *     happen on a sleeping network drive, so an omitted file is one whose state is unknown.
          *     At most eight files are checked at once, across all requests.
@@ -1072,6 +1073,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/stored-copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves this server's copy of the media file's bytes, with range requests. */
+        get: operations["getStoredCopy"];
+        /**
+         * Stores the request body as this server's copy of the media file's bytes, replacing any earlier copy,
+         *     and records the choice to keep a copy. `Content-Length` is required, so that the quota is checked before the upload.
+         */
+        put: operations["putStoredCopy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/stored-copy/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Downloads the linked remote's copy of the media file into this server's uploads directory,
+         *     so that the media file plays here although its original is elsewhere. The request lasts as long as the download.
+         */
+        post: operations["fetchStoredCopy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/stream": {
         parameters: {
             query?: never;
@@ -1080,7 +1122,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Streams the file's bytes. Honors `Range` with 206 and 416 responses and advertises
+         * Streams the file's bytes, or this server's copy of them when the file cannot be read. Honors `Range` with 206 and 416 responses and advertises
          *     `Accept-Ranges: bytes`. The content type is guessed from the file extension.
          */
         get: operations["streamMediaFile"];
@@ -1207,6 +1249,26 @@ export interface paths {
          *     or clears the pairing.
          */
         put: operations["setTranslationDocument"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/upload-choice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Records whether the person wants a copy of the media file kept on a server, and returns the media file.
+         *     Turning it off deletes this server's copy; a device that syncs passes the choice on, and the remote then deletes its copy too.
+         */
+        put: operations["setUploadChoice"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1367,6 +1429,26 @@ export interface paths {
         };
         /** What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it. */
         get: operations["listReviewCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the principal's stored copies with their sizes, and the quota they count against.
+         *     A server without an uploads directory reports a quota of 0, since it keeps no copies.
+         */
+        get: operations["getStorageStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2433,6 +2515,8 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             created_at_ms: number;
+            /** @description Whether this server keeps a copy of the file's bytes, which it plays when the original cannot be read. */
+            has_stored_copy: boolean;
             id: components["schemas"]["MediaFileId"];
             /** @description Whether the user chose to keep a copy of the file's bytes on a server. */
             is_upload_chosen: boolean;
@@ -2577,7 +2661,7 @@ export interface components {
          * @description Whether the server can open the file at a media file's path.
          * @enum {string}
          */
-        PathAvailability: "available" | "missing" | "not_allowed" | "unreadable";
+        PathAvailability: "available" | "missing" | "not_allowed" | "unreadable" | "stored_copy";
         PictureSize: {
             /** Format: int32 */
             height: number;
@@ -3081,6 +3165,33 @@ export interface components {
             /** @description The media file's subtitle tracks after the changes. */
             tracks: components["schemas"]["SubtitleTrack"][];
         };
+        /** @description How much of the principal's upload allowance their stored copies take, and which copies they are. */
+        StorageStatus: {
+            /** @description The copies, largest first. */
+            copies: components["schemas"]["StoredCopy"][];
+            /**
+             * Format: int64
+             * @description The most bytes the principal may keep in copies; null when there is no limit.
+             */
+            quota_bytes?: number | null;
+            /** Format: int64 */
+            used_bytes: number;
+        };
+        /** @description A copy of a media file's bytes that this server keeps. */
+        StoredCopy: {
+            media_file_id: components["schemas"]["MediaFileId"];
+            /** @description The media file's name, as its project's media list shows it. */
+            name: string;
+            project_id: components["schemas"]["ProjectId"];
+            project_name: string;
+            /** Format: int64 */
+            size_bytes: number;
+            /**
+             * Format: int64
+             * @description When the copy was stored, in milliseconds since the Unix epoch.
+             */
+            stored_at_ms: number;
+        };
         /**
          * @description Which role a subtitle track plays for its media file.
          * @enum {string}
@@ -3442,6 +3553,10 @@ export interface components {
         };
         /** @enum {string} */
         UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
+        /** @description The person's choice whether to keep a copy of a media file's bytes on a server. */
+        UploadChoiceRequest: {
+            is_upload_chosen: boolean;
+        };
         VideoAction: {
             /** @enum {string} */
             action: "copy";
@@ -7296,6 +7411,239 @@ export interface operations {
             };
         };
     };
+    getStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The copy's bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description The requested byte range */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or `no_stored_copy`: this server keeps no copy of it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The media file's bytes */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The copy was stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredCopy"];
+                };
+            };
+            /** @description The body was shorter or longer than its `Content-Length`, or broke off */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no copies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `length_required`: the request has no `Content-Length` */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `quota_exceeded`: the copy would take the principal past their quota */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    fetchStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The copy is stored here */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredCopy"];
+                };
+            };
+            /** @description `remote_logged_out`: the linked server ended this device's session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may fetch */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, `not_linked`, or `no_stored_copy` on the remote */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no copies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     streamMediaFile: {
         parameters: {
             query?: {
@@ -7928,6 +8276,62 @@ export interface operations {
             };
         };
     };
+    setUploadChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadChoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description The media file with the choice recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getMediaWaveform: {
         parameters: {
             query: {
@@ -8468,6 +8872,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListReviewCountsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getStorageStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The principal's copies and quota */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageStatus"];
                 };
             };
             /** @description Missing or invalid token */
