@@ -77,6 +77,12 @@ pub fn set(args: &ConfigSetArgs) -> anyhow::Result<()> {
 
 /// Writes the file, readable only by its owner on Unix when it is to hold the token.
 fn write_config_file(path: &Path, key: &str, text: &str) -> std::io::Result<()> {
+    if let Some(directory) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(directory)?;
+    }
     if key == TOKEN_KEY {
         write_owner_only(path, text)
     } else {
@@ -244,5 +250,13 @@ mod tests {
         write_config_file(&path, TOKEN_KEY, "token = \"secret\"\n").unwrap();
         let mode = std::fs::metadata(&path).unwrap().permissions().mode();
         assert_eq!(mode & 0o777, OWNER_ONLY_MODE);
+    }
+
+    #[test]
+    fn creates_the_directory_of_a_new_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("nested").join("server.toml");
+        write_config_file(&path, "port", "port = 1\n").unwrap();
+        assert!(path.exists());
     }
 }

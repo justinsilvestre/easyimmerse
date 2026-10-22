@@ -16,6 +16,13 @@ const loopbackRunning = {
   pairing_url: null,
 };
 
+const offlineRunning = {
+  ...runningOnLan,
+  urls: [],
+  lan_reachable: false,
+  pairing_url: null,
+};
+
 const accounts = { ...lanSettings, auth: "accounts" } as const;
 
 describe("selectDesktopServerStatus", () => {
@@ -199,6 +206,13 @@ describe("selectDesktopPairingServer", () => {
       app: stateAfter(actions.desktopServerStatusReceived(loopbackRunning)),
     };
     expect(selectDesktopPairingServer(state)).toEqual({ kind: "loopbackOnly" });
+  });
+
+  it("returns a server on the local network of a computer without a network as no network", () => {
+    const state = {
+      app: stateAfter(actions.desktopServerStatusReceived(offlineRunning)),
+    };
+    expect(selectDesktopPairingServer(state)).toEqual({ kind: "noNetwork" });
   });
 
   it("returns the pairing address and whether the server has accounts", () => {

@@ -49,6 +49,11 @@ export const LoopbackOnly: Story = {
   args: { server: { kind: "loopbackOnly" } },
 };
 
+/** The server listens on every address, but this computer has no network connection, so no other device reaches it. */
+export const NoNetwork: Story = {
+  args: { server: { kind: "noNetwork" } },
+};
+
 /** A server with accounts shows no code: the other device logs in instead. */
 export const WithAccounts: Story = {
   args: { server: { kind: "running", url, hasAccounts: true } },

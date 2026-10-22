@@ -1,26 +1,32 @@
 //! Keeps the app running after its window closes while other devices use its server,
 //! and brings the window back from the tray or, on macOS, the dock.
 //!
-//! The window closes as usual, so that a page holding unsaved work can still ask first,
+//! The window closes as usual, so that a page holding unsaved work can ask first,
 //! and is made again when it is opened.
-//! Only quitting from a menu ends the app while the server runs.
+//! Quitting from a menu stops the server for other devices and then closes the windows,
+//! after which the app ends.
 
-use std::sync::atomic::{AtomicBool, Ordering};
-
-use tauri::{AppHandle, ExitRequestApi, Manager, Runtime};
+use tauri::{AppHandle, ExitRequestApi, Manager};
 
 use crate::embedded_server::EmbeddedServer;
 use crate::main_window;
 
-/// Set once the person chose to quit, so that closing the last window then ends the app.
-#[derive(Default)]
-pub struct QuitRequested(AtomicBool);
+/// Stops the server for other devices, then closes the windows, each of which may ask first.
+pub fn quit(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Some(server) = app.try_state::<EmbeddedServer>() {
+            server.stop_public().await;
+        }
+        let handle = app.clone();
+        if let Err(error) = app.run_on_main_thread(move || close_windows(&handle)) {
+            tracing::warn!("could not close the windows on Quit: {error}");
+        }
+    });
+}
 
-/// Closes the windows, each of which may ask first, and lets the app end once they are closed.
-pub fn quit<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(requested) = app.try_state::<QuitRequested>() {
-        requested.0.store(true, Ordering::SeqCst);
-    }
+/// Closes every window, or ends the app when there is none.
+fn close_windows(app: &AppHandle) {
     let windows = app.webview_windows();
     if windows.is_empty() {
         app.exit(0);
@@ -49,16 +55,13 @@ pub fn show_main_window(app: &AppHandle) {
 }
 
 /// Keeps the app open when its last window closed while the public listener runs,
-/// unless the person chose to quit or nothing could bring the window back.
+/// unless nothing could bring the window back.
 pub fn on_exit_requested(app: &AppHandle, code: Option<i32>, api: &ExitRequestApi) {
     let is_window_closing = code.is_none();
-    let is_quitting = app
-        .try_state::<QuitRequested>()
-        .is_some_and(|requested| requested.0.load(Ordering::SeqCst));
     let is_serving = app
         .try_state::<EmbeddedServer>()
         .is_some_and(|server| server.is_public_running());
-    if is_window_closing && is_serving && !is_quitting && can_reopen(app) {
+    if is_window_closing && is_serving && can_reopen(app) {
         tracing::info!("the window closed; the server keeps running");
         api.prevent_exit();
     }

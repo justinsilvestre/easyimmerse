@@ -59,9 +59,24 @@ export function ServerStatusBlock({
 function RunningDetails({ status }: { status: DesktopServerStatusView }) {
   return (
     <div className="flex flex-col gap-1 text-sm">
+      {status.urls.length === 0 ? (
+        <p className="text-fg-muted">
+          This computer is not connected to a network, so no other device can
+          reach the server.
+        </p>
+      ) : (
+        <ServerAddresses status={status} />
+      )}
+    </div>
+  );
+}
+
+function ServerAddresses({ status }: { status: DesktopServerStatusView }) {
+  return (
+    <>
       <p className="text-fg-muted">
         {status.isLanReachable
-          ? "Reachable from other devices on this network, at:"
+          ? "Reachable from other devices on this network, if your firewall allows it, at:"
           : "Reachable from this computer only, at:"}
       </p>
       <ul className="flex flex-col">
@@ -76,6 +91,6 @@ function RunningDetails({ status }: { status: DesktopServerStatusView }) {
           ? "It serves the complete web app, so a browser opens easyImmerse at these addresses."
           : "It serves only the API, for easyImmerse apps on other devices."}
       </p>
-    </div>
+    </>
   );
 }

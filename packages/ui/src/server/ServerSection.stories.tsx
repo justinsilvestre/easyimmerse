@@ -122,6 +122,22 @@ export const RunningOnLoopbackOnly: Story = {
   ],
 };
 
+/** The server listens on every address, but this computer has no network connection, so no other device reaches it. */
+export const RunningWithoutNetwork: Story = {
+  decorators: [
+    withDispatchedActions(
+      actions.desktopServerStatusReceived({
+        ...runningOnLan,
+        urls: [],
+        lan_reachable: false,
+        pairing_url: null,
+      }),
+      loaded(),
+      actions.desktopServerLogsReceived(logs.slice(0, 1)),
+    ),
+  ],
+};
+
 /** The server runs on the local network with only the launch token, so anyone there can use it. */
 export const RunningOnLanWithoutAuthentication: Story = {
   decorators: [

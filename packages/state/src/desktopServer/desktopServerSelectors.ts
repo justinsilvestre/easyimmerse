@@ -15,7 +15,7 @@ import {
 
 /**
  * The desktop server as pairing sees it: not known yet when null; not running; starting; running where only this computer reaches it;
- * or running on the local network, with accounts or with the launch token. `url` is the address other devices use.
+ * running on the local network while this computer has no network connection; or running on the local network, with accounts or with the launch token. `url` is the address other devices use.
  * It is unavailable when its status, or the settings of the running server, could not be read.
  */
 export type DesktopPairingServer =
@@ -23,6 +23,7 @@ export type DesktopPairingServer =
   | { kind: "stopped" }
   | { kind: "starting" }
   | { kind: "loopbackOnly" }
+  | { kind: "noNetwork" }
   | { kind: "running"; url: string; hasAccounts: boolean };
 
 /** The server's status as the server settings show it. */
@@ -174,8 +175,8 @@ function runningPairingServer(
   settingsFailure: string | undefined,
 ): DesktopPairingServer | null {
   const url = status.pairing_url ?? status.urls[0];
-  if (!status.lan_reachable || url === undefined)
-    return { kind: "loopbackOnly" };
+  if (url === undefined) return { kind: "noNetwork" };
+  if (!status.lan_reachable) return { kind: "loopbackOnly" };
   if (settings === null) return unavailableOrUnknown(settingsFailure);
   return { kind: "running", url, hasAccounts: settings.auth === "accounts" };
 }

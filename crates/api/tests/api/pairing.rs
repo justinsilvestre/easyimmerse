@@ -59,10 +59,17 @@ async fn a_claimed_code_yields_the_launch_token() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn an_issued_code_has_six_digits() {
+async fn an_issued_code_has_six_characters() {
     let server = spawn_test_server(false).await;
     let code = issue_code(&server).await;
-    assert!(code.len() == 6 && code.bytes().all(|byte| byte.is_ascii_digit()));
+    assert_eq!(code.len(), 6);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn an_issued_code_has_only_digits() {
+    let server = spawn_test_server(false).await;
+    let code = issue_code(&server).await;
+    assert!(code.bytes().all(|byte| byte.is_ascii_digit()), "{code}");
 }
 
 #[tokio::test(flavor = "multi_thread")]

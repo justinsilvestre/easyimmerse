@@ -1,7 +1,8 @@
 //! The macOS application menu: the default menu with a Preferences item (Cmd+,) added,
-//! which asks the page to open its Settings screen, and with a Quit item (Cmd+Q) that closes the windows.
+//! which asks the page to open its Settings screen, and with a Quit item (Cmd+Q)
+//! that stops the server for other devices and then closes the windows.
 //! The default Quit item ends the process at once, before a window holding unsaved work can ask whether to close;
-//! closing the windows lets each ask first, and the app exits once the last one has closed, even while the server runs.
+//! closing the windows lets each ask first, and the app exits once the last one has closed.
 
 use tauri::menu::{Menu, MenuItem, MenuItemKind, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -15,7 +16,7 @@ const QUIT_ITEM_ID: &str = "quit";
 /// After the About item and its separator, where macOS puts Preferences.
 const PREFERENCES_POSITION: usize = 2;
 
-pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+pub fn install(app: &AppHandle) -> tauri::Result<()> {
     let menu = Menu::default(app)?;
     if let Some(MenuItemKind::Submenu(app_submenu)) = menu.items()?.first() {
         app_submenu.insert(&preferences_item(app)?, PREFERENCES_POSITION)?;

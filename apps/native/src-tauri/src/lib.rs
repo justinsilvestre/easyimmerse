@@ -107,7 +107,6 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
 /// and starts the public listener when the config file asks for it.
 #[cfg(desktop)]
 fn set_up_server_control(app: &AppHandle) {
-    app.manage(background_running::QuitRequested::default());
     if let Err(error) = tray::install(app) {
         tracing::warn!("could not show the tray icon: {error}");
     }

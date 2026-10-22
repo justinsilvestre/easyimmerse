@@ -60,6 +60,14 @@ export function DesktopPairingPanel({
           </Button>
         </div>
       );
+    case "noNetwork":
+      return (
+        <p className="text-sm text-fg-muted">
+          The server is running, but this computer is not connected to a
+          network, so no other device can reach it. Connect this computer to the
+          network that the other device is on.
+        </p>
+      );
     case "running":
       return server.hasAccounts ? (
         <PairingAddress url={server.url} code={null}>
