@@ -146,6 +146,7 @@ export type * from "./Rational";
 export type * from "./ResolvedMedia";
 export type * from "./ResolvedSubtitle";
 export type * from "./ReviewAllowanceRequest";
+export type * from "./ReviewAnswerId";
 export type * from "./ReviewAnswerRequest";
 export type * from "./ReviewAnswerResponse";
 export type * from "./ReviewAnswerUndone";

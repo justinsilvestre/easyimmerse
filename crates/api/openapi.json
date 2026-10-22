@@ -1184,7 +1184,7 @@
         "operationId": "listDictionaries",
         "responses": {
           "200": {
-            "description": "Every imported dictionary, in import order",
+            "description": "The principal's dictionaries, in import order",
             "content": {
               "application/json": {
                 "schema": {
@@ -2331,7 +2331,7 @@
         "operationId": "listProjects",
         "responses": {
           "200": {
-            "description": "Every project, most recently opened first",
+            "description": "The principal's projects, most recently opened first",
             "content": {
               "application/json": {
                 "schema": {
@@ -6432,7 +6432,7 @@
         ]
       }
     },
-    "/projects/{id}/review/answers/{answered_at_ms}": {
+    "/projects/{id}/review/answers/{answer_id}": {
       "delete": {
         "tags": [
           "review"
@@ -6450,14 +6450,12 @@
             }
           },
           {
-            "name": "answered_at_ms",
+            "name": "answer_id",
             "in": "path",
-            "description": "The time of the answer, as its log entry gives it",
+            "description": "The id of the answer, as its log entry gives it",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64",
-              "minimum": 0
+              "type": "string"
             }
           },
           {
@@ -6493,7 +6491,7 @@
             }
           },
           "404": {
-            "description": "No such project, or no answer at that time in it",
+            "description": "No such project, or no answer with that id in it",
             "content": {
               "application/json": {
                 "schema": {
@@ -6758,7 +6756,7 @@
         "tags": [
           "review"
         ],
-        "summary": "What waits in each project's review today, counted as the queue counts it, as the list of projects shows it.",
+        "summary": "What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it.",
         "operationId": "listReviewCounts",
         "parameters": [
           {
@@ -9798,7 +9796,8 @@
           "project_id",
           "name",
           "source",
-          "created_at_ms"
+          "created_at_ms",
+          "is_upload_chosen"
         ],
         "properties": {
           "created_at_ms": {
@@ -9809,6 +9808,10 @@
           },
           "id": {
             "$ref": "#/components/schemas/MediaFileId"
+          },
+          "is_upload_chosen": {
+            "type": "boolean",
+            "description": "Whether the user chose to keep a copy of the file's bytes on a server."
           },
           "name": {
             "type": "string",
@@ -10534,7 +10537,8 @@
           "media_count",
           "flashcard_count",
           "unreviewed_count",
-          "uses_anki_connect"
+          "uses_anki_connect",
+          "is_backed_up"
         ],
         "properties": {
           "created_at_ms": {
@@ -10550,6 +10554,10 @@
           },
           "id": {
             "$ref": "#/components/schemas/ProjectId"
+          },
+          "is_backed_up": {
+            "type": "boolean",
+            "description": "Whether a copy of the project's latest change is kept on a server other than this device's own.\nAlways true for an account's projects, which live on the server it is logged in to."
           },
           "last_opened_at_ms": {
             "type": "integer",
@@ -10686,6 +10694,10 @@
             "description": "Local time minus UTC, in minutes, as on the user's device."
           }
         }
+      },
+      "ReviewAnswerId": {
+        "type": "string",
+        "description": "The identifier of one answer in the review log."
       },
       "ReviewAnswerRequest": {
         "type": "object",
@@ -10930,6 +10942,7 @@
         "type": "object",
         "description": "One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across.",
         "required": [
+          "id",
           "flashcard_id",
           "answered_at_ms",
           "rating",
@@ -10947,7 +10960,7 @@
           "answered_at_ms": {
             "type": "integer",
             "format": "int64",
-            "description": "Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.",
+            "description": "Milliseconds since the Unix epoch, stamped by the server.\nAnswers given on two devices may share a time; the id then orders them.",
             "minimum": 0
           },
           "desired_retention": {
@@ -10974,6 +10987,9 @@
           },
           "flashcard_id": {
             "$ref": "#/components/schemas/FlashcardId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ReviewAnswerId"
           },
           "interval_ms_after": {
             "type": "integer",

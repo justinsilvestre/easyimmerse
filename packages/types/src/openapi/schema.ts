@@ -1301,7 +1301,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/review/answers/{answered_at_ms}": {
+    "/projects/{id}/review/answers/{answer_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1365,7 +1365,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+        /** What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it. */
         get: operations["listReviewCounts"];
         put?: never;
         post?: never;
@@ -2278,6 +2278,8 @@ export interface components {
              */
             created_at_ms: number;
             id: components["schemas"]["MediaFileId"];
+            /** @description Whether the user chose to keep a copy of the file's bytes on a server. */
+            is_upload_chosen: boolean;
             /** @description The name shown in the project's media list, usually the file name. */
             name: string;
             origin?: components["schemas"]["MediaOrigin"] | null;
@@ -2508,6 +2510,11 @@ export interface components {
             flashcard_count: number;
             id: components["schemas"]["ProjectId"];
             /**
+             * @description Whether a copy of the project's latest change is kept on a server other than this device's own.
+             *     Always true for an account's projects, which live on the server it is logged in to.
+             */
+            is_backed_up: boolean;
+            /**
              * Format: int64
              * @description Milliseconds since the Unix epoch. Equal to `created_at_ms` until the project is first opened.
              */
@@ -2566,6 +2573,8 @@ export interface components {
              */
             utc_offset_min: number;
         };
+        /** @description The identifier of one answer in the review log. */
+        ReviewAnswerId: string;
         /** @description What the review screen sends when the user rates a card. */
         ReviewAnswerRequest: {
             /**
@@ -2688,7 +2697,8 @@ export interface components {
         ReviewLogEntry: {
             /**
              * Format: int64
-             * @description Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.
+             * @description Milliseconds since the Unix epoch, stamped by the server.
+             *     Answers given on two devices may share a time; the id then orders them.
              */
             answered_at_ms: number;
             /**
@@ -2712,6 +2722,7 @@ export interface components {
              */
             elapsed_ms: number;
             flashcard_id: components["schemas"]["FlashcardId"];
+            id: components["schemas"]["ReviewAnswerId"];
             /**
              * Format: int64
              * @description The interval the answer gave the card.
@@ -4108,7 +4119,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every imported dictionary, in import order */
+            /** @description The principal's dictionaries, in import order */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4979,7 +4990,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every project, most recently opened first */
+            /** @description The principal's projects, most recently opened first */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7918,8 +7929,8 @@ export interface operations {
             path: {
                 /** @description The project id */
                 id: string;
-                /** @description The time of the answer, as its log entry gives it */
-                answered_at_ms: number;
+                /** @description The id of the answer, as its log entry gives it */
+                answer_id: string;
             };
             cookie?: never;
         };
@@ -7943,7 +7954,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or no answer at that time in it */
+            /** @description No such project, or no answer with that id in it */
             404: {
                 headers: {
                     [name: string]: unknown;
