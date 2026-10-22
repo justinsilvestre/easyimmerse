@@ -1,8 +1,10 @@
 # Storybook screenshot diff
 
-Shows which stories of `packages/ui` a change affects, as before and after screenshots. Every story is captured in the light and dark themes at a phone width (390 × 844) and a desktop width (1280 × 800), two captures are compared, and a report page lists the stories that were added, removed, changed, or broke, with the differing pixels marked in red. Each screenshot is cropped to the story's content, including any dialog or menu drawn outside it and any part that extends past the viewport, so a small component is not lost in a mostly empty page. In the report, each story is a collapsible section whose header stays in view while it scrolls, and the page's light or dark theme picks which theme's screenshots are shown, with a switch in the toolbar at the top. Switching keeps the same stories, screenshots, and scroll position: a changed story shows each viewport that changed in either theme, in both themes, and marks the side where it did not. A story's phone and desktop screenshots sit side by side when the page is wide enough that this shrinks neither below half its size. Clicking a screenshot flips it between before and after, and a checkbox lays the changed pixels over the after side. There is no hosted service and no stored baseline: the "before" side is captured from a build of the base commit, so the comparison is always against exactly the commit the change branched from.
+This tool shows you which stories in `packages/ui` your change affects. It screenshots every story before and after the change, compares them, and gives you a report page of everything that was **added, removed, changed, or broke**, with the differing pixels marked in red.
 
-## Locally
+There is **no hosted service and no stored baseline**. The "before" screenshots come from a build of the commit your branch started from, so you always compare against exactly that commit.
+
+## Local runs with `mise run storybook-diff`
 
 ```sh
 mise run storybook-diff                 # against main
@@ -10,28 +12,56 @@ mise run storybook-diff -- --base <ref> # against another branch or commit
 mise run storybook-diff -- --no-open    # print the report path instead of opening it
 ```
 
-The task finds the commit where the current branch left the base branch, checks it out into a temporary worktree under `.dev/storybook-diff/`, builds its Storybook, and captures it. That capture is kept under `.dev/storybook-diff/captures/<commit>/`, so later runs against the same base skip straight to the working tree. It then builds and captures the working tree, compares the two, writes the report to `.dev/storybook-diff/report/index.html`, and opens it. A full run takes about ten minutes the first time and five after that; `.dev/` is ignored by git and can be deleted at any time.
+Before the first run, install Chromium for Playwright: `mise exec -- pnpm exec playwright install chromium`.
 
-Chromium must be installed for Playwright once: `mise exec -- pnpm exec playwright install chromium`.
+- **The first run takes about ten minutes**, because it builds and screenshots the base commit as well as your working tree.
+- **Later runs against the same base take about five**, because the base commit's screenshots are kept.
+- Everything goes in `.dev/storybook-diff/`, which git ignores and which you can delete at any time.
+- The report is written to `.dev/storybook-diff/report/index.html`.
 
-## On a pull request
+## Report screenshots and controls
 
-The `storybook` workflow runs the same scripts in three jobs: `capture` screenshots the base commit and the pull request's head side by side, `compare` builds the report, and `deploy-changes` publishes it under the pull request's Storybook preview at `storybook/pr-<number>/changes/` and posts a comment with the counts. The report links each story to that preview. The captures are also kept as workflow artifacts for a week.
+Every story is screenshotted:
 
-## How the captures stay deterministic
+- in the **light and dark themes**;
+- at a **phone width** (390 × 844) and a **desktop width** (1280 × 800);
+- **cropped to the story's content**, including dialogs and menus and anything that runs past the viewport, so a small component isn't lost in a mostly empty page.
 
-Two captures of the same build are identical, so any difference in the report comes from the change. The capture fixes everything that would otherwise vary:
+Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
-- The browser clock is fixed at one moment, with the time zone set to UTC and the locale to `en-US`, so relative and absolute dates render the same every time.
-- Reduced motion is emulated, which the stylesheet honours, and Playwright disables remaining animations and hides the caret for the screenshot.
-- The capture waits for Storybook's render event, which fires after any `play` function, and then for fonts, images, and the first frame of any video.
+- a **Copy** button, for the story's title and name;
+- a link to the story in Storybook;
+- a **Light/Dark** switch, which starts on your system's theme and affects only that story.
 
-A story that renders differently from run to run is a bug in the story or in this tool, not something to exclude.
+A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
+
+To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it.
+
+## Automatic reports on pull requests
+
+The `storybook` workflow runs the same scripts in three jobs:
+
+1. `capture` screenshots the base commit and the pull request's head.
+2. `compare` builds the report.
+3. `deploy-changes` publishes it at **`storybook/pr-<number>/changes/`**, beside the pull request's Storybook preview, and posts a comment with the counts.
+
+The screenshots are also kept as workflow artifacts for a week.
+
+## Deterministic captures
+
+The screenshots are deterministic, so **any difference in the report comes from your change**. To keep them that way, the capture:
+
+- fixes the browser clock at one moment, with the time zone set to UTC and the locale to `en-US`, so dates render the same every time;
+- turns on reduced motion, which our stylesheet honours, and has Playwright stop any remaining animations and hide the text caret;
+- waits for Storybook to finish rendering the story, including any `play` function, and then for fonts, images, and the first frame of any video.
+
+If a story still renders differently from run to run, **treat it as a bug** in the story or in this tool. Don't exclude it.
 
 ## Files
 
-- `capture.ts` screenshots a built Storybook into a capture directory: one directory per story, one image per variant, and a `manifest.json`.
-- `compare.ts` turns two capture directories into a report directory: `changes.json`, the before, after, and diff images of every changed story, and `index.html`.
-- `index.ts` is the local task that runs both against the base commit and the working tree.
-- `captureVariants.ts` defines the themes and viewports. Adding one there adds it to every capture and report.
-- `storyPage.ts` drives the Storybook preview: it loads the preview once per worker and switches stories through Storybook's own channel, which is several times faster than loading the preview for each story.
+- `index.ts` is the local task. It finds where your branch left the base branch, checks that commit out into a temporary worktree, and runs `capture.ts` and `compare.ts`.
+- `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
+- `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`.
+- `report.html` is the report page's template.
+- `captureVariants.ts` defines the themes and viewports. **Add one there to add it to every capture and report.**
+- `storyPage.ts` drives Storybook. It loads Storybook once per worker and switches between stories through Storybook's own messaging, which is several times faster than reloading the page for each story.
