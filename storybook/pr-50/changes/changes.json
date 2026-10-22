@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 510,
+  "storyCount": 511,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -42,10 +42,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 24229,
-        "light-desktop.png": 30313,
-        "dark-phone.png": 24939,
-        "dark-desktop.png": 31028
+        "light-phone.png": 3944,
+        "light-desktop.png": 31947,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 32597
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -54,7 +54,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -62,7 +62,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -70,7 +70,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -78,7 +78,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         }
       }
     },
@@ -89,10 +89,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22752,
-        "light-desktop.png": 29650,
-        "dark-phone.png": 26225,
-        "dark-desktop.png": 33349
+        "light-phone.png": 19818,
+        "light-desktop.png": 55631,
+        "dark-phone.png": 20164,
+        "dark-desktop.png": 59694
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -101,7 +101,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 623
+          "height": 612
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -109,7 +109,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 601
+          "height": 580
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -117,7 +117,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 623
+          "height": 612
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -125,7 +125,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 601
+          "height": 580
         }
       }
     },
@@ -136,10 +136,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 28801,
-        "light-desktop.png": 34905,
-        "dark-phone.png": 30023,
-        "dark-desktop.png": 36114
+        "light-phone.png": 3944,
+        "light-desktop.png": 36860,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 38503
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -148,7 +148,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -156,7 +156,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -164,7 +164,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -172,7 +172,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         }
       }
     },
@@ -183,10 +183,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 28575,
-        "light-desktop.png": 34657,
-        "dark-phone.png": 30006,
-        "dark-desktop.png": 36092
+        "light-phone.png": 3944,
+        "light-desktop.png": 36485,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 38052
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -195,7 +195,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -203,7 +203,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -211,7 +211,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -219,7 +219,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         }
       }
     },
@@ -230,10 +230,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 36064,
-        "light-desktop.png": 42213,
-        "dark-phone.png": 38297,
-        "dark-desktop.png": 44488
+        "light-phone.png": 3944,
+        "light-desktop.png": 42179,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 44560
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -242,7 +242,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 707
+          "height": 698
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -250,7 +250,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 685
+          "height": 666
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -258,7 +258,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 707
+          "height": 698
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -266,7 +266,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 685
+          "height": 666
         }
       }
     },
@@ -277,10 +277,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 29032,
-        "light-desktop.png": 35071,
-        "dark-phone.png": 32095,
-        "dark-desktop.png": 38278
+        "light-phone.png": 3944,
+        "light-desktop.png": 35430,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 38873
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -289,7 +289,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 672
+          "height": 663
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -297,7 +297,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 650
+          "height": 631
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -305,7 +305,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 672
+          "height": 663
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -313,7 +313,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 650
+          "height": 631
         }
       }
     },
@@ -324,10 +324,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31790,
-        "light-desktop.png": 37884,
-        "dark-phone.png": 34303,
-        "dark-desktop.png": 40482
+        "light-phone.png": 3944,
+        "light-desktop.png": 38104,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 40901
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -336,7 +336,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 681
+          "height": 672
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -344,7 +344,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 659
+          "height": 640
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -352,7 +352,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 681
+          "height": 672
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -360,7 +360,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 659
+          "height": 640
         }
       }
     },
@@ -371,10 +371,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31437,
-        "light-desktop.png": 37580,
-        "dark-phone.png": 33201,
-        "dark-desktop.png": 39383
+        "light-phone.png": 3944,
+        "light-desktop.png": 37891,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 39926
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -383,7 +383,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 672
+          "height": 663
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -391,7 +391,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 650
+          "height": 631
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -399,7 +399,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 672
+          "height": 663
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -407,7 +407,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 650
+          "height": 631
         }
       }
     },
@@ -418,10 +418,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 30396,
-        "light-desktop.png": 36594,
-        "dark-phone.png": 31434,
-        "dark-desktop.png": 37614
+        "light-phone.png": 3944,
+        "light-desktop.png": 37038,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 38278
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -430,7 +430,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 662
+          "height": 653
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -438,7 +438,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 640
+          "height": 621
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -446,7 +446,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 662
+          "height": 653
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -454,7 +454,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 640
+          "height": 621
         }
       }
     },
@@ -465,10 +465,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 27045,
-        "light-desktop.png": 33149,
-        "dark-phone.png": 28236,
-        "dark-desktop.png": 34327
+        "light-phone.png": 3944,
+        "light-desktop.png": 35060,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 36525
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -477,7 +477,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -485,7 +485,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -493,7 +493,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 660
+          "height": 651
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -501,7 +501,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 638
+          "height": 619
         }
       }
     },
@@ -512,10 +512,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 27828,
-        "light-desktop.png": 33931,
-        "dark-phone.png": 29248,
-        "dark-desktop.png": 35339
+        "light-phone.png": 3944,
+        "light-desktop.png": 35812,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 37306
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -524,7 +524,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 676
+          "height": 667
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -532,7 +532,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -540,7 +540,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 676
+          "height": 667
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -548,7 +548,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         }
       }
     },
@@ -559,10 +559,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 28050,
-        "light-desktop.png": 34156,
-        "dark-phone.png": 29412,
-        "dark-desktop.png": 35502
+        "light-phone.png": 3944,
+        "light-desktop.png": 36030,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 37467
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -571,7 +571,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 676
+          "height": 667
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -579,7 +579,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -587,7 +587,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 676
+          "height": 667
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -595,7 +595,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 654
+          "height": 635
         }
       }
     },
@@ -606,10 +606,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 30027,
-        "light-desktop.png": 36177,
-        "dark-phone.png": 31775,
-        "dark-desktop.png": 37938
+        "light-phone.png": 3944,
+        "light-desktop.png": 37814,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 39525
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -618,7 +618,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -626,7 +626,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 664
+          "height": 645
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -634,7 +634,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -642,7 +642,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 664
+          "height": 645
         }
       }
     },
@@ -653,10 +653,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20604,
-        "light-desktop.png": 23396,
-        "dark-phone.png": 24698,
-        "dark-desktop.png": 28285
+        "light-phone.png": 20900,
+        "light-desktop.png": 23829,
+        "dark-phone.png": 25014,
+        "dark-desktop.png": 29176
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -700,10 +700,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20913,
-        "light-desktop.png": 23938,
-        "dark-phone.png": 25021,
-        "dark-desktop.png": 28902
+        "light-phone.png": 21209,
+        "light-desktop.png": 24311,
+        "dark-phone.png": 25337,
+        "dark-desktop.png": 29696
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -773,10 +773,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 5231,
-        "light-desktop.png": 5480,
-        "dark-phone.png": 5334,
-        "dark-desktop.png": 5896
+        "light-phone.png": 10726,
+        "light-desktop.png": 21094,
+        "dark-phone.png": 11030,
+        "dark-desktop.png": 21453
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -785,7 +785,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 501
+          "height": 482
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -793,7 +793,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 461
+          "height": 450
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -801,7 +801,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 501
+          "height": 482
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -809,7 +809,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 461
+          "height": 450
         }
       }
     },
@@ -820,10 +820,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 24032,
-        "light-desktop.png": 29575,
-        "dark-phone.png": 27497,
-        "dark-desktop.png": 33270
+        "light-phone.png": 20661,
+        "light-desktop.png": 39463,
+        "dark-phone.png": 21013,
+        "dark-desktop.png": 39836
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -832,7 +832,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 623
+          "height": 612
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -840,7 +840,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 601
+          "height": 590
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -848,7 +848,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 623
+          "height": 612
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -856,7 +856,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 601
+          "height": 590
         }
       }
     },
@@ -867,10 +867,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 24512,
-        "light-desktop.png": 21855,
-        "dark-phone.png": 27744,
-        "dark-desktop.png": 24215
+        "light-phone.png": 24838,
+        "light-desktop.png": 22782,
+        "dark-phone.png": 28104,
+        "dark-desktop.png": 26023
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -914,10 +914,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20604,
-        "light-desktop.png": 23396,
-        "dark-phone.png": 24698,
-        "dark-desktop.png": 28285
+        "light-phone.png": 20900,
+        "light-desktop.png": 23829,
+        "dark-phone.png": 25014,
+        "dark-desktop.png": 29176
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -961,10 +961,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20897,
-        "light-desktop.png": 23721,
-        "dark-phone.png": 24793,
-        "dark-desktop.png": 28626
+        "light-phone.png": 21208,
+        "light-desktop.png": 24011,
+        "dark-phone.png": 25148,
+        "dark-desktop.png": 29282
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1008,10 +1008,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21853,
-        "light-desktop.png": 25474,
-        "dark-phone.png": 26007,
-        "dark-desktop.png": 30549
+        "light-phone.png": 22149,
+        "light-desktop.png": 26000,
+        "dark-phone.png": 26323,
+        "dark-desktop.png": 31583
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1055,10 +1055,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20865,
-        "light-desktop.png": 23792,
-        "dark-phone.png": 24975,
-        "dark-desktop.png": 28661
+        "light-phone.png": 21161,
+        "light-desktop.png": 24235,
+        "dark-phone.png": 25291,
+        "dark-desktop.png": 29556
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1102,10 +1102,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22632,
-        "light-desktop.png": 26181,
-        "dark-phone.png": 26783,
-        "dark-desktop.png": 31175
+        "light-phone.png": 22928,
+        "light-desktop.png": 26761,
+        "dark-phone.png": 27099,
+        "dark-desktop.png": 32189
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1149,10 +1149,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22857,
-        "light-desktop.png": 26704,
-        "dark-phone.png": 27092,
-        "dark-desktop.png": 31883
+        "light-phone.png": 23153,
+        "light-desktop.png": 27299,
+        "dark-phone.png": 27408,
+        "dark-desktop.png": 33042
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1186,6 +1186,53 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 628
+        }
+      }
+    },
+    {
+      "id": "account-accountsection--forgot-password-on-mail-server",
+      "title": "Account/AccountSection",
+      "name": "Forgot Password On Mail Server",
+      "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 407,
+        "light-desktop.png": 407,
+        "dark-phone.png": 416,
+        "dark-desktop.png": 416
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 534
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 534
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 512
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 512
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 534
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 534
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 512
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 512
         }
       }
     },
@@ -1196,10 +1243,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 29591,
-        "light-desktop.png": 35693,
-        "dark-phone.png": 31135,
-        "dark-desktop.png": 37224
+        "light-phone.png": 3944,
+        "light-desktop.png": 37307,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 38865
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1208,7 +1255,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1216,7 +1263,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 664
+          "height": 645
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1224,7 +1271,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 686
+          "height": 677
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1232,7 +1279,54 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 664
+          "height": 645
+        }
+      }
+    },
+    {
+      "id": "account-accountsection--reset-link-sent",
+      "title": "Account/AccountSection",
+      "name": "Reset Link Sent",
+      "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 407,
+        "light-desktop.png": 407,
+        "dark-phone.png": 416,
+        "dark-desktop.png": 416
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 560
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 560
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 538
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 538
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 560
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 560
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 538
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 538
         }
       }
     },
@@ -1243,10 +1337,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 958,
-        "light-desktop.png": 958,
-        "dark-phone.png": 938,
-        "dark-desktop.png": 938
+        "light-phone.png": 1365,
+        "light-desktop.png": 1365,
+        "dark-phone.png": 1354,
+        "dark-desktop.png": 1354
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1290,10 +1384,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 858,
-        "light-desktop.png": 858,
-        "dark-phone.png": 825,
-        "dark-desktop.png": 825
+        "light-phone.png": 1265,
+        "light-desktop.png": 1265,
+        "dark-phone.png": 1241,
+        "dark-desktop.png": 1241
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1337,10 +1431,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 958,
-        "light-desktop.png": 958,
-        "dark-phone.png": 938,
-        "dark-desktop.png": 938
+        "light-phone.png": 1365,
+        "light-desktop.png": 1365,
+        "dark-phone.png": 1354,
+        "dark-desktop.png": 1354
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1384,10 +1478,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22752,
-        "light-desktop.png": 29650,
-        "dark-phone.png": 26225,
-        "dark-desktop.png": 33350
+        "light-phone.png": 19818,
+        "light-desktop.png": 55632,
+        "dark-phone.png": 20164,
+        "dark-desktop.png": 59694
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1396,7 +1490,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 639
+          "height": 628
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1404,7 +1498,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 617
+          "height": 596
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1412,7 +1506,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 639
+          "height": 628
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1420,7 +1514,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 617
+          "height": 596
         }
       }
     },
@@ -1431,10 +1525,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22752,
-        "light-desktop.png": 29650,
-        "dark-phone.png": 26225,
-        "dark-desktop.png": 33350
+        "light-phone.png": 19818,
+        "light-desktop.png": 55632,
+        "dark-phone.png": 20164,
+        "dark-desktop.png": 59694
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1443,7 +1537,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 649
+          "height": 638
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1451,7 +1545,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 627
+          "height": 606
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1459,7 +1553,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 649
+          "height": 638
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1467,7 +1561,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 627
+          "height": 606
         }
       }
     },
@@ -1478,10 +1572,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 24032,
-        "light-desktop.png": 29575,
-        "dark-phone.png": 27497,
-        "dark-desktop.png": 33271
+        "light-phone.png": 20254,
+        "light-desktop.png": 39056,
+        "dark-phone.png": 20597,
+        "dark-desktop.png": 39420
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1490,7 +1584,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1498,7 +1592,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1506,7 +1600,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1514,7 +1608,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         }
       }
     },
@@ -1525,10 +1619,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23916,
-        "light-desktop.png": 28177,
-        "dark-phone.png": 27385,
-        "dark-desktop.png": 31846
+        "light-phone.png": 20138,
+        "light-desktop.png": 37658,
+        "dark-phone.png": 20485,
+        "dark-desktop.png": 37995
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1537,7 +1631,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1545,7 +1639,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1553,7 +1647,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1561,7 +1655,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         }
       }
     },
@@ -1572,10 +1666,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31433,
-        "light-desktop.png": 52057,
-        "dark-phone.png": 33845,
-        "dark-desktop.png": 54610
+        "light-phone.png": 22768,
+        "light-desktop.png": 38966,
+        "dark-phone.png": 23141,
+        "dark-desktop.png": 39354
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1584,7 +1678,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 642
+          "height": 633
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1592,7 +1686,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 620
+          "height": 611
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1600,7 +1694,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 642
+          "height": 633
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1608,7 +1702,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 620
+          "height": 611
         }
       }
     },
@@ -1619,10 +1713,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 26839,
-        "light-desktop.png": 32417,
-        "dark-phone.png": 33005,
-        "dark-desktop.png": 38958
+        "light-phone.png": 23456,
+        "light-desktop.png": 42356,
+        "dark-phone.png": 28849,
+        "dark-desktop.png": 48125
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1631,7 +1725,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1639,7 +1733,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1647,7 +1741,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 605
+          "height": 594
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1655,7 +1749,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 583
+          "height": 572
         }
       }
     },
@@ -1666,10 +1760,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 27527,
-        "light-desktop.png": 33108,
-        "dark-phone.png": 31488,
-        "dark-desktop.png": 37273
+        "light-phone.png": 24077,
+        "light-desktop.png": 43060,
+        "dark-phone.png": 24714,
+        "dark-desktop.png": 43693
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1678,7 +1772,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 631
+          "height": 620
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1686,7 +1780,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 609
+          "height": 598
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1694,7 +1788,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 631
+          "height": 620
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1702,7 +1796,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 609
+          "height": 598
         }
       }
     },
@@ -1713,10 +1807,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 30631,
-        "light-desktop.png": 42556,
-        "dark-phone.png": 34019,
-        "dark-desktop.png": 46174
+        "light-phone.png": 30307,
+        "light-desktop.png": 27272,
+        "dark-phone.png": 33817,
+        "dark-desktop.png": 30846
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1725,7 +1819,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 592
+          "height": 590
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1733,7 +1827,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 548
+          "height": 536
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1741,7 +1835,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 592
+          "height": 590
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1749,7 +1843,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 548
+          "height": 536
         }
       }
     },
@@ -1760,10 +1854,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31430,
-        "light-desktop.png": 42681,
-        "dark-phone.png": 34816,
-        "dark-desktop.png": 46216
+        "light-phone.png": 27192,
+        "light-desktop.png": 27326,
+        "dark-phone.png": 30542,
+        "dark-desktop.png": 30924
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1772,7 +1866,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1780,7 +1874,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1788,7 +1882,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1796,7 +1890,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         }
       }
     },
@@ -1807,10 +1901,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31594,
-        "light-desktop.png": 42924,
-        "dark-phone.png": 34979,
-        "dark-desktop.png": 46507
+        "light-phone.png": 27404,
+        "light-desktop.png": 27547,
+        "dark-phone.png": 30742,
+        "dark-desktop.png": 31205
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1819,7 +1913,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1827,7 +1921,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1835,7 +1929,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1843,7 +1937,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         }
       }
     },
@@ -1854,10 +1948,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 36144,
-        "light-desktop.png": 52168,
-        "dark-phone.png": 39637,
-        "dark-desktop.png": 55931
+        "light-phone.png": 32382,
+        "light-desktop.png": 38961,
+        "dark-phone.png": 36192,
+        "dark-desktop.png": 42851
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1866,7 +1960,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 630
+          "height": 618
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1874,7 +1968,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 586
+          "height": 574
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1882,7 +1976,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 630
+          "height": 618
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1890,7 +1984,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 586
+          "height": 574
         }
       }
     },
@@ -1901,10 +1995,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 46408,
-        "light-desktop.png": 69466,
-        "dark-phone.png": 49913,
-        "dark-desktop.png": 73773
+        "light-phone.png": 41877,
+        "light-desktop.png": 54029,
+        "dark-phone.png": 45975,
+        "dark-desktop.png": 58369
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1913,7 +2007,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 807
+          "height": 795
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1921,7 +2015,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 763
+          "height": 751
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1929,7 +2023,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 807
+          "height": 795
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1937,7 +2031,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 763
+          "height": 751
         }
       }
     },
@@ -1948,10 +2042,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31330,
-        "light-desktop.png": 42469,
-        "dark-phone.png": 34708,
-        "dark-desktop.png": 45993
+        "light-phone.png": 27047,
+        "light-desktop.png": 27389,
+        "dark-phone.png": 30366,
+        "dark-desktop.png": 30902
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1960,7 +2054,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -1968,7 +2062,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -1976,7 +2070,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -1984,7 +2078,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         }
       }
     },
@@ -1995,10 +2089,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 30486,
-        "light-desktop.png": 41661,
-        "dark-phone.png": 33789,
-        "dark-desktop.png": 45074
+        "light-phone.png": 26035,
+        "light-desktop.png": 26219,
+        "dark-phone.png": 29350,
+        "dark-desktop.png": 29668
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2007,7 +2101,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2015,7 +2109,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2023,7 +2117,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 604
+          "height": 592
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2031,7 +2125,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 560
+          "height": 548
         }
       }
     },
@@ -2042,10 +2136,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 55548,
-        "light-desktop.png": 100651,
-        "dark-phone.png": 60998,
-        "dark-desktop.png": 106126
+        "light-phone.png": 126461,
+        "light-desktop.png": 317852,
+        "dark-phone.png": 131258,
+        "dark-desktop.png": 323589
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2054,7 +2148,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 756
+          "height": 948
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2062,7 +2156,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 692
+          "height": 864
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2070,7 +2164,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 756
+          "height": 948
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2078,7 +2172,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 692
+          "height": 864
         }
       }
     },
@@ -2089,10 +2183,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23389,
-        "light-desktop.png": 30961,
-        "dark-phone.png": 24965,
-        "dark-desktop.png": 32466
+        "light-phone.png": 24050,
+        "light-desktop.png": 30686,
+        "dark-phone.png": 25694,
+        "dark-desktop.png": 32402
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2101,7 +2195,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 578
+          "height": 576
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2109,7 +2203,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 538
+          "height": 536
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2117,7 +2211,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 578
+          "height": 576
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2125,7 +2219,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 538
+          "height": 536
         }
       }
     },
@@ -2136,10 +2230,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23622,
-        "light-desktop.png": 31198,
-        "dark-phone.png": 25160,
-        "dark-desktop.png": 32665
+        "light-phone.png": 24223,
+        "light-desktop.png": 30836,
+        "dark-phone.png": 25834,
+        "dark-desktop.png": 32537
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2148,7 +2242,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 578
+          "height": 576
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2156,7 +2250,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 538
+          "height": 536
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2164,7 +2258,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 578
+          "height": 576
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2172,7 +2266,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 538
+          "height": 536
         }
       }
     },
@@ -2183,10 +2277,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 12846,
-        "light-desktop.png": 18082,
-        "dark-phone.png": 13693,
-        "dark-desktop.png": 18896
+        "light-phone.png": 13385,
+        "light-desktop.png": 18653,
+        "dark-phone.png": 14260,
+        "dark-desktop.png": 19570
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2195,7 +2289,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 526
+          "height": 514
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2203,7 +2297,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 504
+          "height": 492
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2211,7 +2305,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 526
+          "height": 514
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2219,7 +2313,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 504
+          "height": 492
         }
       }
     },
@@ -2230,10 +2324,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 27691,
-        "light-desktop.png": 38720,
-        "dark-phone.png": 32270,
-        "dark-desktop.png": 43222
+        "light-phone.png": 35082,
+        "light-desktop.png": 66632,
+        "dark-phone.png": 40120,
+        "dark-desktop.png": 71717
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2242,7 +2336,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 657
+          "height": 634
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2250,7 +2344,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 635
+          "height": 612
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2258,7 +2352,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 657
+          "height": 634
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2266,7 +2360,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 635
+          "height": 612
         }
       }
     },
@@ -2277,10 +2371,10 @@
       "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 48566,
-        "light-desktop.png": 85886,
-        "dark-phone.png": 51972,
-        "dark-desktop.png": 88950
+        "light-phone.png": 48740,
+        "light-desktop.png": 71411,
+        "dark-phone.png": 52291,
+        "dark-desktop.png": 75457
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2289,7 +2383,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 681
+          "height": 679
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2297,7 +2391,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 619
+          "height": 607
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2305,7 +2399,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 681
+          "height": 679
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2313,7 +2407,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 619
+          "height": 607
         }
       }
     },
@@ -2611,10 +2705,10 @@
       "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 10881,
-        "light-desktop.png": 25030,
-        "dark-phone.png": 12537,
-        "dark-desktop.png": 28765
+        "light-phone.png": 11014,
+        "light-desktop.png": 25163,
+        "dark-phone.png": 12665,
+        "dark-desktop.png": 28893
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2705,10 +2799,10 @@
       "importPath": "./src/account/SyncConflictsNotice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 13049,
-        "light-desktop.png": 25096,
-        "dark-phone.png": 14173,
-        "dark-desktop.png": 26283
+        "light-phone.png": 23443,
+        "light-desktop.png": 58015,
+        "dark-phone.png": 24908,
+        "dark-desktop.png": 59595
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2717,7 +2811,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 510
+          "height": 535
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2725,7 +2819,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 478
+          "height": 503
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2733,7 +2827,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 510
+          "height": 535
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2741,7 +2835,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 478
+          "height": 503
         }
       }
     },
@@ -2752,10 +2846,10 @@
       "importPath": "./src/account/SyncConflictsNotice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21918,
-        "light-desktop.png": 50081,
-        "dark-phone.png": 23875,
-        "dark-desktop.png": 52024
+        "light-phone.png": 80536,
+        "light-desktop.png": 229763,
+        "dark-phone.png": 84178,
+        "dark-desktop.png": 233455
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2764,7 +2858,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 568
+          "height": 704
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2772,7 +2866,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 526
+          "height": 662
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2780,7 +2874,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 568
+          "height": 704
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2788,7 +2882,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 526
+          "height": 662
         }
       }
     },
@@ -2799,10 +2893,10 @@
       "importPath": "./src/account/SyncConflictsNotice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23314,
-        "light-desktop.png": 53212,
-        "dark-phone.png": 25328,
-        "dark-desktop.png": 55239
+        "light-phone.png": 76599,
+        "light-desktop.png": 214758,
+        "dark-phone.png": 80193,
+        "dark-desktop.png": 218372
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2811,7 +2905,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 582
+          "height": 704
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2819,7 +2913,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 540
+          "height": 662
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2827,7 +2921,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 582
+          "height": 704
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2835,7 +2929,33 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 540
+          "height": 662
+        }
+      }
+    },
+    {
+      "id": "account-syncconflictsnotice--all-shown",
+      "title": "Account/SyncConflictsNotice",
+      "name": "All Shown",
+      "importPath": "./src/account/SyncConflictsNotice.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 772
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 720
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 772
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 720
         }
       }
     },
@@ -2846,10 +2966,10 @@
       "importPath": "./src/account/SyncConflictsNotice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 22102,
-        "light-desktop.png": 50310,
-        "dark-phone.png": 24106,
-        "dark-desktop.png": 52295
+        "light-phone.png": 80637,
+        "light-desktop.png": 229778,
+        "dark-phone.png": 84289,
+        "dark-desktop.png": 233477
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2858,7 +2978,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 568
+          "height": 704
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -2866,7 +2986,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 526
+          "height": 662
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -2874,7 +2994,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 568
+          "height": 704
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2882,7 +3002,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 526
+          "height": 662
         }
       }
     },
@@ -2893,10 +3013,10 @@
       "importPath": "./src/account/SyncStateLine.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 2924,
-        "light-desktop.png": 2924,
-        "dark-phone.png": 3022,
-        "dark-desktop.png": 3022
+        "light-phone.png": 4623,
+        "light-desktop.png": 4623,
+        "dark-phone.png": 4776,
+        "dark-desktop.png": 4776
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2904,7 +3024,7 @@
           "height": 56
         },
         "after-light-phone.png": {
-          "width": 354,
+          "width": 389,
           "height": 56
         },
         "before-light-desktop.png": {
@@ -2912,7 +3032,7 @@
           "height": 56
         },
         "after-light-desktop.png": {
-          "width": 354,
+          "width": 389,
           "height": 56
         },
         "before-dark-phone.png": {
@@ -2920,7 +3040,7 @@
           "height": 56
         },
         "after-dark-phone.png": {
-          "width": 354,
+          "width": 389,
           "height": 56
         },
         "before-dark-desktop.png": {
@@ -2928,7 +3048,54 @@
           "height": 56
         },
         "after-dark-desktop.png": {
-          "width": 354,
+          "width": 389,
+          "height": 56
+        }
+      }
+    },
+    {
+      "id": "account-syncstateline--unreachable",
+      "title": "Account/SyncStateLine",
+      "name": "Unreachable",
+      "importPath": "./src/account/SyncStateLine.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 3206,
+        "light-desktop.png": 3206,
+        "dark-phone.png": 3270,
+        "dark-desktop.png": 3270
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 270,
+          "height": 56
+        },
+        "after-light-phone.png": {
+          "width": 305,
+          "height": 56
+        },
+        "before-light-desktop.png": {
+          "width": 270,
+          "height": 56
+        },
+        "after-light-desktop.png": {
+          "width": 305,
+          "height": 56
+        },
+        "before-dark-phone.png": {
+          "width": 270,
+          "height": 56
+        },
+        "after-dark-phone.png": {
+          "width": 305,
+          "height": 56
+        },
+        "before-dark-desktop.png": {
+          "width": 270,
+          "height": 56
+        },
+        "after-dark-desktop.png": {
+          "width": 305,
           "height": 56
         }
       }
@@ -2940,10 +3107,10 @@
       "importPath": "./src/account/SyncStateLine.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 15916,
-        "light-desktop.png": 9783,
-        "dark-phone.png": 16039,
-        "dark-desktop.png": 9859
+        "light-phone.png": 14184,
+        "light-desktop.png": 8137,
+        "dark-phone.png": 14325,
+        "dark-desktop.png": 8229
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2951,7 +3118,7 @@
           "height": 80
         },
         "after-light-phone.png": {
-          "width": 304,
+          "width": 339,
           "height": 56
         },
         "before-light-desktop.png": {
@@ -2959,7 +3126,7 @@
           "height": 56
         },
         "after-light-desktop.png": {
-          "width": 304,
+          "width": 339,
           "height": 56
         },
         "before-dark-phone.png": {
@@ -2967,7 +3134,7 @@
           "height": 80
         },
         "after-dark-phone.png": {
-          "width": 304,
+          "width": 339,
           "height": 56
         },
         "before-dark-desktop.png": {
@@ -2975,7 +3142,7 @@
           "height": 56
         },
         "after-dark-desktop.png": {
-          "width": 304,
+          "width": 339,
           "height": 56
         }
       }
@@ -2987,10 +3154,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 33579,
-        "light-desktop.png": 86096,
-        "dark-phone.png": 37634,
-        "dark-desktop.png": 91078
+        "light-phone.png": 33853,
+        "light-desktop.png": 86447,
+        "dark-phone.png": 37931,
+        "dark-desktop.png": 91619
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3034,10 +3201,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 25494,
-        "light-desktop.png": 56915,
-        "dark-phone.png": 27384,
-        "dark-desktop.png": 59396
+        "light-phone.png": 25769,
+        "light-desktop.png": 57424,
+        "dark-phone.png": 27681,
+        "dark-desktop.png": 60137
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3081,10 +3248,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 34300,
-        "light-desktop.png": 87164,
-        "dark-phone.png": 38736,
-        "dark-desktop.png": 92555
+        "light-phone.png": 34574,
+        "light-desktop.png": 87564,
+        "dark-phone.png": 39033,
+        "dark-desktop.png": 93159
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3128,10 +3295,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 42750,
-        "light-desktop.png": 103479,
-        "dark-phone.png": 47423,
-        "dark-desktop.png": 109258
+        "light-phone.png": 43024,
+        "light-desktop.png": 103831,
+        "dark-phone.png": 47720,
+        "dark-desktop.png": 109839
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3175,10 +3342,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 48077,
-        "light-desktop.png": 106402,
-        "dark-phone.png": 74388,
-        "dark-desktop.png": 149945
+        "light-phone.png": 48351,
+        "light-desktop.png": 107116,
+        "dark-phone.png": 74685,
+        "dark-desktop.png": 151702
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3222,10 +3389,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 25945,
-        "light-desktop.png": 57307,
-        "dark-phone.png": 27961,
-        "dark-desktop.png": 59943
+        "light-phone.png": 26219,
+        "light-desktop.png": 57770,
+        "dark-phone.png": 28259,
+        "dark-desktop.png": 60636
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3269,10 +3436,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 36232,
-        "light-desktop.png": 85907,
-        "dark-phone.png": 40406,
-        "dark-desktop.png": 91017
+        "light-phone.png": 36506,
+        "light-desktop.png": 86872,
+        "dark-phone.png": 40703,
+        "dark-desktop.png": 92366
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3316,10 +3483,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 35560,
-        "light-desktop.png": 86057,
-        "dark-phone.png": 39805,
-        "dark-desktop.png": 91192
+        "light-phone.png": 35834,
+        "light-desktop.png": 86342,
+        "dark-phone.png": 40102,
+        "dark-desktop.png": 91643
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3363,10 +3530,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 46550,
-        "light-desktop.png": 99484,
-        "dark-phone.png": 51057,
-        "dark-desktop.png": 104880
+        "light-phone.png": 46824,
+        "light-desktop.png": 103004,
+        "dark-phone.png": 51354,
+        "dark-desktop.png": 108593
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3410,10 +3577,10 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 13352,
-        "light-desktop.png": 39089,
-        "dark-phone.png": 14856,
-        "dark-desktop.png": 41070
+        "light-phone.png": 13626,
+        "light-desktop.png": 39613,
+        "dark-phone.png": 15153,
+        "dark-desktop.png": 41803
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3718,10 +3885,10 @@
       "importPath": "./src/projects/MediaUploadChoice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 11265,
-        "light-desktop.png": 21615,
-        "dark-phone.png": 11336,
-        "dark-desktop.png": 21695
+        "light-phone.png": 7444,
+        "light-desktop.png": 22574,
+        "dark-phone.png": 7509,
+        "dark-desktop.png": 22639
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3730,7 +3897,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 448
+          "height": 439
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -3738,7 +3905,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 416
+          "height": 417
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -3746,7 +3913,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 448
+          "height": 439
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -3754,7 +3921,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 416
+          "height": 417
         }
       }
     },
@@ -3765,10 +3932,10 @@
       "importPath": "./src/projects/MediaUploadChoice.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 6925,
-        "light-desktop.png": 21165,
-        "dark-phone.png": 6965,
-        "dark-desktop.png": 21205
+        "light-phone.png": 7506,
+        "light-desktop.png": 22636,
+        "dark-phone.png": 7574,
+        "dark-desktop.png": 22704
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3777,7 +3944,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 438
+          "height": 439
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -3785,7 +3952,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 416
+          "height": 417
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -3793,7 +3960,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 438
+          "height": 439
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -3801,7 +3968,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 416
+          "height": 417
         }
       }
     },
@@ -3812,10 +3979,10 @@
       "importPath": "./src/screens/SettingsScreen.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 80556,
-        "light-desktop.png": 92048,
-        "dark-phone.png": 103633,
-        "dark-desktop.png": 125726
+        "light-phone.png": 3944,
+        "light-desktop.png": 96656,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 132678
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3824,7 +3991,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1808
+          "height": 1790
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -3832,7 +3999,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1736
+          "height": 1698
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -3840,7 +4007,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1808
+          "height": 1790
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -3848,7 +4015,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1736
+          "height": 1698
         }
       }
     },
@@ -3859,10 +4026,10 @@
       "importPath": "./src/screens/SettingsScreen.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 84549,
-        "light-desktop.png": 97557,
-        "dark-phone.png": 112615,
-        "dark-desktop.png": 141089
+        "light-phone.png": 3944,
+        "light-desktop.png": 102359,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 147919
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3871,7 +4038,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1964
+          "height": 1946
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -3879,7 +4046,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1892
+          "height": 1854
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -3887,7 +4054,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1964
+          "height": 1946
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -3895,7 +4062,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1892
+          "height": 1854
         }
       }
     },
@@ -3906,10 +4073,10 @@
       "importPath": "./src/screens/SettingsScreen.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 92548,
-        "light-desktop.png": 106737,
-        "dark-phone.png": 129068,
-        "dark-desktop.png": 168348
+        "light-phone.png": 3944,
+        "light-desktop.png": 111737,
+        "dark-phone.png": 4074,
+        "dark-desktop.png": 175118
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -3918,7 +4085,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 2032
+          "height": 2014
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -3926,7 +4093,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1940
+          "height": 1902
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -3934,7 +4101,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 2032
+          "height": 2014
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -3942,7 +4109,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1940
+          "height": 1902
         }
       }
     },
