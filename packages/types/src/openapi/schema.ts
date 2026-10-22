@@ -4306,7 +4306,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No import job has the id, or its outcome has been forgotten */
+            /** @description The principal has no import job with the id, or its outcome has been forgotten */
             404: {
                 headers: {
                     [name: string]: unknown;
