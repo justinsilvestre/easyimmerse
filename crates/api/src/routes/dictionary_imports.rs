@@ -13,6 +13,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, internal, not_found};
+use crate::auth::owner::Owner;
 use crate::import_jobs::{SharedProgress, lock};
 use crate::import_progress_sink::ImportProgressSink;
 use crate::routes::dictionaries::{DictionarySummary, summarize};
@@ -68,16 +69,17 @@ pub struct ImportJobStatus {
     responses(
         (status = 200, description = "Where the import stands", body = ImportJobStatus),
         (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No import job has the id, or its outcome has been forgotten", body = ApiError),
+        (status = 404, description = "The principal has no import job with the id, or its outcome has been forgotten", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
 pub async fn get_import_job(
     State(state): State<AppState>,
+    Owner(owner): Owner,
     Path(id): Path<String>,
 ) -> Result<Json<ImportJobStatus>, ApiFailure> {
     lock(&state.import_jobs)
-        .status(&id)
+        .status(&id, &owner)
         .map(Json)
         .ok_or_else(|| not_found(format!("no import job has the id {id:?}")))
 }
@@ -89,7 +91,7 @@ pub(crate) fn start_import(
     files: Vec<SourceFile>,
     table_layout: Option<TableLayout>,
 ) -> (StatusCode, Json<ImportJobStarted>) {
-    let (id, progress) = lock(&state.import_jobs).start();
+    let (id, progress) = lock(&state.import_jobs).start(owner.clone());
     let (storage, jobs) = (Arc::clone(&state.storage), Arc::clone(&state.import_jobs));
     let job_id = id.clone();
     tokio::spawn(async move {
