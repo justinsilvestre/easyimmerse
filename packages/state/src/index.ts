@@ -208,6 +208,7 @@ export {
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
+export { isPlayedByServer } from "./screen/isPlayedByServer.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {
   selectLookup,
