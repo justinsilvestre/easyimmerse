@@ -117,8 +117,7 @@ mod tests {
         let file = ServerFileConfig::parse("cache_dir = \"cache\"", Path::new("/srv/server.toml"))
             .unwrap();
         let settings = resolve_serve_settings(&ServeArgs::default(), &file);
-        assert!(
-            describe_settings(&settings, &file).contains(&"cache_dir = /srv/cache".to_string())
-        );
+        let expected = format!("cache_dir = {}", Path::new("/srv").join("cache").display());
+        assert!(describe_settings(&settings, &file).contains(&expected));
     }
 }

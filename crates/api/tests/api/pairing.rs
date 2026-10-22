@@ -14,7 +14,7 @@ use crate::support::{
 };
 
 async fn issue_code(server: &TestServer) -> String {
-    let response = server.post_json("/pairing/code", &json!({})).await;
+    let response = server.request("POST", "/pairing/code").send().await;
     response.json()["code"]
         .as_str()
         .expect("a pairing code")
@@ -121,7 +121,7 @@ async fn issuing_needs_a_token() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_server_with_accounts_issues_no_code() {
     let server = spawn_test_server_with_accounts(false).await;
-    let response = server.post_json("/pairing/code", &json!({})).await;
+    let response = server.request("POST", "/pairing/code").send().await;
     assert_eq!(response.json()["code"], "pairing_needs_launch_token");
 }
 
