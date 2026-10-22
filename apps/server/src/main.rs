@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         .with_env_filter(log_filter())
         .init();
     match Cli::parse().command {
-        Command::Serve(args) => serve_command::run(args).await,
+        Command::Serve(args) => serve_command::run(*args).await,
         Command::Users(command) => users_command::run(command),
     }
 }
