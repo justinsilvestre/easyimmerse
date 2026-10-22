@@ -29,6 +29,7 @@ mod sample_content;
 mod sessions;
 mod stored_integer;
 mod subtitle_tracks;
+mod sync;
 mod users;
 
 pub use anki_sync::DeliveredPackage;
@@ -40,6 +41,10 @@ pub use preferences::is_synced_preference;
 pub use sample_content::SampleContentError;
 pub use sessions::{LiveSession, NewSession, StoredSession};
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
+pub use sync::changes::{PendingRow, SyncChange, SyncChangesPage};
+pub use sync::codec::RowData;
+pub use sync::remotes::{NewRemote, RemoteKind, StoredRemote};
+pub use sync::tables::SyncTable;
 pub use users::StoredUser;
 
 use std::collections::HashMap;
@@ -716,6 +721,70 @@ impl Storage {
         dictionary_ids: &[String],
     ) -> Result<Vec<DictionaryStylesheet>, StorageError> {
         self.read(|conn| dictionaries::find_stylesheets(conn, owner, dictionary_ids))
+    }
+
+    /// The owner's synced changes after `cursor`, at most `limit` of them, in the order they were made.
+    pub fn changes_since(
+        &self,
+        owner: &OwnerId,
+        cursor: u64,
+        limit: u32,
+    ) -> Result<SyncChangesPage, StorageError> {
+        self.read(|conn| sync::changes::changes_since(conn, owner, cursor, limit))
+    }
+
+    /// The last change sequence this server gave out.
+    pub fn local_change_seq(&self) -> Result<u64, StorageError> {
+        self.read(sync::changes::local_change_seq)
+    }
+
+    /// The owner's changes that the remote has yet to receive, up to `through_seq`, in the order to push them.
+    pub fn pending_pushes(
+        &self,
+        owner: &OwnerId,
+        remote_id: &str,
+        through_seq: u64,
+    ) -> Result<Vec<PendingRow>, StorageError> {
+        self.read(|conn| sync::changes::pending_pushes(conn, owner, remote_id, through_seq))
+    }
+
+    /// Links an owner to a remote; an owner has at most one remote of each kind.
+    pub fn create_sync_remote(&self, remote: &NewRemote) -> Result<StoredRemote, StorageError> {
+        self.write(|conn| sync::remotes::create_remote(conn, remote))
+    }
+
+    pub fn get_sync_remote(
+        &self,
+        owner: &OwnerId,
+        kind: RemoteKind,
+    ) -> Result<Option<StoredRemote>, StorageError> {
+        self.read(|conn| sync::remotes::get_remote(conn, owner, kind))
+    }
+
+    /// Records that the remote holds every change of this server up to `seq`.
+    pub fn set_sync_pushed_through(&self, remote_id: &str, seq: u64) -> Result<(), StorageError> {
+        self.write(|conn| sync::remotes::set_pushed_through(conn, remote_id, seq))
+    }
+
+    /// Records when a round of syncing with the remote last finished.
+    pub fn set_sync_last_synced(&self, remote_id: &str, at_ms: u64) -> Result<(), StorageError> {
+        self.write(|conn| sync::remotes::set_last_synced(conn, remote_id, at_ms))
+    }
+
+    /// Forgets the remote together with what it was known to hold.
+    pub fn delete_sync_remote(&self, remote_id: &str) -> Result<(), StorageError> {
+        self.write(|conn| sync::remotes::delete_remote(conn, remote_id))
+    }
+
+    /// Records the modification time the remote has for a row.
+    pub fn record_sync_base(
+        &self,
+        remote_id: &str,
+        table: SyncTable,
+        key: &str,
+        updated_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sync::remotes::record_base(conn, remote_id, table, key, updated_at_ms))
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

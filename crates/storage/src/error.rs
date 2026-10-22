@@ -54,6 +54,14 @@ pub enum StorageError {
     ReviewAnswerNotLatest(String),
     #[error(transparent)]
     Scheduling(#[from] easyimmerse_srs::SrsError),
+    #[error("the table {0:?} does not sync")]
+    UnknownSyncTable(String),
+    #[error("a synced row of {table} lacks the column {column}")]
+    SyncColumnMissing { table: String, column: String },
+    #[error("a synced row of {table} holds a list or an object in the column {column}")]
+    SyncValueUnsupported { table: String, column: String },
+    #[error("the owner is not linked to that remote")]
+    RemoteNotLinked,
 }
 
 impl From<DictionaryError> for StorageError {
