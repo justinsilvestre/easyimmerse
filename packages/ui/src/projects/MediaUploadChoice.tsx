@@ -141,7 +141,7 @@ function BrowserFileUpload({ mediaFileId, copy, host }: ChoiceProps) {
         <span className="text-xs text-fg-muted">Kept on {host}</span>
         <Button
           size="sm"
-          variant="subtle"
+          aria-label={`${isRemoving ? "Removing" : "Remove"} from ${host}`}
           aria-disabled={isRemoving || undefined}
           onClick={() => {
             if (!isRemoving)
@@ -150,7 +150,7 @@ function BrowserFileUpload({ mediaFileId, copy, host }: ChoiceProps) {
               );
           }}
         >
-          {isRemoving ? "Removing…" : `Remove from ${host}`}
+          {isRemoving ? "Removing…" : "Remove"}
         </Button>
       </ChoiceRow>
     );
