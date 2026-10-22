@@ -3,11 +3,14 @@ import {
   useGetStorageStatusQuery,
   useGetSyncStatusQuery,
 } from "@easyimmerse/backend";
-import { type AccountVia, selectServerConfig } from "@easyimmerse/state";
+import {
+  type AccountVia,
+  hostOf,
+  selectServerConfig,
+} from "@easyimmerse/state";
 import type { StorageStatus } from "@easyimmerse/types";
 import { formatByteSize } from "../components/formatByteSize.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { hostOf } from "./hostOf.ts";
 import { StoredCopyRow } from "./StoredCopyRow.tsx";
 
 /** The id of the storage section within the Settings screen, which a link can jump to. */

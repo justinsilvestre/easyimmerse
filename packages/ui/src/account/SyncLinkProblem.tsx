@@ -1,5 +1,6 @@
 import {
   actions,
+  hostOf,
   type NativePlatform,
   selectIsSignInFormStarted,
   selectIsSyncRunRequested,
@@ -11,7 +12,6 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
-import { hostOf } from "./hostOf.ts";
 import { SignInForm } from "./SignInForm.tsx";
 
 /** Explains why the work is not being copied to the linked server, if it is not, and offers what can be done about it. */

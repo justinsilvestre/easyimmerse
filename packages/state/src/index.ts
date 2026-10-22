@@ -327,6 +327,7 @@ export {
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
+export { hostOf } from "./server/hostOf.ts";
 export { isOwnTokenRefused } from "./server/isOwnTokenRefused.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
 export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";

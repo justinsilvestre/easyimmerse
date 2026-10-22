@@ -1,6 +1,7 @@
 import { useGetCurrentPrincipalQuery } from "@easyimmerse/backend";
 import {
   actions,
+  hostOf,
   type NativePlatform,
   selectIsUnlinking,
 } from "@easyimmerse/state";
@@ -14,7 +15,6 @@ import { DeviceList } from "./DeviceList.tsx";
 import { deviceNames } from "./deviceNames.ts";
 import { EmailConfirmation } from "./EmailConfirmation.tsx";
 import { formatCopyTime } from "./formatCopyTime.ts";
-import { hostOf } from "./hostOf.ts";
 import { SyncConflictsNotice } from "./SyncConflictsNotice.tsx";
 import { SyncLinkProblem } from "./SyncLinkProblem.tsx";
 import { SyncStateLine } from "./SyncStateLine.tsx";

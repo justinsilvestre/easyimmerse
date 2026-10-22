@@ -1,7 +1,11 @@
-import { type AppAction, actions, type BackupSign } from "@easyimmerse/state";
+import {
+  type AppAction,
+  actions,
+  type BackupSign,
+  hostOf,
+} from "@easyimmerse/state";
 import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
-import { hostOf } from "./hostOf.ts";
 
 /** What the backup sign's panel says, and the button it offers with the actions that button dispatches, if any. */
 type BackupSignTexts = {

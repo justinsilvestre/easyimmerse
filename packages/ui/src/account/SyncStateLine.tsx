@@ -1,6 +1,6 @@
+import { hostOf } from "@easyimmerse/state";
 import type { SyncLink } from "@easyimmerse/types";
 import clsx from "clsx";
-import { hostOf } from "./hostOf.ts";
 
 /** Tells in one line how copying the work to the linked server fares. */
 export function SyncStateLine({ link }: { link: SyncLink }) {
