@@ -86,7 +86,7 @@ const savingWord = withDispatchedActions(
 
 /** Draws the cloud button in the footer bar, with room above it for the menu it opens. */
 const inFooter: Decorator = (Story) => (
-  <div className="flex min-h-64 flex-col justify-end">
+  <div className="flex min-h-96 flex-col justify-end">
     <FooterBar
       isSettingsOpen={false}
       onOpenSettings={fn()}
