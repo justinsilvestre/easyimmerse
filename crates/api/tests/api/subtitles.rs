@@ -124,7 +124,7 @@ async fn stores_a_path_source_by_its_canonical_path() {
     let dir = tempfile::tempdir().unwrap();
     let database = dir.path().join("easyimmerse.db");
     let storage = Storage::open(&database).unwrap();
-    storage.seed_placeholder_projects().unwrap();
+    crate::support::seed_known_placeholder_projects(&storage);
     let server = spawn_test_server_with_storage(true, storage).await;
     let media_id = add_media(&server).await;
     let spelled = fixture_path(".").join("sample.vtt");

@@ -1,12 +1,13 @@
-use axum::Json;
 use axum::extract::{Query, State};
+use axum::{Extension, Json};
 use easyimmerse_core::lookup::{DictionaryStylesheet, KanjiResult, LookupResult};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::auth::principal::Principal;
 use crate::lookup::{LookupRows, PositionLookup, defining_dictionary_ids};
 use crate::state::AppState;
 
@@ -57,22 +58,29 @@ pub struct LookupResponse {
 )]
 pub async fn lookup_text(
     State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
     Query(query): Query<LookupQuery>,
 ) -> Result<Json<LookupResponse>, ApiFailure> {
+    let owner = principal.owner_id();
     let response = state
-        .with_storage(move |storage| look_up(storage, &query))
+        .with_storage(move |storage| look_up(storage, &owner, &query))
         .await?;
     Ok(Json(response))
 }
 
-fn look_up(storage: &Storage, query: &LookupQuery) -> Result<LookupResponse, StorageError> {
+fn look_up(
+    storage: &Storage,
+    owner: &OwnerId,
+    query: &LookupQuery,
+) -> Result<LookupResponse, StorageError> {
     let context = query.context.as_deref().zip(query.offset);
     let lookup = PositionLookup::new(&query.text, &query.language, context);
-    let rows = LookupRows::find(storage, &[&lookup])?;
+    let rows = LookupRows::find(storage, owner, &[&lookup])?;
     let results = rows.results(&lookup);
     // Stylesheets come with each lookup rather than from a route of their own, so that entries never show unstyled first.
     Ok(LookupResponse {
-        stylesheets: storage.find_dictionary_stylesheets(&defining_dictionary_ids(&results))?,
+        stylesheets: storage
+            .find_dictionary_stylesheets(owner, &defining_dictionary_ids(&results))?,
         kanji: rows.kanji(&lookup),
         results,
     })

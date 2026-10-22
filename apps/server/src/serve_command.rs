@@ -7,7 +7,7 @@ use easyimmerse_api::{
     AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions, SmtpConfig,
     SmtpCredentials, SmtpSecurity, serve,
 };
-use easyimmerse_storage::Storage;
+use easyimmerse_storage::{OwnerId, Storage};
 use tokio::net::TcpListener;
 
 use crate::cli::{ServeArgs, SmtpSecurityArg};
@@ -202,7 +202,7 @@ fn open_storage(args: &ServeArgs) -> anyhow::Result<Storage> {
         path => Storage::open(Path::new(path)).with_context(|| format!("could not open {path}"))?,
     };
     if args.seed_placeholders {
-        storage.seed_placeholder_projects()?;
+        storage.seed_placeholder_projects(&OwnerId::launch())?;
     }
     if args.seed_sample_content {
         let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");

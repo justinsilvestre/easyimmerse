@@ -7,7 +7,7 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::dictionary::{self, DictionarySource, SourceFile, TableLayout};
-use easyimmerse_storage::Storage;
+use easyimmerse_storage::{OwnerId, Storage};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -82,9 +82,10 @@ pub async fn get_import_job(
         .ok_or_else(|| not_found(format!("no import job has the id {id:?}")))
 }
 
-/// Starts importing the files on the blocking pool and answers with the id of the job to poll.
+/// Starts importing the files as a dictionary of the owner on the blocking pool and answers with the id of the job to poll.
 pub(crate) fn start_import(
     state: &AppState,
+    owner: OwnerId,
     files: Vec<SourceFile>,
     table_layout: Option<TableLayout>,
 ) -> (StatusCode, Json<ImportJobStarted>) {
@@ -97,7 +98,8 @@ pub(crate) fn start_import(
             .map(|file| file.name.clone())
             .unwrap_or_default();
         let result = tokio::task::spawn_blocking(move || {
-            import_into(&storage, files, table_layout, progress)
+            let source = DictionarySource::new(files)?.with_table_layout(table_layout);
+            import_into(&storage, &owner, source, progress)
         })
         .await
         .unwrap_or_else(|error| Err(internal(format!("import task failed: {error}"))));
@@ -111,12 +113,11 @@ pub(crate) fn start_import(
 
 fn import_into(
     storage: &Storage,
-    files: Vec<SourceFile>,
-    table_layout: Option<TableLayout>,
+    owner: &OwnerId,
+    mut source: DictionarySource,
     progress: SharedProgress,
 ) -> Result<DictionarySummary, ApiFailure> {
-    let mut source = DictionarySource::new(files)?.with_table_layout(table_layout);
-    let id = storage.import_dictionary_with(|sink| {
+    let id = storage.import_dictionary_with(owner, |sink| {
         let mut counting = ImportProgressSink::new(sink, progress);
         dictionary::import_dictionary(&mut source, &mut counting).map(|_| ())
     })?;

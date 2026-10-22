@@ -9,8 +9,9 @@ use easyimmerse_api::mail::{OutgoingMail, RecordedMails};
 use easyimmerse_api::{
     AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions, ServerHandle, serve,
 };
+use easyimmerse_core::project::ProjectId;
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
-use easyimmerse_storage::Storage;
+use easyimmerse_storage::{OwnerId, Storage};
 use serde_json::Value;
 use tempfile::TempDir;
 use tokio::net::TcpListener;
@@ -64,10 +65,16 @@ pub async fn spawn_test_server(allow_local_paths: bool) -> TestServer {
 /// An in-memory database holding the two placeholder projects.
 pub fn seeded_storage() -> Storage {
     let storage = Storage::open_in_memory().expect("an in-memory database");
+    seed_known_placeholder_projects(&storage);
     storage
-        .seed_placeholder_projects()
+}
+
+/// Gives the launch owner the placeholder projects under the ids `placeholder-1` and `placeholder-2`, which the tests name.
+pub fn seed_known_placeholder_projects(storage: &Storage) {
+    let ids = ["placeholder-1", "placeholder-2"].map(|id| ProjectId(id.to_string()));
+    storage
+        .seed_placeholder_projects_with_ids(&OwnerId::launch(), &ids)
         .expect("placeholder projects");
-    storage
 }
 
 pub async fn spawn_test_server_with_storage(

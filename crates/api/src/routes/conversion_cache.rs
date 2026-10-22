@@ -4,7 +4,7 @@ use axum::Json;
 use axum::extract::State;
 use easyimmerse_conversion::ConversionService;
 use easyimmerse_media::ConversionCacheStatus;
-use easyimmerse_storage::Storage;
+use easyimmerse_storage::{OwnerId, Storage};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -14,6 +14,7 @@ use crate::routes::media_support::{conversion_failure, require_conversion};
 use crate::state::AppState;
 
 /// The preference that keeps the chosen cache budget between runs: a number of bytes, or "auto".
+/// It is a setting of the machine, so it is stored among the launch owner's preferences.
 pub const CACHE_BUDGET_PREFERENCE: &str = "conversionCacheBudgetBytes";
 
 /// How large the conversion cache may grow. `null` lets the budget follow the disk's size.
@@ -25,7 +26,7 @@ pub struct ConversionCacheBudget {
 
 /// Applies the budget stored in the preferences, if any, when the server starts.
 pub fn restore_cache_budget(conversion: &ConversionService, storage: &Storage) {
-    match storage.get_preference(CACHE_BUDGET_PREFERENCE) {
+    match storage.get_preference(&OwnerId::launch(), CACHE_BUDGET_PREFERENCE) {
         Ok(value) => conversion.set_cache_budget(value.as_deref().and_then(parse_budget)),
         Err(error) => tracing::warn!("the conversion cache budget could not be read: {error}"),
     }
@@ -106,7 +107,9 @@ pub async fn set_conversion_cache_budget(
         .budget_bytes
         .map_or_else(|| "auto".to_string(), |bytes| bytes.to_string());
     state
-        .with_storage(move |storage| storage.set_preference(CACHE_BUDGET_PREFERENCE, &stored))
+        .with_storage(move |storage| {
+            storage.set_preference(&OwnerId::launch(), CACHE_BUDGET_PREFERENCE, &stored)
+        })
         .await?;
     conversion.set_cache_budget(budget.budget_bytes);
     let status = conversion

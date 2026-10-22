@@ -65,10 +65,11 @@ async fn post_answer(
         .await
 }
 
-async fn undo(server: &TestServer, answered_at_ms: &Value) -> crate::support::TestResponse {
+async fn undo(server: &TestServer, answer_id: &Value) -> crate::support::TestResponse {
+    let answer_id = answer_id.as_str().unwrap();
     server
         .delete(&format!(
-            "/projects/{PROJECT}/review/answers/{answered_at_ms}?{OFFSET}"
+            "/projects/{PROJECT}/review/answers/{answer_id}?{OFFSET}"
         ))
         .await
 }
@@ -122,7 +123,7 @@ async fn undoing_the_answer_makes_the_card_new_again() {
     let server = spawn_test_server(false).await;
     let id = create_flashcard(&server, PROJECT, "Haus").await;
     let answered = answer(&server, &id, "good").await;
-    let response = undo(&server, &answered["entry"]["answered_at_ms"]).await;
+    let response = undo(&server, &answered["entry"]["id"]).await;
     assert_eq!(response.json()["state"], Value::Null);
 }
 
@@ -131,7 +132,7 @@ async fn undoing_the_answer_puts_the_card_back_in_the_queue() {
     let server = spawn_test_server(false).await;
     let id = create_flashcard(&server, PROJECT, "Haus").await;
     let answered = answer(&server, &id, "good").await;
-    undo(&server, &answered["entry"]["answered_at_ms"]).await;
+    undo(&server, &answered["entry"]["id"]).await;
     assert_eq!(queue(&server).await["cards"][0]["flashcard"]["id"], id);
 }
 
@@ -142,7 +143,7 @@ async fn undoing_an_answer_that_is_not_the_latest_is_a_conflict() {
     let second = create_flashcard(&server, PROJECT, "Tür").await;
     let answered = answer(&server, &first, "good").await;
     answer(&server, &second, "good").await;
-    let response = undo(&server, &answered["entry"]["answered_at_ms"]).await;
+    let response = undo(&server, &answered["entry"]["id"]).await;
     assert_eq!(response.status, 409);
 }
 

@@ -6,20 +6,22 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
-use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
+use axum::{Extension, Json};
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
-    ListReviewCountsResponse, ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse,
-    ReviewAnswerUndone, ReviewHoldRequest, ReviewQueue, ReviewSummary,
+    ListReviewCountsResponse, ReviewAllowanceRequest, ReviewAnswerId, ReviewAnswerRequest,
+    ReviewAnswerResponse, ReviewAnswerUndone, ReviewHoldRequest, ReviewQueue, ReviewSummary,
 };
 use easyimmerse_srs::{ReviewMoment, fit_parameters};
+use easyimmerse_storage::OwnerId;
 use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::auth::principal::Principal;
 use crate::now_ms::now_ms;
 use crate::state::AppState;
 
@@ -65,7 +67,7 @@ pub async fn get_review_summary(
     Ok(Json(summary))
 }
 
-/// What waits in each project's review today, counted as the queue counts it, as the list of projects shows it.
+/// What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it.
 #[utoipa::path(
     get,
     path = "/review/counts",
@@ -81,11 +83,13 @@ pub async fn get_review_summary(
 )]
 pub async fn list_review_counts(
     State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
     Query(query): Query<ReviewMomentQuery>,
 ) -> Result<Json<ListReviewCountsResponse>, ApiFailure> {
     let moment = query.now();
+    let owner = principal.owner_id();
     let projects = state
-        .with_storage(move |storage| storage.list_review_counts(moment))
+        .with_storage(move |storage| storage.list_review_counts(&owner, moment))
         .await?;
     Ok(Json(ListReviewCountsResponse { projects }))
 }
@@ -110,6 +114,7 @@ pub async fn list_review_counts(
 )]
 pub async fn get_review_queue(
     State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
     Query(query): Query<ReviewMomentQuery>,
 ) -> Result<Json<ReviewQueue>, ApiFailure> {
@@ -117,28 +122,30 @@ pub async fn get_review_queue(
     let queue = state
         .with_storage(move |storage| storage.review_queue(&project_id, moment))
         .await?;
-    fit_parameters_when_due(&state, moment);
+    fit_parameters_when_due(&state, principal.owner_id(), moment);
     Ok(Json(queue))
 }
 
 /// Fits the FSRS parameters on a blocking thread when a fit is due and none is running, without holding up the response.
 /// The fit takes seconds, so it reads the log and keeps its result in two short calls to the database rather than one long one.
 /// A fit that fails leaves the fit due, so that the next session tries again.
-fn fit_parameters_when_due(state: &AppState, moment: ReviewMoment) {
+fn fit_parameters_when_due(state: &AppState, owner: OwnerId, moment: ReviewMoment) {
     let is_fitting = Arc::clone(&state.is_fitting_review_parameters);
     if is_fitting.swap(true, Ordering::AcqRel) {
         return;
     }
     let state = state.clone();
     tokio::spawn(async move {
-        fit_and_save(&state, moment).await;
+        fit_and_save(&state, owner, moment).await;
         is_fitting.store(false, Ordering::Release);
     });
 }
 
-async fn fit_and_save(state: &AppState, moment: ReviewMoment) {
+/// Fits the parameters of the owner's reviews to its answers.
+async fn fit_and_save(state: &AppState, owner: OwnerId, moment: ReviewMoment) {
+    let fit_owner = owner.clone();
     let log = state
-        .with_storage(move |storage| storage.log_to_fit(moment))
+        .with_storage(move |storage| storage.log_to_fit(&fit_owner, moment))
         .await;
     let Ok(Some(log)) = log else { return };
     let fitted = tokio::task::spawn_blocking(move || fit_parameters(&log, moment)).await;
@@ -151,7 +158,7 @@ async fn fit_and_save(state: &AppState, moment: ReviewMoment) {
         Err(error) => return tracing::warn!("the review parameter fit stopped: {error}"),
     };
     let saved = state
-        .with_storage(move |storage| storage.save_review_parameters(&weights, moment.at_ms))
+        .with_storage(move |storage| storage.save_review_parameters(&owner, &weights, moment.at_ms))
         .await;
     if saved.is_err() {
         tracing::warn!("the fitted review parameters could not be saved");
@@ -188,33 +195,31 @@ pub async fn answer_review(
 /// Undoes the project's latest answer and restores the card's schedule from before it.
 #[utoipa::path(
     delete,
-    path = "/projects/{id}/review/answers/{answered_at_ms}",
+    path = "/projects/{id}/review/answers/{answer_id}",
     tag = "review",
     operation_id = "undoReviewAnswer",
     security(("bearer_token" = [])),
     params(
         ("id" = String, Path, description = "The project id"),
-        ("answered_at_ms" = u64, Path, description = "The time of the answer, as its log entry gives it"),
+        ("answer_id" = String, Path, description = "The id of the answer, as its log entry gives it"),
         ReviewMomentQuery,
     ),
     responses(
         (status = 200, description = "The card as it stood before the answer", body = ReviewAnswerUndone),
         (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No such project, or no answer at that time in it", body = ApiError),
+        (status = 404, description = "No such project, or no answer with that id in it", body = ApiError),
         (status = 409, description = "The answer is not the project's latest", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
 pub async fn undo_review_answer(
     State(state): State<AppState>,
-    Path((project_id, answered_at_ms)): Path<(ProjectId, u64)>,
+    Path((project_id, answer_id)): Path<(ProjectId, ReviewAnswerId)>,
     Query(query): Query<ReviewMomentQuery>,
 ) -> Result<Json<ReviewAnswerUndone>, ApiFailure> {
     let moment = query.now();
     let undone = state
-        .with_storage(move |storage| {
-            storage.undo_review_answer(&project_id, answered_at_ms, moment)
-        })
+        .with_storage(move |storage| storage.undo_review_answer(&project_id, &answer_id, moment))
         .await?;
     Ok(Json(undone))
 }

@@ -1,4 +1,5 @@
 use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_storage::OwnerId;
 
 use crate::config::ApiConfig;
 
@@ -30,6 +31,15 @@ impl Principal {
         matches!(self, Principal::Launch) && config.allow_local_paths
     }
 
+    /// The owner of the data the principal works with: the device's own data for the launch principal,
+    /// and the account's for a session.
+    pub fn owner_id(&self) -> OwnerId {
+        match self {
+            Principal::Launch => OwnerId::launch(),
+            Principal::Account { user_id, .. } => OwnerId(user_id.clone()),
+        }
+    }
+
     /// The launch principal acts as an administrator.
     pub fn is_administrator(&self) -> bool {
         match self {
@@ -49,6 +59,17 @@ mod tests {
             role,
             session_id: "s".to_string(),
         }
+    }
+
+    #[test]
+    fn the_launch_principal_owns_the_launch_data() {
+        assert_eq!(Principal::Launch.owner_id(), OwnerId::launch());
+    }
+
+    #[test]
+    fn an_account_owns_the_data_under_its_user_id() {
+        let principal = account(AccountRole::LibraryUser);
+        assert_eq!(principal.owner_id(), OwnerId("u".to_string()));
     }
 
     #[test]
