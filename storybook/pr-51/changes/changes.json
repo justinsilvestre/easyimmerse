@@ -1,0 +1,112 @@
+{
+  "variants": [
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "storyCount": 514,
+  "changes": [
+    {
+      "id": "account-accountsection--confirming-log-out",
+      "title": "Account/AccountSection",
+      "name": "Confirming Log Out",
+      "importPath": "./src/account/AccountSection.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 1369,
+        "light-desktop.png": 1369,
+        "dark-phone.png": 3507,
+        "dark-desktop.png": 3507
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 680
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 680
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 628
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 628
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 680
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 680
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 628
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 628
+        }
+      }
+    },
+    {
+      "id": "flashcards-failedsavesstatus--one-not-saved",
+      "title": "Flashcards/FailedSavesStatus",
+      "name": "One Not Saved",
+      "importPath": "./src/flashcards/unsaved/FailedSavesStatus.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 450
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 428
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 450
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 428
+        }
+      }
+    }
+  ]
+}
