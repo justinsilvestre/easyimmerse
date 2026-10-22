@@ -4,9 +4,9 @@
 //! Starting "the server" in the settings adds a public listener on the configured address,
 //! so that other devices can reach the same server.
 //! A change of settings that affects how the server runs
-//! restarts it on the same private listener with the same launch token, so the window keeps working.
+//! restarts it on the same private port with the same launch token, so the window keeps working.
 
-use std::net::{Ipv4Addr, SocketAddr};
+use std::net::Ipv4Addr;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -44,7 +44,7 @@ pub struct EmbeddedServer {
     #[cfg_attr(not(desktop), allow(dead_code))]
     pub cache_dir: PathBuf,
     locations: AppLocations,
-    private_listener: std::net::TcpListener,
+    private_port: u16,
     public_running: AtomicBool,
     on_status: OnceLock<StatusListener>,
     state: Mutex<ServerState>,
@@ -116,13 +116,7 @@ pub fn start(locations: AppLocations) -> Result<EmbeddedServer, EmbeddedServerEr
     let completed = locations.complete(file);
     let token = hex::encode(rand::random::<[u8; 32]>());
     let settings = serve_settings(&completed, &token);
-    let private_listener = bind_private_listener()?;
-    let port = private_listener
-        .local_addr()
-        .map_err(EmbeddedServerError::Bind)?
-        .port();
-    let instance = tauri::async_runtime::block_on(start_instance(&private_listener, &settings))
-        .map_err(EmbeddedServerError::Start)?;
+    let (port, instance) = tauri::async_runtime::block_on(start_first_instance(&settings))?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");
     Ok(EmbeddedServer {
         url: format!("http://127.0.0.1:{port}"),
@@ -133,7 +127,7 @@ pub fn start(locations: AppLocations) -> Result<EmbeddedServer, EmbeddedServerEr
             .unwrap_or_else(|| PathBuf::from(IN_MEMORY_DATABASE)),
         cache_dir: settings.cache_dir.clone().unwrap_or_default(),
         locations,
-        private_listener,
+        private_port: port,
         public_running: AtomicBool::new(false),
         on_status: OnceLock::new(),
         state: Mutex::new(ServerState {
@@ -250,13 +244,13 @@ impl EmbeddedServer {
     /// or when a restart failed earlier.
     async fn refresh_instance(&self, state: &mut ServerState) {
         let current = state.instance.as_ref().map(|instance| &instance.hosts);
-        if current != Some(&hosts_for(&self.private_listener, &state.settings)) {
+        if current != Some(&hosts_for(self.private_port, &state.settings)) {
             tracing::info!("restarting the embedded server for the current network addresses");
             self.restart(state).await;
         }
     }
 
-    /// Stops the whole server and starts it again on the same private listener,
+    /// Stops the whole server and starts it again on the same private port,
     /// then reopens the public listener if it was open.
     async fn restart(&self, state: &mut ServerState) {
         let was_public = state.public.is_some();
@@ -265,7 +259,7 @@ impl EmbeddedServer {
             stop_instance(instance).await;
         }
         state.run_state = ServerRunState::Stopped;
-        match start_instance(&self.private_listener, &state.settings).await {
+        match start_instance(self.private_port, &state.settings).await {
             Ok(instance) => state.instance = Some(instance),
             Err(message) => {
                 tracing::error!("the embedded server could not restart: {message}");
@@ -347,8 +341,7 @@ fn describe(state: &ServerState) -> DesktopServerStatus {
     )
 }
 
-fn hosts_for(private_listener: &std::net::TcpListener, settings: &ServeSettings) -> Vec<String> {
-    let private_port = private_listener.local_addr().map_or(0, |addr| addr.port());
+fn hosts_for(private_port: u16, settings: &ServeSettings) -> Vec<String> {
     expected_hosts(
         private_port,
         settings.bind,
@@ -358,16 +351,41 @@ fn hosts_for(private_listener: &std::net::TcpListener, settings: &ServeSettings)
     )
 }
 
-/// Starts a server on a copy of the private listener that accepts the hosts of both listeners.
-async fn start_instance(
-    private_listener: &std::net::TcpListener,
+/// Binds a random loopback port and starts the first instance on it.
+async fn start_first_instance(
+    settings: &ServeSettings,
+) -> Result<(u16, Instance), EmbeddedServerError> {
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+        .await
+        .map_err(EmbeddedServerError::Bind)?;
+    let port = listener
+        .local_addr()
+        .map_err(EmbeddedServerError::Bind)?
+        .port();
+    let instance = serve_instance(listener, port, settings)
+        .await
+        .map_err(EmbeddedServerError::Start)?;
+    Ok((port, instance))
+}
+
+/// Starts a server on the private port that accepts the hosts of both listeners.
+async fn start_instance(private_port: u16, settings: &ServeSettings) -> Result<Instance, String> {
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, private_port))
+        .await
+        .map_err(|error| {
+            format!("could not listen on the loopback port {private_port}: {error}")
+        })?;
+    serve_instance(listener, private_port, settings).await
+}
+
+// Each instance binds the port anew rather than serving a clone of one long-lived socket,
+// because on Windows the server never accepted a connection on such a clone.
+async fn serve_instance(
+    listener: TcpListener,
+    private_port: u16,
     settings: &ServeSettings,
 ) -> Result<Instance, String> {
-    let hosts = hosts_for(private_listener, settings);
-    let listener = private_listener
-        .try_clone()
-        .and_then(TcpListener::from_std)
-        .map_err(|error| format!("could not reuse the loopback listener: {error}"))?;
+    let hosts = hosts_for(private_port, settings);
     let instance_settings = ServeSettings {
         expected_hosts: hosts.clone(),
         ..settings.clone()
@@ -387,16 +405,6 @@ async fn stop_instance(instance: Instance) {
         Ok(Err(error)) => tracing::warn!("the embedded server did not stop cleanly: {error}"),
         Err(_) => tracing::warn!("the embedded server did not stop within {SHUTDOWN_PATIENCE:?}"),
     }
-}
-
-/// Binds a random loopback port, in non-blocking mode as the async runtime needs it.
-fn bind_private_listener() -> Result<std::net::TcpListener, EmbeddedServerError> {
-    let listener = std::net::TcpListener::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))
-        .map_err(EmbeddedServerError::Bind)?;
-    listener
-        .set_nonblocking(true)
-        .map_err(EmbeddedServerError::Bind)?;
-    Ok(listener)
 }
 
 fn create_dir(path: &std::path::Path) -> Result<(), EmbeddedServerError> {

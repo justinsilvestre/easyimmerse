@@ -101,6 +101,7 @@ jobs:
 
       - name: Embedded server health check
         shell: bash
+        timeout-minutes: 5
         run: |
           binary=target/debug/easyimmerse-native
           if [ "$RUNNER_OS" = "Windows" ]; then binary="$binary.exe"; fi
