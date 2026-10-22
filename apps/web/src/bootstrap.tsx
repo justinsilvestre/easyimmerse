@@ -32,6 +32,7 @@ export async function bootstrap(): Promise<void> {
     playerRegistry,
     browserFileRegistry,
     writeDefinitionMarkdown: definitionMarkdown,
+    server,
   });
   const store = createAppStore(
     effects,

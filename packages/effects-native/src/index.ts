@@ -1,5 +1,8 @@
 import type { NativePlatform } from "@easyimmerse/backend";
-import { createWebEffects } from "@easyimmerse/effects-web";
+import {
+  createServerPreferenceStore,
+  createWebEffects,
+} from "@easyimmerse/effects-web";
 import type {
   DefinitionWriter,
   Effects,
@@ -12,7 +15,6 @@ import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickPath } from "./pickPath.ts";
 import { createPlatformSaveEffects } from "./platformSaveEffects.ts";
-import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
 import { createWindowCloseGuard } from "./windowCloseGuard.ts";
 
