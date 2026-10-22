@@ -14,6 +14,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "apps/native/**"
+      - "apps/web/**"
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
@@ -38,6 +39,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "apps/native/**"
+      - "apps/web/**"
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
@@ -116,7 +118,7 @@ jobs:
             pnpm --filter @easyimmerse/native e2e
           fi
 
-  # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars.
+  # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars and the web app.
   # Every target has a runner of its own architecture, so the sidecars run from inside each bundle.
   # The job is slow, so it skips pull requests and runs once changes reach main, or on a native-ci-bundle tag.
   bundle:
@@ -143,10 +145,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Release build with every bundle for the platform
-        run: pnpm --filter @easyimmerse/native exec tauri build --ci
+      # The desktop app serves the web app to the devices on its network, so each bundle carries it as a resource.
+      # The extra config file adds the resource, which debug builds do without.
+      - name: Build the web app
+        run: |
+          mise run wasm:build
+          pnpm --filter @easyimmerse/web build
 
-      - name: Check the ffmpeg sidecars in each bundle
+      - name: Release build with every bundle for the platform
+        run: pnpm --filter @easyimmerse/native exec tauri build --ci --config src-tauri/tauri.bundle.conf.json
+
+      - name: Check the ffmpeg sidecars and the web app in each bundle
         shell: bash
         run: scripts/check-bundle-sidecars.sh target/release/bundle
 
