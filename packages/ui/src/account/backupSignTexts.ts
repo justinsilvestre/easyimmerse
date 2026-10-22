@@ -1,5 +1,7 @@
 import { type AppAction, actions, type BackupSign } from "@easyimmerse/state";
+import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
+import { hostOf } from "./hostOf.ts";
 
 /** What the backup sign's panel says, and the button it offers with the actions that button dispatches, if any. */
 type BackupSignTexts = {
@@ -13,8 +15,6 @@ const deviceLosses = {
   mobile:
     "Your work is kept only on this device, so you'll lose it if the device is lost or the app is deleted.",
 };
-
-const deviceNames = { desktop: "this computer", mobile: "this device" };
 
 const openAccountSettings = actions.navigated({ type: "openAccountSettings" });
 
@@ -79,13 +79,4 @@ function linkFailingExplanation(
   if (sign.sinceMs === null)
     return `${kept} refused to synchronize. Open the account settings to see why.`;
   return `${kept} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}. It will be copied there when the server can be reached.`;
-}
-
-/** The host of a server's address, as the person would recognize it. */
-function hostOf(serverUrl: string): string {
-  try {
-    return new URL(serverUrl).host;
-  } catch {
-    return serverUrl;
-  }
 }
