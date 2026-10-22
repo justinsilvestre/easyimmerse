@@ -2296,7 +2296,7 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31509,
+        "light-phone.png": 31510,
         "light-desktop.png": 54608,
         "dark-phone.png": 32716,
         "dark-desktop.png": 55600
@@ -2484,8 +2484,8 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 31786,
-        "light-desktop.png": 54961,
+        "light-phone.png": 31785,
+        "light-desktop.png": 54959,
         "dark-phone.png": 33098,
         "dark-desktop.png": 56099
       },
