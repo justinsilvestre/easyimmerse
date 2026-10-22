@@ -109,6 +109,14 @@ pub enum PushOutcomeKind {
     Rejected,
 }
 
+/// The answer to an uploaded dictionary: when the server's registry recorded it.
+/// The uploader takes this time as its own, so that its next push leaves the dictionary's row out.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct DictionaryStored {
+    pub updated_at_ms: u64,
+}
+
 /// Whether linking a device creates a new account on the remote or logs in to an existing one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]

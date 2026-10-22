@@ -14,6 +14,8 @@ use super::remote_client::{RemoteClient, RemoteError};
 pub enum RoundError {
     Remote(RemoteError),
     Storage(StorageError),
+    /// A file this server needed for a transfer could not be written or read.
+    Local(std::io::Error),
 }
 
 impl From<RemoteError> for RoundError {
@@ -46,6 +48,7 @@ impl RoundError {
                 "the remote ended this device's session".to_string(),
             ),
             RoundError::Storage(error) => ("storage".to_string(), error.to_string()),
+            RoundError::Local(error) => ("local_file".to_string(), error.to_string()),
         }
     }
 }

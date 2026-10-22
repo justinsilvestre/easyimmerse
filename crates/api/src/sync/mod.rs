@@ -10,6 +10,7 @@ pub mod proxy;
 mod pull;
 mod push;
 pub mod remote_client;
+mod remote_transfers;
 mod round;
 pub mod status;
 

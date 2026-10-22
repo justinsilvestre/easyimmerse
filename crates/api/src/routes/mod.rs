@@ -39,5 +39,6 @@ pub mod source_form;
 pub mod subtitles;
 pub mod sync_changes;
 pub mod sync_device_side;
+pub mod sync_dictionaries;
 pub mod timed_text;
 pub mod users;

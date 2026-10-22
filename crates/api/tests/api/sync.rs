@@ -10,30 +10,30 @@ use crate::support::{
     spawn_test_server_with_storage,
 };
 
-const EMAIL: &str = "reader@example.com";
-const PASSWORD: &str = "correct horse";
+pub(crate) const EMAIL: &str = "reader@example.com";
+pub(crate) const PASSWORD: &str = "correct horse";
 /// How long a test waits for a round before it fails.
 const ROUND_WAIT: Duration = Duration::from_secs(20);
 
-fn now_ms() -> u64 {
+pub(crate) fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis() as u64
 }
 
-fn new_id() -> String {
+pub(crate) fn new_id() -> String {
     hex::encode(rand::random::<[u8; 16]>())
 }
 
 /// A remote with open sign-up, and a device with no data of its own yet.
-async fn remote_and_device() -> (TestServer, TestServer) {
+pub(crate) async fn remote_and_device() -> (TestServer, TestServer) {
     let remote = spawn_test_server_with_accounts(true).await;
     let device = spawn_test_server_with_storage(false, Storage::open_in_memory().unwrap()).await;
     (remote, device)
 }
 
-async fn link(device: &TestServer, remote: &TestServer, mode: &str) -> TestResponse {
+pub(crate) async fn link(device: &TestServer, remote: &TestServer, mode: &str) -> TestResponse {
     let body = json!({
         "server_url": remote.base_url, "mode": mode, "email": EMAIL, "password": PASSWORD,
     });
@@ -41,7 +41,7 @@ async fn link(device: &TestServer, remote: &TestServer, mode: &str) -> TestRespo
 }
 
 /// A remote and a device linked to a new account on it.
-async fn linked() -> (TestServer, TestServer) {
+pub(crate) async fn linked() -> (TestServer, TestServer) {
     let (remote, device) = remote_and_device().await;
     let response = link(&device, &remote, "signup").await;
     assert_eq!(response.status, 200, "{}", response.text());
@@ -49,7 +49,7 @@ async fn linked() -> (TestServer, TestServer) {
 }
 
 /// Logs the account in on the remote, as the person would from another app, and returns the session token.
-async fn account_token(remote: &TestServer) -> String {
+pub(crate) async fn account_token(remote: &TestServer) -> String {
     let body = json!({ "email": EMAIL, "password": PASSWORD });
     let response = remote
         .request("POST", "/auth/login")
@@ -60,12 +60,12 @@ async fn account_token(remote: &TestServer) -> String {
     response.json()["token"].as_str().unwrap().to_string()
 }
 
-async fn status(device: &TestServer) -> Value {
+pub(crate) async fn status(device: &TestServer) -> Value {
     device.get("/sync/status").await.json()
 }
 
 /// Asks for a round and waits for one that began after the request to finish.
-async fn sync_round(device: &TestServer) -> Value {
+pub(crate) async fn sync_round(device: &TestServer) -> Value {
     let requested_at_ms = now_ms();
     let response = device.request("POST", "/sync/run").send().await;
     assert_eq!(response.status, 202, "{}", response.text());
@@ -79,7 +79,7 @@ async fn sync_round(device: &TestServer) -> Value {
     .await
 }
 
-async fn wait_for(device: &TestServer, is_done: impl Fn(&Value) -> bool) -> Value {
+pub(crate) async fn wait_for(device: &TestServer, is_done: impl Fn(&Value) -> bool) -> Value {
     let deadline = std::time::Instant::now() + ROUND_WAIT;
     loop {
         let status = status(device).await;
@@ -94,7 +94,7 @@ async fn wait_for(device: &TestServer, is_done: impl Fn(&Value) -> bool) -> Valu
     }
 }
 
-async fn send_as(
+pub(crate) async fn send_as(
     server: &TestServer,
     token: &str,
     method: &'static str,
@@ -108,7 +108,7 @@ async fn send_as(
     }
 }
 
-fn settings(name: &str) -> Value {
+pub(crate) fn settings(name: &str) -> Value {
     json!({
         "name": name,
         "target_language": "de",
@@ -168,7 +168,7 @@ async fn edit_flashcard(
 }
 
 /// The account's rows on the remote.
-async fn remote_rows(remote: &TestServer, token: &str) -> Value {
+pub(crate) async fn remote_rows(remote: &TestServer, token: &str) -> Value {
     send_as(
         remote,
         token,

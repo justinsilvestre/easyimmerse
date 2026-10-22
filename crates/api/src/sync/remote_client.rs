@@ -48,9 +48,9 @@ pub struct RemoteResponse {
 
 /// Sends requests to one remote, with this server's session there when it has one.
 pub struct RemoteClient {
-    agent: Agent,
-    server_url: String,
-    token: Option<String>,
+    pub(super) agent: Agent,
+    pub(super) server_url: String,
+    pub(super) token: Option<String>,
 }
 
 impl RemoteClient {
@@ -200,7 +200,7 @@ fn user_agent() -> String {
 }
 
 /// Passes a successful response on, and turns an error status into `Refused` with the remote's code and message.
-fn checked(response: RemoteResponse) -> Result<RemoteResponse, RemoteError> {
+pub(super) fn checked(response: RemoteResponse) -> Result<RemoteResponse, RemoteError> {
     if (200..300).contains(&response.status) {
         return Ok(response);
     }
@@ -222,7 +222,7 @@ fn checked(response: RemoteResponse) -> Result<RemoteResponse, RemoteError> {
     })
 }
 
-fn transport_error(error: ureq::Error) -> RemoteError {
+pub(super) fn transport_error(error: ureq::Error) -> RemoteError {
     match error {
         ureq::Error::Timeout(_)
         | ureq::Error::Io(_)

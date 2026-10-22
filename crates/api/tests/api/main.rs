@@ -24,5 +24,6 @@ mod subtitles;
 mod support;
 mod sync;
 mod sync_changes;
+mod sync_dictionaries;
 mod timed_text;
 mod users;

@@ -22,7 +22,7 @@ use crate::routes::{
     email_confirmation, flashcards, health, local_dictionaries, media, media_availability,
     media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
     media_waveform, openapi, password_reset, plugins, preferences, projects, review, sessions,
-    source_form, subtitles, sync_changes, sync_device_side, timed_text, users,
+    source_form, subtitles, sync_changes, sync_device_side, sync_dictionaries, timed_text, users,
 };
 use crate::state::AppState;
 use crate::sync::proxy::forward_to_remote;
@@ -188,6 +188,10 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(
             sync_changes::list_sync_changes,
             sync_changes::push_sync_changes
+        ))
+        .routes(routes!(
+            sync_dictionaries::get_dictionary_content,
+            sync_dictionaries::put_dictionary_content
         ))
         .routes(routes!(sync_device_side::get_sync_status))
         .routes(routes!(sync_device_side::get_remote_auth_info))
