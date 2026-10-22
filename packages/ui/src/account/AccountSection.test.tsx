@@ -27,6 +27,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 } as const;
 
@@ -49,7 +50,7 @@ async function submittedToOpenServer() {
   await act(async () =>
     rendered.effects.resolveServerAuthInfo({
       ok: true,
-      data: { accounts: true, open_signup: true },
+      data: { accounts: true, open_signup: true, sends_email: false },
     }),
   );
   return rendered;
@@ -120,7 +121,7 @@ describe("AccountSection", () => {
       await act(async () =>
         effects.resolveServerAuthInfo({
           ok: true,
-          data: { accounts: true, open_signup: false },
+          data: { accounts: true, open_signup: false, sends_email: false },
         }),
       );
       expect(

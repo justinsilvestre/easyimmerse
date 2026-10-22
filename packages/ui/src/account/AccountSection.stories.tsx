@@ -33,6 +33,7 @@ const answered = (accounts: boolean, openSignup: boolean) =>
   actions.serverAuthInfoReceived(ownServer, {
     accounts,
     open_signup: openSignup,
+    sends_email: false,
   });
 
 /** A connected server that answers who the app's token belongs to as given, and never answers a log-out. */
@@ -54,6 +55,7 @@ const someone: CurrentPrincipal = {
     email: "someone@example.com",
     role: "privileged",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 };
 

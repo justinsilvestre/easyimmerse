@@ -16,6 +16,7 @@ const user = (id: string, email: string, role: AccountRole): AccountUser => ({
   email,
   role,
   created_at_ms: 0,
+  email_confirmed_at_ms: null,
 });
 
 const administrator = user("u1", "admin@example.com", "administrator");
