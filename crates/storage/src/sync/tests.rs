@@ -467,6 +467,63 @@ mod pending {
     }
 }
 
+mod backed_up {
+    use super::*;
+
+    fn is_backed_up(storage: &Storage) -> bool {
+        storage.get_project(&project()).unwrap().is_backed_up
+    }
+
+    fn pushed_everything(storage: &Storage, remote_id: &str) {
+        let through = storage.local_change_seq().unwrap();
+        storage.set_sync_pushed_through(remote_id, through).unwrap();
+    }
+
+    #[test]
+    fn a_project_is_not_backed_up_without_a_remote() {
+        assert!(!is_backed_up(&seeded_storage()));
+    }
+
+    #[test]
+    fn a_project_is_not_backed_up_before_its_changes_are_pushed() {
+        let (storage, _) = storage_with_remote();
+        assert!(!is_backed_up(&storage));
+    }
+
+    #[test]
+    fn a_project_is_backed_up_once_its_latest_change_is_pushed() {
+        let (storage, remote) = storage_with_remote();
+        pushed_everything(&storage, &remote.id);
+        assert!(is_backed_up(&storage));
+    }
+
+    #[test]
+    fn a_project_is_not_backed_up_after_a_later_change_to_a_child() {
+        let (storage, remote) = storage_with_remote();
+        pushed_everything(&storage, &remote.id);
+        make_flashcard(&storage, &project(), "Haus");
+        assert!(!is_backed_up(&storage));
+    }
+
+    #[test]
+    fn a_project_stays_backed_up_after_a_change_to_another_project() {
+        let (storage, remote) = storage_with_remote();
+        pushed_everything(&storage, &remote.id);
+        make_flashcard(&storage, &other_project(), "Haus");
+        assert!(is_backed_up(&storage));
+    }
+
+    #[test]
+    fn an_accounts_project_is_always_backed_up() {
+        let storage = Storage::open_in_memory().unwrap();
+        let account = crate::review_test_support::account_owner(&storage);
+        let created = storage
+            .create_project(&account, &project_settings("German"))
+            .unwrap();
+        assert!(created.is_backed_up);
+    }
+}
+
 #[test]
 fn the_registry_survives_a_project_with_every_kind_of_child_being_deleted() {
     let storage = seeded_storage();

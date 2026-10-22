@@ -8,8 +8,9 @@ use crate::owners::OwnerId;
 use crate::preferences::set_preference;
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
-/// The project columns followed by the counts, as every project query selects them.
+/// The project columns followed by the counts and the backed-up flag, as every project query selects them.
 /// Cards the user set aside from the review, as the database's clock finds them, are not counted.
+/// A launch owner's project is backed up when a remote of the owner holds every change up to the project's latest.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
      p.flashcard_front_fields_json, p.lists_anki_deletions, p.created_at_ms, p.last_opened_at_ms, \
@@ -19,7 +20,11 @@ const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_la
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id \
       AND NOT EXISTS (SELECT 1 FROM review_cards r WHERE r.flashcard_id = f.id) \
       AND NOT EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = f.id \
-      AND (h.until_ms IS NULL OR h.until_ms > CAST(unixepoch('subsec') * 1000 AS INTEGER))))";
+      AND (h.until_ms IS NULL OR h.until_ms > CAST(unixepoch('subsec') * 1000 AS INTEGER)))), \
+     p.owner_id <> 'launch' \
+      OR COALESCE((SELECT MAX(s.change_seq) FROM sync_rows s WHERE s.project_id = p.id), 0) \
+      <= COALESCE((SELECT MAX(r.pushed_through_seq) FROM sync_remotes r \
+      WHERE r.owner_id = p.owner_id), -1)";
 
 /// The preference under which seeding records the ids it gave the placeholder projects, as a JSON array.
 pub const PLACEHOLDER_PROJECTS_PREFERENCE: &str = "placeholder_projects";
@@ -269,6 +274,7 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
         media_count: read_unsigned(row, 13)?,
         flashcard_count: read_unsigned(row, 14)?,
         unreviewed_count: read_unsigned(row, 15)?,
+        is_backed_up: row.get(16)?,
     })
 }
 
