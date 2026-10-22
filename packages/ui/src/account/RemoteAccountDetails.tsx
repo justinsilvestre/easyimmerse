@@ -1,9 +1,10 @@
 import { useGetCurrentPrincipalQuery } from "@easyimmerse/backend";
 import {
   actions,
-  hostOf,
   type NativePlatform,
+  selectIsCloudServer,
   selectIsUnlinking,
+  selectServerName,
 } from "@easyimmerse/state";
 import type { SyncLink } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
@@ -31,6 +32,12 @@ export function RemoteAccountDetails({
   link: SyncLink;
   platform: NativePlatform;
 }) {
+  const serverName = useAppSelector((state) =>
+    selectServerName(state, link.server_url),
+  );
+  const isCloud = useAppSelector((state) =>
+    selectIsCloudServer(state, link.server_url),
+  );
   const answersForAccount =
     link.state.kind !== "unreachable" && link.state.kind !== "logged_out";
   return (
@@ -44,11 +51,15 @@ export function RemoteAccountDetails({
           </dd>
           <dt className="text-fg-muted">Role</dt>
           <dd>{accountRoleName(link.account_role)}</dd>
-          <dt className="text-fg-muted">Server</dt>
-          <dd className="break-all">{link.server_url}</dd>
+          {!isCloud && (
+            <>
+              <dt className="text-fg-muted">Server</dt>
+              <dd className="break-all">{link.server_url}</dd>
+            </>
+          )}
           <dt className="text-fg-muted">Status</dt>
           <dd>
-            <SyncStateLine link={link} />
+            <SyncStateLine link={link} serverName={serverName} />
           </dd>
           {link.last_synced_at_ms !== null && (
             <>
@@ -69,11 +80,11 @@ export function RemoteAccountDetails({
             href={`#${cloudStorageSectionId}`}
             className="self-start text-sm text-accent-fg underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
           >
-            Storage on {hostOf(link.server_url)}
+            Storage on {serverName}
           </a>
         )}
         {link.state.kind !== "logged_out" && (
-          <LogOut host={hostOf(link.server_url)} platform={platform} />
+          <LogOut host={serverName} platform={platform} />
         )}
       </div>
       {answersForAccount && <DeviceList />}

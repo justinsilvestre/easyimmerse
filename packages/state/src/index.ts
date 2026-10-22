@@ -333,6 +333,7 @@ export { hostOf } from "./server/hostOf.ts";
 export { isOwnTokenRefused } from "./server/isOwnTokenRefused.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
 export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
+export { isCloudServer, serverNameOf } from "./server/serverNameOf.ts";
 export type {
   RequestFailure,
   RequestOutcome,
@@ -348,7 +349,10 @@ export {
   accountViaOf,
   selectAccountVia,
   selectBundledServerPlatform,
+  selectCloudUrl,
+  selectIsCloudServer,
   selectServerConfig,
+  selectServerName,
   selectWorkHome,
 } from "./server/serverSelectors.ts";
 export type {

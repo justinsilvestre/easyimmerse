@@ -5,7 +5,7 @@ import { SyncStateLine } from "./SyncStateLine.tsx";
 const meta = {
   title: "Account/SyncStateLine",
   component: SyncStateLine,
-  args: { link: fixtureSyncLink },
+  args: { link: fixtureSyncLink, serverName: "the easyImmerse cloud" },
 } satisfies Meta<typeof SyncStateLine>;
 
 export default meta;

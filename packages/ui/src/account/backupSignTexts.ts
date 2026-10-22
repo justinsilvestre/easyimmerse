@@ -1,9 +1,4 @@
-import {
-  type AppAction,
-  actions,
-  type BackupSign,
-  hostOf,
-} from "@easyimmerse/state";
+import { type AppAction, actions, type BackupSign } from "@easyimmerse/state";
 import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
 import { syncFailureReason } from "./syncFailureReason.ts";
@@ -63,11 +58,11 @@ export function backupSignTexts(
       };
     case "linkUnreachable":
       return {
-        explanation: `${hostOf(sign.serverUrl)} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}, so your latest work hasn't been backed up there yet. It will be backed up once the server can be reached.`,
+        explanation: `Couldn't reach ${sign.serverName} since ${formatSinceTime(sign.sinceMs, now)}, so your latest work hasn't been backed up there yet. It will be backed up once the server can be reached.`,
         options: [tryAgain],
       };
     case "linkFailed": {
-      const host = hostOf(sign.serverUrl);
+      const host = sign.serverName;
       return {
         explanation: `Your latest work hasn't been backed up to ${host}. ${syncFailureReason(sign.code, host, deviceNames[sign.platform])}`,
         options: [
@@ -78,7 +73,7 @@ export function backupSignTexts(
     }
     case "loggedOut":
       return {
-        explanation: `You were logged out of ${hostOf(sign.serverUrl)} on ${deviceNames[sign.platform]}, so your latest work hasn't been backed up there. Log in again to back it up.`,
+        explanation: `You were logged out of ${sign.serverName} on ${deviceNames[sign.platform]}, so your latest work hasn't been backed up there. Log in again to back it up.`,
         options: [
           {
             label: "Log in again",

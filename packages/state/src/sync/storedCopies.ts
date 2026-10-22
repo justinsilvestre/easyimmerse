@@ -7,8 +7,8 @@ import { noticesActions } from "../notices/noticesActions.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
-import { hostOf } from "../server/hostOf.ts";
 import { isAborted } from "../server/isAborted.ts";
+import { serverNameOf } from "../server/serverNameOf.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import {
   type StoredCopyRequest,
@@ -132,11 +132,11 @@ function mediaFileOf(
 }
 
 /**
- * The host of the server that keeps the copies: the remote the built-in server is linked to,
+ * How the copy names the server that keeps the copies: the remote the built-in server is linked to,
  * or else the server the app is connected to.
  */
 function storageHostOf({ server, backend }: StoredCopiesReads): string {
   const link = cacheEntry(backend, "getSyncStatus", undefined)?.data?.link;
   const serverUrl = link?.server_url ?? server.config?.serverUrl ?? "";
-  return hostOf(serverUrl);
+  return serverNameOf(serverUrl, server.cloudUrl);
 }

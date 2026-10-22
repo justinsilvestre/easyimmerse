@@ -121,7 +121,7 @@ describe("BuiltInServerAccount", () => {
       last_synced_at_ms: null,
     });
     expect(
-      await screen.findByText("Backing up your work to cloud.example.org…"),
+      await screen.findByText("Backing up your work to the easyImmerse cloud…"),
     ).toBeDefined();
   });
 
@@ -144,7 +144,7 @@ describe("BuiltInServerAccount", () => {
     it("links to the storage the account has on the server", async () => {
       renderBuiltIn(linked);
       const link = await screen.findByRole("link", {
-        name: "Storage on cloud.example.org",
+        name: "Storage on the easyImmerse cloud",
       });
       expect(link.getAttribute("href")).toBe("#settings-storage");
     });
@@ -161,7 +161,7 @@ describe("BuiltInServerAccount", () => {
       });
       expect(
         await screen.findByText(
-          "Couldn't upload Episode 4.mp4 to cloud.example.org: there isn't enough room there.",
+          "Couldn't upload Episode 4.mp4 to the easyImmerse cloud: there isn't enough room there.",
         ),
       ).toBeDefined();
     });
@@ -182,7 +182,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(linked);
       expect(
         await screen.findByText(
-          "After you log out, your work stays on this computer, but new changes won't be backed up to cloud.example.org.",
+          "After you log out, your work stays on this computer, but new changes won't be backed up to the easyImmerse cloud.",
         ),
       ).toBeDefined();
     });
@@ -191,7 +191,7 @@ describe("BuiltInServerAccount", () => {
       const { client } = renderBuiltIn(linked);
       fireEvent.click(
         await screen.findByRole("button", {
-          name: "Log out of cloud.example.org",
+          name: "Log out of the easyImmerse cloud",
         }),
       );
       await waitFor(() =>
@@ -212,7 +212,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(unreachable);
       expect(
         await screen.findByText(
-          "Couldn't reach cloud.example.org since Oct 21, 2026, 9:00 AM. Your work will be stored offline on this computer and backed up to cloud.example.org once it can be reached.",
+          "Couldn't reach the easyImmerse cloud since Oct 21, 2026, 9:00 AM. Your work will be stored offline on this computer and backed up to the easyImmerse cloud once it can be reached.",
         ),
       ).toBeDefined();
     });
@@ -235,7 +235,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(loggedOut);
       expect(
         await screen.findByText(
-          "You were logged out of cloud.example.org on this computer, so your work isn't being backed up there.",
+          "You were logged out of the easyImmerse cloud on this computer, so your work isn't being backed up there.",
         ),
       ).toBeDefined();
     });
@@ -251,13 +251,19 @@ describe("BuiltInServerAccount", () => {
     });
   });
 
+  it("leaves out the address of the easyImmerse cloud", async () => {
+    renderBuiltIn(linked);
+    await screen.findByText("Up to date");
+    expect(screen.queryByText("https://cloud.example.org")).toBeNull();
+  });
+
   it("tells why the last round failed", async () => {
     renderBuiltIn(
       linkIn({ kind: "failed", code: "internal", message: "Database locked." }),
     );
     expect(
       await screen.findByText(
-        "cloud.example.org ran into a problem of its own. Trying again later may help.",
+        "Something went wrong on the easyImmerse cloud. Trying again later may help.",
       ),
     ).toBeDefined();
   });

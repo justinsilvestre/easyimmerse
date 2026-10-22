@@ -7,13 +7,13 @@ const reasonFor = (code: string) =>
 describe("syncFailureReason", () => {
   it("suggests updating when the server's answer is not understood", () => {
     expect(reasonFor("remote_protocol")).toBe(
-      "cloud.example.org answered in a way this version of easyImmerse doesn't understand. Updating the app or the server may fix this.",
+      "The answer from cloud.example.org isn't one this version of easyImmerse understands. Updating the app or the server may fix this.",
     );
   });
 
   it("blames the server for its own internal error", () => {
     expect(reasonFor("internal")).toBe(
-      "cloud.example.org ran into a problem of its own. Trying again later may help.",
+      "Something went wrong on cloud.example.org. Trying again later may help.",
     );
   });
 
@@ -31,7 +31,7 @@ describe("syncFailureReason", () => {
 
   it("tells that the server refused, for any other code", () => {
     expect(reasonFor("payload_too_large")).toBe(
-      "cloud.example.org refused the backup.",
+      "The backup was refused by cloud.example.org.",
     );
   });
 });

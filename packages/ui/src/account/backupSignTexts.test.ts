@@ -11,6 +11,7 @@ const linkUnreachable = (platform: "desktop" | "mobile", sinceMs: number) =>
     kind: "linkUnreachable",
     platform,
     serverUrl: "https://cloud.example.org",
+    serverName: "cloud.example.org",
     sinceMs,
   }) as const;
 
@@ -18,6 +19,7 @@ const linkFailed = {
   kind: "linkFailed",
   platform: "desktop",
   serverUrl: "https://cloud.example.org",
+  serverName: "cloud.example.org",
   code: "internal",
 } as const;
 
@@ -28,6 +30,7 @@ const loggedOut = (platform: "desktop" | "mobile") =>
     kind: "loggedOut",
     platform,
     serverUrl: "https://cloud.example.org",
+    serverName: "cloud.example.org",
     email: "someone@example.org",
   }) as const;
 
@@ -91,7 +94,7 @@ describe("backupSignTexts", () => {
       expect(
         backupSignTexts(linkUnreachable("desktop", since), now)?.explanation,
       ).toBe(
-        "cloud.example.org couldn't be reached since 2:05 PM, so your latest work hasn't been backed up there yet. It will be backed up once the server can be reached.",
+        "Couldn't reach cloud.example.org since 2:05 PM, so your latest work hasn't been backed up there yet. It will be backed up once the server can be reached.",
       );
     });
 
@@ -105,7 +108,7 @@ describe("backupSignTexts", () => {
   describe("after a round failed", () => {
     it("explains why the latest work hasn't been backed up", () => {
       expect(backupSignTexts(linkFailed)?.explanation).toBe(
-        "Your latest work hasn't been backed up to cloud.example.org. cloud.example.org ran into a problem of its own. Trying again later may help.",
+        "Your latest work hasn't been backed up to cloud.example.org. Something went wrong on cloud.example.org. Trying again later may help.",
       );
     });
 

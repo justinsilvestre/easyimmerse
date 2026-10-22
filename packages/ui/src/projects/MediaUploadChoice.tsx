@@ -4,12 +4,14 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
-  hostOf,
+  selectCloudUrl,
   selectIsStoredCopyFetching,
   selectIsStoredCopyUploading,
   selectIsUploadChoiceChanging,
   selectServerConfig,
+  selectServerName,
   selectWorkHome,
+  serverNameOf,
 } from "@easyimmerse/state";
 import type { SyncLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
@@ -36,6 +38,7 @@ export function MediaUploadChoice({
 }) {
   const workHome = useAppSelector(selectWorkHome);
   const server = useAppSelector(selectServerConfig);
+  const cloudUrl = useAppSelector(selectCloudUrl);
   const link = useGetSyncStatusQuery(undefined, {
     skip: workHome !== "builtInServer",
   }).data?.link;
@@ -53,7 +56,7 @@ export function MediaUploadChoice({
     <BrowserFileUpload
       mediaFileId={mediaFileId}
       copy={copy}
-      host={hostOf(server.serverUrl)}
+      host={serverNameOf(server.serverUrl, cloudUrl)}
     />
   );
 }
@@ -68,7 +71,9 @@ function RemoteCopyChoice({
   link: SyncLink;
 }) {
   const dispatch = useAppDispatch();
-  const host = hostOf(link.server_url);
+  const host = useAppSelector((state) =>
+    selectServerName(state, link.server_url),
+  );
   const isChanging = useAppSelector((state) =>
     selectIsUploadChoiceChanging(state, mediaFileId),
   );

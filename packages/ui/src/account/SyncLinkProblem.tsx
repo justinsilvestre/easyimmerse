@@ -1,9 +1,9 @@
 import {
   actions,
-  hostOf,
   type NativePlatform,
   selectIsSignInFormStarted,
   selectIsSyncRunRequested,
+  selectServerName,
 } from "@easyimmerse/state";
 import type { RefusedUpload, SyncLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
@@ -23,7 +23,9 @@ export function SyncLinkProblem({
   link: SyncLink;
   platform: NativePlatform;
 }) {
-  const host = hostOf(link.server_url);
+  const host = useAppSelector((state) =>
+    selectServerName(state, link.server_url),
+  );
   const device = deviceNames[platform];
   switch (link.state.kind) {
     case "idle":

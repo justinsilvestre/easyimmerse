@@ -7,7 +7,12 @@ import { SyncStateLine } from "./SyncStateLine.tsx";
 afterEach(cleanup);
 
 const renderIn = (state: SyncLinkState) =>
-  render(<SyncStateLine link={{ ...fixtureSyncLink, state }} />);
+  render(
+    <SyncStateLine
+      link={{ ...fixtureSyncLink, state }}
+      serverName="cloud.example.org"
+    />,
+  );
 
 describe("SyncStateLine", () => {
   it("tells that the copy is up to date while idle", () => {

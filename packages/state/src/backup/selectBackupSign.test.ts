@@ -189,8 +189,19 @@ describe("selectBackupSign", () => {
           kind: "loggedOut",
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
+          serverName: "cloud.example.org",
           email: "someone@example.org",
         });
+      });
+
+      it("names the easyImmerse cloud by that name", () => {
+        const sign = signOf(
+          withServer(appAfter(), desktopServer, "https://cloud.example.org"),
+          listedWith(linkIn({ kind: "logged_out" }), notBackedUp),
+        );
+        expect("serverName" in sign && sign.serverName).toBe(
+          "the easyImmerse cloud",
+        );
       });
 
       it("tells since when the remote could not be reached while a project is not backed up", () => {
@@ -206,6 +217,7 @@ describe("selectBackupSign", () => {
           kind: "linkUnreachable",
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
+          serverName: "cloud.example.org",
           sinceMs: 1000,
         });
       });
@@ -223,6 +235,7 @@ describe("selectBackupSign", () => {
           kind: "linkFailed",
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
+          serverName: "cloud.example.org",
           code: "storage",
         });
       });

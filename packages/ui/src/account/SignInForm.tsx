@@ -26,7 +26,7 @@ const modeOptions = [
 
 /**
  * The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. `intro` tells what logging in does.
- * It uses the easyImmerse cloud, where the app knows of one, unless the person chooses their own server.
+ * It uses the easyImmerse cloud, where the app knows of one, unless the person follows the quiet link under it to use their own server.
  */
 export function SignInForm({ intro }: { intro?: string }) {
   const dispatch = useAppDispatch();
@@ -53,12 +53,7 @@ export function SignInForm({ intro }: { intro?: string }) {
         value={form.mode}
         onChange={(mode) => change({ mode })}
       />
-      {servers.serverChoice === "official" ? (
-        <OfficialServer
-          isBusy={form.isBusy}
-          onChooseOwn={() => change({ serverChoice: "own" })}
-        />
-      ) : (
+      {servers.serverChoice === "own" && (
         <div className="flex flex-col gap-1.5">
           <TextField
             label="Server address"
@@ -131,30 +126,18 @@ export function SignInForm({ intro }: { intro?: string }) {
       >
         {submitLabel(form)}
       </Button>
+      {servers.serverChoice === "official" && (
+        <LinkButton
+          aria-disabled={form.isBusy}
+          className="self-start text-xs"
+          onClick={() => {
+            if (!form.isBusy) change({ serverChoice: "own" });
+          }}
+        >
+          Use your own server
+        </LinkButton>
+      )}
     </form>
-  );
-}
-
-/** Names the easyImmerse cloud as the server the form uses, with the link that chooses the person's own server instead. */
-function OfficialServer({
-  isBusy,
-  onChooseOwn,
-}: {
-  isBusy: boolean;
-  onChooseOwn: () => void;
-}) {
-  return (
-    <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-      <span className="text-fg-muted">Server: easyImmerse cloud</span>
-      <LinkButton
-        aria-disabled={isBusy}
-        onClick={() => {
-          if (!isBusy) onChooseOwn();
-        }}
-      >
-        Use your own server
-      </LinkButton>
-    </p>
   );
 }
 

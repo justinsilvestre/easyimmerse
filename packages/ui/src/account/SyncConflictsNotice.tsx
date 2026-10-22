@@ -8,6 +8,7 @@ import type { ConflictKept, SyncConflict } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { capitalized } from "./capitalized.ts";
 import { groupSyncConflicts } from "./groupSyncConflicts.ts";
 
 const keptTexts = {
@@ -105,8 +106,4 @@ function ConflictList({ conflicts }: { conflicts: SyncConflict[] }) {
       ))}
     </ul>
   );
-}
-
-function capitalized(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

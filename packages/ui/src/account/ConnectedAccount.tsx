@@ -4,10 +4,11 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
-  hostOf,
   isOwnTokenRefused,
+  selectIsCloudServer,
   selectIsSigningOut,
   selectLogOutDroppedCount,
+  selectServerName,
 } from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
@@ -55,6 +56,9 @@ function AccountDetails({
   user: AccountUser;
   serverUrl: string;
 }) {
+  const isCloud = useAppSelector((state) =>
+    selectIsCloudServer(state, serverUrl),
+  );
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
@@ -66,8 +70,12 @@ function AccountDetails({
           </dd>
           <dt className="text-fg-muted">Role</dt>
           <dd>{accountRoleName(user.role)}</dd>
-          <dt className="text-fg-muted">Server</dt>
-          <dd className="break-all">{serverUrl}</dd>
+          {!isCloud && (
+            <>
+              <dt className="text-fg-muted">Server</dt>
+              <dd className="break-all">{serverUrl}</dd>
+            </>
+          )}
         </dl>
         <LogOut serverUrl={serverUrl} />
       </div>
@@ -101,7 +109,7 @@ function LogOut({ serverUrl }: { serverUrl: string }) {
   const dispatch = useAppDispatch();
   const isSigningOut = useAppSelector(selectIsSigningOut);
   const droppedCount = useAppSelector(selectLogOutDroppedCount);
-  const host = hostOf(serverUrl);
+  const host = useAppSelector((state) => selectServerName(state, serverUrl));
   return (
     <div className="flex flex-col items-start gap-1">
       <Button
