@@ -37,5 +37,6 @@ pub mod review;
 pub mod sessions;
 pub mod source_form;
 pub mod subtitles;
+pub mod sync_changes;
 pub mod timed_text;
 pub mod users;

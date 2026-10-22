@@ -145,6 +145,24 @@ impl From<StorageError> for ApiFailure {
                 error.to_string(),
             ),
             StorageError::Dictionary(error) => error.into(),
+            StorageError::UnknownSyncTable(_) => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "unknown_sync_table",
+                error.to_string(),
+            ),
+            StorageError::SyncColumnMissing { .. } => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "sync_column_missing",
+                error.to_string(),
+            ),
+            StorageError::SyncValueUnsupported { .. } => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "sync_value_unsupported",
+                error.to_string(),
+            ),
+            StorageError::RemoteNotLinked => {
+                ApiFailure::new(StatusCode::NOT_FOUND, "not_linked", error.to_string())
+            }
             _ => internal(error.to_string()),
         }
     }
@@ -227,6 +245,18 @@ mod tests {
     #[test]
     fn a_missing_session_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::SessionNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_table_that_does_not_sync_has_its_own_code() {
+        let failure = ApiFailure::from(StorageError::UnknownSyncTable("users".to_string()));
+        assert_eq!(failure.error.code, "unknown_sync_table");
+    }
+
+    #[test]
+    fn a_missing_link_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::RemoteNotLinked);
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
     }
 

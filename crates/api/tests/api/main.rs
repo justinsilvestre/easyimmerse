@@ -22,5 +22,6 @@ mod review;
 mod sidecar_subtitles;
 mod subtitles;
 mod support;
+mod sync_changes;
 mod timed_text;
 mod users;
