@@ -17,9 +17,13 @@ const syncStatusPollMs = 5000;
 /**
  * A quiet sign in the footer while some of the user's work is kept only on this device,
  * which opens an explanation of how the work could be lost and, where the app offers one, a way to back it up.
- * On a narrow screen it shows only its icon.
+ * On a narrow screen it shows only its icon. With `isInitiallyOpen`, the explanation starts open.
  */
-export function NotBackedUpSign() {
+export function NotBackedUpSign({
+  isInitiallyOpen = false,
+}: {
+  isInitiallyOpen?: boolean;
+}) {
   const isOnBuiltInServer = useAppSelector(selectWorkHome) === "builtInServer";
   // Keeps the project list and the sync status cached, since whether each project is backed up, and how the link to a remote fares, decide the sign.
   useListProjectsQuery(undefined, { skip: !isOnBuiltInServer });
@@ -33,8 +37,10 @@ export function NotBackedUpSign() {
   if (texts === null) return null;
   const { explanation, button } = texts;
   return (
+    // On a narrow screen the panel is placed against the footer rather than the sign, which sits too far right for it to fit.
     <MenuShell
-      className="shrink-0"
+      className="shrink-0 max-sm:static"
+      isInitiallyOpen={isInitiallyOpen}
       trigger={(triggerProps) => (
         <button
           type="button"
@@ -52,7 +58,7 @@ export function NotBackedUpSign() {
           role="menu"
           aria-label="Not backed up"
           aria-describedby={explanationId}
-          className="absolute bottom-full left-0 z-20 mb-1 flex w-72 max-w-[calc(100vw-1rem)] flex-col gap-2 rounded-md border border-line bg-surface p-3 text-sm shadow-lg"
+          className="absolute bottom-full left-0 z-20 mb-1 flex max-sm:left-2 w-72 max-w-[calc(100vw-1rem)] flex-col gap-2 rounded-md border border-line bg-surface p-3 text-sm shadow-lg"
         >
           <p id={explanationId} className="text-fg-muted">
             {explanation}
