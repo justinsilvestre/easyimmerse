@@ -56,10 +56,7 @@ describe("mediaItemsOf", () => {
       null,
       new Map(),
     );
-    expect(items.map((item) => item.copy?.browserFile)).toEqual([
-      null,
-      "gone",
-    ]);
+    expect(items.map((item) => item.copy?.browserFile)).toEqual([null, "gone"]);
   });
 
   it("counts the flashcards made from each file", () => {
