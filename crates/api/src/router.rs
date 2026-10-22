@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::extract::DefaultBodyLimit;
 use axum::middleware::from_fn_with_state;
+use axum::routing::any;
 use axum::{Extension, Router};
 use tower_http::cors::{AllowHeaders, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -21,9 +22,10 @@ use crate::routes::{
     email_confirmation, flashcards, health, local_dictionaries, media, media_availability,
     media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
     media_waveform, openapi, password_reset, plugins, preferences, projects, review, sessions,
-    source_form, subtitles, sync_changes, timed_text, users,
+    source_form, subtitles, sync_changes, sync_device_side, timed_text, users,
 };
 use crate::state::AppState;
+use crate::sync::proxy::forward_to_remote;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
@@ -38,7 +40,9 @@ const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
     let (protected, _) = protected_routes().split_for_parts();
+    // The proxy reuses the documented account routes of the remote, so it stays out of the document.
     let protected = protected
+        .route("/sync/remote/{*path}", any(forward_to_remote))
         .layer(Extension(Arc::new(document.clone())))
         // A layer added later runs earlier, so the path check sees the principal the bearer token gives.
         .layer(from_fn_with_state(state.clone(), require_owned_path))
@@ -185,6 +189,14 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             sync_changes::list_sync_changes,
             sync_changes::push_sync_changes
         ))
+        .routes(routes!(sync_device_side::get_sync_status))
+        .routes(routes!(sync_device_side::get_remote_auth_info))
+        .routes(routes!(
+            sync_device_side::link_sync_remote,
+            sync_device_side::unlink_sync_remote
+        ))
+        .routes(routes!(sync_device_side::run_sync))
+        .routes(routes!(sync_device_side::dismiss_sync_conflicts))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {

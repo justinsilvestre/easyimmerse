@@ -30,6 +30,7 @@ pub mod serve;
 pub mod sidecar_subtitle_tracks;
 mod source_update;
 pub mod state;
+pub mod sync;
 #[cfg(test)]
 mod typescript_constants;
 

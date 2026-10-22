@@ -15,6 +15,7 @@ use crate::import_jobs::ImportJobs;
 use crate::mail::MailService;
 use crate::media_source_jobs::MediaSourceJobs;
 use crate::plugins::{PluginRegistry, fetched_item_dir};
+use crate::sync::SyncEngine;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -45,6 +46,8 @@ pub struct AppState {
     pub confirmation_mails: Arc<MailThrottle>,
     /// The owners whose FSRS parameters are being fitted, so that no second fit for the same owner starts beside one.
     pub owners_fitting_review_parameters: Arc<Mutex<HashSet<String>>>,
+    /// Syncs the device's own data with the remote it is linked to. A server without a link only waits.
+    pub sync: Arc<SyncEngine>,
 }
 
 impl AppState {
@@ -54,8 +57,10 @@ impl AppState {
         probes: Option<ProbeCache>,
         conversion: Option<ConversionService>,
     ) -> Self {
+        let storage = Arc::new(storage);
         Self {
-            storage: Arc::new(storage),
+            sync: Arc::new(SyncEngine::new(Arc::clone(&storage))),
+            storage,
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,

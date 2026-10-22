@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
@@ -37,6 +38,7 @@ pub struct ServerHandle {
     shutdown: oneshot::Sender<()>,
     task: JoinHandle<std::io::Result<()>>,
     conversion: Option<ConversionService>,
+    sync_loop: JoinHandle<()>,
 }
 
 impl ServerHandle {
@@ -46,6 +48,7 @@ impl ServerHandle {
         if let Some(conversion) = &self.conversion {
             conversion.shutdown().await;
         }
+        self.sync_loop.abort();
         // The receiver is gone only if the server already stopped, which is fine.
         let _ = self.shutdown.send(());
         self.task.await??;
@@ -97,6 +100,7 @@ pub async fn serve(
     let state = AppState::new(storage, config, open_probe_cache(), conversion.clone())
         .with_plugins(plugins, media_dir)
         .with_mail(mail);
+    let sync_loop = tokio::spawn(Arc::clone(&state.sync).run());
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
     let service = router.into_make_service_with_connect_info::<SocketAddr>();
@@ -109,6 +113,7 @@ pub async fn serve(
         shutdown,
         task,
         conversion,
+        sync_loop,
     })
 }
 

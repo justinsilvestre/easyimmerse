@@ -163,6 +163,9 @@ impl From<StorageError> for ApiFailure {
             StorageError::RemoteNotLinked => {
                 ApiFailure::new(StatusCode::NOT_FOUND, "not_linked", error.to_string())
             }
+            StorageError::AlreadyLinked => {
+                ApiFailure::new(StatusCode::CONFLICT, "already_linked", error.to_string())
+            }
             _ => internal(error.to_string()),
         }
     }
@@ -258,6 +261,12 @@ mod tests {
     fn a_missing_link_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::RemoteNotLinked);
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn an_existing_link_has_its_own_code() {
+        let failure = ApiFailure::from(StorageError::AlreadyLinked);
+        assert_eq!(failure.error.code, "already_linked");
     }
 
     #[test]
