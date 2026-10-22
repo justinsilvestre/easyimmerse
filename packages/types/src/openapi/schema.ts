@@ -1397,6 +1397,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sync/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forgets the conflicts of the link, once the person has read of them. */
+        delete: operations["dismissSyncConflicts"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logs in to an account on a remote, or signs up there, and keeps a copy of the device's own data on it from now on.
+         *     A logged-out link to the same account resumes where it stopped; a link to another account starts over.
+         */
+        post: operations["linkSyncRemote"];
+        /** Logs out of the linked remote and stops syncing with it. The device's own data stays as it is. */
+        delete: operations["unlinkSyncRemote"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/remote-auth-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Asks a remote what it offers to clients that want to log in, on behalf of the app, which may not reach it directly. */
+        get: operations["getRemoteAuthInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts a round of syncing now rather than when the next one is due. */
+        post: operations["runSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reports the link of the device's own data and how syncing with it goes. An account gets no link. */
+        get: operations["getSyncStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timed-text/parse": {
         parameters: {
             query?: never;
@@ -1777,6 +1866,11 @@ export interface components {
         ConfirmEmailRequest: {
             token: string;
         };
+        /**
+         * @description Which of two changes made at once was kept.
+         * @enum {string}
+         */
+        ConflictKept: "this_device" | "other_device" | "deletion";
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -2241,6 +2335,14 @@ export interface components {
             frequencies: components["schemas"]["DictionaryFrequency"][];
             tags: components["schemas"]["TagDefinition"][];
         };
+        /** @description Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it. */
+        LinkRemoteRequest: {
+            email: string;
+            mode: components["schemas"]["SignInMode"];
+            password: string;
+            /** @description The remote's address, such as `https://cloud.example.com`. */
+            server_url: string;
+        };
         ListDictionariesResponse: {
             dictionaries: components["schemas"]["DictionarySummary"][];
         };
@@ -2394,6 +2496,15 @@ export interface components {
             at_ms: number;
             level: components["schemas"]["MediaSourceLogLevel"];
             message: string;
+        };
+        /** @description The progress of a media file being uploaded to a remote. */
+        MediaTransfer: {
+            media_file_id: components["schemas"]["MediaFileId"];
+            name: string;
+            /** Format: int64 */
+            sent_bytes: number;
+            /** Format: int64 */
+            total_bytes: number;
         };
         /**
          * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
@@ -2607,6 +2718,11 @@ export interface components {
             /** Format: int64 */
             num: number;
         };
+        /**
+         * @description Whether a remote is an account server reached over the internet, or a server on the local network.
+         * @enum {string}
+         */
+        RemoteKind: "account" | "lan";
         /** @description Raises the number of new cards, or of reviews, the project's review shows today. */
         ReviewAllowanceRequest: {
             /** Format: int32 */
@@ -2892,6 +3008,11 @@ export interface components {
         SetUserRoleRequest: {
             role: components["schemas"]["AccountRole"];
         };
+        /**
+         * @description Whether linking a device creates a new account on the remote or logs in to an existing one.
+         * @enum {string}
+         */
+        SignInMode: "login" | "signup";
         SignupRequest: {
             email: string;
             /** @description At least eight characters. */
@@ -2968,6 +3089,64 @@ export interface components {
             next_cursor: number;
             rows: components["schemas"]["SyncRow"][];
         };
+        /** @description A row that this device and another changed at once. */
+        SyncConflict: {
+            /** @description Names the row for the person, such as "a flashcard in Spanish practice". */
+            description: string;
+            /** Format: int64 */
+            detected_at_ms: number;
+            id: string;
+            kept: components["schemas"]["ConflictKept"];
+        };
+        /** @description A link to a remote, and how far syncing with it has come. */
+        SyncLink: {
+            account_email: string;
+            account_role: components["schemas"]["AccountRole"];
+            /**
+             * Format: int64
+             * @description How many conflicts there are since they were last dismissed.
+             */
+            conflict_count: number;
+            /** @description The 20 most recent conflicts, newest first. */
+            conflicts: components["schemas"]["SyncConflict"][];
+            kind: components["schemas"]["RemoteKind"];
+            /**
+             * Format: int64
+             * @description When the latest successful round began. Every change made on this device before then is on the remote.
+             */
+            last_synced_at_ms?: number | null;
+            /** Format: int64 */
+            linked_at_ms: number;
+            /**
+             * Format: int64
+             * @description This server's change sequence up to which the remote holds every change.
+             */
+            pushed_through_seq: number;
+            server_url: string;
+            state: components["schemas"]["SyncLinkState"];
+            transfer?: components["schemas"]["MediaTransfer"] | null;
+        };
+        /** @description What syncing with a remote is doing. */
+        SyncLinkState: {
+            /** @enum {string} */
+            kind: "idle";
+        } | {
+            /** @enum {string} */
+            kind: "syncing";
+        } | {
+            /** @enum {string} */
+            kind: "unreachable";
+            /** Format: int64 */
+            since_ms: number;
+        } | {
+            /** @enum {string} */
+            kind: "logged_out";
+        } | {
+            code: string;
+            /** @enum {string} */
+            kind: "failed";
+            message: string;
+        };
         /** @description The rows a device sends to a server in one request. */
         SyncPushBatch: {
             rows: components["schemas"]["PushedRow"][];
@@ -2990,6 +3169,20 @@ export interface components {
              *     Of two changes made to a row at once, the later is kept.
              */
             updated_at_ms: number;
+        };
+        /** @description How a built-in server keeps a copy of its data on a remote. */
+        SyncStatus: {
+            link?: components["schemas"]["SyncLink"] | null;
+            /**
+             * Format: int64
+             * @description The last change sequence this server gave out. Zero for an account.
+             */
+            local_change_seq: number;
+            /**
+             * Format: int64
+             * @description Raised each time rows pulled from the remote change this server's data. Zero for an account.
+             */
+            pulled_revision: number;
         };
         /**
          * @description A table whose rows sync between servers. Each name is the table's name in the server's database.
@@ -8359,6 +8552,352 @@ export interface operations {
             };
             /** @description The body is larger than 16 MiB */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    dismissSyncConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The conflicts were forgotten */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    linkSyncRemote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRemoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Linked; the first round has started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+            /** @description `invalid_server_url`, or the remote's own 400 such as `invalid_email` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token, or the remote's `invalid_credentials` */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden` for an account, or the remote's 403 such as `signup_closed` or `accounts_disabled` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `already_linked`, or the remote's 409 such as `email_taken` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The remote's `too_many_attempts`, with its Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unlinkSyncRemote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may unlink */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_linked` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getRemoteAuthInfo: {
+        parameters: {
+            query: {
+                /** @description The remote's address, such as `https://cloud.example.com`. */
+                server_url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the remote offers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerAuthInfo"];
+                };
+            };
+            /** @description `invalid_server_url` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may link */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    runSync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A round will start shortly */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_linked` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getSyncStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link and its state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
