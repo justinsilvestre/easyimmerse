@@ -3,7 +3,7 @@ use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
 
 use crate::error::StorageError;
 use crate::new_row::{generate_id, now_ms};
-use crate::stored_integer::{read_unsigned, to_stored_integer};
+use crate::stored_integer::{read_optional_unsigned, read_unsigned, to_stored_integer};
 
 /// An account together with the hash of its password, for logging in.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,7 +12,9 @@ pub struct StoredUser {
     pub password_hash: String,
 }
 
-pub const USER_COLUMNS: &str = "u.id, u.email, u.role, u.created_at_ms";
+pub const USER_COLUMNS: &str = "u.id, u.email, u.role, u.created_at_ms, u.email_confirmed_at_ms";
+/// How many columns `USER_COLUMNS` names, which is the index of the first column after them.
+pub const USER_COLUMN_COUNT: usize = 5;
 
 /// Creates an account, unless one already has the email address in any letter case.
 pub fn create_user(
@@ -61,7 +63,7 @@ pub fn find_user_by_email(
             |row| {
                 Ok(StoredUser {
                     user: read_user(row)?,
-                    password_hash: row.get(4)?,
+                    password_hash: row.get(USER_COLUMN_COUNT)?,
                 })
             },
         )
@@ -121,6 +123,18 @@ pub fn set_password_hash(
     Ok(())
 }
 
+/// Records that the owner of the account confirmed its email address at `at_ms`, unless they did so before.
+pub fn confirm_email(conn: &Connection, id: &str, at_ms: u64) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE users SET email_confirmed_at_ms = COALESCE(email_confirmed_at_ms, ?2) WHERE id = ?1",
+        params![id, to_stored_integer(at_ms)],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    Ok(())
+}
+
 /// Deletes an account together with its sessions, unless it is the last administrator account.
 pub fn delete_user(conn: &mut Connection, id: &str) -> Result<(), StorageError> {
     let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -166,6 +180,7 @@ pub fn read_user(row: &Row) -> rusqlite::Result<AccountUser> {
             )
         })?,
         created_at_ms: read_unsigned(row, 3)?,
+        email_confirmed_at_ms: read_optional_unsigned(row, 4)?,
     })
 }
 
@@ -269,7 +284,14 @@ mod tests {
     fn replacing_a_password_hash_ends_the_sessions() {
         let storage = storage_with_user("reader@example.com");
         let id = storage.list_users().unwrap()[0].id.clone();
-        storage.create_session("token-hash", &id, u64::MAX).unwrap();
+        let session = crate::NewSession {
+            token_hash: "token-hash",
+            user_id: &id,
+            user_agent: "",
+            created_at_ms: 0,
+            expires_at_ms: u64::MAX,
+        };
+        storage.create_session(&session).unwrap();
         storage.set_password_hash(&id, "new hash").unwrap();
         assert_eq!(storage.find_live_session("token-hash", 0).unwrap(), None);
     }
@@ -279,6 +301,35 @@ mod tests {
         let storage = Storage::open_in_memory().unwrap();
         let result = storage.set_password_hash("missing", "hash");
         assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    #[test]
+    fn a_new_user_has_no_confirmed_email_address() {
+        let storage = storage_with_user("reader@example.com");
+        assert_eq!(storage.list_users().unwrap()[0].email_confirmed_at_ms, None);
+    }
+
+    #[test]
+    fn records_when_the_email_address_was_confirmed() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.confirm_email(&id, 1_000).unwrap();
+        assert_eq!(
+            storage.get_user(&id).unwrap().email_confirmed_at_ms,
+            Some(1_000)
+        );
+    }
+
+    #[test]
+    fn keeps_the_first_confirmation_time() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.confirm_email(&id, 1_000).unwrap();
+        storage.confirm_email(&id, 2_000).unwrap();
+        assert_eq!(
+            storage.get_user(&id).unwrap().email_confirmed_at_ms,
+            Some(1_000)
+        );
     }
 
     fn storage_with_administrator() -> (Storage, String) {

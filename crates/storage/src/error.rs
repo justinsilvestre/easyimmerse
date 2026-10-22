@@ -42,6 +42,8 @@ pub enum StorageError {
     EmailTaken(String),
     #[error("no account has the id {0:?}")]
     UserNotFound(String),
+    #[error("no session of the account has the id {0:?}")]
+    SessionNotFound(String),
     #[error("the account {0:?} is the last administrator, and the server must keep one")]
     LastAdministrator(String),
     #[error("no review answer was given at {0} ms in the project")]

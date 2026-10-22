@@ -8,6 +8,7 @@ mod anki_pending_deletions;
 mod anki_sync;
 mod connections;
 mod dictionaries;
+mod email_tokens;
 mod error;
 mod flashcards;
 mod media_files;
@@ -31,9 +32,10 @@ mod users;
 
 pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
+pub use email_tokens::{EmailTokenPurpose, NewEmailToken};
 pub use error::StorageError;
 pub use sample_content::SampleContentError;
-pub use sessions::LiveSession;
+pub use sessions::{LiveSession, NewSession, StoredSession};
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 pub use users::StoredUser;
 
@@ -517,14 +519,14 @@ impl Storage {
         self.write(|conn| users::delete_user(conn, id))
     }
 
-    /// Records a session of the user under the hash of its token.
-    pub fn create_session(
-        &self,
-        token_hash: &str,
-        user_id: &str,
-        expires_at_ms: u64,
-    ) -> Result<(), StorageError> {
-        self.write(|conn| sessions::create_session(conn, token_hash, user_id, expires_at_ms))
+    /// Records that the owner of the account confirmed its email address at `at_ms`, unless they did so before.
+    pub fn confirm_email(&self, id: &str, at_ms: u64) -> Result<(), StorageError> {
+        self.write(|conn| users::confirm_email(conn, id, at_ms))
+    }
+
+    /// Records a session, last used when it was created, and returns its new id.
+    pub fn create_session(&self, session: &NewSession) -> Result<String, StorageError> {
+        self.write(|conn| sessions::create_session(conn, session))
     }
 
     /// Finds the session stored under the token hash, unless it has expired by `now_ms`.
@@ -543,18 +545,61 @@ impl Storage {
         }
     }
 
-    /// Moves the expiry of the session stored under the token hash.
-    pub fn extend_session(&self, token_hash: &str, expires_at_ms: u64) -> Result<(), StorageError> {
-        self.write(|conn| sessions::extend_session(conn, token_hash, expires_at_ms))
+    /// Records when the session was last used, and moves its expiry when `expires_at_ms` is given.
+    pub fn refresh_session(
+        &self,
+        token_hash: &str,
+        last_used_at_ms: u64,
+        expires_at_ms: Option<u64>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            sessions::refresh_session(conn, token_hash, last_used_at_ms, expires_at_ms)
+        })
+    }
+
+    /// Lists the sessions of the user, most recently used first.
+    pub fn list_sessions(&self, user_id: &str) -> Result<Vec<StoredSession>, StorageError> {
+        self.read(|conn| sessions::list_sessions(conn, user_id))
     }
 
     pub fn delete_session(&self, token_hash: &str) -> Result<(), StorageError> {
         self.write(|conn| sessions::delete_session(conn, token_hash))
     }
 
+    /// Deletes the session with the id, unless it belongs to another user or does not exist.
+    pub fn delete_session_by_id(&self, user_id: &str, id: &str) -> Result<(), StorageError> {
+        self.write(|conn| sessions::delete_session_by_id(conn, user_id, id))
+    }
+
     /// Deletes every session that expired at or before `now_ms` and returns how many there were.
     pub fn delete_expired_sessions(&self, now_ms: u64) -> Result<usize, StorageError> {
         self.write(|conn| sessions::delete_expired_sessions(conn, now_ms))
+    }
+
+    /// Records the token of a mailed link, replacing the user's earlier tokens of the same purpose.
+    pub fn issue_email_token(&self, token: &NewEmailToken) -> Result<(), StorageError> {
+        self.write(|conn| email_tokens::issue_email_token(conn, token))
+    }
+
+    /// Deletes the token stored under the hash for the purpose and returns its user's id,
+    /// or None when there is no such token or it expired by `now_ms`.
+    pub fn take_email_token(
+        &self,
+        token_hash: &str,
+        purpose: EmailTokenPurpose,
+        now_ms: u64,
+    ) -> Result<Option<String>, StorageError> {
+        self.write(|conn| email_tokens::take_email_token(conn, token_hash, purpose, now_ms))
+    }
+
+    /// Takes a confirmation token and records that its user confirmed their address at `now_ms`.
+    /// Returns whether the token was live.
+    pub fn confirm_email_with_token(
+        &self,
+        token_hash: &str,
+        now_ms: u64,
+    ) -> Result<bool, StorageError> {
+        self.write(|conn| email_tokens::confirm_email_with_token(conn, token_hash, now_ms))
     }
 
     /// Imports a dictionary from its files in one transaction and returns its new id.
