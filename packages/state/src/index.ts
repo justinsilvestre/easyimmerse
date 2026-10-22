@@ -355,10 +355,19 @@ export type {
 } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
+export {
+  storedCopyFetchRequestId,
+  storedCopyUploadRequestId,
+  uploadChoiceRequestId,
+} from "./sync/storedCopies.ts";
 export { type SyncAction, syncActions } from "./sync/syncActions.ts";
 export {
   selectIsDismissingSyncConflicts,
+  selectIsStoredCopyFetching,
+  selectIsStoredCopyUploading,
   selectIsSyncRunRequested,
+  selectIsUploadChoiceChanging,
+  selectStoredCopyDeletionToConfirm,
   selectSyncLink,
   selectSyncStatus,
 } from "./sync/syncSelectors.ts";

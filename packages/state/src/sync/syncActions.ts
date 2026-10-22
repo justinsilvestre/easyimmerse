@@ -9,6 +9,30 @@ export const syncActions = {
   syncRunRequested: () => ({ type: "syncRunRequested" }) as const,
   /** The person dismissed the conflicts the built-in server recorded. */
   syncConflictsDismissed: () => ({ type: "syncConflictsDismissed" }) as const,
+  /** The person chose whether a server keeps a copy of a media file's bytes. */
+  uploadChoiceToggled: (
+    projectId: string,
+    mediaFileId: string,
+    isUploadChosen: boolean,
+  ) =>
+    ({
+      type: "uploadChoiceToggled",
+      projectId,
+      mediaFileId,
+      isUploadChosen,
+    }) as const,
+  /** The person asked to upload a file this browser holds, for the server to keep a copy of. */
+  storedCopyUploadRequested: (projectId: string, mediaFileId: string) =>
+    ({ type: "storedCopyUploadRequested", projectId, mediaFileId }) as const,
+  /** The person asked the built-in server to download the copy its remote keeps of a media file. */
+  storedCopyFetchRequested: (projectId: string, mediaFileId: string) =>
+    ({ type: "storedCopyFetchRequested", projectId, mediaFileId }) as const,
+  /** The person asked to delete the copy a server keeps of a media file, which waits for them to confirm it. */
+  storedCopyDeletionAsked: (mediaFileId: string) =>
+    ({ type: "storedCopyDeletionAsked", mediaFileId }) as const,
+  /** The person chose to keep the copy after all. */
+  storedCopyDeletionCancelled: () =>
+    ({ type: "storedCopyDeletionCancelled" }) as const,
 };
 
 /** An action of syncing with the remote. */

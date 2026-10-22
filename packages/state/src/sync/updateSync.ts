@@ -8,9 +8,16 @@ import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { personBoundPreferenceKeys } from "../preferences/preferenceScope.ts";
 import { routeActions } from "../route/routeActions.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
+import { storedCopyEffects } from "./storedCopies.ts";
 
-/** Which conflict the person was last told of, so that the same conflict raises its notice only once. */
-export type SyncState = { notifiedConflictId: string | null };
+/**
+ * Which conflict the person was last told of, so that the same conflict raises its notice only once,
+ * and the media file whose copy on the server waits for the person to confirm its deletion.
+ */
+export type SyncState = {
+  notifiedConflictId: string | null;
+  storedCopyDeletionToConfirm: string | null;
+};
 
 /** The id of the request that asks the built-in server to sync now. */
 export const runSyncRequestId = "sync/run";
@@ -41,12 +48,13 @@ const conflictsNotice = dispatch(
  * Follows the native app's syncing with the remote its built-in server is linked to:
  * it reloads the preferences that follow the person once changes are pulled, tells the person of each new conflict once,
  * and sends the person's requests to sync now and to dismiss the conflicts.
+ * It also sends the person's requests about the copies a server keeps of media files, asking first before one is deleted.
  */
-export const updateSync: FeatureUpdate<SyncState, "operations"> = (
-  sync,
-  action,
-  { operations },
-) => {
+export const updateSync: FeatureUpdate<
+  SyncState,
+  "operations" | "server" | "backend"
+> = (sync, action, reads) => {
+  const { operations } = reads;
   switch (action.type) {
     case "syncPulledChanges":
       return updated(sync, {
@@ -56,7 +64,7 @@ export const updateSync: FeatureUpdate<SyncState, "operations"> = (
     case "syncConflictsReported":
       if (action.conflictId === sync.notifiedConflictId) return updated(sync);
       return updated(
-        { notifiedConflictId: action.conflictId },
+        { ...sync, notifiedConflictId: action.conflictId },
         conflictsNotice,
       );
     case "syncRunRequested":
@@ -71,14 +79,29 @@ export const updateSync: FeatureUpdate<SyncState, "operations"> = (
           kind: "dismissSyncConflicts",
         }),
       );
+    case "storedCopyDeletionAsked":
+      return updated({
+        ...sync,
+        storedCopyDeletionToConfirm: action.mediaFileId,
+      });
+    case "storedCopyDeletionCancelled":
+      return updated({ ...sync, storedCopyDeletionToConfirm: null });
+    case "uploadChoiceToggled":
+      return updated(
+        { ...sync, storedCopyDeletionToConfirm: null },
+        ...storedCopyEffects(action, reads),
+      );
     default:
-      return updated(sync);
+      return updated(sync, ...storedCopyEffects(action, reads));
   }
 };
 
 /** The syncing with the remote as a feature. */
-export const syncFeature: Feature<SyncState, "operations"> = {
-  initialState: { notifiedConflictId: null },
+export const syncFeature: Feature<
+  SyncState,
+  "operations" | "server" | "backend"
+> = {
+  initialState: { notifiedConflictId: null, storedCopyDeletionToConfirm: null },
   update: updateSync,
 };
 

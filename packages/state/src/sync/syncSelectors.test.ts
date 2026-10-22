@@ -5,7 +5,12 @@ import {
   emptyServerCache,
   serverCacheWith,
 } from "../server/serverCacheWith.ts";
-import { selectSyncLink, selectSyncStatus } from "./syncSelectors.ts";
+import { storedCopyUploadRequestId } from "./storedCopies.ts";
+import {
+  selectIsStoredCopyUploading,
+  selectSyncLink,
+  selectSyncStatus,
+} from "./syncSelectors.ts";
 
 const link: SyncLink = {
   kind: "account",
@@ -47,5 +52,32 @@ describe("selectSyncLink", () => {
 
   it("returns null before the built-in server has reported its status", () => {
     expect(selectSyncLink(unreported)).toBeNull();
+  });
+});
+
+describe("selectIsStoredCopyUploading", () => {
+  it("tells that the file is being uploaded while its upload waits for the server", () => {
+    const uploading = {
+      app: {
+        ...initialAppState,
+        operations: {
+          ...initialAppState.operations,
+          requests: [
+            {
+              id: storedCopyUploadRequestId("m1"),
+              request: {
+                kind: "fetchStoredCopy",
+                projectId: "p1",
+                mediaFileId: "m1",
+              },
+              isWaiting: false,
+              isSlow: false,
+            } as const,
+          ],
+        },
+      },
+      backend: emptyServerCache,
+    };
+    expect(selectIsStoredCopyUploading(uploading, "m1")).toBe(true);
   });
 });

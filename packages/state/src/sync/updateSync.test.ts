@@ -15,15 +15,20 @@ import {
   syncFeature,
 } from "./updateSync.ts";
 
+/** What the sync update reads: the requests in flight, no server, and an empty cache. */
+const readsWith = (operations: OperationsState) => ({
+  operations,
+  server: initialAppState.server,
+  backend: { queries: {} },
+});
+
 /** The sync slice after the actions, and the effects of the last one. */
 function syncAfter(
   ...syncActions: AppAction[]
 ): readonly [SyncState, readonly Effect[]] {
   return syncActions.reduce<readonly [SyncState, readonly Effect[]]>(
     ([sync], action) =>
-      syncFeature.update(sync, action, {
-        operations: initialAppState.operations,
-      }),
+      syncFeature.update(sync, action, readsWith(initialAppState.operations)),
     [syncFeature.initialState, []],
   );
 }
@@ -111,7 +116,7 @@ describe("updateSync", () => {
     const [, effects] = syncFeature.update(
       syncFeature.initialState,
       actions.syncRunRequested(),
-      { operations: waitingFor(runSyncRequestId) },
+      readsWith(waitingFor(runSyncRequestId)),
     );
     expect(effects).toEqual([]);
   });
