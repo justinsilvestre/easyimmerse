@@ -11,13 +11,19 @@ import {
 } from "@easyimmerse/state";
 import type { ApiError } from "@easyimmerse/types";
 
-/** The effects through which a person signs in to a server and connects the app to it, or disconnects it. */
+/**
+ * The effects through which a person signs in to a server and connects the app to it, or disconnects it,
+ * and follows the links a server mails to confirm an email address or to choose a new password.
+ */
 export type AccountEffects = Pick<
   Effects,
   | "fetchServerAuthInfo"
   | "createSession"
   | "connectToServer"
   | "disconnectFromServer"
+  | "confirmEmail"
+  | "requestPasswordReset"
+  | "setNewPassword"
 >;
 
 /**
@@ -34,11 +40,29 @@ export function createAccountEffects(
     fetchServerAuthInfo: (serverUrl) =>
       requestJson(fetchFn, new URL("/auth/server", serverUrl)),
     createSession: ({ serverUrl, mode, email, password }: SignInAttempt) =>
-      requestJson(fetchFn, new URL(`/auth/${mode}`, serverUrl), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      }),
+      requestJson(
+        fetchFn,
+        new URL(`/auth/${mode}`, serverUrl),
+        postingJson({ email, password }),
+      ),
+    confirmEmail: (serverUrl, token) =>
+      requestDone(
+        fetchFn,
+        new URL("/auth/confirm-email", serverUrl),
+        postingJson({ token }),
+      ),
+    requestPasswordReset: (serverUrl, email) =>
+      requestDone(
+        fetchFn,
+        new URL("/auth/password-reset", serverUrl),
+        postingJson({ email }),
+      ),
+    setNewPassword: (serverUrl, token, password) =>
+      requestJson(
+        fetchFn,
+        new URL("/auth/password", serverUrl),
+        postingJson({ token, password }),
+      ),
     connectToServer: async (server: ServerConfig) => {
       try {
         storage.setItem(serverConfigStorageKey, JSON.stringify(server));
@@ -55,12 +79,31 @@ export function createAccountEffects(
   };
 }
 
-/** Sends a request and reads its JSON answer, or the reason there is none. */
-async function requestJson<T>(
+function postingJson(body: unknown): RequestInit {
+  return {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
+
+/** Sends a request whose success carries no data, and resolves with null or the reason it failed. */
+async function requestDone(
+  fetchFn: typeof fetch,
+  url: URL,
+  init: RequestInit,
+): Promise<SignInOutcome<null>> {
+  const sent = await send(fetchFn, url, init);
+  if (!sent.ok) return sent;
+  return { ok: true, data: null };
+}
+
+/** Sends a request and resolves with the response when it succeeds, or the reason it failed. */
+async function send(
   fetchFn: typeof fetch,
   url: URL,
   init?: RequestInit,
-): Promise<SignInOutcome<T>> {
+): Promise<SignInOutcome<Response>> {
   let response: Response;
   try {
     response = await fetchFn(url, init);
@@ -71,6 +114,18 @@ async function requestJson<T>(
     };
   }
   if (!response.ok) return { ok: false, error: await failureOf(response) };
+  return { ok: true, data: response };
+}
+
+/** Sends a request and reads its JSON answer, or the reason there is none. */
+async function requestJson<T>(
+  fetchFn: typeof fetch,
+  url: URL,
+  init?: RequestInit,
+): Promise<SignInOutcome<T>> {
+  const sent = await send(fetchFn, url, init);
+  if (!sent.ok) return sent;
+  const response = sent.data;
   try {
     return { ok: true, data: (await response.json()) as T };
   } catch {

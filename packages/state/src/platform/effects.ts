@@ -118,4 +118,20 @@ export interface Effects {
   connectToServer(server: ServerConfig): Promise<SignInOutcome<null>>;
   /** Makes the app run offline from now on, forgetting the server it was connected to, which starts the app anew. */
   disconnectFromServer(): void;
+  /** Confirms an account's email address on the server at the address, with the token of the link mailed to it. Never rejects. */
+  confirmEmail(serverUrl: string, token: string): Promise<SignInOutcome<null>>;
+  /** Asks the server at the address to mail a link that lets the account with the email address choose a new password. Never rejects. */
+  requestPasswordReset(
+    serverUrl: string,
+    email: string,
+  ): Promise<SignInOutcome<null>>;
+  /**
+   * Sets an account's new password on the server at the address, with the token of the link mailed for a reset,
+   * and resolves with the session it opens. Never rejects.
+   */
+  setNewPassword(
+    serverUrl: string,
+    token: string,
+    password: string,
+  ): Promise<SignInOutcome<SessionCreated>>;
 }

@@ -53,7 +53,15 @@ type EffectCall =
   | { type: "fetchServerAuthInfo"; serverUrl: string }
   | { type: "createSession"; attempt: SignInAttempt }
   | { type: "connectToServer"; server: ServerConfig }
-  | { type: "disconnectFromServer" };
+  | { type: "disconnectFromServer" }
+  | { type: "confirmEmail"; serverUrl: string; token: string }
+  | { type: "requestPasswordReset"; serverUrl: string; email: string }
+  | {
+      type: "setNewPassword";
+      serverUrl: string;
+      token: string;
+      password: string;
+    };
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -94,6 +102,12 @@ export type RecordingEffects = Effects & {
   resolveSession(outcome: SignInOutcome<SessionCreated>): void;
   /** Makes every later connection to a server fail, as a browser whose storage is full does. */
   refuseConnections(): void;
+  /** Settles the pending confirmEmail promise. Throws when no confirmation is pending. */
+  resolveEmailConfirmation(outcome: SignInOutcome<null>): void;
+  /** Settles the pending requestPasswordReset promise. Throws when no request is pending. */
+  resolvePasswordResetRequest(outcome: SignInOutcome<null>): void;
+  /** Settles the pending setNewPassword promise. Throws when no new password is pending. */
+  resolveNewPassword(outcome: SignInOutcome<SessionCreated>): void;
 };
 
 type PendingPick<R> = {
@@ -157,6 +171,13 @@ export function createRecordingEffects(
     "server auth info question",
   );
   const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
+  const emailConfirmation =
+    createPendingPick<SignInOutcome<null>>("email confirmation");
+  const passwordResetRequest = createPendingPick<SignInOutcome<null>>(
+    "password reset request",
+  );
+  const newPassword =
+    createPendingPick<SignInOutcome<SessionCreated>>("new password");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -267,6 +288,18 @@ export function createRecordingEffects(
     disconnectFromServer: () => {
       calls.push({ type: "disconnectFromServer" });
     },
+    confirmEmail: (serverUrl, token) => {
+      calls.push({ type: "confirmEmail", serverUrl, token });
+      return emailConfirmation.start();
+    },
+    requestPasswordReset: (serverUrl, email) => {
+      calls.push({ type: "requestPasswordReset", serverUrl, email });
+      return passwordResetRequest.start();
+    },
+    setNewPassword: (serverUrl, token, password) => {
+      calls.push({ type: "setNewPassword", serverUrl, token, password });
+      return newPassword.start();
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -309,6 +342,15 @@ export function createRecordingEffects(
     },
     refuseConnections: () => {
       refusesConnections = true;
+    },
+    resolveEmailConfirmation: (outcome) => {
+      emailConfirmation.take().resolve(outcome);
+    },
+    resolvePasswordResetRequest: (outcome) => {
+      passwordResetRequest.take().resolve(outcome);
+    },
+    resolveNewPassword: (outcome) => {
+      newPassword.take().resolve(outcome);
     },
   };
 }
