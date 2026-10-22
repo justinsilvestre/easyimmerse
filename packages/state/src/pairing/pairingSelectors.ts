@@ -37,12 +37,6 @@ export const selectPairingForm = createSelector(
     }) satisfies PairingFormView,
 );
 
-/** Tells whether the pairing page is on top of Settings. */
-export const selectIsPairingOpen = (state: AppRoot) => {
-  const { route } = state.app;
-  return route.screen === "settings" && route.pages.at(-1) === "pairing";
-};
-
 function messageOf(form: PairingForm): string | null {
   switch (form.status.kind) {
     case "failed":

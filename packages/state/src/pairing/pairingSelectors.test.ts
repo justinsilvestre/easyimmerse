@@ -1,23 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import { selectIsPairingOpen, selectPairingForm } from "./pairingSelectors.ts";
-
-describe("selectIsPairingOpen", () => {
-  it("returns true while the pairing page is on top of Settings", () => {
-    const state = {
-      app: stateAfter(actions.navigated({ type: "openPairing" })),
-    };
-    expect(selectIsPairingOpen(state)).toBe(true);
-  });
-
-  it("returns false on the general settings", () => {
-    const state = {
-      app: stateAfter(actions.navigated({ type: "openSettings" })),
-    };
-    expect(selectIsPairingOpen(state)).toBe(false);
-  });
-});
+import { selectPairingForm } from "./pairingSelectors.ts";
 
 describe("selectPairingForm", () => {
   it("lets a form with an address be sent", () => {

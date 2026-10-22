@@ -34,8 +34,6 @@ const meta = {
   args: {
     isSettingsOpen: false,
     onOpenSettings: fn(),
-    isPairingOpen: false,
-    onOpenPairing: fn(),
     activities: [samples.dictionaryImport],
     onOpenActivity: fn(),
   },
@@ -46,9 +44,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = { args: { activities: [] } };
 
-/** On the local network sync page, whose button stands for the page already open. */
-export const OnThePairingPage: Story = {
-  args: { activities: [], isSettingsOpen: true, isPairingOpen: true },
+/** In Settings, whose button stands for the page already open. */
+export const InSettings: Story = {
+  args: { activities: [], isSettingsOpen: true },
 };
 
 export const OneActivity: Story = {};

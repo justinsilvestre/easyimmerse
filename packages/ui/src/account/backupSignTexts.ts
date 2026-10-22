@@ -3,10 +3,10 @@ import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
 import { syncFailureReason } from "./syncFailureReason.ts";
 
-/** One way the backup sign's panel offers to back the work up: its button's label and the actions it dispatches. */
+/** One way the cloud menu offers to back the work up: its button's label and the actions it dispatches. */
 type BackupOption = { label: string; actions: readonly AppAction[] };
 
-/** What the backup sign's panel says, and the ways of backing the work up that it offers. */
+/** What the cloud menu says while the work is not backed up, and the ways of backing it up that it offers. */
 type BackupSignTexts = {
   explanation: string;
   options: readonly BackupOption[];
@@ -31,7 +31,7 @@ const tryAgain: BackupOption = {
   actions: [actions.syncRunRequested()],
 };
 
-/** Returns what the backup sign's panel says, or null when the sign is hidden. `now` dates the moment a remote became unreachable. */
+/** Returns what the cloud menu says about backing up, or null when there is nothing to say. `now` dates the moment a remote became unreachable. */
 export function backupSignTexts(
   sign: BackupSign,
   now: number = Date.now(),
@@ -65,10 +65,7 @@ export function backupSignTexts(
       const host = sign.serverName;
       return {
         explanation: `Your latest work hasn't been backed up to ${host}. ${syncFailureReason(sign.code, host, deviceNames[sign.platform])}`,
-        options: [
-          tryAgain,
-          { label: "Open account settings", actions: [openAccountSettings] },
-        ],
+        options: [tryAgain],
       };
     }
     case "loggedOut":

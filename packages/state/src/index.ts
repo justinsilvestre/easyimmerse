@@ -167,7 +167,6 @@ export type { PairingFields } from "./pairing/pairingForm.ts";
 export type { PairingScan, PairingScanStop } from "./pairing/pairingScan.ts";
 export {
   type PairingFormView,
-  selectIsPairingOpen,
   selectPairingForm,
 } from "./pairing/pairingSelectors.ts";
 export {
