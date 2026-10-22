@@ -24,6 +24,45 @@ describe("signInFailureMessage", () => {
     );
   });
 
+  it("tells of a remote the built-in server could not reach", () => {
+    expect(
+      signInFailureMessage(
+        { status: 502, code: "remote_unreachable", message: "" },
+        serverUrl,
+      ),
+    ).toBe(
+      "The server couldn't be reached. Check its address and your connection.",
+    );
+  });
+
+  it("tells of a built-in server already logged in to a remote", () => {
+    expect(
+      signInFailureMessage(
+        { status: 409, code: "already_linked", message: "" },
+        serverUrl,
+      ),
+    ).toBe("This app is already logged in to a server. Log out of it first.");
+  });
+
+  it("tells of a server that cannot send email right now", () => {
+    expect(
+      signInFailureMessage(
+        { status: 503, code: "mail_unavailable", message: "" },
+        serverUrl,
+      ),
+    ).toBe("This server can't send email right now. Try again later.");
+  });
+
+  it("names the attempt that failed for another reason", () => {
+    expect(
+      signInFailureMessage(
+        { status: 500, message: "Disk full." },
+        serverUrl,
+        "send a reset link",
+      ),
+    ).toBe("The server could not send a reset link: Disk full.");
+  });
+
   it("tells of a password too short", () => {
     expect(
       signInFailureMessage(

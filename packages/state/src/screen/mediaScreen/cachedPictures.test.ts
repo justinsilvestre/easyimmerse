@@ -36,6 +36,22 @@ const probed = (mediaFile: MediaFile, hasPictures: boolean) =>
   );
 
 describe("cachedHasPictures", () => {
+  describe("for a browser-added file whose copy the server keeps", () => {
+    it("is true once the server has found a video track in it", () => {
+      const stored = {
+        ...browserFile("clip.mp4"),
+        id: "m1",
+        has_stored_copy: true,
+      };
+      const tracks = serverCacheWith(
+        "getMediaTracks",
+        file,
+        exampleTracksOneEach,
+      );
+      expect(cachedHasPictures(tracks, server, stored)).toBe(true);
+    });
+  });
+
   describe("for a file on the server's disk", () => {
     it("is true once the server has found a video track in it", () => {
       const tracks = serverCacheWith(

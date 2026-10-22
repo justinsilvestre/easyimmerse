@@ -27,6 +27,9 @@ pub struct Project {
     pub unreviewed_count: u64,
     /// Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
     pub uses_anki_connect: bool,
+    /// Whether a copy of the project's latest change is kept on a server other than this device's own.
+    /// Always true for an account's projects, which live on the server it is logged in to.
+    pub is_backed_up: bool,
 }
 
 /// Everything a user sets about a project, as the project form edits it.

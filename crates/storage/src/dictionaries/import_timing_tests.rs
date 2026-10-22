@@ -20,7 +20,9 @@ fn imports_the_named_file() {
     let directory = tempfile::tempdir().unwrap();
     let storage = Storage::open(&directory.path().join("timing.sqlite")).unwrap();
     let started = Instant::now();
-    let id = storage.import_dictionary(&mut source).unwrap();
+    let id = storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut source)
+        .unwrap();
     let counts = storage.get_dictionary(&id).unwrap().counts;
     eprintln!("imported {counts:?} in {:.1?}", started.elapsed());
 }

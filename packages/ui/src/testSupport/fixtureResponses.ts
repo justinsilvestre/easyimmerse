@@ -8,6 +8,8 @@ import type {
   ProjectSettings,
   ReviewAnswerRequest,
   SubtitleTracksResponse,
+  SyncLink,
+  SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
 import {
@@ -64,6 +66,7 @@ export const fixtureProject: Project = {
   flashcard_count: 0,
   unreviewed_count: 0,
   uses_anki_connect: false,
+  is_backed_up: false,
 };
 
 const fixtureProjects: ListProjectsResponse = {
@@ -78,6 +81,7 @@ const fixtureProjects: ListProjectsResponse = {
       flashcard_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: false,
+      is_backed_up: false,
     },
   ],
 };
@@ -111,6 +115,8 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
+      has_stored_copy: false,
     },
     {
       id: "m2",
@@ -125,6 +131,8 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
+      has_stored_copy: false,
     },
   ],
 };
@@ -153,8 +161,34 @@ export const fixtureImportedMediaFiles: ListMediaFilesResponse = {
   ),
 };
 
+/** A built-in server's link to the easyImmerse cloud, idle after a round that began at the Unix epoch. */
+export const fixtureSyncLink: SyncLink = {
+  kind: "account",
+  server_url: "https://cloud.example.org",
+  account_email: "someone@example.org",
+  account_role: "library_user",
+  linked_at_ms: 0,
+  last_synced_at_ms: 0,
+  pushed_through_seq: 0,
+  state: { kind: "idle" },
+  transfer: null,
+  refused_upload: null,
+  conflicts: [],
+  conflict_count: 0,
+};
+
+/** The sync status of a built-in server with the given link, or with none. */
+export const fixtureSyncStatus = (
+  link: SyncLink | null = null,
+): SyncStatus => ({
+  link,
+  pulled_revision: 0,
+  local_change_seq: 0,
+});
+
 export const fixtureResponses = {
   "GET /plugins": { plugins: [] },
+  "GET /sync/status": fixtureSyncStatus(),
   "GET /projects": fixtureProjects,
   "GET /review/counts": { projects: [] },
   "GET /projects/p1": fixtureProject,

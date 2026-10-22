@@ -4,6 +4,7 @@ import { updated } from "../../app/updated.ts";
 import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
+import { isPlayedByServer } from "../isPlayedByServer.ts";
 import { isDocumentFileName } from "../mediaFileExtensions.ts";
 import { alignedAudioSettledBy } from "../readerScreen/alignedAudioSettledBy.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
@@ -26,9 +27,9 @@ import {
 import type { PlaybackApp } from "./updatePlaybackDialog.ts";
 
 /**
- * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
+ * Works out how a file the server plays, as `isPlayedByServer` tells, plays: reads its record, asks for its tracks, measures the browser,
  * and asks for a playback method with the track choice and the lossless-audio preference. The first request waits while the user
- * makes the first track choice; each later choice is saved and asked about anew. A file the browser holds is probed for pictures instead.
+ * makes the first track choice; each later choice is saved and asked about anew. A file only the browser holds is probed for pictures instead.
  * The file is the one the player plays, which in the reader is the audio file the book is aligned with, as `playedMediaFileOf` describes:
  * a book's record asks for its alignments, among which the audio file is found.
  */
@@ -93,10 +94,10 @@ export function updatePathPlayback(
 
 /**
  * Starts working out how the audio file the open book is aligned with plays, once the book's alignments name it:
- * a file on the server's disk asks for its tracks, and a file the browser holds needs nothing more.
+ * a file the server plays asks for its tracks, and a file only the browser holds needs nothing more.
  */
 function alignedAudioFound(audioFile: MediaFile, played: MediaRoute) {
-  return audioFile.source.kind === "path"
+  return isPlayedByServer(audioFile)
     ? updated(pathPlaybackOf(audioFile), tracksRequest(played))
     : updated(null);
 }
@@ -118,7 +119,7 @@ function requestSettled(
     // A book has nothing to play itself; the reader plays the audio file it is aligned with instead.
     if (file !== undefined && isDocumentFileName(file.name))
       return updated(playback, alignmentsRequest(route));
-    return playback === null && file?.source.kind === "path"
+    return playback === null && file !== undefined && isPlayedByServer(file)
       ? updated(pathPlaybackOf(file), tracksRequest(route))
       : updated(playback, ...picturesProbeOf(action, app));
   }

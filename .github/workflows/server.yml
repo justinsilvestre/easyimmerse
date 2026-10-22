@@ -77,7 +77,9 @@ jobs:
           curl -fsS http://127.0.0.1:8787/health | grep -q '"status":"ok"'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/projects)" = 401
           test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.test' http://127.0.0.1:8787/health)" = 421
-          curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/projects | grep -q placeholder-1
+          projects="$(curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/projects)"
+          echo "$projects" | grep -q 'Spanish practice'
+          echo "$projects" | grep -q 'Japanese drama'
           kill %1
 
       # The plugin route tests load plugins built by `mise run plugins:build`, so the plugins workflow runs them.

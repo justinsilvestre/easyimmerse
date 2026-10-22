@@ -99,7 +99,7 @@ function defaultRoutes(
       /^\/projects\/[^/]+\/media\/[^/]+\/translation-document$/,
       (request: BackendRequest) => withTranslationDocument(responses, request),
     ],
-    ["DELETE", /^\/projects\/[^/]+\/review\/answers\/\d+$/, newAgain],
+    ["DELETE", /^\/projects\/[^/]+\/review\/answers\/[^/]+$/, newAgain],
   ];
 }
 

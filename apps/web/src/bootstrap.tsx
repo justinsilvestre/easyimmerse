@@ -7,7 +7,11 @@ import {
   resolveServerConfig,
   servedServerActions,
 } from "@easyimmerse/backend";
-import { createWebEffects, readLocalStorage } from "@easyimmerse/effects-web";
+import {
+  createWebEffects,
+  openMailedLink,
+  readLocalStorage,
+} from "@easyimmerse/effects-web";
 import type { EnhancerComposer, ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -36,6 +40,7 @@ export async function bootstrap(): Promise<void> {
     playerRegistry,
     browserFileRegistry,
     writeDefinitionMarkdown: definitionMarkdown,
+    server,
   });
   const served = await resolveServedServer(
     location,
@@ -55,6 +60,7 @@ export async function bootstrap(): Promise<void> {
     findDevToolsComposer(),
   );
   for (const action of servedServerActions(served)) store.dispatch(action);
+  openMailedLink(store, window);
   createRoot(findRootElement()).render(
     <AppRoot
       store={store}

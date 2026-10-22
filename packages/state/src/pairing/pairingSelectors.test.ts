@@ -42,6 +42,7 @@ describe("selectPairingForm", () => {
         actions.pairingServerChecked("http://192.168.1.5:8787", {
           accounts: false,
           open_signup: false,
+          sends_email: false,
         }),
       ),
     };

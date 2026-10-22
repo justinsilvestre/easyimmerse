@@ -42,7 +42,7 @@ export function PlayerFailure({
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
+            variant="overVideo"
             onClick={() => dispatch(actions.closeMedia())}
           >
             Back to the project
@@ -50,7 +50,7 @@ export function PlayerFailure({
           {offersSettings && (
             <Button
               size="sm"
-              className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
+              variant="overVideo"
               onClick={() =>
                 dispatch(
                   actions.navigated({ type: "openMediaConversionSettings" }),

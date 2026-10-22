@@ -1,5 +1,8 @@
 import { useListUsersQuery } from "@easyimmerse/backend";
-import { selectUserChangeFailureMessage } from "@easyimmerse/state";
+import {
+  selectAccountVia,
+  selectUserChangeFailureMessage,
+} from "@easyimmerse/state";
 import { useId } from "react";
 import { useAppSelector } from "../../hooks/useAppSelector.ts";
 import { NewUserForm } from "./NewUserForm.tsx";
@@ -20,7 +23,7 @@ export function UserManagement() {
 }
 
 function UserList() {
-  const users = useListUsersQuery();
+  const users = useListUsersQuery(useAppSelector(selectAccountVia));
   const changeFailure = useAppSelector(selectUserChangeFailureMessage);
   if (users.isError)
     return (

@@ -1,7 +1,7 @@
-import type { PreferenceStore } from "@easyimmerse/effects-web";
 import type { ServerConfig } from "@easyimmerse/state";
+import type { PreferenceStore } from "./preferenceStore.ts";
 
-/** Persists preferences through the embedded server's `/preferences/{key}` routes. */
+/** Persists preferences through a server's `/preferences/{key}` routes, as the person the token belongs to. */
 export function createServerPreferenceStore(
   server: ServerConfig,
   fetchFn: typeof fetch = globalThis.fetch,

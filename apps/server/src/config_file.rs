@@ -5,6 +5,8 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+
+use crate::cli::SmtpSecurityArg;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -42,6 +44,17 @@ pub struct ServerFileConfig {
     pub expected_hosts: Option<Vec<String>>,
     pub web_app_dir: Option<PathBuf>,
     pub api_only: Option<bool>,
+    pub uploads_dir: Option<PathBuf>,
+    pub upload_quota_mb: Option<u64>,
+    pub library_user_upload_quota_mb: Option<u64>,
+    pub smtp_host: Option<String>,
+    pub smtp_port: Option<u16>,
+    /// The SMTP password is not kept here; it is read from `EASYIMMERSE_SMTP_PASSWORD`.
+    pub smtp_user: Option<String>,
+    pub smtp_security: Option<SmtpSecurityArg>,
+    pub mail_from: Option<String>,
+    pub public_url: Option<String>,
+    pub mail_to_stderr: Option<bool>,
     /// Settings that only the desktop app reads.
     pub desktop: Option<DesktopFileConfig>,
 }
@@ -97,6 +110,7 @@ impl ServerFileConfig {
             media_dir: resolve(self.media_dir),
             ffmpeg_dir: resolve(self.ffmpeg_dir),
             web_app_dir: resolve(self.web_app_dir),
+            uploads_dir: resolve(self.uploads_dir),
             ..self
         }
     }
@@ -118,6 +132,18 @@ impl ServerFileConfig {
             expected_hosts: self.expected_hosts.or(defaults.expected_hosts),
             web_app_dir: self.web_app_dir.or(defaults.web_app_dir),
             api_only: self.api_only.or(defaults.api_only),
+            uploads_dir: self.uploads_dir.or(defaults.uploads_dir),
+            upload_quota_mb: self.upload_quota_mb.or(defaults.upload_quota_mb),
+            library_user_upload_quota_mb: self
+                .library_user_upload_quota_mb
+                .or(defaults.library_user_upload_quota_mb),
+            smtp_host: self.smtp_host.or(defaults.smtp_host),
+            smtp_port: self.smtp_port.or(defaults.smtp_port),
+            smtp_user: self.smtp_user.or(defaults.smtp_user),
+            smtp_security: self.smtp_security.or(defaults.smtp_security),
+            mail_from: self.mail_from.or(defaults.mail_from),
+            public_url: self.public_url.or(defaults.public_url),
+            mail_to_stderr: self.mail_to_stderr.or(defaults.mail_to_stderr),
             desktop: self.desktop.or(defaults.desktop),
         }
     }
@@ -172,6 +198,12 @@ mod tests {
     fn keeps_an_absolute_directory() {
         let config = parse("ffmpeg_dir = \"/opt/homebrew/bin\"").unwrap();
         assert_eq!(config.ffmpeg_dir, Some(PathBuf::from("/opt/homebrew/bin")));
+    }
+
+    #[test]
+    fn reads_the_smtp_security_in_lowercase() {
+        let config = parse("smtp_security = \"tls\"").unwrap();
+        assert_eq!(config.smtp_security, Some(SmtpSecurityArg::Tls));
     }
 
     #[test]

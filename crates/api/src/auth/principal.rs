@@ -1,4 +1,5 @@
 use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_storage::OwnerId;
 
 use crate::config::ApiConfig;
 
@@ -7,15 +8,20 @@ use crate::config::ApiConfig;
 pub enum Principal {
     /// The holder of the launch token, who owns the machine the server runs on.
     Launch,
-    /// The user of a session, with the role the account had when the request arrived.
-    Account { user_id: String, role: AccountRole },
+    /// The user of a session, with the role the account had when the request arrived, and the session's id.
+    Account {
+        user_id: String,
+        role: AccountRole,
+        session_id: String,
+    },
 }
 
 impl Principal {
-    pub fn of_account(user: &AccountUser) -> Self {
+    pub fn of_session(user: &AccountUser, session_id: &str) -> Self {
         Principal::Account {
             user_id: user.id.clone(),
             role: user.role,
+            session_id: session_id.to_string(),
         }
     }
 
@@ -23,6 +29,15 @@ impl Principal {
     /// since an account's requests may come from another machine.
     pub fn allows_local_paths(&self, config: &ApiConfig) -> bool {
         matches!(self, Principal::Launch) && config.allow_local_paths
+    }
+
+    /// The owner of the data the principal works with: the device's own data for the launch principal,
+    /// and the account's for a session.
+    pub fn owner_id(&self) -> OwnerId {
+        match self {
+            Principal::Launch => OwnerId::launch(),
+            Principal::Account { user_id, .. } => OwnerId(user_id.clone()),
+        }
     }
 
     /// The launch principal acts as an administrator.
@@ -42,7 +57,19 @@ mod tests {
         Principal::Account {
             user_id: "u".to_string(),
             role,
+            session_id: "s".to_string(),
         }
+    }
+
+    #[test]
+    fn the_launch_principal_owns_the_launch_data() {
+        assert_eq!(Principal::Launch.owner_id(), OwnerId::launch());
+    }
+
+    #[test]
+    fn an_account_owns_the_data_under_its_user_id() {
+        let principal = account(AccountRole::LibraryUser);
+        assert_eq!(principal.owner_id(), OwnerId("u".to_string()));
     }
 
     #[test]

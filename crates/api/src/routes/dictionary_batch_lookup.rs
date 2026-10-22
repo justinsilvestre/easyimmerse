@@ -1,11 +1,12 @@
 use axum::Json;
 use axum::extract::State;
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
+use crate::auth::owner::Owner;
 use crate::lookup::{BatchLookupResponse, BatchPools, LookupRows, PositionLookup};
 use crate::state::AppState;
 
@@ -41,11 +42,12 @@ pub struct BatchLookupRequest {
 )]
 pub async fn lookup_texts(
     State(state): State<AppState>,
+    Owner(owner): Owner,
     Json(request): Json<BatchLookupRequest>,
 ) -> Result<Json<BatchLookupResponse>, ApiFailure> {
     check_limits(&request)?;
     let response = state
-        .with_storage(move |storage| look_up_all(storage, &request))
+        .with_storage(move |storage| look_up_all(storage, &owner, &request))
         .await?;
     Ok(Json(response))
 }
@@ -66,6 +68,7 @@ fn check_limits(request: &BatchLookupRequest) -> Result<(), ApiFailure> {
 
 fn look_up_all(
     storage: &Storage,
+    owner: &OwnerId,
     request: &BatchLookupRequest,
 ) -> Result<BatchLookupResponse, StorageError> {
     let lookups_by_text: Vec<Vec<(usize, PositionLookup)>> = (request.texts.iter())
@@ -74,11 +77,12 @@ fn look_up_all(
     let all_lookups: Vec<&PositionLookup> = (lookups_by_text.iter().flatten())
         .map(|(_, lookup)| lookup)
         .collect();
-    let rows = LookupRows::find(storage, &all_lookups)?;
+    let rows = LookupRows::find(storage, owner, &all_lookups)?;
     let mut pools = BatchPools::default();
     let texts = (lookups_by_text.iter())
         .map(|lookups| pools.text_lookups(&rows, lookups))
         .collect();
-    let stylesheets = storage.find_dictionary_stylesheets(&pools.defining_dictionary_ids())?;
+    let stylesheets =
+        storage.find_dictionary_stylesheets(owner, &pools.defining_dictionary_ids())?;
     Ok(pools.into_response(texts, stylesheets))
 }

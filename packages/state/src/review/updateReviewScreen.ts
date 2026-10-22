@@ -116,7 +116,7 @@ function rate(
   const card = session.shown;
   if (card === null || session.stage !== "back") return updated(session);
   const durationMs = Math.max(0, atMs - (session.shownAtMs ?? atMs));
-  const step: SessionStep = { kind: "answer", card, answeredAtMs: null };
+  const step: SessionStep = { kind: "answer", card, answerId: null };
   return moveOn(
     { ...session, steps: [...session.steps, step] },
     atMs,
@@ -149,7 +149,7 @@ function requestUndo(session: ReviewScreenState, projectId: string) {
   return updated(
     { ...session, undoing: latest },
     latest.kind === "answer"
-      ? sendUndo(projectId, latest.answeredAtMs ?? 0)
+      ? sendUndo(projectId, latest.answerId ?? "")
       : sendLift(projectId, latest.card.flashcardId),
   );
 }

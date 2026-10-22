@@ -21,6 +21,12 @@ const savedChoice = {
   track_selection_json: '{"video":0,"audio":2}',
 };
 
+const browserFile = {
+  ...fileOnDisk,
+  source: { kind: "browser_file", size: 1, last_modified_ms: 0 } as const,
+};
+const storedBrowserFile = { ...browserFile, has_stored_copy: true };
+
 /** The actions that bring m1 to the measured environment, with the given tracks and file. */
 const measuredWith = (tracks = exampleTracksOneEach, file = fileOnDisk) => [
   mediaFilesListed(file),
@@ -45,14 +51,22 @@ describe("updateMediaScreen", () => {
     });
 
     it("asks for no tracks of a file the browser holds", () => {
-      const browserFile = {
-        ...fileOnDisk,
-        source: { kind: "browser_file", size: 1, last_modified_ms: 0 } as const,
-      };
       const [, effects] = apply(mediaFilesListed(browserFile));
       expect(effects).not.toContainEqual(
         expect.objectContaining({ id: "media/m1/tracks" }),
       );
+    });
+
+    it("asks for the tracks of a browser-added file whose copy the server keeps", () => {
+      const [, effects] = apply(mediaFilesListed(storedBrowserFile));
+      expect(effects).toContainEqual(
+        expect.objectContaining({ id: "media/m1/tracks" }),
+      );
+    });
+
+    it("starts the server's playback of a browser-added file whose copy the server keeps", () => {
+      const [screen] = apply(mediaFilesListed(storedBrowserFile));
+      expect(screen.playback).not.toBeNull();
     });
 
     it("keeps the saved track choice once the record arrives", () => {

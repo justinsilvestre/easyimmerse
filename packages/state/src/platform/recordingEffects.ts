@@ -70,7 +70,15 @@ type EffectCall =
   | { type: "startDesktopServer" }
   | { type: "stopDesktopServer" }
   | { type: "readDesktopServerStatus" }
-  | { type: "readDesktopServerLogs" };
+  | { type: "readDesktopServerLogs" }
+  | { type: "confirmEmail"; serverUrl: string; token: string }
+  | { type: "requestPasswordReset"; serverUrl: string; email: string }
+  | {
+      type: "setNewPassword";
+      serverUrl: string;
+      token: string;
+      password: string;
+    };
 
 /** What each of the desktop server controls answers. */
 type DesktopServerAnswers = {
@@ -139,6 +147,12 @@ export type RecordingEffects = Effects & {
   rejectDesktopServer(control: DesktopServerControl, message: string): void;
   /** Acts as the server controls reporting a new status, by calling every subscribed listener. */
   changeDesktopServerStatus(status: DesktopServerStatus): void;
+  /** Settles the pending confirmEmail promise. Throws when no confirmation is pending. */
+  resolveEmailConfirmation(outcome: SignInOutcome<null>): void;
+  /** Settles the pending requestPasswordReset promise. Throws when no request is pending. */
+  resolvePasswordResetRequest(outcome: SignInOutcome<null>): void;
+  /** Settles the pending setNewPassword promise. Throws when no new password is pending. */
+  resolveNewPassword(outcome: SignInOutcome<SessionCreated>): void;
 };
 
 type PendingPick<R> = {
@@ -210,6 +224,13 @@ export function createRecordingEffects(
   const desktopServerListeners = new Set<
     (status: DesktopServerStatus) => void
   >();
+  const emailConfirmation =
+    createPendingPick<SignInOutcome<null>>("email confirmation");
+  const passwordResetRequest = createPendingPick<SignInOutcome<null>>(
+    "password reset request",
+  );
+  const newPassword =
+    createPendingPick<SignInOutcome<SessionCreated>>("new password");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -360,6 +381,18 @@ export function createRecordingEffects(
       desktopServerListeners.add(listener);
       return () => desktopServerListeners.delete(listener);
     },
+    confirmEmail: (serverUrl, token) => {
+      calls.push({ type: "confirmEmail", serverUrl, token });
+      return emailConfirmation.start();
+    },
+    requestPasswordReset: (serverUrl, email) => {
+      calls.push({ type: "requestPasswordReset", serverUrl, email });
+      return passwordResetRequest.start();
+    },
+    setNewPassword: (serverUrl, token, password) => {
+      calls.push({ type: "setNewPassword", serverUrl, token, password });
+      return newPassword.start();
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -402,6 +435,15 @@ export function createRecordingEffects(
     },
     refuseConnections: () => {
       refusesConnections = true;
+    },
+    resolveEmailConfirmation: (outcome) => {
+      emailConfirmation.take().resolve(outcome);
+    },
+    resolvePasswordResetRequest: (outcome) => {
+      passwordResetRequest.take().resolve(outcome);
+    },
+    resolveNewPassword: (outcome) => {
+      newPassword.take().resolve(outcome);
     },
     resolvePairingClaim: (outcome) => {
       pairingClaim.take().resolve(outcome);

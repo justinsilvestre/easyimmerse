@@ -44,6 +44,7 @@ futures-util = { version = "0.3", default-features = false }
 gethostname = "1.1"
 hex = "0.4"
 if-addrs = "0.15"
+lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1-rustls-tls"] }
 lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
 lzokay = { version = "2.0", default-features = false, features = ["decompress"] }
 matroska = "0.30"

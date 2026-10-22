@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::pin::pin;
+use std::sync::Arc;
 
 use axum::Router;
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -12,7 +13,9 @@ use tokio::net::TcpListener;
 use tokio::sync::{oneshot, watch};
 use tokio::task::JoinHandle;
 
-use crate::config::ApiConfig;
+use crate::config::{ApiConfig, UploadsConfig};
+use crate::mail::{MailError, MailService};
+use crate::media_copy_files::release_copies_periodically;
 use crate::plugins::PluginRegistry;
 use crate::router::build_router;
 use crate::routes::conversion_cache::restore_cache_budget;
@@ -28,6 +31,8 @@ pub enum ServeError {
         "the server needs a launch token, accounts, or both, or no request could be authenticated"
     )]
     NoAuthentication,
+    #[error("the mail settings are unusable: {0}")]
+    Mail(#[from] MailError),
 }
 
 /// A running server.
@@ -42,6 +47,8 @@ pub struct ServerHandle {
     stop: watch::Sender<bool>,
     task: JoinHandle<std::io::Result<()>>,
     conversion: Option<ConversionService>,
+    sync_loop: JoinHandle<()>,
+    release_loop: JoinHandle<()>,
 }
 
 impl ServerHandle {
@@ -74,6 +81,8 @@ impl ServerHandle {
         if let Some(conversion) = &self.conversion {
             conversion.shutdown().await;
         }
+        self.sync_loop.abort();
+        self.release_loop.abort();
         // Sending fails only when every listener already stopped, which is fine.
         let _ = self.stop.send(true);
         self.stop.closed().await;
@@ -127,9 +136,12 @@ pub async fn serve(
     if !config.can_authenticate() {
         return Err(ServeError::NoAuthentication);
     }
+    let mail = config.account_mail().map(MailService::open).transpose()?;
     let addr = listener.local_addr()?;
-    let state = build_app_state(config, storage, options)?;
+    let state = build_app_state(config, storage, options)?.with_mail(mail);
     let conversion = state.conversion.clone();
+    let sync_loop = tokio::spawn(Arc::clone(&state.sync).run());
+    let release_loop = tokio::spawn(release_copies_periodically(state.clone()));
     let (router, _) = build_router(state);
     let (stop, stop_requested) = watch::channel(false);
     let stop_signal = {
@@ -145,6 +157,8 @@ pub async fn serve(
         stop,
         task,
         conversion,
+        sync_loop,
+        release_loop,
     })
 }
 
@@ -191,6 +205,7 @@ fn build_app_state(
     if let Some(media_dir) = &media_dir {
         config.server_dirs.push(media_dir.clone());
     }
+    config.uploads = uploads_config(&config, media_dir.as_deref())?;
     let plugins = options
         .plugins_dir
         .as_deref()
@@ -217,10 +232,31 @@ fn existing_web_app_dir(web_app_dir: Option<PathBuf>) -> Option<PathBuf> {
     }
 }
 
-/// Creates the directory if needed and returns its absolute path,
-/// so that plugin grants do not depend on the server's working directory.
-/// On Windows the path keeps its ordinary form rather than the `\\?\` form,
-/// in which a plugin's `/` separators would not count.
+/// The uploads of the configuration with their directory made absolute. A server without accounts,
+/// such as the built-in server of the desktop and mobile apps, keeps its copies beside its media
+/// directory when no other directory is configured; a server with accounts keeps copies only when told where.
+fn uploads_config(
+    config: &ApiConfig,
+    media_dir: Option<&Path>,
+) -> std::io::Result<Option<UploadsConfig>> {
+    let uploads = match (&config.uploads, media_dir) {
+        (Some(uploads), _) => uploads.clone(),
+        (None, Some(media_dir)) if config.accounts.is_none() => UploadsConfig {
+            dir: media_dir.join("uploads"),
+            account_quota_bytes: None,
+            library_user_quota_bytes: 0,
+        },
+        (None, _) => return Ok(None),
+    };
+    Ok(Some(UploadsConfig {
+        dir: create_absolute_dir(&uploads.dir)?,
+        ..uploads
+    }))
+}
+
+/// Creates the directory if needed and returns its absolute path, so that plugin grants
+/// do not depend on the server's working directory. On Windows the path keeps its ordinary
+/// form rather than the `\\?\` form, in which a plugin's `/` separators would not count.
 fn create_absolute_dir(dir: &Path) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
     dunce::canonicalize(dir)

@@ -6,7 +6,11 @@ import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
+  selectIsLinking,
+  selectIsSignInFormStarted,
   selectIsSigningOut,
+  selectIsUnlinking,
+  selectPasswordStrength,
   selectSignInForm,
 } from "./accountSelectors.ts";
 
@@ -44,6 +48,7 @@ describe("selectSignInForm", () => {
       actions.serverAuthInfoReceived(cloudUrl, {
         accounts: true,
         open_signup: false,
+        sends_email: false,
       }),
     );
     expect(selectSignInForm(store.getState()).serverOffer).toBe("signupClosed");
@@ -86,6 +91,38 @@ describe("selectCanSubmitSignIn", () => {
   });
 });
 
+describe("selectPasswordStrength", () => {
+  it("assesses nothing while the signup password is empty", () => {
+    const store = storeWith(null);
+    store.dispatch(actions.signInFormChanged({ mode: "signup" }));
+    expect(selectPasswordStrength(store.getState())).toBeNull();
+  });
+
+  it("assesses nothing while the form logs in", () => {
+    const store = storeWith(null);
+    store.dispatch(actions.signInFormChanged({ password: "marigold" }));
+    expect(selectPasswordStrength(store.getState())).toBeNull();
+  });
+
+  it("assesses the password typed while signing up", () => {
+    const store = storeWith(null);
+    store.dispatch(
+      actions.signInFormChanged({ mode: "signup", password: "marigold" }),
+    );
+    expect(selectPasswordStrength(store.getState())?.level).toBe("weak");
+  });
+
+  it("keeps its reference while the password does not change", () => {
+    const store = storeWith(null);
+    store.dispatch(
+      actions.signInFormChanged({ mode: "signup", password: "marigold" }),
+    );
+    expect(selectPasswordStrength(store.getState())).toBe(
+      selectPasswordStrength(store.getState()),
+    );
+  });
+});
+
 describe("selectIsSigningOut", () => {
   it("tells that the app is logging out while the server has not answered", () => {
     const store = createAppStore(
@@ -94,5 +131,65 @@ describe("selectIsSigningOut", () => {
     );
     store.dispatch(actions.signOutRequested());
     expect(selectIsSigningOut(store.getState())).toBe(true);
+  });
+});
+
+const builtInStore = () =>
+  createAppStore(
+    createRecordingEffects(),
+    createFakeServerStoreParts({
+      serverUrl: "http://127.0.0.1:4000",
+      token: "launch",
+      bundledIn: "desktop",
+    }),
+  );
+
+describe("selectIsLinking", () => {
+  it("tells that the built-in server is logging in while the remote has not answered", () => {
+    const store = builtInStore();
+    store.dispatch(
+      actions.signInFormChanged({
+        ownServerUrl: cloudUrl,
+        email: "someone@example.com",
+        password: "correct horse",
+      }),
+    );
+    store.dispatch(
+      actions.serverAuthInfoReceived(cloudUrl, {
+        accounts: true,
+        open_signup: true,
+        sends_email: false,
+      }),
+    );
+    store.dispatch(actions.signInSubmitted());
+    expect(selectIsLinking(store.getState())).toBe(true);
+  });
+});
+
+describe("selectIsUnlinking", () => {
+  it("tells that the built-in server is logging out while it has not answered", () => {
+    const store = builtInStore();
+    store.dispatch(actions.signOutRequested());
+    expect(selectIsUnlinking(store.getState())).toBe(true);
+  });
+});
+
+describe("selectIsSignInFormStarted", () => {
+  it("tells that a form nobody has filled in is not started", () => {
+    expect(selectIsSignInFormStarted(builtInStore().getState())).toBe(false);
+  });
+
+  it("tells that the form is started once it is filled in to log in again", () => {
+    const store = builtInStore();
+    store.dispatch(
+      actions.relinkRequested("https://own.example.org", "someone@example.com"),
+    );
+    expect(selectIsSignInFormStarted(store.getState())).toBe(true);
+  });
+
+  it("tells that the form is started once a person types in it", () => {
+    const store = builtInStore();
+    store.dispatch(actions.signInFormChanged({ password: "c" }));
+    expect(selectIsSignInFormStarted(store.getState())).toBe(true);
   });
 });

@@ -31,11 +31,12 @@ pub enum ConfigSetError {
 enum ValueKind {
     Text,
     Switch,
+    Number,
     TextList,
 }
 
 /// The settings `config set` writes, by the names the config file gives them.
-const KEYS: [(&str, ValueKind); 14] = [
+const KEYS: [(&str, ValueKind); 24] = [
     ("bind", ValueKind::Text),
     ("token", ValueKind::Text),
     ("accounts", ValueKind::Switch),
@@ -49,6 +50,16 @@ const KEYS: [(&str, ValueKind); 14] = [
     ("expected_hosts", ValueKind::TextList),
     ("web_app_dir", ValueKind::Text),
     ("api_only", ValueKind::Switch),
+    ("uploads_dir", ValueKind::Text),
+    ("upload_quota_mb", ValueKind::Number),
+    ("library_user_upload_quota_mb", ValueKind::Number),
+    ("smtp_host", ValueKind::Text),
+    ("smtp_port", ValueKind::Number),
+    ("smtp_user", ValueKind::Text),
+    ("smtp_security", ValueKind::Text),
+    ("mail_from", ValueKind::Text),
+    ("public_url", ValueKind::Text),
+    ("mail_to_stderr", ValueKind::Switch),
     ("desktop.autostart", ValueKind::Switch),
 ];
 
@@ -116,8 +127,7 @@ pub fn set_value(text: &str, key: &str, value: &str) -> Result<String, ConfigSet
     let kind = kind_of(key).ok_or_else(|| ConfigSetError::UnknownKey {
         key: key.to_string(),
     })?;
-    let item =
-        item_for(kind, value).ok_or_else(|| invalid(key, value, "expected true or false"))?;
+    let item = item_for(kind, value).ok_or_else(|| invalid(key, value, expectation_of(kind)))?;
     let mut document = text.parse::<DocumentMut>()?;
     match key.split_once('.') {
         Some((table, key)) => {
@@ -144,6 +154,7 @@ fn item_for(kind: ValueKind, text: &str) -> Option<Item> {
     match kind {
         ValueKind::Text => Some(value(text)),
         ValueKind::Switch => text.parse::<bool>().ok().map(value),
+        ValueKind::Number => text.parse::<i64>().ok().map(value),
         ValueKind::TextList => {
             let entries = text
                 .split(',')
@@ -151,6 +162,13 @@ fn item_for(kind: ValueKind, text: &str) -> Option<Item> {
                 .filter(|entry| !entry.is_empty());
             Some(value(entries.collect::<Array>()))
         }
+    }
+}
+
+fn expectation_of(kind: ValueKind) -> &'static str {
+    match kind {
+        ValueKind::Number => "expected a whole number",
+        _ => "expected true or false",
     }
 }
 
@@ -228,6 +246,20 @@ mod tests {
     fn refuses_a_switch_that_is_not_true_or_false() {
         assert!(matches!(
             set_value("", "accounts", "yes"),
+            Err(ConfigSetError::InvalidValue { .. })
+        ));
+    }
+
+    #[test]
+    fn writes_a_number() {
+        let text = set_value("", "upload_quota_mb", "500").unwrap();
+        assert_eq!(settings_from(&text).upload_quota_mb, Some(500));
+    }
+
+    #[test]
+    fn refuses_a_number_that_is_not_whole() {
+        assert!(matches!(
+            set_value("", "smtp_port", "five"),
             Err(ConfigSetError::InvalidValue { .. })
         ));
     }

@@ -4,7 +4,7 @@
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 
-use crate::cli::ServeArgs;
+use crate::cli::{ServeArgs, SmtpSecurityArg};
 use crate::config_file::{ServerFileConfig, is_in_memory};
 
 pub const DEFAULT_BIND: SocketAddr =
@@ -33,6 +33,16 @@ pub struct ServeSettings {
     /// The web app directory that was chosen. None looks next to the executable.
     pub web_app_dir: Option<PathBuf>,
     pub api_only: bool,
+    pub uploads_dir: Option<PathBuf>,
+    pub upload_quota_mb: Option<u64>,
+    pub library_user_upload_quota_mb: Option<u64>,
+    pub smtp_host: Option<String>,
+    pub smtp_port: Option<u16>,
+    pub smtp_user: Option<String>,
+    pub smtp_security: Option<SmtpSecurityArg>,
+    pub mail_from: Option<String>,
+    pub public_url: Option<String>,
+    pub mail_to_stderr: bool,
 }
 
 /// Merges the command line, whose values already include the environment variables, over
@@ -62,6 +72,18 @@ pub fn resolve_serve_settings(args: &ServeArgs, file: &ServerFileConfig) -> Serv
         },
         web_app_dir: path_or_file(&args.web_app_dir, &file.web_app_dir),
         api_only: flag_or_file(args.api_only, file.api_only),
+        uploads_dir: path_or_file(&args.uploads_dir, &file.uploads_dir),
+        upload_quota_mb: args.upload_quota_mb.or(file.upload_quota_mb),
+        library_user_upload_quota_mb: args
+            .library_user_upload_quota_mb
+            .or(file.library_user_upload_quota_mb),
+        smtp_host: args.smtp_host.clone().or_else(|| file.smtp_host.clone()),
+        smtp_port: args.smtp_port.or(file.smtp_port),
+        smtp_user: args.smtp_user.clone().or_else(|| file.smtp_user.clone()),
+        smtp_security: args.smtp_security.or(file.smtp_security),
+        mail_from: args.mail_from.clone().or_else(|| file.mail_from.clone()),
+        public_url: args.public_url.clone().or_else(|| file.public_url.clone()),
+        mail_to_stderr: flag_or_file(args.mail_to_stderr, file.mail_to_stderr),
     }
 }
 

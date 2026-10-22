@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use easyimmerse_core::lookup::{FoundKanji, FoundKanjiMeta, KanjiResult, build_kanji_results};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 
 use super::distinct::distinct;
 use super::group_by::group_by;
@@ -14,15 +14,20 @@ pub struct KanjiRows {
 }
 
 impl KanjiRows {
-    pub fn find(storage: &Storage, lookups: &[&PositionLookup]) -> Result<Self, StorageError> {
+    pub fn find(
+        storage: &Storage,
+        owner: &OwnerId,
+        lookups: &[&PositionLookup],
+    ) -> Result<Self, StorageError> {
         let characters = distinct(lookups.iter().filter_map(|lookup| lookup.kanji.clone()));
         Ok(Self {
-            kanji_by_character: group_by(storage.find_kanji(&characters)?, |found| {
+            kanji_by_character: group_by(storage.find_kanji(owner, &characters)?, |found| {
                 found.entry.character.clone()
             }),
-            kanji_meta_by_character: group_by(storage.find_kanji_meta(&characters)?, |found| {
-                found.meta.character.clone()
-            }),
+            kanji_meta_by_character: group_by(
+                storage.find_kanji_meta(owner, &characters)?,
+                |found| found.meta.character.clone(),
+            ),
         })
     }
 

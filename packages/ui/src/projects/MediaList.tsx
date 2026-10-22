@@ -3,6 +3,8 @@ import { BookText, Film, Music, Trash2, TriangleAlert } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { MenuButton } from "../components/MenuButton.tsx";
 import { pluralize } from "../components/pluralize.ts";
+import { MediaUploadChoice } from "./MediaUploadChoice.tsx";
+import type { MediaCopy } from "./mediaCopyOf.ts";
 import { type MediaIssue, mediaIssueMessage } from "./mediaIssueMessage.ts";
 
 /** One media file of a project, as the project screen lists it. */
@@ -13,6 +15,8 @@ export type MediaItem = {
   flashcardCount: number;
   /** Why the file cannot be opened from this app, when something is known to stop it. */
   issue?: MediaIssue;
+  /** Where the file's bytes are kept, which offers keeping a copy on a server; without it the row offers nothing of the kind. */
+  copy?: MediaCopy;
 };
 
 const kindIcons: Record<MediaItem["kind"], ReactNode> = {
@@ -60,55 +64,60 @@ function MediaRow({
   const issueId = useId();
   const issueMessage = item.issue && mediaIssueMessage(item.issue, item.kind);
   return (
-    <li className="flex items-center gap-1 rounded-md border border-line bg-surface pr-1 hover:border-line-strong">
-      <button
-        type="button"
-        onClick={() => onOpen(item.id)}
-        aria-describedby={issueMessage && issueId}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        <span className="text-fg-muted">{kindIcons[item.kind]}</span>
-        <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span
-            className={clsx(
-              "min-w-0 truncate font-medium",
-              issueMessage && "text-fg-muted",
-            )}
-          >
-            {item.name}
-          </span>
-          {issueMessage && (
+    <li className="flex flex-col rounded-md border border-line bg-surface hover:border-line-strong">
+      <div className="flex items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={() => onOpen(item.id)}
+          aria-describedby={issueMessage && issueId}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <span className="text-fg-muted">{kindIcons[item.kind]}</span>
+          <span className="flex min-w-0 flex-1 items-center gap-2">
             <span
-              title={issueMessage}
-              aria-hidden
-              className="shrink-0 text-warning-fg"
+              className={clsx(
+                "min-w-0 truncate font-medium",
+                issueMessage && "text-fg-muted",
+              )}
             >
-              <TriangleAlert className="size-4" />
+              {item.name}
+            </span>
+            {issueMessage && (
+              <span
+                title={issueMessage}
+                aria-hidden
+                className="shrink-0 text-warning-fg"
+              >
+                <TriangleAlert className="size-4" />
+              </span>
+            )}
+          </span>
+          {item.flashcardCount > 0 && (
+            <span className="text-xs whitespace-nowrap text-fg-muted">
+              {pluralize(item.flashcardCount, "card")}
             </span>
           )}
-        </span>
-        {item.flashcardCount > 0 && (
-          <span className="text-xs whitespace-nowrap text-fg-muted">
-            {pluralize(item.flashcardCount, "card")}
+        </button>
+        {issueMessage && (
+          <span id={issueId} className="sr-only">
+            {issueMessage}
           </span>
         )}
-      </button>
-      {issueMessage && (
-        <span id={issueId} className="sr-only">
-          {issueMessage}
-        </span>
+        <MenuButton
+          label={`Actions for ${item.name}`}
+          items={[
+            {
+              label: "Remove from project",
+              icon: <Trash2 className="size-4" aria-hidden />,
+              isDestructive: true,
+              onSelect: () => onDelete(item.id),
+            },
+          ]}
+        />
+      </div>
+      {item.copy && (
+        <MediaUploadChoice mediaFileId={item.id} copy={item.copy} />
       )}
-      <MenuButton
-        label={`Actions for ${item.name}`}
-        items={[
-          {
-            label: "Remove from project",
-            icon: <Trash2 className="size-4" aria-hidden />,
-            isDestructive: true,
-            onSelect: () => onDelete(item.id),
-          },
-        ]}
-      />
     </li>
   );
 }

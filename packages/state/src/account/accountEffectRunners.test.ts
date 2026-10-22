@@ -3,6 +3,7 @@ import { actions } from "../app/appAction.ts";
 import { createAppStore } from "../app/createAppStore.ts";
 import { createFakeServerStoreParts } from "../app/createFakeServerStoreParts.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
+import { recoverableWorkKey } from "../recovery/recoverableWork.ts";
 import { selectSignInForm } from "./accountSelectors.ts";
 
 const ownServer = "https://books.example.org";
@@ -14,6 +15,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 } as const;
 
@@ -37,7 +39,7 @@ async function signedIn(refusesConnections = false) {
   if (refusesConnections) effects.refuseConnections();
   effects.resolveServerAuthInfo({
     ok: true,
-    data: { accounts: true, open_signup: true },
+    data: { accounts: true, open_signup: true, sends_email: false },
   });
   await vi.waitFor(() =>
     expect(effects.calls).toContainEqual(
@@ -92,6 +94,27 @@ describe("accountEffectRunners", () => {
     server.respond({ kind: "logOut" }, { ok: true, data: undefined });
     await vi.waitFor(() =>
       expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
+    );
+  });
+
+  it("forgets the account's unsaved work before disconnecting", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts({
+      serverUrl: ownServer,
+      token: "session-token",
+    });
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.signOutRequested());
+    server.respond({ kind: "logOut" }, { ok: true, data: undefined });
+    await vi.waitFor(() =>
+      expect(effects.calls.slice(-2)).toEqual([
+        {
+          type: "saveOnDevice",
+          key: recoverableWorkKey,
+          value: JSON.stringify({ saves: [], resends: [] }),
+        },
+        { type: "disconnectFromServer" },
+      ]),
     );
   });
 });

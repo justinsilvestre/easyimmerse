@@ -1,6 +1,7 @@
 use std::net::{IpAddr, SocketAddr};
 
 use axum::extract::{ConnectInfo, State};
+use axum::http::header::USER_AGENT;
 use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
 use easyimmerse_core::account::{AccountRole, AccountUser};
@@ -9,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
+use crate::account_mail::send_confirmation_mail;
 use crate::accounts::{
     AccountsError, authenticate, create_account, end_session, ensure_credentials_bounded,
     start_session,
@@ -43,7 +45,11 @@ pub struct SessionCreated {
     pub user: AccountUser,
 }
 
+/// The longest User-Agent header that a session keeps, in characters.
+const MAX_USER_AGENT_CHARACTERS: usize = 256;
+
 /// Creates an account with the `library_user` role and logs it in. Needs no token.
+/// On a server that sends email, it also mails a link that confirms the address.
 #[utoipa::path(
     post,
     path = "/auth/signup",
@@ -63,6 +69,7 @@ pub struct SessionCreated {
 pub async fn sign_up(
     State(state): State<AppState>,
     peer: Option<Extension<ConnectInfo<SocketAddr>>>,
+    headers: HeaderMap,
     Json(request): Json<SignupRequest>,
 ) -> Result<(StatusCode, Json<SessionCreated>), ApiFailure> {
     ensure_signup_open(&state.config)?;
@@ -71,13 +78,18 @@ pub async fn sign_up(
     state
         .login_throttle
         .ensure_allowed(&request.email, peer, now_ms())?;
+    let user_agent = user_agent_of(&headers);
     let session = state
         .with_accounts(move |storage| {
             let role = AccountRole::LibraryUser;
             let user = create_account(storage, &request.email, &request.password, role)?;
-            open_session(storage, user)
+            open_session(storage, user, &user_agent)
         })
         .await?;
+    let mails = &state.confirmation_mails;
+    if state.mail.is_some() && mails.begin_mail(&session.user.id, now_ms()).is_ok() {
+        send_confirmation_mail(&state, session.user.clone());
+    }
     Ok((StatusCode::CREATED, Json(session)))
 }
 
@@ -101,14 +113,16 @@ pub async fn sign_up(
 pub async fn log_in(
     State(state): State<AppState>,
     peer: Option<Extension<ConnectInfo<SocketAddr>>>,
+    headers: HeaderMap,
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<SessionCreated>, ApiFailure> {
     ensure_accounts_enabled(&state.config)?;
     ensure_credentials_bounded(&request.email, &request.password)?;
     let throttle = &state.login_throttle;
     let attempt = throttle.begin_attempt(&request.email, peer_address(peer), now_ms())?;
+    let user_agent = user_agent_of(&headers);
     let session = state
-        .with_accounts(move |storage| log_in_and_open_session(storage, &request))
+        .with_accounts(move |storage| log_in_and_open_session(storage, &request, &user_agent))
         .await?;
     throttle.succeeded(&attempt);
     Ok(Json(session))
@@ -144,17 +158,33 @@ pub async fn log_out(
 fn log_in_and_open_session(
     storage: &Storage,
     request: &LoginRequest,
+    user_agent: &str,
 ) -> Result<SessionCreated, AccountsError> {
     let user = authenticate(storage, &request.email, &request.password)?;
-    open_session(storage, user)
+    open_session(storage, user, user_agent)
 }
 
-fn peer_address(peer: Option<Extension<ConnectInfo<SocketAddr>>>) -> Option<IpAddr> {
+/// The request's User-Agent header, cut to 256 characters, or an empty string.
+pub fn user_agent_of(headers: &HeaderMap) -> String {
+    headers
+        .get(USER_AGENT)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .chars()
+        .take(MAX_USER_AGENT_CHARACTERS)
+        .collect()
+}
+
+pub fn peer_address(peer: Option<Extension<ConnectInfo<SocketAddr>>>) -> Option<IpAddr> {
     peer.map(|Extension(ConnectInfo(address))| address.ip())
 }
 
-fn open_session(storage: &Storage, user: AccountUser) -> Result<SessionCreated, AccountsError> {
-    let token = start_session(storage, &user.id, now_ms())?;
+pub fn open_session(
+    storage: &Storage,
+    user: AccountUser,
+    user_agent: &str,
+) -> Result<SessionCreated, AccountsError> {
+    let token = start_session(storage, &user.id, user_agent, now_ms())?;
     Ok(SessionCreated { token, user })
 }
 
@@ -174,7 +204,7 @@ fn ensure_signup_open(config: &ApiConfig) -> Result<(), ApiFailure> {
     }
 }
 
-fn ensure_accounts_enabled(config: &ApiConfig) -> Result<(), ApiFailure> {
+pub fn ensure_accounts_enabled(config: &ApiConfig) -> Result<(), ApiFailure> {
     if config.accounts.is_some() {
         Ok(())
     } else {

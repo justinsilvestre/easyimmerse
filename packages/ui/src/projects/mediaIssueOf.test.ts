@@ -40,6 +40,22 @@ describe("mediaIssueOf", () => {
       ).toBe("browserFileNotOpen");
     });
 
+    it("finds no issue when the server keeps a copy of it", () => {
+      expect(
+        mediaIssueOf(
+          browserFile(),
+          createBrowserFileRegistry(),
+          new Map([["m2", "stored_copy"]]),
+        ),
+      ).toBeUndefined();
+    });
+
+    it("finds no issue when the server keeps a copy of it on a platform without browser files", () => {
+      expect(
+        mediaIssueOf(browserFile(), null, new Map([["m2", "stored_copy"]])),
+      ).toBeUndefined();
+    });
+
     it("finds no issue when the registry holds it", () => {
       expect(
         mediaIssueOf(browserFile(), registryHoldingAll(), new Map()),

@@ -7,7 +7,7 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 
-use crate::accounts::{extend_in_background, find_session};
+use crate::accounts::{find_session, refresh_in_background};
 use crate::auth::error_body::{ApiFailure, unauthorized};
 use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
@@ -65,11 +65,11 @@ async fn authenticate(state: &AppState, token: String) -> Result<Option<Principa
     let Some(found) = found else {
         return Ok(None);
     };
-    if let Some(extension) = found.extension {
+    if let Some(refresh) = found.refresh {
         let storage = Arc::clone(&state.storage);
-        extend_in_background(storage, Arc::clone(&state.session_extensions), extension);
+        refresh_in_background(storage, Arc::clone(&state.session_refreshes), refresh);
     }
-    Ok(Some(Principal::of_account(&found.user)))
+    Ok(Some(Principal::of_session(&found.user, &found.id)))
 }
 
 #[derive(Deserialize)]

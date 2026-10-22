@@ -11,12 +11,21 @@ const messagesByCode: Record<string, string> = {
   invalid_email: "This email address is not valid.",
   signup_closed: "This server does not let anyone sign up.",
   accounts_disabled: "This server has no accounts.",
+  mail_unavailable: "This server can't send email right now. Try again later.",
+  remote_unreachable:
+    "The server couldn't be reached. Check its address and your connection.",
+  already_linked:
+    "This app is already logged in to a server. Log out of it first.",
 };
 
-/** Tells a person why signing in to the server at the address failed. */
+/**
+ * Tells a person why signing in to the server at the address failed,
+ * or another request to it that `attempt` names as what the server could not do, such as "send a reset link".
+ */
 export function signInFailureMessage(
   failure: RequestFailure,
   serverUrl: string,
+  attempt = "sign you in",
 ): string {
   if (failure.code === "too_many_attempts")
     return tooManyAttemptsMessage(failure.retryAfterSeconds);
@@ -26,7 +35,7 @@ export function signInFailureMessage(
     return `Couldn't reach a server at ${serverUrl}. Check the address and your connection.`;
   if (failure.status === 404 || failure.status === "NO_DATA")
     return `The server at ${serverUrl} did not answer as an easyImmerse server does. Check the address.`;
-  return `The server could not sign you in: ${failure.message}`;
+  return `The server could not ${attempt}: ${failure.message}`;
 }
 
 function tooManyAttemptsMessage(retryAfterSeconds: number | undefined): string {

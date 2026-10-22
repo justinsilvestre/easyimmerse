@@ -1,5 +1,5 @@
 use easyimmerse_core::lookup::{KanjiResult, LookupResult};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 
 use super::kanji_rows::KanjiRows;
 use super::position_lookup::PositionLookup;
@@ -12,11 +12,15 @@ pub struct LookupRows {
 }
 
 impl LookupRows {
-    /// Finds the rows for every lookup at once, running each kind of query once.
-    pub fn find(storage: &Storage, lookups: &[&PositionLookup]) -> Result<Self, StorageError> {
+    /// Finds the rows of the owner's dictionaries for every lookup at once, running each kind of query once.
+    pub fn find(
+        storage: &Storage,
+        owner: &OwnerId,
+        lookups: &[&PositionLookup],
+    ) -> Result<Self, StorageError> {
         Ok(Self {
-            terms: TermRows::find(storage, lookups)?,
-            kanji: KanjiRows::find(storage, lookups)?,
+            terms: TermRows::find(storage, owner, lookups)?,
+            kanji: KanjiRows::find(storage, owner, lookups)?,
         })
     }
 

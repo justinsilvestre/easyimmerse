@@ -17,7 +17,7 @@ async function claimingStore() {
   store.dispatch(actions.pairingSubmitted());
   effects.resolveServerAuthInfo({
     ok: true,
-    data: { accounts: false, open_signup: false },
+    data: { accounts: false, open_signup: false, sends_email: false },
   });
   await vi.waitFor(() =>
     expect(effects.calls).toContainEqual(
@@ -92,7 +92,7 @@ describe("pairingEffectRunners", () => {
     store.dispatch(actions.pairingSubmitted());
     effects.resolveServerAuthInfo({
       ok: true,
-      data: { accounts: true, open_signup: false },
+      data: { accounts: true, open_signup: false, sends_email: false },
     });
     await vi.waitFor(() =>
       expect(store.getState().app.account.signInForm.ownServerUrl).toBe(

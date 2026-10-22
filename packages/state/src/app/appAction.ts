@@ -35,6 +35,8 @@ import type { ServerAction } from "../server/serverActions.ts";
 import { serverActions } from "../server/serverActions.ts";
 import type { StoredPlacesAction } from "../storedPlaces/storedPlacesActions.ts";
 import { storedPlacesActions } from "../storedPlaces/storedPlacesActions.ts";
+import type { SyncAction } from "../sync/syncActions.ts";
+import { syncActions } from "../sync/syncActions.ts";
 import type { StartupAction } from "./startupActions.ts";
 import { startupActions } from "./startupActions.ts";
 
@@ -58,6 +60,7 @@ const featureActionCreators = [
   reviewActions,
   pairingActions,
   desktopServerActions,
+  syncActions,
 ] as const;
 
 /** The action creators of each feature. A type-level test checks that no two declare the same action type. */
@@ -96,7 +99,8 @@ export type AppAction =
   | AccountAction
   | ReviewAction
   | PairingAction
-  | DesktopServerAction;
+  | DesktopServerAction
+  | SyncAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

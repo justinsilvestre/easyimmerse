@@ -60,12 +60,20 @@ pub struct ReviewCardState {
     pub is_leech: bool,
 }
 
+/// The identifier of one answer in the review log.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
+#[serde(transparent)]
+#[ts(export)]
+pub struct ReviewAnswerId(pub String);
+
 /// One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ReviewLogEntry {
+    pub id: ReviewAnswerId,
     pub flashcard_id: FlashcardId,
-    /// Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.
+    /// Milliseconds since the Unix epoch, stamped by the server.
+    /// Answers given on two devices may share a time; the id then orders them.
     pub answered_at_ms: u64,
     pub rating: ReviewRating,
     /// The phase the card was in when answered. A new card's first answer is a learning answer.

@@ -4,6 +4,7 @@ import {
 } from "@easyimmerse/state";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { AccountSection } from "../account/AccountSection.tsx";
+import { CloudStorageSection } from "../account/CloudStorageSection.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import {
@@ -48,6 +49,7 @@ export function SettingsScreen({
       <div id={accountSectionId} className="scroll-mt-4">
         <AccountSection />
       </div>
+      <CloudStorageSection />
       {isDesktop && <ServerSection />}
       <button
         type="button"

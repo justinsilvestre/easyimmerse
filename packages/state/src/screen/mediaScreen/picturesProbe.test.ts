@@ -19,6 +19,8 @@ const browserFile = (name: string): MediaFile => ({
   track_selection_json: null,
   origin: null,
   translation_media_file_id: null,
+  is_upload_chosen: false,
+  has_stored_copy: false,
 });
 
 const listed = (file: MediaFile) =>
@@ -52,6 +54,11 @@ describe("picturesProbeOf", () => {
         },
       ],
     );
+  });
+
+  it("asks nothing for a browser-added video whose copy the server keeps", () => {
+    const stored = { ...browserFile("clip.mp4"), has_stored_copy: true };
+    expect(picturesProbeOf(listed(stored), { route })).toEqual([]);
   });
 
   it("asks nothing for a sound file", () => {

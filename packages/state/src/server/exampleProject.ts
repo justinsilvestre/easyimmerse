@@ -24,5 +24,6 @@ export function exampleProject(id: string): Project {
     flashcard_count: 0,
     unreviewed_count: 0,
     uses_anki_connect: false,
+    is_backed_up: false,
   };
 }

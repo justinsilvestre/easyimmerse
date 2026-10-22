@@ -71,8 +71,34 @@ fn describe_settings(settings: &ServeSettings, file: &ServerFileConfig) -> Vec<S
         ),
         format!("web_app_dir = {}", path(&settings.web_app_dir)),
         format!("api_only = {}", settings.api_only),
+        format!("uploads_dir = {}", path(&settings.uploads_dir)),
+        format!("upload_quota_mb = {}", optional(&settings.upload_quota_mb)),
+        format!(
+            "library_user_upload_quota_mb = {}",
+            optional(&settings.library_user_upload_quota_mb)
+        ),
+        format!("smtp_host = {}", optional(&settings.smtp_host)),
+        format!("smtp_port = {}", optional(&settings.smtp_port)),
+        format!("smtp_user = {}", optional(&settings.smtp_user)),
+        format!(
+            "smtp_security = {}",
+            optional(
+                &settings
+                    .smtp_security
+                    .map(|security| format!("{security:?}").to_lowercase())
+            )
+        ),
+        format!("mail_from = {}", optional(&settings.mail_from)),
+        format!("public_url = {}", optional(&settings.public_url)),
+        format!("mail_to_stderr = {}", settings.mail_to_stderr),
         format!("desktop.autostart = {}", file.should_autostart()),
     ]
+}
+
+fn optional(value: &Option<impl std::fmt::Display>) -> String {
+    value
+        .as_ref()
+        .map_or("none".to_string(), |value| value.to_string())
 }
 
 fn describe_hosts(hosts: &[String]) -> String {

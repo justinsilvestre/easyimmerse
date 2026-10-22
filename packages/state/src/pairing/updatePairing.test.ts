@@ -34,7 +34,11 @@ const filledIn = actions.pairingFormChanged({
 const submitted = [filledIn, actions.pairingSubmitted()] as const;
 
 const checked = (accounts: boolean) =>
-  actions.pairingServerChecked(desktop, { accounts, open_signup: false });
+  actions.pairingServerChecked(desktop, {
+    accounts,
+    open_signup: false,
+    sends_email: false,
+  });
 
 const failure = { status: "NETWORK", message: "offline" } as const;
 
@@ -117,6 +121,7 @@ describe("updatePairing", () => {
       actions.pairingServerChecked("http://10.0.0.2:8787", {
         accounts: false,
         open_signup: false,
+        sends_email: false,
       }),
     );
     expect(effects).toEqual([]);

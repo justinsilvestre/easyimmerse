@@ -16,7 +16,12 @@ const newUser = {
   role: "privileged",
 } as const;
 
-const createdUser = { id: "u2", ...newUser, created_at_ms: 0 };
+const createdUser = {
+  id: "u2",
+  ...newUser,
+  created_at_ms: 0,
+  email_confirmed_at_ms: null,
+};
 
 const lastAdministrator = {
   ok: false,
@@ -24,10 +29,11 @@ const lastAdministrator = {
 } as const;
 
 /** A store connected to a server, whose requests wait until the test answers them. */
-function connectedStore() {
+function connectedStore(bundledIn?: "desktop") {
   const server = createFakeServerStoreParts({
     serverUrl: "https://books.example.org",
     token: "t",
+    ...(bundledIn && { bundledIn }),
   });
   const store = createAppStore(createRecordingEffects(), server);
   return { server, store };
@@ -41,7 +47,11 @@ function creatingStore() {
   return connected;
 }
 
-const createRequest = { kind: "createUser", request: newUser } as const;
+const createRequest = {
+  kind: "createUser",
+  via: "self",
+  request: newUser,
+} as const;
 
 describe("updateUserManagement", () => {
   describe("when an account is created", () => {
@@ -91,6 +101,18 @@ describe("updateUserManagement", () => {
     store.dispatch(actions.userRoleChosen("u1", "administrator"));
     expect(server.sentRequests).toContainEqual({
       kind: "setUserRole",
+      via: "self",
+      userId: "u1",
+      role: "administrator",
+    });
+  });
+
+  it("sends the role chosen through the built-in server to the remote it is linked to", () => {
+    const { server, store } = connectedStore("desktop");
+    store.dispatch(actions.userRoleChosen("u1", "administrator"));
+    expect(server.sentRequests).toContainEqual({
+      kind: "setUserRole",
+      via: "linkedRemote",
       userId: "u1",
       role: "administrator",
     });
@@ -100,7 +122,12 @@ describe("updateUserManagement", () => {
     const { server, store } = connectedStore();
     store.dispatch(actions.userRoleChosen("u1", "library_user"));
     server.respond(
-      { kind: "setUserRole", userId: "u1", role: "library_user" },
+      {
+        kind: "setUserRole",
+        via: "self",
+        userId: "u1",
+        role: "library_user",
+      },
       lastAdministrator,
     );
     await vi.waitFor(() =>
@@ -136,6 +163,7 @@ describe("updateUserManagement", () => {
       store.dispatch(actions.userDeletionConfirmed());
       expect(server.sentRequests).toContainEqual({
         kind: "deleteUser",
+        via: "self",
         userId: "u1",
       });
     });

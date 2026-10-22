@@ -1,5 +1,5 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -9,13 +9,15 @@ use easyimmerse_storage::{Storage, StorageError};
 
 use tokio::sync::Semaphore;
 
-use crate::accounts::{AccountsError, LoginThrottle, PendingExtensions};
+use crate::accounts::{AccountsError, LoginThrottle, MailThrottle, PendingRefreshes};
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
+use crate::mail::MailService;
 use crate::media_source_jobs::MediaSourceJobs;
 use crate::pairing_codes::PairingCodeState;
 use crate::plugins::{PluginRegistry, fetched_item_dir};
+use crate::sync::SyncEngine;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -44,10 +46,16 @@ pub struct AppState {
     pub login_throttle: Arc<LoginThrottle>,
     /// Bounds how many passwords are hashed at once, since each hash takes about 19 MiB of memory.
     pub password_hashing: Arc<Semaphore>,
-    /// The session extensions being written.
-    pub session_extensions: Arc<PendingExtensions>,
-    /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
-    pub is_fitting_review_parameters: Arc<AtomicBool>,
+    /// The session refreshes being written.
+    pub session_refreshes: Arc<PendingRefreshes>,
+    /// Sends the mail of the account flows. None when the server has no accounts or sends no email.
+    pub mail: Option<MailService>,
+    /// The recent confirmation mails, which make the next one to the same account wait.
+    pub confirmation_mails: Arc<MailThrottle>,
+    /// The owners whose FSRS parameters are being fitted, so that no second fit for the same owner starts beside one.
+    pub owners_fitting_review_parameters: Arc<Mutex<HashSet<String>>>,
+    /// Syncs the device's own data with the remote it is linked to. A server without a link only waits.
+    pub sync: Arc<SyncEngine>,
     /// The active pairing code and the recent failed claims of one.
     pub pairing_code: Arc<PairingCodeState>,
 }
@@ -59,8 +67,11 @@ impl AppState {
         probes: Option<ProbeCache>,
         conversion: Option<ConversionService>,
     ) -> Self {
+        let storage = Arc::new(storage);
+        let uploads_dir = config.uploads.as_ref().map(|uploads| uploads.dir.clone());
         Self {
-            storage: Arc::new(storage),
+            sync: Arc::new(SyncEngine::new(Arc::clone(&storage), uploads_dir)),
+            storage,
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,
@@ -72,8 +83,10 @@ impl AppState {
             media_dir: None,
             login_throttle: Arc::default(),
             password_hashing: Arc::new(Semaphore::new(processor_count())),
-            session_extensions: Arc::default(),
-            is_fitting_review_parameters: Arc::default(),
+            session_refreshes: Arc::default(),
+            mail: None,
+            confirmation_mails: Arc::default(),
+            owners_fitting_review_parameters: Arc::default(),
             pairing_code: Arc::default(),
         }
     }
@@ -91,6 +104,11 @@ impl AppState {
     pub fn with_plugins(mut self, plugins: PluginRegistry, media_dir: Option<PathBuf>) -> Self {
         self.plugins = Arc::new(plugins);
         self.media_dir = media_dir;
+        self
+    }
+
+    pub fn with_mail(mut self, mail: Option<MailService>) -> Self {
+        self.mail = mail;
         self
     }
 

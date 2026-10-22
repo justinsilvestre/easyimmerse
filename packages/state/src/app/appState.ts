@@ -11,6 +11,7 @@ import type { Route } from "../route/route.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
+import type { SyncState } from "../sync/updateSync.ts";
 
 /** The app's own state, one slice per feature. */
 export type AppState = {
@@ -35,4 +36,6 @@ export type AppState = {
   pairing: PairingForm;
   /** The server that the desktop app runs inside itself, as its server controls report it. */
   desktopServer: DesktopServerState;
+  /** What the person was told of the native app's syncing with the remote its built-in server is linked to. */
+  sync: SyncState;
 };

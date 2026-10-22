@@ -68,7 +68,12 @@ pub async fn import_local_dictionary(
 ) -> Result<(StatusCode, Json<ImportJobStarted>), ApiFailure> {
     ensure_local_paths_allowed(&principal, &state.config)?;
     let files = read_local_dictionary(request.path, None).await?;
-    Ok(start_import(&state, files, request.table_layout))
+    Ok(start_import(
+        &state,
+        principal.owner_id(),
+        files,
+        request.table_layout,
+    ))
 }
 
 /// Detects what each column of a table at a local path holds and returns that layout with the table's first rows,

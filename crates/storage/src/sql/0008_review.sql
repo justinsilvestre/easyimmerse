@@ -19,7 +19,10 @@ CREATE INDEX review_cards_by_due ON review_cards (project_id, due_at_ms);
 
 -- Every answer, which the export turns into Anki's review log. Rows are only ever added, or removed by undoing the latest answer.
 -- Each row also holds the card's schedule after the answer, from which undoing the next answer restores it.
+-- Answers given on two devices may share `answered_at_ms`; within a project, the latest answer is the greatest
+-- `(answered_at_ms, id)`.
 CREATE TABLE review_log (
+    id TEXT PRIMARY KEY,
     answered_at_ms INTEGER NOT NULL,
     flashcard_id TEXT NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -39,10 +42,10 @@ CREATE TABLE review_log (
     due_at_ms INTEGER NOT NULL,
     reps INTEGER NOT NULL,
     lapses INTEGER NOT NULL,
-    learning_step INTEGER NOT NULL,
-    PRIMARY KEY (project_id, answered_at_ms)
+    learning_step INTEGER NOT NULL
 );
 
+CREATE INDEX review_log_by_project ON review_log (project_id, answered_at_ms, id);
 CREATE INDEX review_log_by_flashcard ON review_log (flashcard_id, answered_at_ms);
 
 -- The new cards and the reviews a project's review shows on a local day beyond the daily limits, as the user asked for.
@@ -65,9 +68,9 @@ CREATE TABLE review_holds (
     until_ms INTEGER
 );
 
--- The FSRS parameters fitted to the user's answers across every project. At most one row; without it the defaults schedule.
+-- The FSRS parameters fitted to an owner's answers across all of its projects. Without a row the defaults schedule.
 CREATE TABLE review_parameters (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
+    owner_id TEXT PRIMARY KEY REFERENCES owners(id) ON DELETE CASCADE,
     -- A JSON array of numbers.
     weights_json TEXT NOT NULL,
     -- When the fit that gave them began.
