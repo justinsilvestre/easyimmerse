@@ -65,6 +65,14 @@ pub struct ServeArgs {
     /// without accounts keeps them in the `uploads` subdirectory of `--media-dir`, when that is set.
     #[arg(long, env = "EASYIMMERSE_UPLOADS_DIR")]
     pub uploads_dir: Option<PathBuf>,
+    /// The most megabytes of copies each privileged account and administrator may keep, a
+    /// megabyte being 1,000,000 bytes. Without it they may keep any amount.
+    #[arg(long, requires = "uploads_dir")]
+    pub upload_quota_mb: Option<u64>,
+    /// The most megabytes of copies each library user may keep. With the default of 0,
+    /// library users keep none.
+    #[arg(long, default_value_t = 0, requires = "uploads_dir")]
+    pub library_user_upload_quota_mb: u64,
     /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
@@ -177,4 +185,30 @@ pub struct DeleteUserArgs {
     pub database: DatabaseArgs,
     #[arg(long)]
     pub email: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::*;
+
+    fn parse(args: &[&str]) -> Result<Cli, clap::Error> {
+        Cli::try_parse_from([&["easyimmerse-server", "serve"], args].concat())
+    }
+
+    #[test]
+    fn refuses_an_upload_quota_without_an_uploads_directory() {
+        assert!(parse(&["--upload-quota-mb", "5"]).is_err());
+    }
+
+    #[test]
+    fn accepts_an_upload_quota_with_an_uploads_directory() {
+        assert!(parse(&["--uploads-dir", "uploads", "--upload-quota-mb", "5"]).is_ok());
+    }
+
+    #[test]
+    fn accepts_no_uploads_directory_without_quotas() {
+        assert!(parse(&[]).is_ok());
+    }
 }

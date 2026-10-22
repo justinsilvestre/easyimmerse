@@ -180,9 +180,13 @@ fn build_config(args: &ServeArgs, addr: SocketAddr) -> ApiConfig {
 fn uploads_config(args: &ServeArgs) -> Option<UploadsConfig> {
     args.uploads_dir.clone().map(|dir| UploadsConfig {
         dir,
-        account_quota_bytes: None,
-        library_user_quota_bytes: 0,
+        account_quota_bytes: args.upload_quota_mb.map(megabytes),
+        library_user_quota_bytes: megabytes(args.library_user_upload_quota_mb),
     })
+}
+
+fn megabytes(count: u64) -> u64 {
+    count.saturating_mul(1_000_000)
 }
 
 fn push_host(config: &mut ApiConfig, host: String) {
@@ -241,6 +245,8 @@ mod tests {
             plugins_dir: None,
             media_dir: None,
             uploads_dir: None,
+            upload_quota_mb: None,
+            library_user_upload_quota_mb: 0,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
             smtp_host: None,
             smtp_port: None,
@@ -339,6 +345,34 @@ mod tests {
         args.uploads_dir = Some("/srv/uploads".into());
         let uploads = config_for(&args).uploads.unwrap();
         assert_eq!(uploads.dir, std::path::PathBuf::from("/srv/uploads"));
+    }
+
+    fn uploads_args() -> ServeArgs {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.uploads_dir = Some("/srv/uploads".into());
+        args
+    }
+
+    #[test]
+    fn gives_accounts_no_upload_limit_without_a_quota() {
+        let uploads = config_for(&uploads_args()).uploads.unwrap();
+        assert_eq!(uploads.account_quota_bytes, None);
+    }
+
+    #[test]
+    fn reads_the_account_upload_quota_in_megabytes() {
+        let mut args = uploads_args();
+        args.upload_quota_mb = Some(5);
+        let uploads = config_for(&args).uploads.unwrap();
+        assert_eq!(uploads.account_quota_bytes, Some(5_000_000));
+    }
+
+    #[test]
+    fn reads_the_library_user_upload_quota_in_megabytes() {
+        let mut args = uploads_args();
+        args.library_user_upload_quota_mb = 2;
+        let uploads = config_for(&args).uploads.unwrap();
+        assert_eq!(uploads.library_user_quota_bytes, 2_000_000);
     }
 
     /// Arguments for a server with accounts that sends mail through `smtp.example.com`.
