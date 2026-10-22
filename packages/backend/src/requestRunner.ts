@@ -230,23 +230,39 @@ export const requestEndpoints = {
     ),
   logOut: () =>
     backendApi.endpoints.logOut.initiate(undefined, { track: false }),
-  createUser: ({ request }) =>
-    backendApi.endpoints.createUser.initiate(request, { track: false }),
-  setUserRole: ({ userId, role }) =>
-    backendApi.endpoints.setUserRole.initiate(
-      { userId, body: { role } },
+  createUser: ({ via, request }) =>
+    backendApi.endpoints.createUser.initiate(
+      { via, request },
       { track: false },
     ),
-  deleteUser: ({ userId }) =>
-    backendApi.endpoints.deleteUser.initiate(userId, { track: false }),
-  getCurrentPrincipal: () =>
-    backendApi.endpoints.getCurrentPrincipal.initiate(undefined, {
+  setUserRole: ({ via, userId, role }) =>
+    backendApi.endpoints.setUserRole.initiate(
+      { via, userId, body: { role } },
+      { track: false },
+    ),
+  deleteUser: ({ via, userId }) =>
+    backendApi.endpoints.deleteUser.initiate({ via, userId }, { track: false }),
+  getCurrentPrincipal: ({ via }) =>
+    backendApi.endpoints.getCurrentPrincipal.initiate(via, {
       forceRefetch: true,
     }),
-  deleteSession: ({ sessionId }) =>
-    backendApi.endpoints.deleteSession.initiate(sessionId, { track: false }),
-  requestConfirmationEmail: () =>
-    backendApi.endpoints.requestConfirmationEmail.initiate(undefined, {
+  deleteSession: ({ via, sessionId }) =>
+    backendApi.endpoints.deleteSession.initiate(
+      { via, sessionId },
+      { track: false },
+    ),
+  requestConfirmationEmail: ({ via }) =>
+    backendApi.endpoints.requestConfirmationEmail.initiate(via, {
+      track: false,
+    }),
+  linkSyncRemote: ({ request }) =>
+    backendApi.endpoints.linkSyncRemote.initiate(request, { track: false }),
+  unlinkSyncRemote: () =>
+    backendApi.endpoints.unlinkSyncRemote.initiate(undefined, { track: false }),
+  runSync: () =>
+    backendApi.endpoints.runSync.initiate(undefined, { track: false }),
+  dismissSyncConflicts: () =>
+    backendApi.endpoints.dismissSyncConflicts.initiate(undefined, {
       track: false,
     }),
   getReviewQueue: ({ projectId }) =>

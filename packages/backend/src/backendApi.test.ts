@@ -6,8 +6,11 @@ import type {
   Project,
   SourceStepResponse,
   SubtitleTracksResponse,
+  SyncConflict,
+  SyncLink,
+  SyncStatus,
 } from "@easyimmerse/types";
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, type Middleware } from "@reduxjs/toolkit";
 import { describe, expect, it, vi } from "vitest";
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { accountPath, backendApi } from "./backendApi.ts";
@@ -802,7 +805,7 @@ describe("the account endpoints", () => {
   it("send GET /auth/server for getServerAuthInfo", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.getServerAuthInfo.initiate(),
+      backendApi.endpoints.getServerAuthInfo.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/auth/server" }]);
   });
@@ -810,7 +813,7 @@ describe("the account endpoints", () => {
   it("send GET /auth/me for getCurrentPrincipal", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.getCurrentPrincipal.initiate(),
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/auth/me" }]);
   });
@@ -824,7 +827,7 @@ describe("the account endpoints", () => {
   it("send GET /users for listUsers", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.listUsers.initiate(),
+      backendApi.endpoints.listUsers.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/users" }]);
   });
@@ -837,7 +840,7 @@ describe("the account endpoints", () => {
       role: "privileged",
     } as const;
     await createStore(client).dispatch(
-      backendApi.endpoints.createUser.initiate(request),
+      backendApi.endpoints.createUser.initiate({ via: "self", request }),
     );
     expect(client.requests).toEqual([
       {
@@ -852,6 +855,7 @@ describe("the account endpoints", () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
       backendApi.endpoints.setUserRole.initiate({
+        via: "self",
         userId: "u1",
         body: { role: "administrator" },
       }),
@@ -868,9 +872,12 @@ describe("the account endpoints", () => {
   it("fetch the current principal again once an account's role changes", async () => {
     const client = createRecordingClient();
     const store = createStore(client);
-    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
+    );
     await store.dispatch(
       backendApi.endpoints.setUserRole.initiate({
+        via: "self",
         userId: "u1",
         body: { role: "library_user" },
       }),
@@ -885,8 +892,12 @@ describe("the account endpoints", () => {
   it("fetch the current principal again once an account is deleted", async () => {
     const client = createRecordingClient();
     const store = createStore(client);
-    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
-    await store.dispatch(backendApi.endpoints.deleteUser.initiate("u1"));
+    await store.dispatch(
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
+    );
+    await store.dispatch(
+      backendApi.endpoints.deleteUser.initiate({ via: "self", userId: "u1" }),
+    );
     await vi.waitFor(() =>
       expect(
         client.requests.filter(({ path }) => path === "/auth/me"),
@@ -897,7 +908,7 @@ describe("the account endpoints", () => {
   it("send DELETE /users/{id} for deleteUser", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.deleteUser.initiate("u1"),
+      backendApi.endpoints.deleteUser.initiate({ via: "self", userId: "u1" }),
     );
     expect(client.requests).toEqual([{ method: "DELETE", path: "/users/u1" }]);
   });
@@ -905,7 +916,7 @@ describe("the account endpoints", () => {
   it("send GET /auth/sessions for listSessions", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.listSessions.initiate(),
+      backendApi.endpoints.listSessions.initiate("self"),
     );
     expect(client.requests).toEqual([
       { method: "GET", path: "/auth/sessions" },
@@ -915,7 +926,10 @@ describe("the account endpoints", () => {
   it("send DELETE /auth/sessions/{id} for deleteSession", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.deleteSession.initiate("s1"),
+      backendApi.endpoints.deleteSession.initiate({
+        via: "self",
+        sessionId: "s1",
+      }),
     );
     expect(client.requests).toEqual([
       { method: "DELETE", path: "/auth/sessions/s1" },
@@ -925,8 +939,13 @@ describe("the account endpoints", () => {
   it("list the sessions again once one is deleted", async () => {
     const client = createRecordingClient();
     const store = createStore(client);
-    await store.dispatch(backendApi.endpoints.listSessions.initiate());
-    await store.dispatch(backendApi.endpoints.deleteSession.initiate("s1"));
+    await store.dispatch(backendApi.endpoints.listSessions.initiate("self"));
+    await store.dispatch(
+      backendApi.endpoints.deleteSession.initiate({
+        via: "self",
+        sessionId: "s1",
+      }),
+    );
     await vi.waitFor(() =>
       expect(
         client.requests.filter(({ path }) => path === "/auth/sessions"),
@@ -937,10 +956,24 @@ describe("the account endpoints", () => {
   it("send POST /auth/confirmation-email for requestConfirmationEmail", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.requestConfirmationEmail.initiate(),
+      backendApi.endpoints.requestConfirmationEmail.initiate("self"),
     );
     expect(client.requests).toEqual([
       { method: "POST", path: "/auth/confirmation-email" },
+    ]);
+  });
+
+  it("send account requests through the built-in server to the remote it is linked to", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setUserRole.initiate({
+        via: "linkedRemote",
+        userId: "u1",
+        body: { role: "administrator" },
+      }),
+    );
+    expect(client.requests.map(({ path }) => path)).toEqual([
+      "/sync/remote/users/u1/role",
     ]);
   });
 });
@@ -954,5 +987,173 @@ describe("accountPath", () => {
     expect(accountPath("linkedRemote", "/auth/me")).toBe(
       "/sync/remote/auth/me",
     );
+  });
+});
+
+const conflict = (id: string): SyncConflict => ({
+  id,
+  description: "a flashcard in Spanish practice",
+  kept: "other_device",
+  detected_at_ms: 0,
+});
+
+const syncLink: SyncLink = {
+  kind: "account",
+  server_url: "https://cloud.example.org",
+  account_email: "someone@example.org",
+  account_role: "library_user",
+  linked_at_ms: 0,
+  last_synced_at_ms: null,
+  pushed_through_seq: 4,
+  state: { kind: "idle" },
+  transfer: null,
+  conflicts: [],
+  conflict_count: 0,
+};
+
+const syncStatus: SyncStatus = {
+  link: syncLink,
+  pulled_revision: 1,
+  local_change_seq: 4,
+};
+
+/** A built-in server that answers each status request with the next of the statuses, and lists no projects. */
+function createStatusClient(...statuses: SyncStatus[]) {
+  const requests: BackendRequest[] = [];
+  let answered = 0;
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      if (request.path !== "/sync/status")
+        return { data: { projects: [] } as T };
+      const status = statuses[Math.min(answered, statuses.length - 1)];
+      answered += 1;
+      return { data: status as T };
+    },
+  };
+  return { client, requests };
+}
+
+/** A store over the client that records the type of every action dispatched to it. */
+function createRecordingStore(client: BackendClient) {
+  const dispatched: { type: string; conflictId?: string }[] = [];
+  const recording: Middleware = () => (next) => (action) => {
+    dispatched.push(action as { type: string });
+    return next(action);
+  };
+  const extra: BackendThunkExtra = {
+    client,
+    browserFileRegistry: null,
+    frameCapturer: null,
+    failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect: createFakeAnkiConnect(),
+  };
+  const store = configureStore({
+    reducer: { [backendApi.reducerPath]: backendApi.reducer },
+    middleware: (getDefault) =>
+      getDefault({ thunk: { extraArgument: extra } }).concat(
+        recording,
+        backendApi.middleware,
+      ),
+  });
+  return { store, dispatched };
+}
+
+/** Fetches the status once for each of the statuses, after the project list is fetched, and returns what the store saw. */
+async function fetchStatuses(...statuses: SyncStatus[]) {
+  const { client, requests } = createStatusClient(...statuses);
+  const { store, dispatched } = createRecordingStore(client);
+  await store.dispatch(backendApi.endpoints.listProjects.initiate());
+  for (const _ of statuses)
+    await store.dispatch(
+      backendApi.endpoints.getSyncStatus.initiate(undefined, {
+        forceRefetch: true,
+      }),
+    );
+  const projectListings = () =>
+    requests.filter(({ path }) => path === "/projects").length;
+  return { dispatched, projectListings };
+}
+
+const typesOf = (dispatched: { type: string }[]) =>
+  dispatched.map(({ type }) => type);
+
+describe("getSyncStatus", () => {
+  it("sends GET /sync/status", async () => {
+    const { client, requests } = createStatusClient(syncStatus);
+    await createStore(client).dispatch(
+      backendApi.endpoints.getSyncStatus.initiate(),
+    );
+    expect(requests).toEqual([{ method: "GET", path: "/sync/status" }]);
+  });
+
+  it("reports nothing on the first answer", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus);
+    expect(typesOf(dispatched)).not.toContain("syncPulledChanges");
+  });
+
+  it("reports changes pulled from the remote", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 2,
+    });
+    expect(typesOf(dispatched)).toContain("syncPulledChanges");
+  });
+
+  it("reports pulled changes when the revision starts over, as after the built-in server restarts", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 0,
+    });
+    expect(typesOf(dispatched)).toContain("syncPulledChanges");
+  });
+
+  it("lists the projects again once changes are pulled", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 2,
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("lists the projects again once changes are pushed", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, pushed_through_seq: 5 },
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("lists the projects again once a change is made on the device", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      local_change_seq: 5,
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("leaves the projects alone while nothing changed", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, syncStatus);
+    expect(projectListings()).toBe(1);
+  });
+
+  it("reports a new latest conflict", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c2"), conflict("c1")] },
+    });
+    expect(
+      dispatched.filter(({ type }) => type === "syncConflictsReported"),
+    ).toEqual([{ type: "syncConflictsReported", conflictId: "c2" }]);
+  });
+
+  it("does not report the same latest conflict again", async () => {
+    const withConflict = {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c1")] },
+    };
+    const { dispatched } = await fetchStatuses(withConflict, withConflict);
+    expect(typesOf(dispatched)).not.toContain("syncConflictsReported");
   });
 });

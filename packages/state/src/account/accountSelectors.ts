@@ -17,7 +17,11 @@ import {
   serverOfferOf,
   signInServerUrlOf,
 } from "./signInForm.ts";
-import { logOutRequestId } from "./updateSignIn.ts";
+import {
+  linkRequestId,
+  logOutRequestId,
+  unlinkRequestId,
+} from "./updateSignIn.ts";
 
 /** The sign-in form as it shows. */
 export type SignInFormView = {
@@ -99,6 +103,14 @@ export const selectCanSubmitSignIn = (state: AppRoot) =>
 /** Tells whether the app is logging out of its account. */
 export const selectIsSigningOut = (state: AppRoot) =>
   selectIsRequestInFlight(state.app, logOutRequestId);
+
+/** Tells whether the native app's built-in server is logging in to a remote. */
+export const selectIsLinking = (state: AppRoot) =>
+  selectIsRequestInFlight(state.app, linkRequestId);
+
+/** Tells whether the native app's built-in server is logging out of its remote. */
+export const selectIsUnlinking = (state: AppRoot) =>
+  selectIsRequestInFlight(state.app, unlinkRequestId);
 
 function failureMessageOf(
   form: SignInForm,

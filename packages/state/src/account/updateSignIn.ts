@@ -2,10 +2,13 @@ import type { AppAction } from "../app/appAction.ts";
 import type { ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
+import { isAborted } from "../server/isAborted.ts";
 import { isSettled } from "../server/isSettled.ts";
+import type { RequestOutcome } from "../server/serverRequest.ts";
 import type { ServerState } from "../server/serverState.ts";
 import {
   canSubmitSignIn,
+  initialSignInForm,
   isBusy,
   offersMode,
   type SignInForm,
@@ -23,10 +26,18 @@ import {
 /** The id of the request that ends the app's session. */
 export const logOutRequestId = "account/logOut";
 
+/** The id of the request that logs the native app's built-in server in to a remote. */
+export const linkRequestId = "account/link";
+
+/** The id of the request that logs the native app's built-in server out of its remote. */
+export const unlinkRequestId = "account/unlink";
+
 /**
  * Keeps the sign-in form, asks the chosen server what it offers before the first attempt on it, sends the email and password,
  * and connects the app to the server once it opens a session.
  * Logging out ends the session on the server and then disconnects the app, whether or not the server could be reached.
+ * In the native app, the built-in server logs in to the remote and keeps the session itself, so the app stays connected to the built-in server,
+ * and logging out asks the built-in server to log out of the remote.
  * Asked for a password reset, the form asks a server that sends email to mail a link to the address instead.
  */
 export function updateSignIn(
@@ -53,13 +64,10 @@ export function updateSignIn(
         status: { kind: "failed", failure: action.failure },
       });
     case "signOutRequested":
-      if (selectIsRequestInFlight({ operations }, logOutRequestId))
-        return updated(form);
-      return updated(form, {
-        type: "sendRequest",
-        id: logOutRequestId,
-        request: { kind: "logOut" },
-      });
+      return signOutRequested(form, server, operations);
+    case "relinkRequested":
+      if (isBusy(form)) return updated(form);
+      return updated(relinkForm(action, server));
     case "passwordResetAsked":
       return passwordResetAsked(form, server);
     case "passwordResetSubmitted":
@@ -74,6 +82,8 @@ export function updateSignIn(
         status: { kind: "idle" },
       });
     case "requestSettled":
+      if (isSettled(action, linkRequestId, "linkSyncRemote"))
+        return updated(linkSettled(form, action.outcome));
       return isSettled(action, logOutRequestId, "logOut")
         ? updated(form, { type: "disconnectFromServer" })
         : updated(form);
@@ -91,7 +101,7 @@ function submitted(form: SignInForm, server: ServerState) {
       { ...form, status: { kind: "checkingServer" } },
       { type: "fetchServerAuthInfo", serverUrl },
     );
-  return sending(form, serverUrl);
+  return sending(form, serverUrl, server);
 }
 
 function infoReceived(
@@ -109,14 +119,61 @@ function infoReceived(
     return updated(passwordResetDecided(form, action.info));
   if (form.status.kind !== "checkingServer") return updated(form);
   return offersMode(serverOfferOf(form, serverUrl), form.mode)
-    ? sending(form, action.serverUrl)
+    ? sending(form, action.serverUrl, server)
     : updated({ ...form, status: { kind: "idle" } });
 }
 
-function sending(form: SignInForm, serverUrl: string) {
+function sending(form: SignInForm, serverUrl: string, server: ServerState) {
   const { mode, email, password } = form;
-  return updated(
-    { ...form, status: { kind: "submitting" } },
-    { type: "createSession", attempt: { serverUrl, mode, email, password } },
-  );
+  const submitting = { ...form, status: { kind: "submitting" } } as const;
+  if (server.config?.bundledIn !== undefined)
+    return updated(submitting, {
+      type: "sendRequest",
+      id: linkRequestId,
+      request: {
+        kind: "linkSyncRemote",
+        request: { server_url: serverUrl, mode, email, password },
+      },
+    });
+  return updated(submitting, {
+    type: "createSession",
+    attempt: { serverUrl, mode, email, password },
+  });
+}
+
+function signOutRequested(
+  form: SignInForm,
+  server: ServerState,
+  operations: ReadableState["operations"],
+) {
+  const isLinked = server.config?.bundledIn !== undefined;
+  const id = isLinked ? unlinkRequestId : logOutRequestId;
+  if (selectIsRequestInFlight({ operations }, id)) return updated(form);
+  return updated(form, {
+    type: "sendRequest",
+    id,
+    request: { kind: isLinked ? "unlinkSyncRemote" : "logOut" },
+  });
+}
+
+function linkSettled(
+  form: SignInForm,
+  outcome: RequestOutcome<"linkSyncRemote">,
+): SignInForm {
+  if (outcome.ok || isAborted(outcome))
+    return { ...form, password: "", status: { kind: "idle" } };
+  return { ...form, status: { kind: "failed", failure: outcome.error } };
+}
+
+/** The form filled in to log in again to the remote that logged the built-in server out. */
+function relinkForm(
+  { serverUrl, email }: Extract<AppAction, { type: "relinkRequested" }>,
+  server: ServerState,
+): SignInForm {
+  return {
+    ...initialSignInForm,
+    serverChoice: serverUrl === server.cloudUrl ? "official" : "own",
+    ownServerUrl: serverUrl,
+    email,
+  };
 }

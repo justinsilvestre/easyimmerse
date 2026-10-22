@@ -3,6 +3,7 @@ import { actions } from "../app/appAction.ts";
 import { dispatch } from "../app/dispatchEffect.ts";
 import type { ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
+import { accountViaOf } from "../server/serverSelectors.ts";
 import type { ServerState } from "../server/serverState.ts";
 import { principalRefresh } from "./confirmationEmail.ts";
 import {
@@ -85,7 +86,7 @@ function confirmationAnswered(
   // The Account section of a connected app shows whether the address is confirmed.
   return server.config === null
     ? updated(done)
-    : updated(done, principalRefresh);
+    : updated(done, principalRefresh(accountViaOf(server.config)));
 }
 
 function newPasswordAnswered(

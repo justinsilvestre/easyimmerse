@@ -24,6 +24,26 @@ describe("signInFailureMessage", () => {
     );
   });
 
+  it("tells of a remote the built-in server could not reach", () => {
+    expect(
+      signInFailureMessage(
+        { status: 502, code: "remote_unreachable", message: "" },
+        serverUrl,
+      ),
+    ).toBe(
+      "The server couldn't be reached. Check its address and your connection.",
+    );
+  });
+
+  it("tells of a built-in server already logged in to a remote", () => {
+    expect(
+      signInFailureMessage(
+        { status: 409, code: "already_linked", message: "" },
+        serverUrl,
+      ),
+    ).toBe("This app is already logged in to a server. Log out of it first.");
+  });
+
   it("tells of a server that cannot send email right now", () => {
     expect(
       signInFailureMessage(

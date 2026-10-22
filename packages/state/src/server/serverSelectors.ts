@@ -1,4 +1,5 @@
 import type { AppRoot } from "../app/createAppStore.ts";
+import type { ServerConfig } from "./serverState.ts";
 
 /**
  * Where the person's work is kept: in this browser when the app runs without a server,
@@ -28,7 +29,10 @@ export function selectWorkHome(state: AppRoot): WorkHome {
 
 /** Returns which server the Account section's requests reach. */
 export function selectAccountVia(state: AppRoot): AccountVia {
-  return state.app.server.config?.bundledIn === undefined
-    ? "self"
-    : "linkedRemote";
+  return accountViaOf(state.app.server.config);
+}
+
+/** Returns which server the account requests of an app connected to the given server reach. */
+export function accountViaOf(config: ServerConfig | null): AccountVia {
+  return config?.bundledIn === undefined ? "self" : "linkedRemote";
 }

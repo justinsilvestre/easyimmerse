@@ -16,6 +16,7 @@ export {
   useGetReviewSummaryQuery,
   useGetServerAuthInfoQuery,
   useGetSubtitleCuesQuery,
+  useGetSyncStatusQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
   useListAlignmentsQuery,

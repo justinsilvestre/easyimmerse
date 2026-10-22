@@ -14,7 +14,11 @@ import {
   accountFeature,
   updateAccount,
 } from "./updateAccount.ts";
-import { logOutRequestId } from "./updateSignIn.ts";
+import {
+  linkRequestId,
+  logOutRequestId,
+  unlinkRequestId,
+} from "./updateSignIn.ts";
 
 const cloudUrl = "https://cloud.example.com";
 
@@ -27,6 +31,15 @@ const ownServer = "https://books.example.org";
 const connected: ServerState = {
   config: { serverUrl: ownServer, token: "session-token" },
   cloudUrl: null,
+};
+
+const builtIn: ServerState = {
+  config: {
+    serverUrl: "http://127.0.0.1:4000",
+    token: "launch",
+    bundledIn: "desktop",
+  },
+  cloudUrl,
 };
 
 const session = {
@@ -239,6 +252,146 @@ describe("updateAccount", () => {
     expect(effects).toEqual([{ type: "disconnectFromServer" }]);
   });
 
+  describe("on the native app's built-in server", () => {
+    const linkRequest = {
+      kind: "linkSyncRemote",
+      request: {
+        server_url: ownServer,
+        mode: "login",
+        email: "someone@example.com",
+        password: "correct horse",
+      },
+    } as const;
+
+    const linkSettled = (
+      outcome: Parameters<typeof actions.requestSettled>[2],
+    ) => actions.requestSettled(linkRequestId, linkRequest, outcome);
+
+    const linking = [
+      actions.signInFormChanged({ serverChoice: "own" }),
+      filledIn,
+      actions.signInSubmitted(),
+      answered(true, false),
+    ];
+
+    const linked = linkSettled({
+      ok: true,
+      data: { link: null, pulled_revision: 0, local_change_seq: 0 },
+    });
+
+    it("asks the built-in server to log in to the remote", () => {
+      const [, effects] = accountAfter(builtIn, ...linking);
+      expect(effects).toEqual([
+        { type: "sendRequest", id: linkRequestId, request: linkRequest },
+      ]);
+    });
+
+    it("returns the form to idle once the built-in server has logged in", () => {
+      const [account] = accountAfter(builtIn, ...linking, linked);
+      expect(account.signInForm.status).toEqual({ kind: "idle" });
+    });
+
+    it("clears the password once the built-in server has logged in", () => {
+      const [account] = accountAfter(builtIn, ...linking, linked);
+      expect(account.signInForm.password).toBe("");
+    });
+
+    it("keeps why the remote refused to log in", () => {
+      const failure = {
+        status: 401,
+        code: "invalid_credentials",
+        message: "",
+      };
+      const [account] = accountAfter(
+        builtIn,
+        ...linking,
+        linkSettled({ ok: false, error: failure }),
+      );
+      expect(account.signInForm.status).toEqual({ kind: "failed", failure });
+    });
+
+    it("stays connected to the built-in server when the remote refuses to log in", () => {
+      const [, effects] = accountAfter(
+        builtIn,
+        ...linking,
+        linkSettled({
+          ok: false,
+          error: { status: 401, code: "invalid_credentials", message: "" },
+        }),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("asks the built-in server to log out of the remote when asked to log out", () => {
+      const [, effects] = accountAfter(builtIn, actions.signOutRequested());
+      expect(effects).toEqual([
+        {
+          type: "sendRequest",
+          id: unlinkRequestId,
+          request: { kind: "unlinkSyncRemote" },
+        },
+      ]);
+    });
+
+    it("stays connected to the built-in server once it has logged out of the remote", () => {
+      const [, effects] = accountAfter(
+        builtIn,
+        actions.requestSettled(
+          unlinkRequestId,
+          { kind: "unlinkSyncRemote" },
+          { ok: true, data: undefined },
+        ),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("logs out of the remote once this device's session there has ended", () => {
+      const [, effects] = accountAfter(
+        builtIn,
+        actions.requestSettled(
+          deleteSessionRequestId("s1"),
+          {
+            kind: "deleteSession",
+            via: "linkedRemote",
+            sessionId: "s1",
+            isCurrent: true,
+          },
+          { ok: true, data: undefined },
+        ),
+      );
+      expect(effects).toEqual([
+        {
+          type: "sendRequest",
+          id: unlinkRequestId,
+          request: { kind: "unlinkSyncRemote" },
+        },
+      ]);
+    });
+
+    describe("when the person asks to log in again", () => {
+      const relink = actions.relinkRequested(ownServer, "someone@example.com");
+
+      it("fills in the remote's address and the account's email", () => {
+        const [account] = accountAfter(builtIn, relink);
+        expect(account.signInForm).toMatchObject({
+          mode: "login",
+          serverChoice: "own",
+          ownServerUrl: ownServer,
+          email: "someone@example.com",
+          password: "",
+        });
+      });
+
+      it("chooses the official server when the remote is the easyImmerse cloud", () => {
+        const [account] = accountAfter(
+          builtIn,
+          actions.relinkRequested(cloudUrl, "someone@example.com"),
+        );
+        expect(account.signInForm.serverChoice).toBe("official");
+      });
+    });
+  });
+
   describe("when the person forgets their password", () => {
     const mailing = actions.serverAuthInfoReceived(ownServer, {
       accounts: true,
@@ -415,7 +568,7 @@ describe("updateAccount", () => {
         opened,
         actions.emailConfirmationAnswered({ ok: true, data: null }),
       );
-      expect(effects).toEqual([principalRefresh]);
+      expect(effects).toEqual([principalRefresh("self")]);
     });
   });
 
@@ -484,7 +637,11 @@ describe("updateAccount", () => {
   });
 
   describe("when the person logs out a device", () => {
-    const request = { kind: "deleteSession", sessionId: "s2" } as const;
+    const request = {
+      kind: "deleteSession",
+      via: "self",
+      sessionId: "s2",
+    } as const;
 
     it("asks the server to end its session", () => {
       const [, effects] = accountAfter(
@@ -539,7 +696,10 @@ describe("updateAccount", () => {
   });
 
   describe("when the person asks for another confirmation link", () => {
-    const request = { kind: "requestConfirmationEmail" } as const;
+    const request = {
+      kind: "requestConfirmationEmail",
+      via: "self",
+    } as const;
 
     const settled = (outcome: Parameters<typeof actions.requestSettled>[2]) =>
       actions.requestSettled(confirmationEmailRequestId, request, outcome);
@@ -584,7 +744,7 @@ describe("updateAccount", () => {
           error: { status: 409, code: "already_confirmed", message: "" },
         }),
       );
-      expect(effects).toEqual([principalRefresh]);
+      expect(effects).toEqual([principalRefresh("self")]);
     });
   });
 });

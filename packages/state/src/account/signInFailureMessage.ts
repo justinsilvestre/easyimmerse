@@ -12,6 +12,10 @@ const messagesByCode: Record<string, string> = {
   signup_closed: "This server does not let anyone sign up.",
   accounts_disabled: "This server has no accounts.",
   mail_unavailable: "This server can't send email right now. Try again later.",
+  remote_unreachable:
+    "The server couldn't be reached. Check its address and your connection.",
+  already_linked:
+    "This app is already logged in to a server. Log out of it first.",
 };
 
 /**

@@ -6,7 +6,9 @@ import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
+  selectIsLinking,
   selectIsSigningOut,
+  selectIsUnlinking,
   selectPasswordStrength,
   selectSignInForm,
 } from "./accountSelectors.ts";
@@ -128,5 +130,45 @@ describe("selectIsSigningOut", () => {
     );
     store.dispatch(actions.signOutRequested());
     expect(selectIsSigningOut(store.getState())).toBe(true);
+  });
+});
+
+const builtInStore = () =>
+  createAppStore(
+    createRecordingEffects(),
+    createFakeServerStoreParts({
+      serverUrl: "http://127.0.0.1:4000",
+      token: "launch",
+      bundledIn: "desktop",
+    }),
+  );
+
+describe("selectIsLinking", () => {
+  it("tells that the built-in server is logging in while the remote has not answered", () => {
+    const store = builtInStore();
+    store.dispatch(
+      actions.signInFormChanged({
+        ownServerUrl: cloudUrl,
+        email: "someone@example.com",
+        password: "correct horse",
+      }),
+    );
+    store.dispatch(
+      actions.serverAuthInfoReceived(cloudUrl, {
+        accounts: true,
+        open_signup: true,
+        sends_email: false,
+      }),
+    );
+    store.dispatch(actions.signInSubmitted());
+    expect(selectIsLinking(store.getState())).toBe(true);
+  });
+});
+
+describe("selectIsUnlinking", () => {
+  it("tells that the built-in server is logging out while it has not answered", () => {
+    const store = builtInStore();
+    store.dispatch(actions.signOutRequested());
+    expect(selectIsUnlinking(store.getState())).toBe(true);
   });
 });

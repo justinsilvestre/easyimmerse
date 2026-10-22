@@ -10,7 +10,7 @@ import type {
   AnkiSendOutcome,
   PickedDictionaryFile,
 } from "@easyimmerse/state";
-import { cacheKey, serverCachePath } from "@easyimmerse/state";
+import { actions, cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AccountUser,
   AddAlignmentRequest,
@@ -37,6 +37,7 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LinkRemoteRequest,
   ListDictionariesResponse,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
@@ -72,6 +73,7 @@ import type {
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
+  SyncStatus,
   TablePreview,
   TimedTextTrack,
   TrackSelection,
@@ -159,7 +161,17 @@ type TranslationDocumentArgs = MediaFileArgs & {
   body: TranslationDocumentSelection;
 };
 
-type UserRoleArgs = { userId: string; body: SetUserRoleRequest };
+type CreateUserArgs = { via: AccountVia; request: CreateUserRequest };
+
+type UserRoleArgs = {
+  via: AccountVia;
+  userId: string;
+  body: SetUserRoleRequest;
+};
+
+type UserArgs = { via: AccountVia; userId: string };
+
+type SessionArgs = { via: AccountVia; sessionId: string };
 
 type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 
@@ -342,6 +354,36 @@ export function accountPath(via: AccountVia, path: string): string {
   return via === "linkedRemote" ? `${linkedRemotePrefix}${path}` : path;
 }
 
+/** The data that rows pulled from a remote may have changed. */
+const pulledDataTags = [
+  "Projects",
+  "MediaFiles",
+  "Flashcards",
+  "AnkiPendingDeletions",
+  "SubtitleTracks",
+  "Alignments",
+  "Dictionaries",
+  "Review",
+] as const;
+
+/** What linking to a remote, or unlinking from it, changes: the status, the account reached through it, and whether projects are backed up. */
+const linkChangedTags = [
+  "SyncStatus",
+  "CurrentPrincipal",
+  "Projects",
+  "Sessions",
+  "Users",
+] as const;
+
+/** The cache tags that a new sync status makes stale, compared with the one before it. */
+function staleTagsBetween(before: SyncStatus, after: SyncStatus) {
+  if (after.pulled_revision !== before.pulled_revision) return pulledDataTags;
+  const hasPushed =
+    after.local_change_seq !== before.local_change_seq ||
+    after.link?.pushed_through_seq !== before.link?.pushed_through_seq;
+  return hasPushed ? (["Projects"] as const) : [];
+}
+
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
   reducerPath: serverCachePath,
@@ -362,6 +404,7 @@ export const backendApi = createApi({
     "CurrentPrincipal",
     "Sessions",
     "Review",
+    "SyncStatus",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -1096,63 +1139,66 @@ export const backendApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
-    /** What the connected server offers for signing in. The route needs no token. */
-    getServerAuthInfo: build.query<ServerAuthInfo, void>({
-      query: () => ({ method: "GET", path: "/auth/server" }),
+    /** What the server that `via` names offers for signing in. The route needs no token. */
+    getServerAuthInfo: build.query<ServerAuthInfo, AccountVia>({
+      query: (via) => ({
+        method: "GET",
+        path: accountPath(via, "/auth/server"),
+      }),
     }),
-    /** Who the app's token belongs to: the owner of the machine the server runs on, or an account. */
-    getCurrentPrincipal: build.query<CurrentPrincipal, void>({
-      query: () => ({ method: "GET", path: "/auth/me" }),
+    /** Who the token used on the server that `via` names belongs to: the owner of the machine the server runs on, or an account. */
+    getCurrentPrincipal: build.query<CurrentPrincipal, AccountVia>({
+      query: (via) => ({ method: "GET", path: accountPath(via, "/auth/me") }),
       providesTags: ["CurrentPrincipal"],
     }),
     /** Ends the session the app's token belongs to. */
     logOut: build.mutation<void, void>({
       query: () => ({ method: "POST", path: "/auth/logout" }),
     }),
-    /** The server's accounts, which only an administrator may list. */
-    listUsers: build.query<AccountUser[], void>({
-      query: () => ({ method: "GET", path: "/users" }),
+    /** The accounts of the server that `via` names, which only an administrator may list. */
+    listUsers: build.query<AccountUser[], AccountVia>({
+      query: (via) => ({ method: "GET", path: accountPath(via, "/users") }),
       providesTags: ["Users"],
     }),
-    createUser: build.mutation<AccountUser, CreateUserRequest>({
-      query: (request) => ({
+    createUser: build.mutation<AccountUser, CreateUserArgs>({
+      query: ({ via, request }) => ({
         method: "POST",
-        path: "/users",
+        path: accountPath(via, "/users"),
         body: { kind: "json", value: request },
       }),
       invalidatesTags: ["Users"],
     }),
     setUserRole: build.mutation<AccountUser, UserRoleArgs>({
-      query: ({ userId, body }) => ({
+      query: ({ via, userId, body }) => ({
         method: "PUT",
-        path: `/users/${encodeURIComponent(userId)}/role`,
+        path: accountPath(via, `/users/${encodeURIComponent(userId)}/role`),
         body: { kind: "json", value: body },
       }),
       // The account may be the app's own, whose role the Account section shows.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
-    deleteUser: build.mutation<void, string>({
-      query: (userId) => ({
+    deleteUser: build.mutation<void, UserArgs>({
+      query: ({ via, userId }) => ({
         method: "DELETE",
-        path: `/users/${encodeURIComponent(userId)}`,
+        path: accountPath(via, `/users/${encodeURIComponent(userId)}`),
       }),
       // The account may be the app's own, whose session then ends.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
-    /** The devices the app's account is logged in on, which only an account may list. */
-    listSessions: build.query<SessionList, void>({
-      query: () => ({
+    /** The devices the account is logged in on, which only an account may list. */
+    listSessions: build.query<SessionList, AccountVia>({
+      query: (via) => ({
         method: "GET",
-        path: accountPath("self", "/auth/sessions"),
+        path: accountPath(via, "/auth/sessions"),
       }),
       providesTags: ["Sessions"],
     }),
     /** Logs the account out on one of its devices. */
-    deleteSession: build.mutation<void, string>({
-      query: (sessionId) => ({
+    deleteSession: build.mutation<void, SessionArgs>({
+      query: ({ via, sessionId }) => ({
         method: "DELETE",
         path: accountPath(
-          "self",
+          via,
           `/auth/sessions/${encodeURIComponent(sessionId)}`,
         ),
       }),
@@ -1160,11 +1206,62 @@ export const backendApi = createApi({
       invalidatesTags: () => ["Sessions"],
     }),
     /** Mails the account another link that confirms its email address. */
-    requestConfirmationEmail: build.mutation<void, void>({
-      query: () => ({
+    requestConfirmationEmail: build.mutation<void, AccountVia>({
+      query: (via) => ({
         method: "POST",
-        path: accountPath("self", "/auth/confirmation-email"),
+        path: accountPath(via, "/auth/confirmation-email"),
       }),
+    }),
+    /**
+     * How the native app's built-in server keeps a copy of its data on the remote it is linked to.
+     * Each answer is compared with the one before it: changes pulled from the remote make the data they may touch stale and reload the preferences that follow the person,
+     * changes pushed to it change which projects are backed up, and a new latest conflict is reported to the person.
+     * The first answer has nothing to compare with, so it reports nothing; the entry is kept while nothing shows it, so that the next answer still has one.
+     */
+    getSyncStatus: build.query<SyncStatus, void>({
+      query: () => ({ method: "GET", path: "/sync/status" }),
+      providesTags: ["SyncStatus"],
+      keepUnusedDataFor: Infinity,
+      async onQueryStarted(_arg, { dispatch, getCacheEntry, queryFulfilled }) {
+        const before = getCacheEntry().data;
+        const { data } = await queryFulfilled.catch(() => ({ data: null }));
+        if (before === undefined || data === null) return;
+        const staleTags = staleTagsBetween(before, data);
+        if (staleTags.length > 0)
+          dispatch(backendApi.util.invalidateTags([...staleTags]));
+        if (data.pulled_revision !== before.pulled_revision)
+          dispatch(actions.syncPulledChanges());
+        const latestConflictId = data.link?.conflicts[0]?.id;
+        if (
+          latestConflictId !== undefined &&
+          latestConflictId !== before.link?.conflicts[0]?.id
+        )
+          dispatch(actions.syncConflictsReported(latestConflictId));
+      },
+    }),
+    /** Logs the built-in server in to a remote, or signs up there, to keep a copy of the device's data on it. */
+    linkSyncRemote: build.mutation<SyncStatus, LinkRemoteRequest>({
+      query: (request) => ({
+        method: "POST",
+        path: "/sync/link",
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: [...linkChangedTags],
+    }),
+    /** Logs the built-in server out of its remote. The data on the device stays. */
+    unlinkSyncRemote: build.mutation<void, void>({
+      query: () => ({ method: "DELETE", path: "/sync/link" }),
+      invalidatesTags: [...linkChangedTags],
+    }),
+    /** Asks the built-in server to sync with its remote now. The status then shows the round. */
+    runSync: build.mutation<void, void>({
+      query: () => ({ method: "POST", path: "/sync/run" }),
+      invalidatesTags: ["SyncStatus"],
+    }),
+    /** Forgets the conflicts the built-in server recorded while syncing. */
+    dismissSyncConflicts: build.mutation<void, void>({
+      query: () => ({ method: "DELETE", path: "/sync/conflicts" }),
+      invalidatesTags: ["SyncStatus"],
     }),
   }),
 });
@@ -1201,6 +1298,7 @@ export const {
   useGetServerAuthInfoQuery,
   useListUsersQuery,
   useListSessionsQuery,
+  useGetSyncStatusQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
 } = backendApi;

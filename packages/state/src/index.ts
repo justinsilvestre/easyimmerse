@@ -3,7 +3,9 @@ export {
   type SignInFormView,
   selectAccountServerOptions,
   selectCanSubmitSignIn,
+  selectIsLinking,
   selectIsSigningOut,
+  selectIsUnlinking,
   selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
@@ -324,6 +326,7 @@ export {
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
+export { isOwnTokenRefused } from "./server/isOwnTokenRefused.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
 export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
 export type {
@@ -338,6 +341,7 @@ export type {
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
 export type { AccountVia, WorkHome } from "./server/serverSelectors.ts";
 export {
+  accountViaOf,
   selectAccountVia,
   selectBundledServerPlatform,
   selectServerConfig,
@@ -350,5 +354,18 @@ export type {
 } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
+export { type SyncAction, syncActions } from "./sync/syncActions.ts";
+export {
+  selectIsDismissingSyncConflicts,
+  selectIsSyncRunRequested,
+  selectSyncLink,
+  selectSyncStatus,
+} from "./sync/syncSelectors.ts";
+export {
+  dismissSyncConflictsRequestId,
+  runSyncRequestId,
+  type SyncState,
+  syncConflictsNoticeKey,
+} from "./sync/updateSync.ts";
 export type { Clock } from "./timers/clock.ts";
 export { systemClock } from "./timers/clock.ts";

@@ -15,6 +15,7 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LinkRemoteRequest,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
   LookupQuery,
@@ -37,6 +38,7 @@ import type {
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
+  SyncStatus,
   TableLayout,
   TablePreview,
   TimedTextTrack,
@@ -60,6 +62,7 @@ import type {
   PickedDictionaryFile,
   PickedMediaFile,
 } from "../platform/effects.ts";
+import type { AccountVia } from "./serverSelectors.ts";
 
 /** A request to the server that an update may send, one member per endpoint an update needs. */
 export type ServerRequest =
@@ -205,18 +208,31 @@ export type ServerRequest =
     }
   /** Ends the session the app's token belongs to. */
   | { kind: "logOut" }
-  /** Creates an account on the server, as only an administrator may. */
-  | { kind: "createUser"; request: CreateUserRequest }
-  /** Gives an account another role, as only an administrator may. */
-  | { kind: "setUserRole"; userId: string; role: AccountRole }
-  /** Deletes an account and its sessions, as only an administrator may. */
-  | { kind: "deleteUser"; userId: string }
-  /** Fetches anew who the app's token belongs to, as after the account's email address is confirmed. */
-  | { kind: "getCurrentPrincipal" }
+  /** Creates an account on the server that `via` names, as only an administrator may. */
+  | { kind: "createUser"; via: AccountVia; request: CreateUserRequest }
+  /** Gives an account on the server that `via` names another role, as only an administrator may. */
+  | { kind: "setUserRole"; via: AccountVia; userId: string; role: AccountRole }
+  /** Deletes an account on the server that `via` names, and its sessions, as only an administrator may. */
+  | { kind: "deleteUser"; via: AccountVia; userId: string }
+  /** Fetches anew who the token used on the server that `via` names belongs to, as after the account's email address is confirmed. */
+  | { kind: "getCurrentPrincipal"; via: AccountVia }
   /** Logs the account out on one of its devices. `isCurrent` tells whether it is this one; it is not sent. */
-  | { kind: "deleteSession"; sessionId: string; isCurrent: boolean }
+  | {
+      kind: "deleteSession";
+      via: AccountVia;
+      sessionId: string;
+      isCurrent: boolean;
+    }
   /** Mails the account another link that confirms its email address. */
-  | { kind: "requestConfirmationEmail" }
+  | { kind: "requestConfirmationEmail"; via: AccountVia }
+  /** Logs the built-in server in to a remote, or signs up there, to keep a copy of the device's work on it. */
+  | { kind: "linkSyncRemote"; request: LinkRemoteRequest }
+  /** Logs the built-in server out of the remote it is linked to. The work on the device stays. */
+  | { kind: "unlinkSyncRemote" }
+  /** Asks the built-in server to sync with its linked remote now. */
+  | { kind: "runSync" }
+  /** Forgets the conflicts the built-in server recorded while syncing. */
+  | { kind: "dismissSyncConflicts" }
   /** Lists the cards of a review session of the project, in the order they are shown. */
   | { kind: "getReviewQueue"; projectId: string }
   /** Records the user's rating of a card, with the time from the card appearing to the rating. */
@@ -310,6 +326,13 @@ export type ServerResponses = {
   deleteSession: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   requestConfirmationEmail: void;
+  linkSyncRemote: SyncStatus;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  unlinkSyncRemote: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  runSync: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  dismissSyncConflicts: void;
   getReviewQueue: ReviewQueue;
   answerReview: ReviewAnswerResponse;
   undoReviewAnswer: ReviewAnswerUndone;

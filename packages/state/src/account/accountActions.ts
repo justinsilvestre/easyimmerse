@@ -35,8 +35,11 @@ export const accountActions = {
     ({ type: "passwordResetAnswered", outcome }) as const,
   /** The person went back from asking for a reset link to logging in. */
   passwordResetLeft: () => ({ type: "passwordResetLeft" }) as const,
-  /** The person asked to log out of the account the app is connected through. */
+  /** The person asked to log out of the account the app is connected through, or that the native app's built-in server is linked to. */
   signOutRequested: () => ({ type: "signOutRequested" }) as const,
+  /** The person asked to log in again to the remote that logged the native app's built-in server out, as the account with this email address. */
+  relinkRequested: (serverUrl: string, email: string) =>
+    ({ type: "relinkRequested", serverUrl, email }) as const,
   /** The person asked to log the account out on one of its devices, which may be this one. */
   deviceLogOutRequested: (sessionId: string, isCurrent: boolean) =>
     ({ type: "deviceLogOutRequested", sessionId, isCurrent }) as const,

@@ -4,6 +4,7 @@ import { updated } from "../app/updated.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { isAborted } from "../server/isAborted.ts";
 import { isSettled } from "../server/isSettled.ts";
+import { accountViaOf } from "../server/serverSelectors.ts";
 import {
   type ConfirmationEmailStatus,
   confirmationEmailRequestId,
@@ -17,8 +18,9 @@ import {
 export function updateConfirmationEmail(
   status: ConfirmationEmailStatus,
   action: AppAction,
-  { operations }: Pick<ReadableState, "operations">,
+  { operations, server }: Pick<ReadableState, "operations" | "server">,
 ) {
+  const via = accountViaOf(server.config);
   if (action.type === "confirmationEmailRequested") {
     if (selectIsRequestInFlight({ operations }, confirmationEmailRequestId))
       return updated(status);
@@ -27,7 +29,7 @@ export function updateConfirmationEmail(
       {
         type: "sendRequest",
         id: confirmationEmailRequestId,
-        request: { kind: "requestConfirmationEmail" },
+        request: { kind: "requestConfirmationEmail", via },
       },
     );
   }
@@ -44,6 +46,6 @@ export function updateConfirmationEmail(
       retryAfterSeconds: outcome.error.retryAfterSeconds,
     });
   if (outcome.error.status === 409)
-    return updated({ kind: "idle" }, principalRefresh);
+    return updated({ kind: "idle" }, principalRefresh(via));
   return updated({ kind: "failed", failure: outcome.error });
 }
