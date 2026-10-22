@@ -5,6 +5,9 @@ use serde_json::{Map, Value};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
+use crate::account::AccountRole;
+use crate::media_file::MediaFileId;
+
 /// A table whose rows sync between servers. Each name is the table's name in the server's database.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -104,4 +107,143 @@ pub enum PushOutcomeKind {
     ParentDeleted,
     /// The row cannot be stored: its table or key is not the owner's to sync, or its data lacks a column.
     Rejected,
+}
+
+/// Whether linking a device creates a new account on the remote or logs in to an existing one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum SignInMode {
+    Login,
+    Signup,
+}
+
+/// Whether a remote is an account server reached over the internet, or a server on the local network.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum RemoteKind {
+    Account,
+    Lan,
+}
+
+/// How a built-in server keeps a copy of its data on a remote.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SyncStatus {
+    /// The account link of the device's own data. None when the device is not linked, and always for an account.
+    pub link: Option<SyncLink>,
+    /// Raised each time rows pulled from the remote change this server's data. Zero for an account.
+    pub pulled_revision: u64,
+    /// The last change sequence this server gave out. Zero for an account.
+    pub local_change_seq: u64,
+}
+
+/// A link to a remote, and how far syncing with it has come.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SyncLink {
+    pub kind: RemoteKind,
+    pub server_url: String,
+    pub account_email: String,
+    pub account_role: AccountRole,
+    pub linked_at_ms: u64,
+    /// When the latest successful round began. Every change made on this device before then is on the remote.
+    pub last_synced_at_ms: Option<u64>,
+    /// This server's change sequence up to which the remote holds every change.
+    pub pushed_through_seq: u64,
+    pub state: SyncLinkState,
+    /// The media file being uploaded, while one is.
+    pub transfer: Option<MediaTransfer>,
+    /// The 20 most recent conflicts, newest first.
+    pub conflicts: Vec<SyncConflict>,
+    /// How many conflicts there are since they were last dismissed.
+    pub conflict_count: u64,
+}
+
+/// What syncing with a remote is doing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+#[ts(export)]
+pub enum SyncLinkState {
+    Idle,
+    Syncing,
+    /// The remote could not be reached since this time.
+    Unreachable {
+        since_ms: u64,
+    },
+    /// The remote ended this device's session, so the person must log in again.
+    LoggedOut,
+    /// The remote refused a request or answered in a way this server does not understand.
+    Failed {
+        code: String,
+        message: String,
+    },
+}
+
+/// The progress of a media file being uploaded to a remote.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct MediaTransfer {
+    pub media_file_id: MediaFileId,
+    pub name: String,
+    pub sent_bytes: u64,
+    pub total_bytes: u64,
+}
+
+/// Which of two changes made at once was kept.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum ConflictKept {
+    /// The change made on this device.
+    ThisDevice,
+    /// The change made on another device.
+    OtherDevice,
+    /// The row was deleted on another device, so the change made on this device was dropped.
+    Deletion,
+}
+
+/// A row that this device and another changed at once.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SyncConflict {
+    pub id: String,
+    /// Names the row for the person, such as "a flashcard in Spanish practice".
+    pub description: String,
+    pub kept: ConflictKept,
+    pub detected_at_ms: u64,
+}
+
+/// Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct LinkRemoteRequest {
+    /// The remote's address, such as `https://cloud.example.com`.
+    pub server_url: String,
+    pub mode: SignInMode,
+    pub email: String,
+    pub password: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_link_state_names_its_kind_beside_its_fields() {
+        let state = SyncLinkState::Unreachable { since_ms: 5 };
+        assert_eq!(
+            serde_json::to_value(state).unwrap(),
+            serde_json::json!({ "kind": "unreachable", "since_ms": 5 })
+        );
+    }
+
+    #[test]
+    fn a_link_state_without_fields_is_only_its_kind() {
+        assert_eq!(
+            serde_json::to_value(SyncLinkState::LoggedOut).unwrap(),
+            serde_json::json!({ "kind": "logged_out" })
+        );
+    }
 }
