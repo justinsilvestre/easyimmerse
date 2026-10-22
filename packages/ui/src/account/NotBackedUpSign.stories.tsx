@@ -39,7 +39,7 @@ const savedWord = actions.flashcardStarted(
 function ScreenWithFooter() {
   return (
     <div className="flex h-screen flex-col">
-      <p className="flex-1 p-4 text-fg-muted">The screen above.</p>
+      <div className="flex-1" />
       <AppFooter />
     </div>
   );
