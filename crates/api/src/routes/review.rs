@@ -3,12 +3,12 @@
 //! Every route takes the client's UTC offset, which places the current time in the user's local day:
 //! a day ends at 4 a.m. local time, and new cards are counted per day.
 
-use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use std::collections::HashSet;
+use std::sync::Mutex;
 
+use axum::Json;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::{Extension, Json};
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
@@ -21,7 +21,8 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
+use crate::import_jobs::lock;
 use crate::now_ms::now_ms;
 use crate::state::AppState;
 
@@ -83,11 +84,10 @@ pub async fn get_review_summary(
 )]
 pub async fn list_review_counts(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Query(query): Query<ReviewMomentQuery>,
 ) -> Result<Json<ListReviewCountsResponse>, ApiFailure> {
     let moment = query.now();
-    let owner = principal.owner_id();
     let projects = state
         .with_storage(move |storage| storage.list_review_counts(&owner, moment))
         .await?;
@@ -114,7 +114,7 @@ pub async fn list_review_counts(
 )]
 pub async fn get_review_queue(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Path(project_id): Path<ProjectId>,
     Query(query): Query<ReviewMomentQuery>,
 ) -> Result<Json<ReviewQueue>, ApiFailure> {
@@ -122,7 +122,7 @@ pub async fn get_review_queue(
     let queue = state
         .with_storage(move |storage| storage.review_queue(&project_id, moment))
         .await?;
-    fit_parameters_when_due(&state, principal.owner_id(), moment);
+    fit_parameters_when_due(&state, owner, moment);
     Ok(Json(queue))
 }
 
@@ -130,15 +130,19 @@ pub async fn get_review_queue(
 /// The fit takes seconds, so it reads the log and keeps its result in two short calls to the database rather than one long one.
 /// A fit that fails leaves the fit due, so that the next session tries again.
 fn fit_parameters_when_due(state: &AppState, owner: OwnerId, moment: ReviewMoment) {
-    let is_fitting = Arc::clone(&state.is_fitting_review_parameters);
-    if is_fitting.swap(true, Ordering::AcqRel) {
+    if !begin_fit(&state.owners_fitting_review_parameters, &owner) {
         return;
     }
     let state = state.clone();
     tokio::spawn(async move {
-        fit_and_save(&state, owner, moment).await;
-        is_fitting.store(false, Ordering::Release);
+        fit_and_save(&state, owner.clone(), moment).await;
+        lock(&state.owners_fitting_review_parameters).remove(&owner.0);
     });
+}
+
+/// Records that a fit for the owner runs, and tells whether none ran already.
+fn begin_fit(fitting: &Mutex<HashSet<String>>, owner: &OwnerId) -> bool {
+    lock(fitting).insert(owner.0.clone())
 }
 
 /// Fits the parameters of the owner's reviews to its answers.
@@ -311,4 +315,27 @@ pub async fn raise_review_allowance(
         })
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn owner(id: &str) -> OwnerId {
+        OwnerId(id.to_string())
+    }
+
+    #[test]
+    fn a_second_fit_of_the_same_owner_does_not_begin() {
+        let fitting = Mutex::default();
+        begin_fit(&fitting, &owner("a"));
+        assert!(!begin_fit(&fitting, &owner("a")));
+    }
+
+    #[test]
+    fn a_fit_of_another_owner_begins_beside_a_running_one() {
+        let fitting = Mutex::default();
+        begin_fit(&fitting, &owner("a"));
+        assert!(begin_fit(&fitting, &owner("b")));
+    }
 }

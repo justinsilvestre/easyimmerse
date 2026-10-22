@@ -1,5 +1,5 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -43,8 +43,8 @@ pub struct AppState {
     pub mail: Option<MailService>,
     /// The recent confirmation mails, which make the next one to the same account wait.
     pub confirmation_mails: Arc<MailThrottle>,
-    /// Whether a fit of the FSRS parameters is running, so that no second one starts beside it.
-    pub is_fitting_review_parameters: Arc<AtomicBool>,
+    /// The owners whose FSRS parameters are being fitted, so that no second fit for the same owner starts beside one.
+    pub owners_fitting_review_parameters: Arc<Mutex<HashSet<String>>>,
 }
 
 impl AppState {
@@ -68,7 +68,7 @@ impl AppState {
             session_refreshes: Arc::default(),
             mail: None,
             confirmation_mails: Arc::default(),
-            is_fitting_review_parameters: Arc::default(),
+            owners_fitting_review_parameters: Arc::default(),
         }
     }
 
