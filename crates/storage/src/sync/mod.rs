@@ -22,6 +22,6 @@ mod inbox_tests;
 #[cfg(test)]
 mod push_answers_tests;
 #[cfg(test)]
-mod sync_test_support;
+pub(crate) mod sync_test_support;
 #[cfg(test)]
 mod tests;

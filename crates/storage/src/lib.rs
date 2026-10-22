@@ -11,6 +11,9 @@ mod dictionaries;
 mod email_tokens;
 mod error;
 mod flashcards;
+mod media_copies;
+#[cfg(test)]
+mod media_copies_tests;
 mod media_files;
 mod migrations;
 mod new_row;
@@ -37,6 +40,7 @@ pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryDump, DictionaryId, StoredDictionary};
 pub use email_tokens::{EmailTokenPurpose, NewEmailToken};
 pub use error::StorageError;
+pub use media_copies::{MediaCopy, NewMediaCopy};
 pub use owned_paths::OwnedPath;
 pub use owners::{LAUNCH_OWNER, OwnerId};
 pub use preferences::is_synced_preference;
@@ -65,6 +69,7 @@ use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
+use easyimmerse_core::media_copy::StoredCopy;
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::review::{
@@ -986,6 +991,59 @@ impl Storage {
     }
 
     /// Records that the remote holds the media file's bytes.
+    /// Records a copy of a media file whose file is written, replacing any earlier one, and the choice to keep it.
+    pub fn record_media_copy(&self, copy: &NewMediaCopy) -> Result<StoredCopy, StorageError> {
+        self.write(|conn| media_copies::record_media_copy(conn, copy))
+    }
+
+    pub fn get_media_copy(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Option<MediaCopy>, StorageError> {
+        self.read(|conn| media_copies::get_media_copy(conn, media_file_id))
+    }
+
+    /// Removes the record of a copy and returns the name of its file.
+    pub fn remove_media_copy(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Option<String>, StorageError> {
+        self.write(|conn| media_copies::remove_media_copy(conn, media_file_id))
+    }
+
+    /// Lists the owner's stored copies, largest first.
+    pub fn list_media_copies(&self, owner: &OwnerId) -> Result<Vec<StoredCopy>, StorageError> {
+        self.read(|conn| media_copies::list_media_copies(conn, owner))
+    }
+
+    /// How many bytes the owner's stored copies take.
+    pub fn media_copies_size(&self, owner: &OwnerId) -> Result<u64, StorageError> {
+        self.read(|conn| media_copies::media_copies_size(conn, owner))
+    }
+
+    /// Records whether the person wants a copy kept on a server; turning it off removes this server's copy.
+    pub fn set_upload_choice(
+        &self,
+        media_file_id: &MediaFileId,
+        is_upload_chosen: bool,
+    ) -> Result<MediaFile, StorageError> {
+        self.write(|conn| media_copies::set_upload_choice(conn, media_file_id, is_upload_chosen))
+    }
+
+    /// Takes the names of the files whose copies are gone, for the caller to delete.
+    pub fn take_released_copy_files(&self) -> Result<Vec<String>, StorageError> {
+        self.write(media_copies::take_released_copy_files)
+    }
+
+    /// Lists the owner's media files chosen for a copy on a server, of which the remote holds none.
+    pub fn list_media_files_to_upload(
+        &self,
+        owner: &OwnerId,
+        remote_id: &str,
+    ) -> Result<Vec<MediaFile>, StorageError> {
+        self.read(|conn| media_files::list_media_files_to_upload(conn, owner, remote_id))
+    }
+
     pub fn record_remote_copy(
         &self,
         remote_id: &str,

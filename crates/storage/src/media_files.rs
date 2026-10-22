@@ -5,12 +5,18 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
 use crate::new_row::{generate_id, now_ms};
+use crate::owners::OwnerId;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
      browser_file_last_modified_ms, created_at_ms, track_selection_json, origin_plugin, \
      origin_locator, translation_media_file_id, is_upload_chosen";
+/// The stored columns and whether this server keeps a copy of the bytes, for reading.
+const SELECTED_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
+     browser_file_last_modified_ms, created_at_ms, track_selection_json, origin_plugin, \
+     origin_locator, translation_media_file_id, is_upload_chosen, \
+     EXISTS (SELECT 1 FROM media_copies c WHERE c.media_file_id = media_files.id)";
 
 /// Lists a project's media files, oldest first.
 pub fn list_media_files(
@@ -18,7 +24,7 @@ pub fn list_media_files(
     project_id: &ProjectId,
 ) -> Result<Vec<MediaFile>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {MEDIA_FILE_COLUMNS} FROM media_files WHERE project_id = ?1 \
+        "SELECT {SELECTED_COLUMNS} FROM media_files WHERE project_id = ?1 \
          ORDER BY created_at_ms, rowid"
     ))?;
     let media_files = statement
@@ -27,9 +33,30 @@ pub fn list_media_files(
     Ok(media_files)
 }
 
+/// Lists the owner's media files whose person chose to keep a copy on a server and of which the remote holds none,
+/// oldest first.
+pub fn list_media_files_to_upload(
+    conn: &Connection,
+    owner: &OwnerId,
+    remote_id: &str,
+) -> Result<Vec<MediaFile>, StorageError> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT {SELECTED_COLUMNS} FROM media_files \
+         WHERE is_upload_chosen = 1 \
+         AND project_id IN (SELECT id FROM projects WHERE owner_id = ?1) \
+         AND NOT EXISTS (SELECT 1 FROM remote_copies r \
+             WHERE r.remote_id = ?2 AND r.media_file_id = media_files.id) \
+         ORDER BY created_at_ms, rowid"
+    ))?;
+    let media_files = statement
+        .query_map(params![owner.0, remote_id], read_media_file)?
+        .collect::<Result<_, _>>()?;
+    Ok(media_files)
+}
+
 pub fn get_media_file(conn: &Connection, id: &MediaFileId) -> Result<MediaFile, StorageError> {
     conn.query_row(
-        &format!("SELECT {MEDIA_FILE_COLUMNS} FROM media_files WHERE id = ?1"),
+        &format!("SELECT {SELECTED_COLUMNS} FROM media_files WHERE id = ?1"),
         params![id.0],
         read_media_file,
     )
@@ -55,6 +82,7 @@ pub fn add_media_file(
         track_selection_json: None,
         translation_media_file_id: None,
         is_upload_chosen: false,
+        has_stored_copy: false,
     };
     insert_media_file(conn, &media_file)?;
     Ok(media_file)
@@ -201,6 +229,7 @@ fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
         track_selection_json: row.get(8)?,
         translation_media_file_id: row.get::<_, Option<String>>(11)?.map(MediaFileId),
         is_upload_chosen: row.get(12)?,
+        has_stored_copy: row.get(13)?,
     })
 }
 

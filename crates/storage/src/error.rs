@@ -66,6 +66,8 @@ pub enum StorageError {
     RemoteNotLinked,
     #[error("this device is already linked to a server; unlink it first")]
     AlreadyLinked,
+    #[error("the copy takes {size} bytes, and {used} of the {quota} bytes you may keep are taken")]
+    QuotaExceeded { used: u64, quota: u64, size: u64 },
 }
 
 impl From<DictionaryError> for StorageError {

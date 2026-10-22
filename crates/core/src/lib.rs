@@ -7,6 +7,7 @@ pub mod flashcard;
 pub mod found_subtitle_tracks;
 pub mod language_code;
 pub mod lookup;
+pub mod media_copy;
 pub mod media_file;
 pub mod project;
 pub mod providers;
