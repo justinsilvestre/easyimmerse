@@ -44,6 +44,44 @@ describe("describeDevice", () => {
     expect(describeDevice(desktopApp)).toBe("easyImmerse desktop app");
   });
 
+  describe("for a native app's built-in server", () => {
+    it("names the desktop app on macOS", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (macos)")).toBe(
+        "easyImmerse desktop app (macOS)",
+      );
+    });
+
+    it("names the desktop app on Windows", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (windows)")).toBe(
+        "easyImmerse desktop app (Windows)",
+      );
+    });
+
+    it("names the desktop app on Linux", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (linux)")).toBe(
+        "easyImmerse desktop app (Linux)",
+      );
+    });
+
+    it("names the mobile app on iOS", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (ios)")).toBe(
+        "easyImmerse mobile app (iOS)",
+      );
+    });
+
+    it("names the mobile app on Android", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (android)")).toBe(
+        "easyImmerse mobile app (Android)",
+      );
+    });
+
+    it("names the app alone on an unrecognized system", () => {
+      expect(describeDevice("easyImmerse/0.1.0 (plan9)")).toBe(
+        "easyImmerse app",
+      );
+    });
+  });
+
   it("names the system alone when the browser is unknown", () => {
     expect(describeDevice("Mozilla/5.0 (Macintosh)")).toBe("macOS");
   });
