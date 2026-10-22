@@ -70,6 +70,8 @@ import type {
   SetUserRoleRequest,
   SourceStepRequest,
   SourceStepResponse,
+  StorageStatus,
+  StoredCopy,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -79,6 +81,7 @@ import type {
   TrackSelection,
   TracksResponse,
   TranslationDocumentSelection,
+  UploadChoiceRequest,
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
@@ -119,6 +122,10 @@ import {
   type ServerQuery,
   sendFlashcardsToAnki,
 } from "./sendToAnki.ts";
+import {
+  type StoredCopyUploadArgs,
+  uploadStoredCopy,
+} from "./storedCopyUpload.ts";
 import { utcOffsetMinOf } from "./utcOffsetMinOf.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
@@ -160,6 +167,8 @@ type AlignmentArgs = MediaFileArgs & { alignmentId: string };
 type TranslationDocumentArgs = MediaFileArgs & {
   body: TranslationDocumentSelection;
 };
+
+type UploadChoiceArgs = MediaFileArgs & { isUploadChosen: boolean };
 
 type CreateUserArgs = { via: AccountVia; request: CreateUserRequest };
 
@@ -381,7 +390,12 @@ function staleTagsBetween(before: SyncStatus, after: SyncStatus) {
   const hasPushed =
     after.local_change_seq !== before.local_change_seq ||
     after.link?.pushed_through_seq !== before.link?.pushed_through_seq;
-  return hasPushed ? (["Projects"] as const) : [];
+  if (hasPushed) return ["Projects", "StorageStatus"] as const;
+  // An upload that began or ended changes which copies the remote keeps.
+  const hasTransferChanged =
+    after.link?.transfer?.media_file_id !==
+    before.link?.transfer?.media_file_id;
+  return hasTransferChanged ? (["StorageStatus"] as const) : [];
 }
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
@@ -405,6 +419,7 @@ export const backendApi = createApi({
     "Sessions",
     "Review",
     "SyncStatus",
+    "StorageStatus",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -702,6 +717,49 @@ export const backendApi = createApi({
         { type: "Projects", id: projectId },
         "Projects",
         "Alignments",
+      ],
+    }),
+    /** How much of the upload allowance the copies of media files kept on the server that `via` names take, and which copies they are. */
+    getStorageStatus: build.query<StorageStatus, AccountVia>({
+      query: (via) => ({ method: "GET", path: accountPath(via, "/storage") }),
+      providesTags: ["StorageStatus"],
+    }),
+    /** Records whether to keep a copy of a media file's bytes on a server. Turning it off deletes the copy. */
+    setUploadChoice: build.mutation<MediaFile, UploadChoiceArgs>({
+      query: ({ isUploadChosen, ...args }) => ({
+        method: "PUT",
+        path: `${mediaFilePath(args)}/upload-choice`,
+        body: {
+          kind: "json",
+          value: {
+            is_upload_chosen: isUploadChosen,
+          } satisfies UploadChoiceRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+        "StorageStatus",
+        "SyncStatus",
+      ],
+    }),
+    /** Sends the bytes of a file a browser holds for the server to keep a copy of, which also records the choice to keep one. */
+    uploadStoredCopy: build.mutation<StoredCopy, StoredCopyUploadArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        uploadStoredCopy(args, api.extra as BackendThunkExtra, baseQuery),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+        "StorageStatus",
+      ],
+    }),
+    /** Has the native app's built-in server download the copy that its remote keeps of a media file. It answers once the download is done. */
+    fetchStoredCopy: build.mutation<StoredCopy, MediaFileArgs>({
+      query: (args) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/stored-copy/fetch`,
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+        "StorageStatus",
       ],
     }),
     getMediaTracks: build.query<TracksResponse, MediaFileArgs>({
@@ -1299,6 +1357,7 @@ export const {
   useListUsersQuery,
   useListSessionsQuery,
   useGetSyncStatusQuery,
+  useGetStorageStatusQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
 } = backendApi;

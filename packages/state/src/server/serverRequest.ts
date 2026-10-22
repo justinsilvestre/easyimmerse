@@ -35,6 +35,7 @@ import type {
   ReviewRating,
   SourceStepRequest,
   SourceStepResponse,
+  StoredCopy,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -233,6 +234,22 @@ export type ServerRequest =
   | { kind: "runSync" }
   /** Forgets the conflicts the built-in server recorded while syncing. */
   | { kind: "dismissSyncConflicts" }
+  /** Records whether to keep a copy of a media file's bytes on a server. */
+  | {
+      kind: "setUploadChoice";
+      projectId: string;
+      mediaFileId: string;
+      isUploadChosen: boolean;
+    }
+  /** Sends the bytes of a file a browser holds for the server to keep a copy of. */
+  | {
+      kind: "uploadStoredCopy";
+      projectId: string;
+      mediaFileId: string;
+      file: PickedMediaFile;
+    }
+  /** Has the built-in server download the copy its remote keeps of a media file. */
+  | { kind: "fetchStoredCopy"; projectId: string; mediaFileId: string }
   /** Lists the cards of a review session of the project, in the order they are shown. */
   | { kind: "getReviewQueue"; projectId: string }
   /** Records the user's rating of a card, with the time from the card appearing to the rating. */
@@ -333,6 +350,9 @@ export type ServerResponses = {
   runSync: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   dismissSyncConflicts: void;
+  setUploadChoice: MediaFile;
+  uploadStoredCopy: StoredCopy;
+  fetchStoredCopy: StoredCopy;
   getReviewQueue: ReviewQueue;
   answerReview: ReviewAnswerResponse;
   undoReviewAnswer: ReviewAnswerUndone;

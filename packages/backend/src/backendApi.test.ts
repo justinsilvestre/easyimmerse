@@ -1037,7 +1037,8 @@ function createStatusClient(...statuses: SyncStatus[]) {
 
 /** A store over the client that records the type of every action dispatched to it. */
 function createRecordingStore(client: BackendClient) {
-  const dispatched: { type: string; conflictId?: string }[] = [];
+  const dispatched: { type: string; conflictId?: string; payload?: unknown }[] =
+    [];
   const recording: Middleware = () => (next) => (action) => {
     dispatched.push(action as { type: string });
     return next(action);
@@ -1079,6 +1080,12 @@ async function fetchStatuses(...statuses: SyncStatus[]) {
 
 const typesOf = (dispatched: { type: string }[]) =>
   dispatched.map(({ type }) => type);
+
+/** The tags that the dispatched invalidations named. */
+const invalidatedTags = (dispatched: { type: string; payload?: unknown }[]) =>
+  dispatched
+    .filter(({ type }) => type.endsWith("invalidateTags"))
+    .flatMap(({ payload }) => payload as string[]);
 
 describe("getSyncStatus", () => {
   it("sends GET /sync/status", async () => {
@@ -1139,6 +1146,31 @@ describe("getSyncStatus", () => {
     expect(projectListings()).toBe(1);
   });
 
+  it("checks the storage again once changes are pushed", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, pushed_through_seq: 5 },
+    });
+    expect(invalidatedTags(dispatched)).toContain("StorageStatus");
+  });
+
+  it("checks the storage again once an upload ends", async () => {
+    const uploading = {
+      ...syncStatus,
+      link: {
+        ...syncLink,
+        transfer: {
+          media_file_id: "m1",
+          name: "film.mkv",
+          sent_bytes: 1,
+          total_bytes: 2,
+        },
+      },
+    };
+    const { dispatched } = await fetchStatuses(uploading, syncStatus);
+    expect(invalidatedTags(dispatched)).toContain("StorageStatus");
+  });
+
   it("reports a new latest conflict", async () => {
     const { dispatched } = await fetchStatuses(syncStatus, {
       ...syncStatus,
@@ -1156,5 +1188,98 @@ describe("getSyncStatus", () => {
     };
     const { dispatched } = await fetchStatuses(withConflict, withConflict);
     expect(typesOf(dispatched)).not.toContain("syncConflictsReported");
+  });
+});
+
+const storedCopy = {
+  media_file_id: "m1",
+  project_id: "p1",
+  project_name: "Spanish practice",
+  name: "film.mkv",
+  size_bytes: 2,
+  stored_at_ms: 0,
+};
+
+/** Answers the media list, counting how often it is asked for, and every other request with a stored copy. */
+function createMediaListClient() {
+  let listings = 0;
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) => {
+      if (request.path !== "/projects/p1/media")
+        return { data: storedCopy as T };
+      listings += 1;
+      return { data: { media_files: [] } as T };
+    },
+  };
+  return { client, listings: () => listings };
+}
+
+describe("the storage endpoints", () => {
+  it("send GET /storage for getStorageStatus on the server itself", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getStorageStatus.initiate("self"),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/storage" }]);
+  });
+
+  it("send GET /sync/remote/storage for getStorageStatus on the linked remote", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getStorageStatus.initiate("linkedRemote"),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/sync/remote/storage" },
+    ]);
+  });
+
+  it("put the choice for setUploadChoice", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setUploadChoice.initiate({
+        ...mediaArgs,
+        isUploadChosen: true,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "PUT",
+        path: "/projects/p1/media/m1/upload-choice",
+        body: { kind: "json", value: { is_upload_chosen: true } },
+      },
+    ]);
+  });
+
+  it("send POST .../stored-copy/fetch for fetchStoredCopy", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "POST", path: "/projects/p1/media/m1/stored-copy/fetch" },
+    ]);
+  });
+
+  it("list the project's media files again once the choice is recorded", async () => {
+    const { client, listings } = createMediaListClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await store.dispatch(
+      backendApi.endpoints.setUploadChoice.initiate({
+        ...mediaArgs,
+        isUploadChosen: false,
+      }),
+    );
+    await vi.waitFor(() => expect(listings()).toBe(2));
+  });
+
+  it("list the project's media files again once a copy is fetched", async () => {
+    const { client, listings } = createMediaListClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await store.dispatch(
+      backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
+    );
+    await vi.waitFor(() => expect(listings()).toBe(2));
   });
 });

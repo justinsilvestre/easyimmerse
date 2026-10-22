@@ -265,6 +265,21 @@ export const requestEndpoints = {
     backendApi.endpoints.dismissSyncConflicts.initiate(undefined, {
       track: false,
     }),
+  setUploadChoice: ({ projectId, mediaFileId, isUploadChosen }) =>
+    backendApi.endpoints.setUploadChoice.initiate(
+      { projectId, mediaFileId, isUploadChosen },
+      { track: false },
+    ),
+  uploadStoredCopy: ({ projectId, mediaFileId, file }) =>
+    backendApi.endpoints.uploadStoredCopy.initiate(
+      { projectId, mediaFileId, file },
+      { track: false },
+    ),
+  fetchStoredCopy: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.fetchStoredCopy.initiate(
+      { projectId, mediaFileId },
+      { track: false },
+    ),
   getReviewQueue: ({ projectId }) =>
     backendApi.endpoints.getReviewQueue.initiate(projectId, { track: false }),
   answerReview: ({ projectId, flashcardId, rating, durationMs }) =>
