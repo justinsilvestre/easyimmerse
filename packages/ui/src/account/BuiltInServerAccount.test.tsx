@@ -149,6 +149,23 @@ describe("BuiltInServerAccount", () => {
       expect(link.getAttribute("href")).toBe("#settings-storage");
     });
 
+    it("tells when a media file did not fit on the server", async () => {
+      renderBuiltIn({
+        ...linked,
+        refused_upload: {
+          media_file_id: "m1",
+          name: "Episode 4.mp4",
+          code: "quota_exceeded",
+          message: "the copy takes 20 bytes, and only 10 bytes are free",
+        },
+      });
+      expect(
+        await screen.findByText(
+          "Couldn't keep a copy of Episode 4.mp4 on cloud.example.org: there isn't enough room there.",
+        ),
+      ).toBeDefined();
+    });
+
     it("lists the devices the account is logged in on", async () => {
       renderBuiltIn(linked);
       expect(await screen.findByText("This device")).toBeDefined();

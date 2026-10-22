@@ -135,6 +135,20 @@ export const Synchronizing: Story = {
   parameters: builtInServer({ ...linked, state: { kind: "syncing" } }),
 };
 
+/** A round that copied everything but one media file, which did not fit in the account's room on the server. */
+export const UploadRefused: Story = {
+  parameters: builtInServer({
+    ...linked,
+    refused_upload: {
+      media_file_id: "m1",
+      name: "Episode 4.mp4",
+      code: "quota_exceeded",
+      message:
+        "the copy takes 734003200 bytes, and only 52428800 bytes are free",
+    },
+  }),
+};
+
 export const LinkedAsAdministrator: Story = {
   parameters: builtInServer({ ...linked, account_role: "administrator" }),
 };

@@ -61,6 +61,7 @@ const linkIn = (state: SyncLinkState): SyncLink => ({
   pushed_through_seq: 0,
   state,
   transfer: null,
+  refused_upload: null,
   conflicts: [],
   conflict_count: 0,
 });

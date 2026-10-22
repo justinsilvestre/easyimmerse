@@ -5,7 +5,7 @@ import {
   selectIsSignInFormStarted,
   selectIsSyncRunRequested,
 } from "@easyimmerse/state";
-import type { SyncLink } from "@easyimmerse/types";
+import type { RefusedUpload, SyncLink } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -14,7 +14,7 @@ import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
 import { SignInForm } from "./SignInForm.tsx";
 
-/** Explains why the work is not being copied to the linked server, if it is not, and offers what can be done about it. */
+/** Explains why the work, or one of its media files, is not being copied to the linked server, if it is not, and offers what can be done about it. */
 export function SyncLinkProblem({
   link,
   platform,
@@ -27,7 +27,13 @@ export function SyncLinkProblem({
   switch (link.state.kind) {
     case "idle":
     case "syncing":
-      return null;
+      return (
+        link.refused_upload && (
+          <p className="max-w-lg text-sm text-warning-fg">
+            {refusedUploadText(link.refused_upload, host)}
+          </p>
+        )
+      );
     case "unreachable":
       return (
         <Problem
@@ -52,6 +58,18 @@ export function SyncLinkProblem({
           <LogInAgain link={link} />
         </Problem>
       );
+  }
+}
+
+function refusedUploadText(refused: RefusedUpload, host: string) {
+  const prefix = `Couldn't keep a copy of ${refused.name} on ${host}`;
+  switch (refused.code) {
+    case "quota_exceeded":
+      return `${prefix}: there isn't enough room there.`;
+    case "uploads_unavailable":
+      return `${prefix}: it doesn't keep copies of media files.`;
+    default:
+      return `${prefix}: ${refused.message}.`;
   }
 }
 
