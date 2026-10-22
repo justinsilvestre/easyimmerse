@@ -40,8 +40,8 @@ export function BuiltInServerAccount() {
 function NotLinked({ platform }: { platform: NativePlatform }) {
   const { hasOfficialServer } = useAppSelector(selectAccountServerOptions);
   const where = hasOfficialServer
-    ? "the easyImmerse cloud or your own server"
-    : "your own easyImmerse server";
+    ? "the easyImmerse cloud"
+    : "an easyImmerse server";
   return (
     <SignInForm
       intro={`Your work is currently saved only on ${deviceNames[platform]}. Log in to back it up to ${where} and use it on your other devices.`}

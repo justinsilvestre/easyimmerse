@@ -199,7 +199,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to your own easyImmerse server to back it up there.",
+          "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to an easyImmerse server to back it up there.",
         ),
       ).toBeDefined();
     });
@@ -212,7 +212,7 @@ describe("NotBackedUpSign", () => {
       await openSign();
       expect(
         screen.getByText(
-          "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work. Log in to the easyImmerse cloud or to your own server to back it up there.",
+          "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work. Log in to the easyImmerse cloud to back it up there.",
         ),
       ).toBeDefined();
     });

@@ -10,6 +10,8 @@ import {
   selectPasswordStrength,
   selectSignInForm,
 } from "@easyimmerse/state";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { type ReactNode, useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { LinkButton } from "../components/LinkButton.tsx";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter.tsx";
@@ -26,7 +28,7 @@ const modeOptions = [
 
 /**
  * The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. `intro` tells what logging in does.
- * It uses the easyImmerse cloud, where the app knows of one, unless the person follows the quiet link under it to use their own server.
+ * It uses the easyImmerse cloud, where the app knows of one, unless the person opens More options to give their own server's address.
  */
 export function SignInForm({ intro }: { intro?: string }) {
   const dispatch = useAppDispatch();
@@ -53,31 +55,13 @@ export function SignInForm({ intro }: { intro?: string }) {
         value={form.mode}
         onChange={(mode) => change({ mode })}
       />
-      {servers.serverChoice === "own" && (
-        <div className="flex flex-col gap-1.5">
-          <TextField
-            label="Server address"
-            type="url"
-            placeholder="https://"
-            hint="The address your easyImmerse server is reached at, starting with http:// or https://."
-            value={form.ownServerUrl}
-            disabled={form.isBusy}
-            onChange={(event) => change({ ownServerUrl: event.target.value })}
-          />
-          {servers.hasOfficialServer && (
-            <LinkButton
-              aria-disabled={form.isBusy}
-              className="self-start text-sm"
-              onClick={() => {
-                if (!form.isBusy) change({ serverChoice: "official" });
-              }}
-            >
-              Use the easyImmerse cloud
-            </LinkButton>
-          )}
-        </div>
+      {!servers.hasOfficialServer && (
+        <ServerAddressField
+          value={form.ownServerUrl}
+          isBusy={form.isBusy}
+          onChange={(ownServerUrl) => change({ ownServerUrl })}
+        />
       )}
-      <ServerOfferNotice offer={form.serverOffer} mode={form.mode} />
       <TextField
         label="Email"
         type="email"
@@ -107,6 +91,22 @@ export function SignInForm({ intro }: { intro?: string }) {
         )}
         {form.mode === "login" && <ForgotPassword form={form} />}
       </div>
+      {servers.hasOfficialServer && (
+        <MoreOptions
+          isOpen={servers.serverChoice === "own"}
+          isBusy={form.isBusy}
+          onToggle={(isOpen) =>
+            change({ serverChoice: isOpen ? "own" : "official" })
+          }
+        >
+          <ServerAddressField
+            value={form.ownServerUrl}
+            isBusy={form.isBusy}
+            onChange={(ownServerUrl) => change({ ownServerUrl })}
+          />
+        </MoreOptions>
+      )}
+      <ServerOfferNotice offer={form.serverOffer} mode={form.mode} />
       {form.status === "passwordResetUnavailable" && (
         <p role="status" className="text-sm text-warning-fg">
           This server can't send email. Ask its administrator to set a new
@@ -126,18 +126,67 @@ export function SignInForm({ intro }: { intro?: string }) {
       >
         {submitLabel(form)}
       </Button>
-      {servers.serverChoice === "official" && (
-        <LinkButton
-          aria-disabled={form.isBusy}
-          className="self-start text-xs"
-          onClick={() => {
-            if (!form.isBusy) change({ serverChoice: "own" });
-          }}
-        >
-          Use your own server
-        </LinkButton>
-      )}
     </form>
+  );
+}
+
+/** Options most people never need, behind a toggle that shows them: for now, the address of the person's own server. */
+function MoreOptions({
+  isOpen,
+  isBusy,
+  onToggle,
+  children,
+}: {
+  isOpen: boolean;
+  isBusy: boolean;
+  onToggle: (isOpen: boolean) => void;
+  children: ReactNode;
+}) {
+  const contentId = useId();
+  const Chevron = isOpen ? ChevronDown : ChevronRight;
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={contentId}
+        aria-disabled={isBusy}
+        className="-ml-1 flex items-center gap-1 self-start rounded-md px-1 py-0.5 text-sm text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+        onClick={() => {
+          if (!isBusy) onToggle(!isOpen);
+        }}
+      >
+        <Chevron aria-hidden className="size-4" />
+        More options
+      </button>
+      {isOpen && (
+        <div id={contentId} className="border-l-2 border-line pl-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ServerAddressField({
+  value,
+  isBusy,
+  onChange,
+}: {
+  value: string;
+  isBusy: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <TextField
+      label="Server address"
+      type="url"
+      placeholder="https://"
+      hint="The address of your own easyImmerse server, starting with http:// or https://."
+      value={value}
+      disabled={isBusy}
+      onChange={(event) => onChange(event.target.value)}
+    />
   );
 }
 

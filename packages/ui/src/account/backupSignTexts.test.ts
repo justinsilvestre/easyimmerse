@@ -66,19 +66,19 @@ describe("backupSignTexts", () => {
 
   it("explains that work is stored only on this computer", () => {
     expect(backupSignTexts(deviceOnly("desktop"))?.explanation).toBe(
-      "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to the easyImmerse cloud or to your own server to back it up there.",
+      "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to the easyImmerse cloud to back it up there.",
     );
   });
 
   it("explains that work is stored only on this phone or tablet", () => {
     expect(backupSignTexts(deviceOnly("mobile"))?.explanation).toBe(
-      "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work. Log in to the easyImmerse cloud or to your own server to back it up there.",
+      "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work. Log in to the easyImmerse cloud to back it up there.",
     );
   });
 
   it("names only the person's own server when the easyImmerse cloud is not offered", () => {
     expect(backupSignTexts(deviceOnly("desktop", false))?.explanation).toBe(
-      "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to your own easyImmerse server to back it up there.",
+      "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work. Log in to an easyImmerse server to back it up there.",
     );
   });
 

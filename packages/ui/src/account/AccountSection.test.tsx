@@ -93,26 +93,20 @@ describe("AccountSection", () => {
       expect(screen.queryByLabelText("Server address")).toBeNull();
     });
 
-    it("asks for an address once the person chooses their own server", () => {
+    it("asks for an address once More options is opened", () => {
       renderWithAppStore(<AccountSection />, undefined, {
         cloudUrl: "https://cloud.example.com",
       });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Use your own server" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
       expect(screen.getByLabelText("Server address")).toBeDefined();
     });
 
-    it("goes back to the easyImmerse cloud when the person chooses it", () => {
+    it("goes back to the easyImmerse cloud once More options is closed", () => {
       renderWithAppStore(<AccountSection />, undefined, {
         cloudUrl: "https://cloud.example.com",
       });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Use your own server" }),
-      );
-      fireEvent.click(
-        screen.getByRole("button", { name: "Use the easyImmerse cloud" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
       expect(screen.queryByLabelText("Server address")).toBeNull();
     });
 
@@ -285,11 +279,7 @@ describe("AccountSection", () => {
 
     it("offers to log in to a server that backs up the work", async () => {
       renderBuiltIn(null);
-      expect(
-        await screen.findByText(
-          /Log in to back it up to/,
-        ),
-      ).toBeDefined();
+      expect(await screen.findByText(/Log in to back it up to/)).toBeDefined();
     });
 
     it("shows the account on the server that keeps a copy of the work", async () => {

@@ -53,7 +53,7 @@ export function backupSignTexts(
       };
     case "deviceOnly":
       return {
-        explanation: `${deviceLosses[sign.platform]} Log in to ${sign.hasOfficialServer ? "the easyImmerse cloud or to your own server" : "your own easyImmerse server"} to back it up there.`,
+        explanation: `${deviceLosses[sign.platform]} Log in to ${sign.hasOfficialServer ? "the easyImmerse cloud" : "an easyImmerse server"} to back it up there.`,
         options: [logIn],
       };
     case "linkUnreachable":

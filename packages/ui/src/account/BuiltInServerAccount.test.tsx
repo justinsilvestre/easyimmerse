@@ -74,7 +74,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(null);
       expect(
         await screen.findByText(
-          "Your work is currently saved only on this computer. Log in to back it up to the easyImmerse cloud or your own server and use it on your other devices.",
+          "Your work is currently saved only on this computer. Log in to back it up to the easyImmerse cloud and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -83,7 +83,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(null, { platform: "mobile" });
       expect(
         await screen.findByText(
-          "Your work is currently saved only on this device. Log in to back it up to the easyImmerse cloud or your own server and use it on your other devices.",
+          "Your work is currently saved only on this device. Log in to back it up to the easyImmerse cloud and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -92,7 +92,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(null, { hasCloud: false });
       expect(
         await screen.findByText(
-          "Your work is currently saved only on this computer. Log in to back it up to your own easyImmerse server and use it on your other devices.",
+          "Your work is currently saved only on this computer. Log in to back it up to an easyImmerse server and use it on your other devices.",
         ),
       ).toBeDefined();
     });

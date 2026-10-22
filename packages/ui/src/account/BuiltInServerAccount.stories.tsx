@@ -80,6 +80,14 @@ export const NotLinkedWithoutCloud: Story = {
   },
 };
 
+/** More options opened, which asks for the address of the person's own server. */
+export const OwnServerChosen: Story = {
+  parameters: builtInServer(null),
+  decorators: [
+    withDispatchedActions(actions.signInFormChanged({ serverChoice: "own" })),
+  ],
+};
+
 export const Linking: Story = {
   parameters: builtInServer(null),
   decorators: [
