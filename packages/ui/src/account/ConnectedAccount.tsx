@@ -13,6 +13,8 @@ import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { accountRoleName } from "./accountRoleName.ts";
+import { DeviceList } from "./DeviceList.tsx";
+import { EmailConfirmation } from "./EmailConfirmation.tsx";
 import { UserManagement } from "./users/UserManagement.tsx";
 
 /** Tells who the app's server knows it as: an account, which may log out, or the server's owner, who needs none. */
@@ -65,13 +67,17 @@ function AccountDetails({
     <>
       <dl className="grid max-w-lg grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-fg-muted">Email</dt>
-        <dd className="break-all">{user.email}</dd>
+        <dd className="break-all">
+          {user.email}
+          <EmailConfirmation user={user} />
+        </dd>
         <dt className="text-fg-muted">Role</dt>
         <dd>{accountRoleName(user.role)}</dd>
         <dt className="text-fg-muted">Server</dt>
         <dd className="break-all">{serverUrl}</dd>
       </dl>
       <LogOut />
+      <DeviceList />
       {user.role === "administrator" && <UserManagement />}
     </>
   );

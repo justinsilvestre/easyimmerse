@@ -13,11 +13,13 @@ import {
 } from "@easyimmerse/state";
 import { Button } from "../components/Button.tsx";
 import { ChoiceRow } from "../components/ChoiceRow.tsx";
+import { LinkButton } from "../components/LinkButton.tsx";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter.tsx";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { TextField } from "../components/TextField.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { PasswordResetForm } from "./PasswordResetForm.tsx";
 
 const modeOptions = [
   { value: "login", label: "Log in" },
@@ -38,6 +40,7 @@ export function SignInForm() {
   const passwordStrength = useAppSelector(selectPasswordStrength);
   const change = (changes: Parameters<typeof actions.signInFormChanged>[0]) =>
     dispatch(actions.signInFormChanged(changes));
+  if (form.passwordReset !== null) return <PasswordResetForm />;
   return (
     <form
       noValidate
@@ -104,7 +107,14 @@ export function SignInForm() {
         {passwordStrength !== null && (
           <PasswordStrengthMeter strength={passwordStrength} />
         )}
+        {form.mode === "login" && <ForgotPassword form={form} />}
       </div>
+      {form.status === "passwordResetUnavailable" && (
+        <p role="status" className="text-sm text-warning-fg">
+          This server can't send email. Ask its administrator to set a new
+          password for you.
+        </p>
+      )}
       {form.failureMessage !== null && (
         <p role="alert" className="text-sm text-danger-fg">
           {form.failureMessage}
@@ -119,6 +129,24 @@ export function SignInForm() {
         {submitLabel(form)}
       </Button>
     </form>
+  );
+}
+
+/** The button that asks for a password reset link, which first checks that the server can send one. */
+function ForgotPassword({ form }: { form: SignInFormView }) {
+  const dispatch = useAppDispatch();
+  return (
+    <LinkButton
+      aria-disabled={!form.canAskPasswordReset}
+      className="self-start text-sm"
+      onClick={() => {
+        if (form.canAskPasswordReset) dispatch(actions.passwordResetAsked());
+      }}
+    >
+      {form.status === "checkingPasswordReset"
+        ? "Checking the server…"
+        : "Forgot your password?"}
+    </LinkButton>
   );
 }
 
