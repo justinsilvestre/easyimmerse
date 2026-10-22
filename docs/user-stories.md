@@ -940,6 +940,8 @@ As a desktop app user:
   - [x] I can ask for a new pairing code
 - when the pairing code is about to expire:
   - [x] a new pairing code replaces it
+- when another device pairs with the pairing code:
+  - [x] a new pairing code replaces it
 - when I click the button for local network sync while the server is not running, or while only this computer can reach it:
   - [x] I am told that other devices cannot reach the server
   - [x] I can start the server on the local network from there
