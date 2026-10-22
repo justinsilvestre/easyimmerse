@@ -46,6 +46,9 @@ pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 pub use sync::apply_pushed::{PushRejection, PushVerdict, PushedChange};
 pub use sync::changes::{PendingRow, SyncChange, SyncChangesPage};
 pub use sync::codec::RowData;
+pub use sync::conflicts::NewConflict;
+pub use sync::inbox::{AppliedInbox, PulledRow};
+pub use sync::push_answers::{AnsweredPush, PushAnswer};
 pub use sync::remotes::{NewRemote, RemoteKind, StoredRemote};
 pub use sync::tables::SyncTable;
 pub use users::StoredUser;
@@ -70,6 +73,7 @@ use easyimmerse_core::review::{
     ReviewQueue, ReviewSummary,
 };
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
+use easyimmerse_core::sync::SyncConflict;
 use rusqlite::Connection;
 
 use connections::Connections;
@@ -805,6 +809,127 @@ impl Storage {
         updated_at_ms: u64,
     ) -> Result<(), StorageError> {
         self.write(|conn| sync::remotes::record_base(conn, remote_id, table, key, updated_at_ms))
+    }
+
+    /// Links the owner to a remote, keeping a logged-out link to the same account and replacing one to another.
+    pub fn link_sync_remote(&self, remote: &NewRemote) -> Result<StoredRemote, StorageError> {
+        self.write(|conn| sync::remotes::link_remote(conn, remote))
+    }
+
+    /// Forgets the session token after the remote logged this server out.
+    pub fn forget_sync_session_token(&self, remote_id: &str) -> Result<(), StorageError> {
+        self.write(|conn| sync::remotes::forget_session_token(conn, remote_id))
+    }
+
+    /// Keeps a page of pulled rows in the inbox and moves the pull cursor past it, in one transaction.
+    pub fn receive_sync_page(
+        &self,
+        remote_id: &str,
+        rows: &[PulledRow],
+        next_cursor: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sync::inbox::receive_page(conn, remote_id, rows, next_cursor))
+    }
+
+    /// Applies the rows waiting in the remote's inbox, one transaction per rank, parents first.
+    pub fn apply_sync_inbox(
+        &self,
+        remote: &StoredRemote,
+        now_ms: u64,
+    ) -> Result<AppliedInbox, StorageError> {
+        let mut ranks: Vec<u8> = SyncTable::ALL
+            .iter()
+            .map(|table| table.spec().rank)
+            .collect();
+        ranks.sort_unstable();
+        ranks.dedup();
+        let mut applied = AppliedInbox::default();
+        for rank in ranks {
+            applied.merge(self.write(|conn| sync::inbox::apply_inbox(conn, remote, rank, now_ms))?);
+        }
+        Ok(applied)
+    }
+
+    /// How many pulled rows wait in the remote's inbox.
+    pub fn sync_inbox_size(&self, remote_id: &str) -> Result<u64, StorageError> {
+        self.read(|conn| sync::inbox::inbox_size(conn, remote_id))
+    }
+
+    /// Records the remote's answers to one pushed batch, in one transaction.
+    pub fn record_sync_push_answers(
+        &self,
+        remote: &StoredRemote,
+        answers: &[AnsweredPush],
+        now_ms: u64,
+    ) -> Result<AppliedInbox, StorageError> {
+        self.write(|conn| sync::push_answers::record_push_answers(conn, remote, answers, now_ms))
+    }
+
+    /// The owner's registry entries of the rows, each with its current data, or None for a row never seen here.
+    pub fn sync_changes_of(
+        &self,
+        owner: &OwnerId,
+        rows: &[(SyncTable, String)],
+    ) -> Result<Vec<Option<SyncChange>>, StorageError> {
+        self.read(|conn| {
+            rows.iter()
+                .map(|(table, key)| sync::changes::change_of(conn, owner, *table, key))
+                .collect()
+        })
+    }
+
+    pub fn record_sync_conflict(
+        &self,
+        remote_id: &str,
+        conflict: &NewConflict,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sync::conflicts::record_conflict(conn, remote_id, conflict))
+    }
+
+    /// The remote's most recent conflicts, newest first.
+    pub fn list_sync_conflicts(
+        &self,
+        remote_id: &str,
+        limit: u32,
+    ) -> Result<Vec<SyncConflict>, StorageError> {
+        self.read(|conn| sync::conflicts::list_conflicts(conn, remote_id, limit))
+    }
+
+    pub fn count_sync_conflicts(&self, remote_id: &str) -> Result<u64, StorageError> {
+        self.read(|conn| sync::conflicts::count_conflicts(conn, remote_id))
+    }
+
+    pub fn clear_sync_conflicts(&self, remote_id: &str) -> Result<(), StorageError> {
+        self.write(|conn| sync::conflicts::clear_conflicts(conn, remote_id))
+    }
+
+    /// Records that the remote holds the media file's bytes.
+    pub fn record_remote_copy(
+        &self,
+        remote_id: &str,
+        media_file_id: &MediaFileId,
+        size_bytes: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            sync::remote_copies::record_remote_copy(conn, remote_id, media_file_id, size_bytes)
+        })
+    }
+
+    pub fn forget_remote_copy(
+        &self,
+        remote_id: &str,
+        media_file_id: &MediaFileId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sync::remote_copies::forget_remote_copy(conn, remote_id, media_file_id))
+    }
+
+    /// The size of the remote's copy of the media file, or None when it holds none.
+    pub fn remote_copy_size(
+        &self,
+        remote_id: &str,
+        media_file_id: &MediaFileId,
+    ) -> Result<Option<u64>, StorageError> {
+        self.read(|conn| sync::remote_copies::remote_copy_size(conn, remote_id, media_file_id))
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

@@ -1,7 +1,7 @@
 //! The servers this server keeps a copy of an owner's data on, and what each remote is known to hold.
 
 use easyimmerse_core::account::AccountRole;
-use rusqlite::{Connection, OptionalExtension, Row, params};
+use rusqlite::{Connection, ErrorCode, OptionalExtension, Row, TransactionBehavior, params};
 
 use super::tables::SyncTable;
 use crate::error::StorageError;
@@ -29,6 +29,15 @@ impl RemoteKind {
             "account" => Some(RemoteKind::Account),
             "lan" => Some(RemoteKind::Lan),
             _ => None,
+        }
+    }
+}
+
+impl From<RemoteKind> for easyimmerse_core::sync::RemoteKind {
+    fn from(kind: RemoteKind) -> Self {
+        match kind {
+            RemoteKind::Account => easyimmerse_core::sync::RemoteKind::Account,
+            RemoteKind::Lan => easyimmerse_core::sync::RemoteKind::Lan,
         }
     }
 }
@@ -72,7 +81,7 @@ const REMOTE_COLUMNS: &str = "id, owner_id, kind, server_url, session_token, acc
 /// Records a link to a remote and returns it with its new id.
 pub fn create_remote(conn: &Connection, remote: &NewRemote) -> Result<StoredRemote, StorageError> {
     let id = generate_id();
-    conn.execute(
+    let inserted = conn.execute(
         "INSERT INTO sync_remotes (id, owner_id, kind, server_url, session_token, account_id, \
          account_email, account_role, linked_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
@@ -86,8 +95,79 @@ pub fn create_remote(conn: &Connection, remote: &NewRemote) -> Result<StoredRemo
             remote.account_role.as_str(),
             to_stored_integer(remote.linked_at_ms),
         ],
-    )?;
+    );
+    match inserted {
+        Err(rusqlite::Error::SqliteFailure(failure, _))
+            if failure.code == ErrorCode::ConstraintViolation =>
+        {
+            return Err(StorageError::AlreadyLinked);
+        }
+        other => other?,
+    };
     find_remote(conn, "id = ?1", params![id])?.ok_or(StorageError::RemoteNotLinked)
+}
+
+/// Links the owner to a remote in one transaction, as when the person logs in to it again.
+/// A logged-out link to the same account on the same server keeps its row, and with it how far syncing had come,
+/// and takes the new session. A link to another account or server replaces it, and syncing starts over.
+/// A link whose session is still live is refused.
+pub fn link_remote(
+    conn: &mut Connection,
+    remote: &NewRemote,
+) -> Result<StoredRemote, StorageError> {
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let linked = match get_remote(&transaction, &remote.owner_id, remote.kind)? {
+        Some(existing) if existing.session_token.is_some() => Err(StorageError::AlreadyLinked),
+        Some(existing)
+            if existing.server_url == remote.server_url
+                && existing.account_id == remote.account_id =>
+        {
+            restore_session(&transaction, &existing.id, remote)
+        }
+        Some(existing) => {
+            delete_remote(&transaction, &existing.id)?;
+            create_remote(&transaction, remote)
+        }
+        None => create_remote(&transaction, remote),
+    }?;
+    transaction.commit()?;
+    Ok(linked)
+}
+
+fn restore_session(
+    conn: &Connection,
+    remote_id: &str,
+    remote: &NewRemote,
+) -> Result<StoredRemote, StorageError> {
+    update_remote(
+        conn,
+        "session_token = ?2, account_email = ?3, account_role = ?4",
+        params![
+            remote_id,
+            remote.session_token,
+            remote.account_email,
+            remote.account_role.as_str()
+        ],
+    )?;
+    find_remote(conn, "id = ?1", params![remote_id])?.ok_or(StorageError::RemoteNotLinked)
+}
+
+/// Forgets the session token after the remote logged this server out; the link stays, logged out.
+pub fn forget_session_token(conn: &Connection, remote_id: &str) -> Result<(), StorageError> {
+    update_remote(conn, "session_token = NULL", params![remote_id])
+}
+
+/// Records the remote's change sequence up to which this server has pulled.
+pub fn set_pulled_cursor(
+    conn: &Connection,
+    remote_id: &str,
+    cursor: u64,
+) -> Result<(), StorageError> {
+    update_remote(
+        conn,
+        "pulled_cursor = ?2",
+        params![remote_id, to_stored_integer(cursor)],
+    )
 }
 
 /// The owner's remote of the kind, when it has one.
@@ -266,6 +346,64 @@ mod tests {
             .get_sync_remote(&OwnerId::launch(), RemoteKind::Account)
             .unwrap();
         assert_eq!(found, None);
+    }
+
+    fn account_remote(storage: &Storage) -> StoredRemote {
+        storage
+            .get_sync_remote(&OwnerId::launch(), RemoteKind::Account)
+            .unwrap()
+            .unwrap()
+    }
+
+    #[test]
+    fn forgetting_the_session_token_logs_the_link_out() {
+        let (storage, remote) = storage_with_remote();
+        storage.forget_sync_session_token(&remote.id).unwrap();
+        assert_eq!(account_remote(&storage).session_token, None);
+    }
+
+    #[test]
+    fn refuses_to_link_over_a_live_link() {
+        let (storage, _) = storage_with_remote();
+        let result = storage.link_sync_remote(&launch_remote());
+        assert!(matches!(result, Err(StorageError::AlreadyLinked)));
+    }
+
+    #[test]
+    fn relinking_the_same_account_keeps_how_far_syncing_came() {
+        let (storage, remote) = storage_with_remote();
+        storage.set_sync_pushed_through(&remote.id, 7).unwrap();
+        storage.forget_sync_session_token(&remote.id).unwrap();
+        let relinked = storage.link_sync_remote(&launch_remote()).unwrap();
+        assert_eq!(relinked.pushed_through_seq, 7);
+    }
+
+    #[test]
+    fn relinking_the_same_account_takes_the_new_session() {
+        let (storage, remote) = storage_with_remote();
+        storage.forget_sync_session_token(&remote.id).unwrap();
+        let new_session = NewRemote {
+            session_token: "new token".to_string(),
+            ..launch_remote()
+        };
+        storage.link_sync_remote(&new_session).unwrap();
+        assert_eq!(
+            account_remote(&storage).session_token.as_deref(),
+            Some("new token")
+        );
+    }
+
+    #[test]
+    fn linking_another_account_starts_over() {
+        let (storage, remote) = storage_with_remote();
+        storage.set_sync_pushed_through(&remote.id, 7).unwrap();
+        storage.forget_sync_session_token(&remote.id).unwrap();
+        let other_account = NewRemote {
+            account_id: "other account".to_string(),
+            ..launch_remote()
+        };
+        let linked = storage.link_sync_remote(&other_account).unwrap();
+        assert_eq!(linked.pushed_through_seq, 0);
     }
 
     #[test]

@@ -62,6 +62,8 @@ pub enum StorageError {
     SyncValueUnsupported { table: String, column: String },
     #[error("the owner is not linked to that remote")]
     RemoteNotLinked,
+    #[error("this device is already linked to a server; unlink it first")]
+    AlreadyLinked,
 }
 
 impl From<DictionaryError> for StorageError {

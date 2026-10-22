@@ -236,7 +236,7 @@ fn key_of(table: SyncTable, data: &RowData) -> Option<String> {
     }
 }
 
-fn text_of(data: &RowData, column: &str) -> Option<String> {
+pub(crate) fn text_of(data: &RowData, column: &str) -> Option<String> {
     data.get(column)?.as_str().map(str::to_string)
 }
 
@@ -258,7 +258,7 @@ fn is_under_another_owner(
 
 /// The owner of the stored row with the key, through its project where it has no owner of its own.
 /// None when there is no such row, and for the tables whose key already includes the owner.
-fn owner_of_row(
+pub(crate) fn owner_of_row(
     conn: &Connection,
     table: SyncTable,
     key: &str,
@@ -303,7 +303,7 @@ fn owner_of_row(
 }
 
 /// The rows a row of the table refers to, as (table, column, whether the reference may be null).
-fn parents_of(table: SyncTable) -> &'static [(SyncTable, &'static str, bool)] {
+pub(crate) fn parents_of(table: SyncTable) -> &'static [(SyncTable, &'static str, bool)] {
     match table {
         SyncTable::MediaFiles => &[
             (SyncTable::Projects, "project_id", false),
@@ -371,7 +371,7 @@ fn check_parents(
 }
 
 /// Turns an error from writing a row into the rejection of that row, when the row's data caused it.
-fn rejection_of(error: StorageError) -> Result<PushRejection, StorageError> {
+pub(crate) fn rejection_of(error: StorageError) -> Result<PushRejection, StorageError> {
     match error {
         StorageError::SyncColumnMissing { .. } | StorageError::SyncValueUnsupported { .. } => {
             Ok(PushRejection::InvalidData(error.to_string()))

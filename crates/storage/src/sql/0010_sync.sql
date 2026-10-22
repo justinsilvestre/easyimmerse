@@ -53,6 +53,39 @@ CREATE TABLE sync_bases (
     PRIMARY KEY (remote_id, table_name, row_key)
 ) WITHOUT ROWID;
 
+-- Rows pulled from a remote and not yet applied, so that a pull survives a crash and a row whose parent arrives later waits for it.
+-- `data_json` is the row's synced columns as a JSON object, or null for a deletion.
+CREATE TABLE sync_inbox (
+    remote_id TEXT NOT NULL REFERENCES sync_remotes(id) ON DELETE CASCADE,
+    table_name TEXT NOT NULL,
+    row_key TEXT NOT NULL,
+    updated_at_ms INTEGER NOT NULL,
+    is_deleted INTEGER NOT NULL,
+    data_json TEXT,
+    PRIMARY KEY (remote_id, table_name, row_key)
+) WITHOUT ROWID;
+
+-- Changes made on two servers at once, of which the more recent was kept.
+-- `kept` is this_device, other_device or deletion; `description` names the row for the person, such as "a flashcard in Spanish practice".
+CREATE TABLE sync_conflicts (
+    id TEXT PRIMARY KEY,
+    remote_id TEXT NOT NULL REFERENCES sync_remotes(id) ON DELETE CASCADE,
+    table_name TEXT NOT NULL,
+    row_key TEXT NOT NULL,
+    kept TEXT NOT NULL,
+    description TEXT NOT NULL,
+    detected_at_ms INTEGER NOT NULL
+);
+CREATE INDEX sync_conflicts_by_time ON sync_conflicts (remote_id, detected_at_ms);
+
+-- Media bytes a remote is known to hold for this server, after an upload or a download.
+CREATE TABLE remote_copies (
+    remote_id TEXT NOT NULL REFERENCES sync_remotes(id) ON DELETE CASCADE,
+    media_file_id TEXT NOT NULL REFERENCES media_files(id) ON DELETE CASCADE,
+    size_bytes INTEGER NOT NULL,
+    PRIMARY KEY (remote_id, media_file_id)
+) WITHOUT ROWID;
+
 -- Each synced table has triggers that record its inserts, updates and deletes in `sync_rows`.
 -- An update records a change only when a column that syncs changed; device-bound columns are left out of `UPDATE OF`.
 -- A row deleted by a cascade from its parent leaves no tombstone, since the parent's tombstone deletes it on every server:
