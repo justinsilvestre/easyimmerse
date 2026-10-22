@@ -5,7 +5,7 @@ use anyhow::Context;
 use easyimmerse_api::mail::check_mail_config;
 use easyimmerse_api::{
     AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions, SmtpConfig,
-    SmtpCredentials, SmtpSecurity, serve,
+    SmtpCredentials, SmtpSecurity, UploadsConfig, serve,
 };
 use easyimmerse_storage::{OwnerId, Storage};
 use tokio::net::TcpListener;
@@ -164,6 +164,7 @@ fn build_config(args: &ServeArgs, addr: SocketAddr) -> ApiConfig {
     config.accounts = args.accounts.then_some(AccountsConfig {
         open_signup: args.open_signup,
     });
+    config.uploads = uploads_config(args);
     if addr.ip().is_unspecified() {
         warn_when_no_host_is_expected(args, addr);
     } else {
@@ -173,6 +174,15 @@ fn build_config(args: &ServeArgs, addr: SocketAddr) -> ApiConfig {
         push_host(&mut config, host.clone());
     }
     config
+}
+
+/// Where copies of media are kept and how many bytes each account may keep there.
+fn uploads_config(args: &ServeArgs) -> Option<UploadsConfig> {
+    args.uploads_dir.clone().map(|dir| UploadsConfig {
+        dir,
+        account_quota_bytes: None,
+        library_user_quota_bytes: 0,
+    })
 }
 
 fn push_host(config: &mut ApiConfig, host: String) {
@@ -230,6 +240,7 @@ mod tests {
             cache_dir: None,
             plugins_dir: None,
             media_dir: None,
+            uploads_dir: None,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
             smtp_host: None,
             smtp_port: None,
@@ -314,6 +325,20 @@ mod tests {
             config_for(&args).accounts,
             Some(AccountsConfig { open_signup: true })
         );
+    }
+
+    #[test]
+    fn keeps_no_copies_without_an_uploads_directory() {
+        let args = args("127.0.0.1:8787", &[]);
+        assert_eq!(config_for(&args).uploads, None);
+    }
+
+    #[test]
+    fn keeps_copies_in_the_uploads_directory() {
+        let mut args = args("127.0.0.1:8787", &[]);
+        args.uploads_dir = Some("/srv/uploads".into());
+        let uploads = config_for(&args).uploads.unwrap();
+        assert_eq!(uploads.dir, std::path::PathBuf::from("/srv/uploads"));
     }
 
     /// Arguments for a server with accounts that sends mail through `smtp.example.com`.

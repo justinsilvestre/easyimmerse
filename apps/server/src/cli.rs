@@ -60,6 +60,11 @@ pub struct ServeArgs {
     /// added through a plugin.
     #[arg(long, env = "EASYIMMERSE_MEDIA_DIR")]
     pub media_dir: Option<PathBuf>,
+    /// Where the server keeps the copies of media files that people upload, so that the media
+    /// plays on each of their devices. Without it, a server with accounts keeps no copies, and one
+    /// without accounts keeps them in the `uploads` subdirectory of `--media-dir`, when that is set.
+    #[arg(long, env = "EASYIMMERSE_UPLOADS_DIR")]
+    pub uploads_dir: Option<PathBuf>,
     /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
