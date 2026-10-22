@@ -16,6 +16,17 @@ describe("pairingFailureMessage", () => {
     );
   });
 
+  it("tells of a code that another device has used", () => {
+    expect(
+      pairingFailureMessage(
+        { status: 409, code: "pairing_code_used", message: "" },
+        serverUrl,
+      ),
+    ).toBe(
+      "This code has already been used. Enter the new code that the desktop app shows.",
+    );
+  });
+
   it("tells how many minutes to wait after too many wrong codes", () => {
     expect(
       pairingFailureMessage(

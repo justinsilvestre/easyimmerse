@@ -1,6 +1,7 @@
 //! The pairing code that lets another device on the local network obtain the launch token.
 //!
 //! At most one code is active at a time. It is single-use and expires.
+//! The most recently used code is remembered, so that a device that enters it learns that it was used rather than wrong.
 //! Failed claims are counted per peer address and across all peers,
 //! so that neither one device nor many addresses together can guess codes quickly.
 
@@ -12,6 +13,9 @@ use thiserror::Error;
 
 /// How long a pairing code stays valid.
 pub const PAIRING_CODE_VALIDITY_MS: u64 = 10 * 60 * 1000;
+/// How long before the active code expires a request for the current code replaces it,
+/// so that the code a person reads off the screen still works when they enter it.
+const RENEWAL_MARGIN_MS: u64 = 15 * 1000;
 /// How many failed claims a peer may make within the window.
 const FAILED_CLAIM_LIMIT: usize = 10;
 /// How many failed claims all peers together may make within the window.
@@ -23,6 +27,8 @@ const FAILED_CLAIM_WINDOW_MS: u64 = 15 * 60 * 1000;
 pub enum PairingError {
     #[error("the pairing code is wrong or has expired")]
     InvalidCode,
+    #[error("the pairing code has been used")]
+    UsedCode,
     #[error("too many failed pairing attempts; try again in {retry_after_secs} seconds")]
     TooManyAttempts { retry_after_secs: u64 },
 }
@@ -44,6 +50,7 @@ pub struct PairingCodeState {
 #[derive(Debug, Default)]
 struct CodeAndFailures {
     active: Option<IssuedCode>,
+    used: Option<String>,
     failed_claims: HashMap<Option<IpAddr>, Vec<u64>>,
     failed_claims_of_all_peers: Vec<u64>,
 }
@@ -65,16 +72,37 @@ impl PairingCodeState {
 
     /// Makes `code` the active code, replacing any earlier one.
     pub fn issue(&self, code: String, now_ms: u64) -> IssuedCode {
-        let issued = IssuedCode {
-            code,
-            expires_at_ms: now_ms.saturating_add(self.validity_ms),
-        };
+        let issued = self.issued_now(code, now_ms);
         self.locked().active = Some(issued.clone());
         issued
     }
 
+    fn issued_now(&self, code: String, now_ms: u64) -> IssuedCode {
+        IssuedCode {
+            code,
+            expires_at_ms: now_ms.saturating_add(self.validity_ms),
+        }
+    }
+
+    /// Returns the active code, or makes the code from `new_code` the active one
+    /// when no code is active or the active one expires within the renewal margin.
+    pub fn current_or_issue(&self, new_code: impl FnOnce() -> String, now_ms: u64) -> IssuedCode {
+        let mut inner = self.locked();
+        match &inner.active {
+            Some(active) if now_ms.saturating_add(RENEWAL_MARGIN_MS) < active.expires_at_ms => {
+                active.clone()
+            }
+            _ => {
+                let issued = self.issued_now(new_code(), now_ms);
+                inner.active = Some(issued.clone());
+                issued
+            }
+        }
+    }
+
     /// Uses up the active code when `code` equals it and it has not expired.
     /// The check for too many failures comes first, so that a limited peer learns nothing.
+    /// A claim of the most recently used code fails without counting as a failed claim, since that code was right once.
     pub fn claim(&self, code: &str, peer: Option<IpAddr>, now_ms: u64) -> Result<(), PairingError> {
         self.locked().claim(code, peer, now_ms)
     }
@@ -94,8 +122,11 @@ impl CodeAndFailures {
             });
         }
         if self.is_active_code(code, now_ms) {
-            self.active = None;
+            self.used = self.active.take().map(|active| active.code);
             return Ok(());
+        }
+        if self.is_used_code(code) {
+            return Err(PairingError::UsedCode);
         }
         self.failed_claims.entry(peer).or_default().push(now_ms);
         self.failed_claims_of_all_peers.push(now_ms);
@@ -107,6 +138,12 @@ impl CodeAndFailures {
             now_ms < active.expires_at_ms
                 && bytes_are_equal(code.as_bytes(), active.code.as_bytes())
         })
+    }
+
+    fn is_used_code(&self, code: &str) -> bool {
+        self.used
+            .as_ref()
+            .is_some_and(|used| bytes_are_equal(code.as_bytes(), used.as_bytes()))
     }
 
     /// When the peer may claim again, or None when it may claim now.
@@ -203,13 +240,93 @@ mod tests {
     }
 
     #[test]
-    fn refuses_a_code_claimed_before() {
+    fn tells_that_a_code_claimed_before_was_used() {
         let codes = codes_with_active_code();
         codes.claim(CODE, peer(1), 2_000).unwrap();
         assert_eq!(
-            codes.claim(CODE, peer(1), 3_000),
+            codes.claim(CODE, peer(2), 3_000),
+            Err(PairingError::UsedCode)
+        );
+    }
+
+    #[test]
+    fn tells_that_a_used_code_was_used_after_a_new_one_is_issued() {
+        let codes = codes_with_active_code();
+        codes.claim(CODE, peer(1), 2_000).unwrap();
+        codes.issue("999999".to_string(), 3_000);
+        assert_eq!(
+            codes.claim(CODE, peer(2), 4_000),
+            Err(PairingError::UsedCode)
+        );
+    }
+
+    #[test]
+    fn does_not_count_claims_of_the_used_code_as_failures() {
+        let codes = codes_with_active_code();
+        codes.claim(CODE, peer(1), 2_000).unwrap();
+        for _ in 0..10 {
+            let _ = codes.claim(CODE, peer(2), 3_000);
+        }
+        codes.issue("999999".to_string(), 4_000);
+        assert_eq!(codes.claim("999999", peer(2), 5_000), Ok(()));
+    }
+
+    #[test]
+    fn refuses_a_code_replaced_before_it_was_used() {
+        let codes = codes_with_active_code();
+        codes.issue("999999".to_string(), 2_000);
+        codes.claim("999999", peer(1), 3_000).unwrap();
+        assert_eq!(
+            codes.claim(CODE, peer(1), 4_000),
             Err(PairingError::InvalidCode)
         );
+    }
+
+    mod current_or_issue {
+        use super::*;
+
+        fn new_code() -> String {
+            "999999".to_string()
+        }
+
+        #[test]
+        fn issues_a_code_when_none_was_issued() {
+            let codes = PairingCodeState::default();
+            assert_eq!(codes.current_or_issue(new_code, 1_000).code, "999999");
+        }
+
+        #[test]
+        fn keeps_the_active_code_until_shortly_before_it_expires() {
+            let codes = codes_with_active_code();
+            let shortly_before_renewal = 1_000 + PAIRING_CODE_VALIDITY_MS - RENEWAL_MARGIN_MS - 1;
+            assert_eq!(
+                codes
+                    .current_or_issue(new_code, shortly_before_renewal)
+                    .code,
+                CODE
+            );
+        }
+
+        #[test]
+        fn replaces_the_active_code_shortly_before_it_expires() {
+            let codes = codes_with_active_code();
+            let at_renewal = 1_000 + PAIRING_CODE_VALIDITY_MS - RENEWAL_MARGIN_MS;
+            assert_eq!(codes.current_or_issue(new_code, at_renewal).code, "999999");
+        }
+
+        #[test]
+        fn issues_a_new_code_once_the_active_one_is_used() {
+            let codes = codes_with_active_code();
+            codes.claim(CODE, peer(1), 2_000).unwrap();
+            assert_eq!(codes.current_or_issue(new_code, 3_000).code, "999999");
+        }
+
+        #[test]
+        fn makes_the_new_code_claimable() {
+            let codes = PairingCodeState::default();
+            codes.current_or_issue(new_code, 1_000);
+            assert_eq!(codes.claim("999999", peer(1), 2_000), Ok(()));
+        }
     }
 
     #[test]

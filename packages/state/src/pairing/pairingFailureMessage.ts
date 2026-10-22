@@ -8,6 +8,8 @@ export function pairingFailureMessage(
 ) {
   if (failure.code === "pairing_code_invalid")
     return "This code is wrong or has expired. Enter the code that the desktop app shows now.";
+  if (failure.code === "pairing_code_used")
+    return "This code has already been used. Enter the new code that the desktop app shows.";
   if (failure.code === "too_many_attempts")
     return tooManyAttemptsMessage(failure.retryAfterSeconds);
   if (failure.code === connectionNotKeptCode)

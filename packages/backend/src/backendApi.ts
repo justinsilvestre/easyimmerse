@@ -354,6 +354,7 @@ export const backendApi = createApi({
     "Users",
     "CurrentPrincipal",
     "Review",
+    "PairingCode",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -1136,13 +1137,17 @@ export const backendApi = createApi({
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
     /**
-     * Issues a new pairing code for another device on the local network, replacing any earlier one.
-     * It is a query rather than a mutation, so that polling it before the code expires keeps a valid code on screen.
-     * The code stays cached as long as the server keeps it valid, so that reopening the pairing page shows the same code.
+     * Reads the pairing code to show to another device on the local network.
+     * The server issues a new one when the last one was used or is about to expire, so polling this keeps a working code on screen.
      */
-    issuePairingCode: build.query<PairingCode, void>({
+    currentPairingCode: build.query<PairingCode, void>({
+      query: () => ({ method: "POST", path: "/pairing/code/current" }),
+      providesTags: ["PairingCode"],
+    }),
+    /** Issues a new pairing code, replacing the one on screen. */
+    issuePairingCode: build.mutation<PairingCode, void>({
       query: () => ({ method: "POST", path: "/pairing/code" }),
-      keepUnusedDataFor: 10 * 60,
+      invalidatesTags: ["PairingCode"],
     }),
   }),
 });
@@ -1181,12 +1186,9 @@ export const {
   useListUsersQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
-  useIssuePairingCodeQuery,
+  useCurrentPairingCodeQuery,
+  useIssuePairingCodeMutation,
 } = backendApi;
-
-/** Reads the cached pairing code without asking for one. */
-export const useIssuedPairingCodeState =
-  backendApi.endpoints.issuePairingCode.useQueryState;
 
 type BackendState = Parameters<
   typeof backendApi.util.selectCachedArgsForQuery

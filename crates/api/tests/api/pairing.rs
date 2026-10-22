@@ -72,13 +72,45 @@ async fn an_issued_code_has_only_digits() {
     assert!(code.bytes().all(|byte| byte.is_ascii_digit()), "{code}");
 }
 
+async fn current_code(server: &TestServer) -> String {
+    let response = server.request("POST", "/pairing/code/current").send().await;
+    response.json()["code"]
+        .as_str()
+        .expect("a pairing code")
+        .to_string()
+}
+
 #[tokio::test(flavor = "multi_thread")]
-async fn a_code_cannot_be_claimed_twice() {
+async fn a_code_claimed_before_is_reported_as_used() {
     let server = spawn_test_server(false).await;
     let code = issue_code(&server).await;
     claim(&server, &code).await;
     let response = claim(&server, &code).await;
-    assert_eq!(response.json()["code"], "pairing_code_invalid");
+    assert_eq!(response.json()["code"], "pairing_code_used");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_current_code_is_the_issued_one() {
+    let server = spawn_test_server(false).await;
+    let code = issue_code(&server).await;
+    assert_eq!(current_code(&server).await, code);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn after_a_claim_the_current_code_can_be_claimed() {
+    let server = spawn_test_server(false).await;
+    let code = issue_code(&server).await;
+    claim(&server, &code).await;
+    let next = current_code(&server).await;
+    let response = claim(&server, &next).await;
+    assert_eq!(response.json(), json!({ "token": TOKEN }));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_server_with_accounts_has_no_current_code() {
+    let server = spawn_test_server_with_accounts(false).await;
+    let response = server.request("POST", "/pairing/code/current").send().await;
+    assert_eq!(response.json()["code"], "pairing_needs_launch_token");
 }
 
 #[tokio::test(flavor = "multi_thread")]

@@ -475,6 +475,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pairing/code/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns the active pairing code, or issues a new one when none is active,
+         *     the active one has been used, or it expires within fifteen seconds.
+         *     Only the launch token may call it, and only on a server without accounts.
+         */
+        post: operations["currentPairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plugins": {
         parameters: {
             query?: never;
@@ -4504,8 +4525,17 @@ export interface operations {
                     "application/json": components["schemas"]["PairingGrant"];
                 };
             };
-            /** @description `pairing_code_invalid`: the code is wrong, used up or expired */
+            /** @description `pairing_code_invalid`: the code is wrong, expired or replaced */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `pairing_code_used`: the code was the most recently used one */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4545,6 +4575,53 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The new pairing code */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCode"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `pairing_needs_launch_token`: the server has accounts, or the token is an account's */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    currentPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pairing code to show */
             200: {
                 headers: {
                     [name: string]: unknown;

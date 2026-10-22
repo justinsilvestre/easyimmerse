@@ -1826,7 +1826,17 @@
             }
           },
           "404": {
-            "description": "`pairing_code_invalid`: the code is wrong, used up or expired",
+            "description": "`pairing_code_invalid`: the code is wrong, expired or replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`pairing_code_used`: the code was the most recently used one",
             "content": {
               "application/json": {
                 "schema": {
@@ -1878,6 +1888,62 @@
         "responses": {
           "200": {
             "description": "The new pairing code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingCode"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`pairing_needs_launch_token`: the server has accounts, or the token is an account's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/pairing/code/current": {
+      "post": {
+        "tags": [
+          "pairing"
+        ],
+        "summary": "Returns the active pairing code, or issues a new one when none is active,\nthe active one has been used, or it expires within fifteen seconds.\nOnly the launch token may call it, and only on a server without accounts.",
+        "operationId": "currentPairingCode",
+        "responses": {
+          "200": {
+            "description": "The pairing code to show",
             "content": {
               "application/json": {
                 "schema": {

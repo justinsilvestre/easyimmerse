@@ -3,7 +3,7 @@ import { useDesktopPairingCode } from "../hooks/useDesktopPairingCode.ts";
 import { DesktopPairingPanel } from "./DesktopPairingPanel.tsx";
 
 /**
- * The desktop pairing panel with its pairing code from the server, which it renews shortly before each code expires.
+ * The desktop pairing panel with its pairing code from the server, which the server replaces once a device uses it or shortly before it expires.
  * The server's state comes from the caller; null means it is not known yet.
  */
 export function ConnectedDesktopPairingPanel({
