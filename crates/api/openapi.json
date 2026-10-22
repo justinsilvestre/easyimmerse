@@ -7012,6 +7012,164 @@
         ]
       }
     },
+    "/sync/dictionaries/{id}/content": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Streams one of the principal's dictionaries as NDJSON: a `begin` line with its metadata and import time,\na line for each entry, frequency, tag, kanji and media file, and an `end` line.",
+        "operationId": "getDictionaryContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The dictionary, one JSON object per line",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The principal has no dictionary with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Imports a dictionary that a device uploads as the principal's, under the id it has there,\nfrom the NDJSON that `GET /sync/dictionaries/{id}/content` writes.",
+        "operationId": "putDictionaryContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The dictionary, one JSON object per line",
+          "content": {
+            "application/x-ndjson": {}
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The dictionary was stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryStored"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is not a whole dump (code `bad_dump`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A dictionary with this id or title is stored already (code `dictionary_exists`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is larger than 1 GiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/sync/link": {
       "post": {
         "tags": [
@@ -9099,6 +9257,20 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "DictionaryStored": {
+        "type": "object",
+        "description": "The answer to an uploaded dictionary: when the server's registry recorded it.\nThe uploader takes this time as its own, so that its next push leaves the dictionary's row out.",
+        "required": [
+          "updated_at_ms"
+        ],
+        "properties": {
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },

@@ -1414,6 +1414,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sync/dictionaries/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Streams one of the principal's dictionaries as NDJSON: a `begin` line with its metadata and import time,
+         *     a line for each entry, frequency, tag, kanji and media file, and an `end` line.
+         */
+        get: operations["getDictionaryContent"];
+        /**
+         * Imports a dictionary that a device uploads as the principal's, under the id it has there,
+         *     from the NDJSON that `GET /sync/dictionaries/{id}/content` writes.
+         */
+        put: operations["putDictionaryContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sync/link": {
         parameters: {
             query?: never;
@@ -2006,6 +2030,14 @@ export interface components {
             dictionaryId: string;
             dictionaryTitle: string;
             reading?: string | null;
+        };
+        /**
+         * @description The answer to an uploaded dictionary: when the server's registry recorded it.
+         *     The uploader takes this time as its own, so that its next push leaves the dictionary's row out.
+         */
+        DictionaryStored: {
+            /** Format: int64 */
+            updated_at_ms: number;
         };
         /**
          * @description The CSS that a dictionary ships for its own entries, unsanitized.
@@ -8597,6 +8629,129 @@ export interface operations {
             };
             /** @description `forbidden`: only the launch token may sync */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getDictionaryContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dictionary, one JSON object per line */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/x-ndjson": string;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The principal has no dictionary with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putDictionaryContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The dictionary, one JSON object per line */
+        requestBody?: {
+            content: {
+                "application/x-ndjson": unknown;
+            };
+        };
+        responses: {
+            /** @description The dictionary was stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryStored"];
+                };
+            };
+            /** @description The body is not a whole dump (code `bad_dump`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A dictionary with this id or title is stored already (code `dictionary_exists`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 1 GiB */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
