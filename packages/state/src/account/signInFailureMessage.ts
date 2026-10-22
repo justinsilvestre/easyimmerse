@@ -9,7 +9,7 @@ const messagesByCode: Record<string, string> = {
   password_too_long: "The password is too long.",
   [connectionNotKeptCode]: "The sign-in could not be saved in this browser.",
   invalid_email: "This email address is not valid.",
-  signup_closed: "This server does not let anyone sign up.",
+  signup_closed: "This server does not let anyone create an account.",
   accounts_disabled: "This server has no accounts.",
   mail_unavailable: "This server can't send email right now. Try again later.",
   remote_unreachable:

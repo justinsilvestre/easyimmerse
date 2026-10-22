@@ -2,7 +2,6 @@ import type {
   ServerOffer,
   SignInFormView,
   SignInMode,
-  SignInServerChoice,
 } from "@easyimmerse/state";
 import {
   actions,
@@ -12,26 +11,18 @@ import {
   selectSignInForm,
 } from "@easyimmerse/state";
 import { Button } from "../components/Button.tsx";
-import { ChoiceRow } from "../components/ChoiceRow.tsx";
 import { LinkButton } from "../components/LinkButton.tsx";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter.tsx";
-import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { TextField } from "../components/TextField.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { PasswordResetForm } from "./PasswordResetForm.tsx";
 
-const modeOptions = [
-  { value: "login", label: "Log in" },
-  { value: "signup", label: "Sign up" },
-] satisfies { value: SignInMode; label: string }[];
-
-const serverOptions = [
-  { value: "official", label: "easyImmerse" },
-  { value: "own", label: "Your own server" },
-] satisfies { value: SignInServerChoice; label: string }[];
-
-/** The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. `intro` tells what logging in does. */
+/**
+ * The form that logs in to an easyImmerse server, or signs up on it, and connects the app to it. `intro` tells what logging in does.
+ * It logs in unless the person follows its link to create an account, and uses the easyImmerse cloud, where the app knows of one,
+ * unless the person chooses their own server.
+ */
 export function SignInForm({ intro }: { intro?: string }) {
   const dispatch = useAppDispatch();
   const form = useAppSelector(selectSignInForm);
@@ -51,30 +42,37 @@ export function SignInForm({ intro }: { intro?: string }) {
       }}
     >
       {intro !== undefined && <p className="text-sm text-fg-muted">{intro}</p>}
-      <SegmentedControl
-        label="Log in or sign up"
-        options={modeOptions}
-        value={form.mode}
-        onChange={(mode) => change({ mode })}
-      />
-      {servers.hasOfficialServer && (
-        <ChoiceRow
-          label="Server"
-          options={serverOptions}
-          value={servers.serverChoice}
-          onChange={(serverChoice) => change({ serverChoice })}
+      <h3 className="text-sm font-semibold">
+        {form.mode === "login" ? "Log in" : "Create an account"}
+      </h3>
+      {servers.serverChoice === "official" ? (
+        <OfficialServer
+          isBusy={form.isBusy}
+          onChooseOwn={() => change({ serverChoice: "own" })}
         />
-      )}
-      {servers.serverChoice === "own" && (
-        <TextField
-          label="Server address"
-          type="url"
-          placeholder="https://"
-          hint="The address your easyImmerse server is reached at, starting with http:// or https://."
-          value={form.ownServerUrl}
-          disabled={form.isBusy}
-          onChange={(event) => change({ ownServerUrl: event.target.value })}
-        />
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <TextField
+            label="Server address"
+            type="url"
+            placeholder="https://"
+            hint="The address your easyImmerse server is reached at, starting with http:// or https://."
+            value={form.ownServerUrl}
+            disabled={form.isBusy}
+            onChange={(event) => change({ ownServerUrl: event.target.value })}
+          />
+          {servers.hasOfficialServer && (
+            <LinkButton
+              aria-disabled={form.isBusy}
+              className="self-start text-sm"
+              onClick={() => {
+                if (!form.isBusy) change({ serverChoice: "official" });
+              }}
+            >
+              Use the easyImmerse cloud
+            </LinkButton>
+          )}
+        </div>
       )}
       <ServerOfferNotice offer={form.serverOffer} mode={form.mode} />
       <TextField
@@ -125,7 +123,61 @@ export function SignInForm({ intro }: { intro?: string }) {
       >
         {submitLabel(form)}
       </Button>
+      <ModeSwitch
+        mode={form.mode}
+        isBusy={form.isBusy}
+        onChange={(mode) => change({ mode })}
+      />
     </form>
+  );
+}
+
+/** Names the easyImmerse cloud as the server the form uses, with the link that chooses the person's own server instead. */
+function OfficialServer({
+  isBusy,
+  onChooseOwn,
+}: {
+  isBusy: boolean;
+  onChooseOwn: () => void;
+}) {
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+      <span className="text-fg-muted">Server: easyImmerse cloud</span>
+      <LinkButton
+        aria-disabled={isBusy}
+        onClick={() => {
+          if (!isBusy) onChooseOwn();
+        }}
+      >
+        Use your own server
+      </LinkButton>
+    </p>
+  );
+}
+
+/** The line under the form that turns logging in into creating an account, or back. */
+function ModeSwitch({
+  mode,
+  isBusy,
+  onChange,
+}: {
+  mode: SignInMode;
+  isBusy: boolean;
+  onChange: (mode: SignInMode) => void;
+}) {
+  const other = mode === "login" ? "signup" : "login";
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-1.5 text-sm text-fg-muted">
+      {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+      <LinkButton
+        aria-disabled={isBusy}
+        onClick={() => {
+          if (!isBusy) onChange(other);
+        }}
+      >
+        {mode === "login" ? "Create an account" : "Log in"}
+      </LinkButton>
+    </p>
   );
 }
 
@@ -159,7 +211,7 @@ function ServerOfferNotice({
     offer === "noAccounts"
       ? "This server has no accounts, so there is nothing to log in to."
       : offer === "signupClosed" && mode === "signup"
-        ? "This server does not let anyone sign up. Ask its administrator for an account, then log in."
+        ? "This server does not let anyone create an account. Ask its administrator for one, then log in."
         : null;
   if (message === null) return null;
   return (
@@ -172,6 +224,6 @@ function ServerOfferNotice({
 function submitLabel(form: SignInFormView): string {
   if (form.status === "checkingServer") return "Checking the server…";
   if (form.status === "submitting")
-    return form.mode === "login" ? "Logging in…" : "Signing up…";
-  return form.mode === "login" ? "Log in" : "Sign up";
+    return form.mode === "login" ? "Logging in…" : "Creating the account…";
+  return form.mode === "login" ? "Log in" : "Create account";
 }

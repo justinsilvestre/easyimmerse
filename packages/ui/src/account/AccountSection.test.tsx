@@ -97,8 +97,32 @@ describe("AccountSection", () => {
       renderWithAppStore(<AccountSection />, undefined, {
         cloudUrl: "https://cloud.example.com",
       });
-      fireEvent.click(screen.getByLabelText("Your own server"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use your own server" }),
+      );
       expect(screen.getByLabelText("Server address")).toBeDefined();
+    });
+
+    it("goes back to the easyImmerse cloud when the person chooses it", () => {
+      renderWithAppStore(<AccountSection />, undefined, {
+        cloudUrl: "https://cloud.example.com",
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use your own server" }),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use the easyImmerse cloud" }),
+      );
+      expect(screen.queryByLabelText("Server address")).toBeNull();
+    });
+
+    it("turns back into a log-in form from creating an account", () => {
+      renderWithAppStore(<AccountSection />);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Create an account" }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+      expect(screen.getByRole("heading", { name: "Log in" })).toBeDefined();
     });
 
     it("asks the server what it offers when the form is sent", () => {
@@ -116,13 +140,15 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells when the server lets nobody sign up", async () => {
+    it("tells when the server lets nobody create an account", async () => {
       const { effects } = renderWithAppStore(<AccountSection />);
       type("Server address", ownServer);
-      fireEvent.click(screen.getByLabelText("Sign up"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Create an account" }),
+      );
       type("Email", "someone@example.com");
       type("Password", "correct horse");
-      fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create account" }));
       await act(async () =>
         effects.resolveServerAuthInfo({
           ok: true,
@@ -131,7 +157,7 @@ describe("AccountSection", () => {
       );
       expect(
         screen.getByText(
-          "This server does not let anyone sign up. Ask its administrator for an account, then log in.",
+          "This server does not let anyone create an account. Ask its administrator for one, then log in.",
         ),
       ).toBeDefined();
     });
@@ -165,7 +191,9 @@ describe("AccountSection", () => {
     /** Renders the section offline in signup mode with the given password typed. */
     function typeSignupPassword(password: string) {
       renderWithAppStore(<AccountSection />);
-      fireEvent.click(screen.getByLabelText("Sign up"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Create an account" }),
+      );
       type("Password", password);
     }
 
