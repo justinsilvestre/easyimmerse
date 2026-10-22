@@ -51,7 +51,7 @@ function remoteAccountResponses(link: SyncLink) {
           id: "s1",
           created_at_ms: Date.now(),
           last_used_at_ms: Date.now(),
-          user_agent: "",
+          user_agent: "easyImmerse/0.1.0 (macos)",
           is_current: true,
         },
       ],
