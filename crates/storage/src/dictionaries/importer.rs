@@ -9,43 +9,81 @@ use rusqlite::{Connection, Transaction, params};
 use super::DictionaryId;
 use super::columns::{JsonDeflater, enum_text, join_words};
 use crate::error::StorageError;
+use crate::owners::OwnerId;
 
-/// Reads a dictionary from its files into the database in one transaction, and returns its new id.
+/// Reads a dictionary of the owner from its files into the database in one transaction, and returns its new id.
 /// Nothing is stored when the files cannot be read.
 pub fn import_dictionary(
     conn: &mut Connection,
+    owner: &OwnerId,
     source: &mut DictionarySource,
     imported_at: u64,
 ) -> Result<DictionaryId, StorageError> {
-    import_with(conn, imported_at, |sink| {
+    import_with(conn, owner, imported_at, |sink| {
         dictionary::import_dictionary(source, sink).map(|_| ())
     })
 }
 
-/// Stores what `read` passes to the sink, in one transaction.
+/// Stores what `read` passes to the sink as a dictionary of the owner, in one transaction.
 pub fn import_with(
     conn: &mut Connection,
+    owner: &OwnerId,
     imported_at: u64,
     read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
 ) -> Result<DictionaryId, StorageError> {
     let transaction = conn.transaction()?;
-    let mut importer = DictionaryImporter {
-        transaction: &transaction,
+    let id = import_into(
+        &transaction,
+        owner,
         imported_at,
+        DictionaryId::generate(),
+        read,
+    )?;
+    transaction.commit()?;
+    Ok(id)
+}
+
+/// Stores what `read` passes to the sink as a dictionary of the owner under the given id, inside the caller's transaction.
+/// Syncing uses this so that a dictionary keeps its id on every server.
+pub(crate) fn import_into(
+    transaction: &Transaction,
+    owner: &OwnerId,
+    imported_at: u64,
+    id: DictionaryId,
+    read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
+) -> Result<DictionaryId, StorageError> {
+    if is_dictionary_stored(transaction, &id)? {
+        return Err(StorageError::DictionaryExists(id.0));
+    }
+    let mut importer = DictionaryImporter {
+        transaction,
+        owner,
+        imported_at,
+        id: Some(id),
         started: None,
         deflater: JsonDeflater::new(),
     };
     read(&mut importer)?;
     let started = importer.started.ok_or(StorageError::ImportOutOfOrder)?;
-    record_counts(&transaction, started.number)?;
-    transaction.commit()?;
+    record_counts(transaction, started.number)?;
     Ok(started.id)
+}
+
+fn is_dictionary_stored(conn: &Connection, id: &DictionaryId) -> Result<bool, StorageError> {
+    Ok(conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM dictionaries WHERE id = ?1)",
+        params![id.0],
+        |row| row.get(0),
+    )?)
 }
 
 /// Writes each item a format reads straight to the database through cached prepared statements.
 struct DictionaryImporter<'a> {
     transaction: &'a Transaction<'a>,
+    owner: &'a OwnerId,
     imported_at: u64,
+    /// The id to store the dictionary under, until `begin` takes it.
+    id: Option<DictionaryId>,
     /// The dictionary row, once `begin` has written it.
     started: Option<StartedDictionary>,
     deflater: JsonDeflater,
@@ -66,18 +104,18 @@ impl DictionaryImporter<'_> {
         Ok(self.started()?.number)
     }
 
-    /// Tells whether a dictionary with the title was imported before, so that the same file is not imported twice.
+    /// Tells whether the owner imported a dictionary with the title before, so that the same file is not imported twice.
     fn has_dictionary_titled(&self, title: &str) -> Result<bool, StorageError> {
         let count: i64 = self.transaction.query_row(
-            "SELECT COUNT(*) FROM dictionaries WHERE title = ?1",
-            params![title],
+            "SELECT COUNT(*) FROM dictionaries WHERE title = ?1 AND owner_id = ?2",
+            params![title, self.owner.0],
             |row| row.get(0),
         )?;
         Ok(count > 0)
     }
 
     fn insert_metadata(
-        &self,
+        &mut self,
         metadata: &DictionaryMetadata,
     ) -> Result<StartedDictionary, StorageError> {
         if self.has_dictionary_titled(&metadata.title)? {
@@ -85,7 +123,7 @@ impl DictionaryImporter<'_> {
                 metadata.title.clone(),
             ));
         }
-        let id = DictionaryId::generate();
+        let id = self.id.take().ok_or(StorageError::ImportOutOfOrder)?;
         let frequency_mode = metadata
             .frequency_mode
             .as_ref()
@@ -93,8 +131,9 @@ impl DictionaryImporter<'_> {
             .transpose()?;
         self.transaction.execute(
             "INSERT INTO dictionaries (id, title, revision, format, description, author, attribution,
-                 url, source_language, target_language, frequency_mode, stylesheet, imported_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                 url, source_language, target_language, frequency_mode, stylesheet, imported_at,
+                 owner_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
             params![
                 id.0,
                 metadata.title,
@@ -109,6 +148,7 @@ impl DictionaryImporter<'_> {
                 frequency_mode,
                 metadata.stylesheet,
                 i64::try_from(self.imported_at).unwrap_or(i64::MAX),
+                self.owner.0,
             ],
         )?;
         Ok(StartedDictionary {

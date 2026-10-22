@@ -5,7 +5,7 @@ import {
   createWasmBackendClient,
   resolveServerConfig,
 } from "@easyimmerse/backend";
-import { createWebEffects } from "@easyimmerse/effects-web";
+import { createWebEffects, openMailedLink } from "@easyimmerse/effects-web";
 import type { EnhancerComposer, ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -32,6 +32,7 @@ export async function bootstrap(): Promise<void> {
     playerRegistry,
     browserFileRegistry,
     writeDefinitionMarkdown: definitionMarkdown,
+    server,
   });
   const store = createAppStore(
     effects,
@@ -42,6 +43,7 @@ export async function bootstrap(): Promise<void> {
     import.meta.env.VITE_EASYIMMERSE_CLOUD_URL || null,
     findDevToolsComposer(),
   );
+  openMailedLink(store, window);
   createRoot(findRootElement()).render(
     <AppRoot
       store={store}

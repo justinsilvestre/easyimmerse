@@ -9,7 +9,7 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import type { PlayerStatus } from "./PlayerStatus.ts";
 import { selectPathPlayerStatus } from "./selectPathPlayerStatus.ts";
 
-/** What the player shows for a file on the server's disk, from the tracks and the playback method the media screen's update asked for. */
+/** What the player shows for a file the server plays, from the tracks and the playback method the media screen's update asked for. */
 export function usePathPlayback(
   projectId: string,
   mediaFile: MediaFile,

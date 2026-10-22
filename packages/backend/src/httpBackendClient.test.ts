@@ -89,6 +89,17 @@ describe("createHttpBackendClient", () => {
     expect(result).toEqual({ data: undefined });
   });
 
+  it("returns undefined data for a response without a body", async () => {
+    const fakeFetch = createFakeFetch(
+      () => new Response(null, { status: 202 }),
+    );
+    const result = await createClient(fakeFetch).send({
+      method: "POST",
+      path: "/auth/confirmation-email",
+    });
+    expect(result).toEqual({ data: undefined });
+  });
+
   it("sends a JSON body with the JSON content type", async () => {
     const fakeFetch = createFakeFetch(
       () => new Response(null, { status: 204 }),
@@ -129,6 +140,28 @@ describe("createHttpBackendClient", () => {
     });
     expect(result).toEqual({
       error: { status: 401, code: "unauthorized", message: "Bad token" },
+    });
+  });
+
+  it("reads the seconds the Retry-After header asks to wait", async () => {
+    const fakeFetch = createFakeFetch(
+      () =>
+        new Response(
+          JSON.stringify({ code: "too_many_attempts", message: "Wait" }),
+          { status: 429, headers: { "retry-after": "42" } },
+        ),
+    );
+    const result = await createClient(fakeFetch).send({
+      method: "POST",
+      path: "/auth/confirmation-email",
+    });
+    expect(result).toEqual({
+      error: {
+        status: 429,
+        code: "too_many_attempts",
+        message: "Wait",
+        retryAfterSeconds: 42,
+      },
     });
   });
 

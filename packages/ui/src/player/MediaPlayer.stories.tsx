@@ -1,11 +1,7 @@
 import type { BackendClient, BackendRequest } from "@easyimmerse/backend";
-import { actions, createBrowserFileRegistry } from "@easyimmerse/state";
-import type {
-  ListMediaFilesResponse,
-  MediaFileSource,
-} from "@easyimmerse/types";
+import { actions } from "@easyimmerse/state";
+import type { ListMediaFilesResponse } from "@easyimmerse/types";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
-import { type ReactNode, useEffect, useState } from "react";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
@@ -54,57 +50,16 @@ function clientWithHangingTracks(): BackendClient {
   };
 }
 
-/** Stands in for hls.js, which has no server to fetch from in Storybook. */
+/** The sample video, at a path relative to the story's page, so that it resolves wherever Storybook is published. */
+const sampleVideoUrl = "fixtures/sample.mp4";
+
+/** Stands in for hls.js, which has no server to fetch from in Storybook, and plays the sample video instead. */
 const withFakeHls: Decorator = (Story) => (
-  <HlsLoaderContext value={async () => createFakeHls().Hls}>
+  <HlsLoaderContext
+    value={async () => createFakeHls({ playsFrom: sampleVideoUrl }).Hls}
+  >
     <Story />
   </HlsLoaderContext>
-);
-
-const browserFiles = createBrowserFileRegistry<File>();
-let heldSource: MediaFileSource = {
-  kind: "browser_file",
-  size: 0,
-  last_modified_ms: 0,
-};
-
-const browserFileClient = createFakeBackendClient({
-  ...fixtureResponses,
-  "GET /projects/p1/media": (): ListMediaFilesResponse => ({
-    media_files: [
-      {
-        id: "m2",
-        project_id: "p1",
-        name: "sample.mp4",
-        source: heldSource,
-        created_at_ms: 0,
-        track_selection_json: null,
-        origin: null,
-        translation_media_file_id: null,
-      },
-    ],
-  }),
-});
-
-/** Fetches the sample video into a File and registers it as a browser-held media file before the story renders. */
-function FixtureFileLoader({ children }: { children: ReactNode }) {
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    fetch("/fixtures/sample.mp4")
-      .then((response) => response.blob())
-      .then((blob) => {
-        const file = new File([blob], "sample.mp4", { lastModified: 1 });
-        heldSource = browserFiles.register(file);
-        setLoaded(true);
-      });
-  }, []);
-  return loaded ? children : null;
-}
-
-const withFixtureFile: Decorator = (Story) => (
-  <FixtureFileLoader>
-    <Story />
-  </FixtureFileLoader>
 );
 
 const meta = {
@@ -127,17 +82,8 @@ export const Loading: Story = {
   },
 };
 
-export const DirectFromBrowserFile: Story = {
-  decorators: [
-    withDispatchedActions(actions.openMediaFileRequested("p1", "m2")),
-    withFixtureFile,
-  ],
-  parameters: {
-    appStore: { client: browserFileClient, browserFileRegistry: browserFiles },
-  },
-};
-
-export const Converting: Story = {
+/** A file the server converts while it plays, as the player shows any file that is playing. */
+export const Playing: Story = {
   decorators: [withFakeHls],
   parameters: {
     appStore: {
@@ -175,8 +121,4 @@ export const Unsupported: Story = {
 
 export const NoServer: Story = {
   parameters: { appStore: { client: clientFor(directPlaybackRoutes) } },
-};
-
-export const RouteMissing: Story = {
-  parameters: { appStore: { client: clientFor([]), server: fakeServer } },
 };

@@ -27,6 +27,14 @@ const json =
       headers: { "content-type": "application/json" },
     });
 
+const noContent = (status: number) => () => new Response(null, { status });
+
+const postingJson = (body: unknown) => ({
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+
 const unreachable: typeof fetch = async () => {
   throw new TypeError("Failed to fetch");
 };
@@ -70,6 +78,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 };
 
@@ -151,6 +160,89 @@ describe("createAccountEffects", () => {
           },
         },
       );
+    });
+  });
+
+  describe("confirmEmail", () => {
+    it("posts the link's token to /auth/confirm-email", async () => {
+      const { sent, fetchFn } = answering(noContent(204));
+      await effectsOver(fetchFn).effects.confirmEmail(serverUrl, "t1");
+      expect(sent).toEqual([
+        {
+          url: "https://books.example.org/auth/confirm-email",
+          init: postingJson({ token: "t1" }),
+        },
+      ]);
+    });
+
+    it("resolves with no data once the server confirms the address", async () => {
+      const { fetchFn } = answering(noContent(204));
+      expect(
+        await effectsOver(fetchFn).effects.confirmEmail(serverUrl, "t1"),
+      ).toEqual({ ok: true, data: null });
+    });
+
+    it("resolves with the API error of a link that no longer works", async () => {
+      const { fetchFn } = answering(
+        json({ code: "invalid_link", message: "The link is invalid." }, 400),
+      );
+      expect(
+        await effectsOver(fetchFn).effects.confirmEmail(serverUrl, "t1"),
+      ).toMatchObject({ ok: false, error: { code: "invalid_link" } });
+    });
+  });
+
+  describe("requestPasswordReset", () => {
+    it("posts the email address to /auth/password-reset", async () => {
+      const { sent, fetchFn } = answering(noContent(202));
+      await effectsOver(fetchFn).effects.requestPasswordReset(
+        serverUrl,
+        "someone@example.com",
+      );
+      expect(sent).toEqual([
+        {
+          url: "https://books.example.org/auth/password-reset",
+          init: postingJson({ email: "someone@example.com" }),
+        },
+      ]);
+    });
+
+    it("resolves with no data once the server accepts the request", async () => {
+      const { fetchFn } = answering(noContent(202));
+      expect(
+        await effectsOver(fetchFn).effects.requestPasswordReset(
+          serverUrl,
+          "someone@example.com",
+        ),
+      ).toEqual({ ok: true, data: null });
+    });
+  });
+
+  describe("setNewPassword", () => {
+    it("posts the link's token and the password to /auth/password", async () => {
+      const { sent, fetchFn } = answering(json(session));
+      await effectsOver(fetchFn).effects.setNewPassword(
+        serverUrl,
+        "t1",
+        "correct horse",
+      );
+      expect(sent).toEqual([
+        {
+          url: "https://books.example.org/auth/password",
+          init: postingJson({ token: "t1", password: "correct horse" }),
+        },
+      ]);
+    });
+
+    it("resolves with the session the server opened", async () => {
+      const { fetchFn } = answering(json(session));
+      expect(
+        await effectsOver(fetchFn).effects.setNewPassword(
+          serverUrl,
+          "t1",
+          "correct horse",
+        ),
+      ).toEqual({ ok: true, data: session });
     });
   });
 

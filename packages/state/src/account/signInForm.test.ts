@@ -21,7 +21,7 @@ const knowing = (accounts: boolean, openSignup: boolean): SignInForm => ({
   ...filled,
   serverAuthInfo: {
     serverUrl: "https://books.example.org",
-    info: { accounts, open_signup: openSignup },
+    info: { accounts, open_signup: openSignup, sends_email: false },
   },
 });
 

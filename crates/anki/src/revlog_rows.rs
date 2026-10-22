@@ -82,6 +82,7 @@ mod tests {
 
     fn entry(answered_at_ms: u64) -> ReviewLogEntry {
         ReviewLogEntry {
+            id: easyimmerse_core::review::ReviewAnswerId(answered_at_ms.to_string()),
             flashcard_id: easyimmerse_core::flashcard::FlashcardId("f".to_owned()),
             answered_at_ms,
             rating: ReviewRating::Good,

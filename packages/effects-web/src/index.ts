@@ -4,6 +4,7 @@ import type {
   Effects,
   PlayerRegistry,
   SavePathPick,
+  ServerConfig,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
 import { createAccountEffects } from "./accountEffects.ts";
@@ -17,6 +18,7 @@ import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
+import { createScopedPreferenceStore } from "./scopedPreferenceStore.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
 
 /** Builds the browser implementation of the app's side effects. */
@@ -26,8 +28,14 @@ export function createWebEffects(options: {
   browserFileRegistry?: BrowserFileRegistry<File>;
   /** Writes a dictionary definition as Markdown; the UI package provides the writer, which reads markup with the DOM's parser. */
   writeDefinitionMarkdown: DefinitionWriter;
+  /** The server the app is connected to, which keeps the preferences that follow the person; absent or null when there is none. */
+  server?: ServerConfig | null;
 }): Effects {
-  const preferences = createPreferenceStore();
+  const deviceStore = createPreferenceStore();
+  const preferences = createScopedPreferenceStore(
+    options.server ?? null,
+    deviceStore,
+  );
   const pickRegisteredFile = createPickRegisteredFile(
     options.browserFileRegistry ?? createBrowserFileRegistry<File>(),
   );
@@ -44,8 +52,8 @@ export function createWebEffects(options: {
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
     savePreference: preferences.save,
     loadPreference: preferences.load,
-    saveOnDevice: preferences.save,
-    loadFromDevice: preferences.load,
+    saveOnDevice: deviceStore.save,
+    loadFromDevice: deviceStore.load,
     openExternalUrl,
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
@@ -77,5 +85,8 @@ function ignoreSettingsRequests(): () => void {
   return () => undefined;
 }
 
+export { requestJson } from "./accountEffects.ts";
 export { createApplyAppearance } from "./applyAppearance.ts";
+export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
+export { createServerPreferenceStore } from "./serverPreferenceStore.ts";

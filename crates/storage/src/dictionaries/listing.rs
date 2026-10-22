@@ -4,18 +4,22 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 use super::columns::{get_enum, get_optional_enum, get_unsigned};
 use super::{DictionaryCounts, DictionaryId, StoredDictionary};
 use crate::error::StorageError;
+use crate::owners::OwnerId;
 
 const STORED_DICTIONARY_COLUMNS: &str = "id, title, revision, format, description, author,
     attribution, url, source_language, target_language, frequency_mode, stylesheet, imported_at,
     entry_count, term_meta_count, tag_count, kanji_count, kanji_meta_count, media_count";
 
-/// Lists every stored dictionary in the order they were imported.
-pub fn list_dictionaries(conn: &Connection) -> Result<Vec<StoredDictionary>, StorageError> {
+/// Lists the owner's dictionaries in the order they were imported.
+pub fn list_dictionaries(
+    conn: &Connection,
+    owner: &OwnerId,
+) -> Result<Vec<StoredDictionary>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {STORED_DICTIONARY_COLUMNS} FROM dictionaries ORDER BY number"
+        "SELECT {STORED_DICTIONARY_COLUMNS} FROM dictionaries WHERE owner_id = ?1 ORDER BY number"
     ))?;
     let dictionaries = statement
-        .query_map([], read_stored_dictionary)?
+        .query_map(params![owner.0], read_stored_dictionary)?
         .collect::<Result<_, _>>()?;
     Ok(dictionaries)
 }

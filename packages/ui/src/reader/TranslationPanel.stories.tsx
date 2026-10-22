@@ -13,6 +13,8 @@ function document(id: string, name: string): MediaFile {
     track_selection_json: null,
     origin: null,
     translation_media_file_id: null,
+    is_upload_chosen: false,
+    has_stored_copy: false,
   };
 }
 

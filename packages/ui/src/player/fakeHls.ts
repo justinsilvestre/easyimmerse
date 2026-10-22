@@ -18,8 +18,13 @@ export type FakeHlsInstance = {
   emitError: (data: FakeErrorData) => void;
 };
 
-/** A stand-in for the hls.js class, for tests and stories. The instances it creates are listed on `instances`. */
-export function createFakeHls(options: { supported?: boolean } = {}) {
+/**
+ * A stand-in for the hls.js class, for tests and stories. The instances it creates are listed on `instances`.
+ * Given `playsFrom`, a media element it is attached to plays that file, so that a story shows a picture.
+ */
+export function createFakeHls(
+  options: { supported?: boolean; playsFrom?: string } = {},
+) {
   const instances: FakeHlsInstance[] = [];
   class FakeHls {
     static Events = { ERROR: "hlsError" };
@@ -54,6 +59,7 @@ export function createFakeHls(options: { supported?: boolean } = {}) {
     }
     attachMedia(element: HTMLMediaElement) {
       this.record.media = element;
+      if (options.playsFrom !== undefined) element.src = options.playsFrom;
     }
     recoverMediaError() {
       this.record.recoveries += 1;

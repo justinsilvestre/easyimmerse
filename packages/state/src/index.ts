@@ -3,9 +3,34 @@ export {
   type SignInFormView,
   selectAccountServerOptions,
   selectCanSubmitSignIn,
+  selectIsLinking,
+  selectIsSignInFormStarted,
   selectIsSigningOut,
+  selectIsUnlinking,
+  selectLogOutDroppedCount,
+  selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
+export {
+  selectConfirmationEmailMessage,
+  selectHasSentConfirmationEmail,
+  selectIsSendingConfirmationEmail,
+} from "./account/confirmationEmailSelectors.ts";
+export { describeDevice } from "./account/describeDevice.ts";
+export {
+  selectDeviceLogOutFailureMessage,
+  selectIsLoggingOutDevice,
+} from "./account/devicesSelectors.ts";
+export {
+  type MailedLinkView,
+  selectMailedLink,
+  selectNewPasswordStrength,
+} from "./account/mailedLinkSelectors.ts";
+export type {
+  PasswordStrength,
+  PasswordStrengthLevel,
+} from "./account/passwordStrength.ts";
+export { type MailedLink, readMailedLink } from "./account/readMailedLink.ts";
 export {
   connectionNotKeptCode,
   type SignInAttempt,
@@ -66,6 +91,10 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export {
+  type BackupSign,
+  selectBackupSign,
+} from "./backup/selectBackupSign.ts";
 export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
@@ -134,6 +163,10 @@ export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
 export type { Appearance } from "./preferences/appearance.ts";
 export {
+  isPersonBoundPreferenceKey,
+  personBoundPreferenceKeys,
+} from "./preferences/preferenceScope.ts";
+export {
   selectPlayerControls,
   selectPreference,
   selectPreferencesLoaded,
@@ -153,7 +186,6 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
-export { selectIsWorkNotBackedUp } from "./recovery/selectIsWorkNotBackedUp.ts";
 export type {
   ReviewEnd,
   ReviewSessionProgress,
@@ -177,6 +209,7 @@ export {
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
+export { isPlayedByServer } from "./screen/isPlayedByServer.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {
   selectLookup,
@@ -296,8 +329,11 @@ export {
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
+export { hostOf } from "./server/hostOf.ts";
+export { isOwnTokenRefused } from "./server/isOwnTokenRefused.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
 export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
+export { isCloudServer, serverNameOf } from "./server/serverNameOf.ts";
 export type {
   RequestFailure,
   RequestOutcome,
@@ -308,9 +344,16 @@ export type {
   ServerResponses,
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
+export type { AccountVia, WorkHome } from "./server/serverSelectors.ts";
 export {
+  accountViaOf,
+  selectAccountVia,
   selectBundledServerPlatform,
+  selectCloudUrl,
+  selectIsCloudServer,
   selectServerConfig,
+  selectServerName,
+  selectWorkHome,
 } from "./server/serverSelectors.ts";
 export type {
   NativePlatform,
@@ -319,5 +362,28 @@ export type {
 } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
+export {
+  storedCopyFetchRequestId,
+  storedCopyUploadRequestId,
+  uploadChoiceRequestId,
+} from "./sync/storedCopies.ts";
+export { type SyncAction, syncActions } from "./sync/syncActions.ts";
+export {
+  selectIsDismissingSyncConflicts,
+  selectIsShowingAllSyncConflicts,
+  selectIsStoredCopyFetching,
+  selectIsStoredCopyUploading,
+  selectIsSyncRunRequested,
+  selectIsUploadChoiceChanging,
+  selectStoredCopyDeletionToConfirm,
+  selectSyncLink,
+  selectSyncStatus,
+} from "./sync/syncSelectors.ts";
+export {
+  dismissSyncConflictsRequestId,
+  runSyncRequestId,
+  type SyncState,
+  syncConflictsNoticeKey,
+} from "./sync/updateSync.ts";
 export type { Clock } from "./timers/clock.ts";
 export { systemClock } from "./timers/clock.ts";

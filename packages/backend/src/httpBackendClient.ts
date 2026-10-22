@@ -64,22 +64,38 @@ function serializeBody(body: BackendRequestBody | undefined): BodyInit | null {
 
 async function readResponse<T>(response: Response): Promise<BackendResult<T>> {
   if (!response.ok) return { error: await readBackendError(response) };
-  if (response.status === 204) return { data: undefined as T };
-  return { data: (await response.json()) as T };
+  const text = await response.text();
+  return { data: (text === "" ? undefined : JSON.parse(text)) as T };
 }
 
-/** Reads the error a server's failed response describes, or its status alone when the body is not the API's error. */
+/**
+ * Reads the error a server's failed response describes, or its status alone when the body is not the API's error,
+ * along with the seconds its `Retry-After` header asks to wait, when it gives them.
+ */
 export async function readBackendError(
   response: Response,
 ): Promise<BackendError> {
+  const retryAfterSeconds = retryAfterSecondsOf(response.headers);
+  const waiting = retryAfterSeconds === null ? {} : { retryAfterSeconds };
   const apiError = await readApiError(response);
   if (apiError === null)
-    return { status: response.status, message: response.statusText };
+    return {
+      status: response.status,
+      message: response.statusText,
+      ...waiting,
+    };
   return {
     status: response.status,
     code: apiError.code,
     message: apiError.message,
+    ...waiting,
   };
+}
+
+/** The seconds a `Retry-After` header asks to wait, or null when it names a date or is absent. */
+function retryAfterSecondsOf(headers: Headers): number | null {
+  const value = headers.get("retry-after")?.trim() ?? "";
+  return /^\d+$/.test(value) ? Number(value) : null;
 }
 
 async function readApiError(response: Response): Promise<ApiError | null> {

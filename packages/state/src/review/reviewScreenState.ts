@@ -34,8 +34,8 @@ export type SessionStep =
       kind: "answer";
       /** The card as it was shown when rated. */
       card: SessionCard;
-      /** The time of the answer's log entry, which names it to the server; null until the answer has landed. */
-      answeredAtMs: number | null;
+      /** The id of the answer's log entry, which names it to the server; null until the answer has landed. */
+      answerId: string | null;
     }
   | {
       kind: "hold";

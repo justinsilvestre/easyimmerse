@@ -20,13 +20,13 @@ fn import_with_alternate(storage: &Storage, title: &str, term: &str, alternate: 
         Ok(())
     };
     storage
-        .write(|conn| import_with(conn, 1_000, read))
+        .write(|conn| import_with(conn, &crate::OwnerId::launch(), 1_000, read))
         .unwrap();
 }
 
 fn find(storage: &Storage, headword: &str) -> Vec<FoundEntry> {
     storage
-        .find_dictionary_entries(&[headword.to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &[headword.to_string()])
         .unwrap()
 }
 

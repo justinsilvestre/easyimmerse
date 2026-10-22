@@ -18,7 +18,8 @@ use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::auth::principal::Principal;
 use crate::local_path::LOCAL_PATHS_NOT_ALLOWED;
 use crate::routes::media_import::load_project;
-use crate::routes::media_support::resolve_source_path;
+use crate::routes::media_support::resolve_own_path;
+use crate::routes::stored_copies::stored_copy_path;
 use crate::state::AppState;
 
 /// How long one file's check may take before its state is reported as unknown.
@@ -55,10 +56,13 @@ pub enum PathAvailability {
     /// The file exists or may exist, but opening it failed, for example for lack of
     /// permission.
     Unreadable,
+    /// The file cannot be read, but this server keeps a copy of its bytes, which plays in its place.
+    StoredCopy,
 }
 
-/// Checks whether each path-backed media file of a project can be opened. Files the browser
-/// holds are left out, since only the browser can tell whether it still has them. A
+/// Checks whether each path-backed media file of a project can be opened, or else played from this server's copy.
+/// Files the browser holds are left out unless this server keeps a copy, since only the browser can tell
+/// whether it still has them. A
 /// path-backed file is also left out when its check takes longer than two seconds, as can
 /// happen on a sleeping network drive, so an omitted file is one whose state is unknown.
 /// At most eight files are checked at once, across all requests.
@@ -85,7 +89,7 @@ pub async fn get_media_availability(
     let media_files = state
         .with_storage(move |storage| storage.list_media_files(&project_id))
         .await?;
-    let path_files = media_files.into_iter().filter(is_path_backed).collect();
+    let path_files = media_files.into_iter().filter(is_checkable).collect();
     Ok(Json(MediaAvailabilityResponse {
         media_files: check_all(state, &principal, path_files).await,
     }))
@@ -143,14 +147,27 @@ async fn availability_of(
     principal: &Principal,
     media_file: &MediaFile,
 ) -> PathAvailability {
-    match resolve_source_path(state, principal, media_file).await {
+    let own = match resolve_own_path(state, principal, media_file).await {
         Ok(path) => open_availability(tokio::fs::File::open(path).await.map(drop)),
         Err(failure) => resolution_availability(&failure),
+    };
+    if own != PathAvailability::Available && is_copy_readable(state, media_file).await {
+        PathAvailability::StoredCopy
+    } else {
+        own
     }
 }
 
-fn is_path_backed(media_file: &MediaFile) -> bool {
-    matches!(media_file.source, MediaFileSource::Path { .. })
+async fn is_copy_readable(state: &AppState, media_file: &MediaFile) -> bool {
+    match stored_copy_path(state, media_file).await {
+        Ok(Some(path)) => tokio::fs::File::open(path).await.is_ok(),
+        _ => false,
+    }
+}
+
+/// Whether the server can tell if the file is there: it has a path, or this server keeps a copy.
+fn is_checkable(media_file: &MediaFile) -> bool {
+    matches!(media_file.source, MediaFileSource::Path { .. }) || media_file.has_stored_copy
 }
 
 /// Maps a failure to resolve a media file's path to its availability.

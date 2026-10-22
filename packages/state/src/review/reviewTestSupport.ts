@@ -116,10 +116,10 @@ export function answerFailed(flashcardId: string) {
 }
 
 /** The undo of p1's latest answer landing, or failing. */
-export function undoSettled(answeredAtMs: number, isUndone = true) {
+export function undoSettled(answerId: string, isUndone = true) {
   return actions.requestSettled(
     reviewRequestIds("p1").undo,
-    { kind: "undoReviewAnswer", projectId: "p1", answeredAtMs },
+    { kind: "undoReviewAnswer", projectId: "p1", answerId },
     isUndone
       ? {
           ok: true,
@@ -209,6 +209,7 @@ function exampleLogEntry(
   phase: ReviewPhase,
 ) {
   return {
+    id: exampleAnswerId(answeredAtMs),
     flashcard_id: flashcardId,
     answered_at_ms: answeredAtMs,
     rating: "good",
@@ -222,4 +223,9 @@ function exampleLogEntry(
     interval_ms_after: 0,
     desired_retention: 0.9,
   } as const;
+}
+
+/** The id that the example log entry of an answer given at `answeredAtMs` has. */
+export function exampleAnswerId(answeredAtMs: number) {
+  return `answer-${answeredAtMs}`;
 }

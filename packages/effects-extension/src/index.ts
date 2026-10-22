@@ -4,6 +4,7 @@ import type {
   DefinitionWriter,
   Effects,
   PlayerRegistry,
+  ServerConfig,
 } from "@easyimmerse/state";
 import { browser } from "@wxt-dev/browser";
 import { createOpenExternalUrl } from "./openExternalUrl.ts";
@@ -18,6 +19,7 @@ export function createExtensionEffects(options: {
   playerRegistry: PlayerRegistry;
   browserFileRegistry?: BrowserFileRegistry<File>;
   writeDefinitionMarkdown: DefinitionWriter;
+  server?: ServerConfig | null;
 }): Effects {
   return {
     ...createWebEffects(options),
@@ -26,3 +28,4 @@ export function createExtensionEffects(options: {
     ),
   };
 }
+export { openMailedLink } from "@easyimmerse/effects-web";

@@ -29,4 +29,12 @@ track_selection_json: string | null,
  * The document that translates this one, when this is a document paired with its
  * translation before the two are aligned. Null otherwise.
  */
-translation_media_file_id: MediaFileId | null, };
+translation_media_file_id: MediaFileId | null, 
+/**
+ * Whether the user chose to keep a copy of the file's bytes on a server.
+ */
+is_upload_chosen: boolean, 
+/**
+ * Whether this server keeps a copy of the file's bytes, which it plays when the original cannot be read.
+ */
+has_stored_copy: boolean, };

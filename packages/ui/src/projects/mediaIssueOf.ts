@@ -7,7 +7,8 @@ export type PathAvailabilities = ReadonlyMap<string, PathAvailability>;
 
 /**
  * Tells why a media file cannot be opened from this app, or returns undefined when nothing is known to stop it.
- * A file a browser holds is judged by the registry of picked files; a file at a path by what the server reported for it.
+ * A file a browser holds is judged by the registry of picked files, unless the server keeps a copy of it that plays in its place;
+ * a file at a path by what the server reported for it.
  */
 export function mediaIssueOf(
   mediaFile: MediaFile,
@@ -16,6 +17,7 @@ export function mediaIssueOf(
 ): MediaIssue | undefined {
   if (mediaFile.source.kind === "path")
     return pathIssues[pathAvailabilities.get(mediaFile.id) ?? "available"];
+  if (pathAvailabilities.get(mediaFile.id) === "stored_copy") return undefined;
   if (registry === null) return "browserFileUnreachable";
   return registry.find(mediaFile.name, mediaFile.source) === null
     ? "browserFileNotOpen"
@@ -27,4 +29,5 @@ const pathIssues: Record<PathAvailability, MediaIssue | undefined> = {
   missing: "pathMissing",
   not_allowed: "pathNotAllowed",
   unreadable: "pathUnreadable",
+  stored_copy: undefined,
 };

@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
+use easyimmerse_storage::OwnerId;
+
 use crate::auth::error_body::ApiError;
 use crate::routes::dictionaries::DictionarySummary;
 use crate::routes::dictionary_imports::{ImportJobState, ImportJobStatus, ImportProgress};
@@ -21,6 +23,8 @@ pub struct ImportJobs {
 }
 
 struct ImportJob {
+    /// Whose dictionary the import makes. Only that owner may read the job.
+    owner: OwnerId,
     progress: SharedProgress,
     finished: Option<FinishedImport>,
 }
@@ -31,12 +35,13 @@ struct FinishedImport {
 }
 
 impl ImportJobs {
-    /// Registers a running job and returns its id with the progress its import updates.
-    pub fn start(&mut self) -> (String, SharedProgress) {
+    /// Registers a running job of the owner and returns its id with the progress its import updates.
+    pub fn start(&mut self, owner: OwnerId) -> (String, SharedProgress) {
         self.forget_old();
         let id = hex::encode(rand::random::<[u8; 16]>());
         let progress = SharedProgress::default();
         let job = ImportJob {
+            owner,
             progress: Arc::clone(&progress),
             finished: None,
         };
@@ -53,10 +58,13 @@ impl ImportJobs {
         }
     }
 
-    /// The status of a job, or None when no job has the id or its outcome has been forgotten.
-    pub fn status(&mut self, id: &str) -> Option<ImportJobStatus> {
+    /// The status of the owner's job, or None when the owner has no job with the id or its outcome has been forgotten.
+    pub fn status(&mut self, id: &str, owner: &OwnerId) -> Option<ImportJobStatus> {
         self.forget_old();
-        self.jobs.get(id).map(status_of)
+        self.jobs
+            .get(id)
+            .filter(|job| job.owner == *owner)
+            .map(status_of)
     }
 
     fn forget_old(&mut self) {
@@ -117,41 +125,63 @@ mod tests {
     #[test]
     fn a_started_job_is_running() {
         let mut jobs = ImportJobs::default();
-        let (id, _) = jobs.start();
-        assert_eq!(jobs.status(&id).unwrap().state, ImportJobState::Running);
+        let (id, _) = jobs.start(OwnerId::launch());
+        assert_eq!(
+            jobs.status(&id, &OwnerId::launch()).unwrap().state,
+            ImportJobState::Running
+        );
     }
 
     #[test]
     fn a_job_reports_the_progress_its_import_counted() {
         let mut jobs = ImportJobs::default();
-        let (id, progress) = jobs.start();
+        let (id, progress) = jobs.start(OwnerId::launch());
         lock(&progress).entries = 3;
-        assert_eq!(jobs.status(&id).unwrap().progress.entries, 3);
+        assert_eq!(
+            jobs.status(&id, &OwnerId::launch())
+                .unwrap()
+                .progress
+                .entries,
+            3
+        );
     }
 
     #[test]
     fn a_finished_job_carries_its_dictionary() {
         let mut jobs = ImportJobs::default();
-        let (id, _) = jobs.start();
+        let (id, _) = jobs.start(OwnerId::launch());
         jobs.finish(&id, Ok(summary()));
-        assert_eq!(jobs.status(&id).unwrap().dictionary, Some(summary()));
+        assert_eq!(
+            jobs.status(&id, &OwnerId::launch()).unwrap().dictionary,
+            Some(summary())
+        );
     }
 
     #[test]
     fn a_failed_job_carries_its_error() {
         let mut jobs = ImportJobs::default();
-        let (id, _) = jobs.start();
+        let (id, _) = jobs.start(OwnerId::launch());
         let error = ApiError {
             code: "bad_request".to_string(),
             message: "broken".to_string(),
         };
         jobs.finish(&id, Err(error.clone()));
-        assert_eq!(jobs.status(&id).unwrap().error, Some(error));
+        assert_eq!(
+            jobs.status(&id, &OwnerId::launch()).unwrap().error,
+            Some(error)
+        );
+    }
+
+    #[test]
+    fn a_job_of_another_owner_has_no_status() {
+        let mut jobs = ImportJobs::default();
+        let (id, _) = jobs.start(OwnerId::launch());
+        assert_eq!(jobs.status(&id, &OwnerId("account".to_string())), None);
     }
 
     #[test]
     fn an_unknown_job_has_no_status() {
         let mut jobs = ImportJobs::default();
-        assert_eq!(jobs.status("missing"), None);
+        assert_eq!(jobs.status("missing", &OwnerId::launch()), None);
     }
 }

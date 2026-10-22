@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use easyimmerse_core::lookup::{FoundEntry, FoundTermMeta, LookupResult, build_lookup_results};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 
 use super::distinct::distinct;
 use super::group_by::group_by;
@@ -15,7 +15,11 @@ pub struct TermRows {
 }
 
 impl TermRows {
-    pub fn find(storage: &Storage, lookups: &[&PositionLookup]) -> Result<Self, StorageError> {
+    pub fn find(
+        storage: &Storage,
+        owner: &OwnerId,
+        lookups: &[&PositionLookup],
+    ) -> Result<Self, StorageError> {
         let headwords = distinct(
             lookups
                 .iter()
@@ -23,9 +27,9 @@ impl TermRows {
                 .flat_map(|lookup| &lookup.folded_headwords),
         );
         let headwords: Vec<String> = headwords.into_iter().cloned().collect();
-        let entries = storage.find_dictionary_entries(&headwords)?;
+        let entries = storage.find_dictionary_entries(owner, &headwords)?;
         let terms = distinct(entries.iter().map(|found| found.entry.term.clone()));
-        let term_meta = storage.find_term_meta(&terms)?;
+        let term_meta = storage.find_term_meta(owner, &terms)?;
         Ok(Self {
             entry_indices_by_headword: group_by(0..entries.len(), |&index| {
                 entries[index].folded_headword.clone()

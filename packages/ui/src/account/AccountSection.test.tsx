@@ -1,5 +1,4 @@
-import type { NativePlatform } from "@easyimmerse/state";
-import type { CurrentPrincipal } from "@easyimmerse/types";
+import type { CurrentPrincipal, SyncLink } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -9,10 +8,17 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  builtInServerOn,
+  createBuiltInServerClient,
+} from "../testSupport/createBuiltInServerClient.ts";
+import {
   createFakeBackendClient,
   fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import {
+  fixtureResponses,
+  fixtureSyncLink,
+} from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { AccountSection } from "./AccountSection.tsx";
 
@@ -27,6 +33,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 } as const;
 
@@ -49,7 +56,7 @@ async function submittedToOpenServer() {
   await act(async () =>
     rendered.effects.resolveServerAuthInfo({
       ok: true,
-      data: { accounts: true, open_signup: true },
+      data: { accounts: true, open_signup: true, sends_email: false },
     }),
   );
   return rendered;
@@ -58,7 +65,6 @@ async function submittedToOpenServer() {
 /** Renders the section connected to a server that answers who the app's token belongs to as given. */
 function renderConnected(
   principal: CurrentPrincipal | ReturnType<typeof fakeFailure>,
-  bundledIn?: NativePlatform,
 ) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
@@ -68,7 +74,7 @@ function renderConnected(
   return {
     client,
     ...renderWithAppStore(<AccountSection />, client, {
-      server: { serverUrl: ownServer, token: "session-token", bundledIn },
+      server: { serverUrl: ownServer, token: "session-token" },
     }),
   };
 }
@@ -87,12 +93,26 @@ describe("AccountSection", () => {
       expect(screen.queryByLabelText("Server address")).toBeNull();
     });
 
-    it("asks for an address once the person chooses their own server", () => {
+    it("asks for an address once More options is opened", () => {
       renderWithAppStore(<AccountSection />, undefined, {
         cloudUrl: "https://cloud.example.com",
       });
-      fireEvent.click(screen.getByLabelText("Your own server"));
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
       expect(screen.getByLabelText("Server address")).toBeDefined();
+    });
+
+    it("goes back to the easyImmerse cloud once More options is closed", () => {
+      renderWithAppStore(<AccountSection />, undefined, {
+        cloudUrl: "https://cloud.example.com",
+      });
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
+      fireEvent.click(screen.getByRole("button", { name: "More options" }));
+      expect(screen.queryByLabelText("Server address")).toBeNull();
+    });
+
+    it("is headed Log in", () => {
+      renderWithAppStore(<AccountSection />);
+      expect(screen.getByRole("heading", { name: "Log in" })).toBeDefined();
     });
 
     it("asks the server what it offers when the form is sent", () => {
@@ -120,7 +140,7 @@ describe("AccountSection", () => {
       await act(async () =>
         effects.resolveServerAuthInfo({
           ok: true,
-          data: { accounts: true, open_signup: false },
+          data: { accounts: true, open_signup: false, sends_email: false },
         }),
       );
       expect(
@@ -155,7 +175,50 @@ describe("AccountSection", () => {
     });
   });
 
+  describe("while a password is chosen for signing up", () => {
+    /** Renders the section offline in signup mode with the given password typed. */
+    function typeSignupPassword(password: string) {
+      renderWithAppStore(<AccountSection />);
+      fireEvent.click(screen.getByLabelText("Sign up"));
+      type("Password", password);
+    }
+
+    it("shows how strong the password is once one is typed", () => {
+      typeSignupPassword("marigold");
+      expect(
+        screen.getByRole("meter", { name: "Password strength" }),
+      ).toBeDefined();
+    });
+
+    it("shows no strength while logging in", () => {
+      renderWithAppStore(<AccountSection />);
+      type("Password", "marigold");
+      expect(screen.queryByRole("meter")).toBeNull();
+    });
+
+    it("rates a long passphrase strong", () => {
+      typeSignupPassword("correct horse battery staple");
+      expect(screen.queryByText("Strong")).not.toBeNull();
+    });
+
+    it("advises a short password to grow longer", () => {
+      typeSignupPassword("marigold");
+      expect(
+        screen.queryByText(
+          "Add a longer phrase; length matters more than symbols.",
+        ),
+      ).not.toBeNull();
+    });
+  });
+
   describe("while the app is connected", () => {
+    it("is headed Account", async () => {
+      renderConnected({ kind: "account", user: session.user });
+      expect(
+        await screen.findByRole("heading", { name: "Account" }),
+      ).toBeDefined();
+    });
+
     it("names the account's role in words", async () => {
       renderConnected({ kind: "account", user: session.user });
       expect(await screen.findByText("library user")).toBeDefined();
@@ -168,26 +231,24 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells that the desktop app keeps the work on the computer", async () => {
-      renderConnected({ kind: "launch" }, "desktop");
-      expect(
-        await screen.findByText(/desktop app keeps your work on this computer/),
-      ).toBeDefined();
-    });
-
-    it("tells that the mobile app keeps the work on the device", async () => {
-      renderConnected({ kind: "launch" }, "mobile");
-      expect(
-        await screen.findByText(/mobile app keeps your work on this device/),
-      ).toBeDefined();
-    });
-
-    it("tells when the server no longer accepts the app's sign-in", async () => {
+    it("tells when the server has logged the app out", async () => {
       renderConnected(
         fakeFailure({ status: 401, code: "unauthorized", message: "" }),
       );
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "The server no longer accepts this app's sign-in. Log out, then log in again.",
+        "You were logged out of books.example.org. Log in again to keep using your account here.",
+      );
+    });
+
+    it("goes back to the form to log in again once the server has logged the app out", async () => {
+      const { effects } = renderConnected(
+        fakeFailure({ status: 401, code: "unauthorized", message: "" }),
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Log in again" }),
+      );
+      await waitFor(() =>
+        expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
       );
     });
 
@@ -200,6 +261,34 @@ describe("AccountSection", () => {
       await waitFor(() =>
         expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
       );
+    });
+  });
+
+  describe("while the app runs on its built-in server", () => {
+    const renderBuiltIn = (link: SyncLink | null) =>
+      renderWithAppStore(<AccountSection />, createBuiltInServerClient(link), {
+        server: builtInServerOn("desktop"),
+      });
+
+    it("is headed Log in while no server keeps a copy of the work", async () => {
+      renderBuiltIn(null);
+      expect(
+        await screen.findByRole("heading", { name: "Log in" }),
+      ).toBeDefined();
+    });
+
+    it("offers to log in to a server that backs up the work", async () => {
+      renderBuiltIn(null);
+      expect(await screen.findByText(/Log in to back it up to/)).toBeDefined();
+    });
+
+    it("shows the account on the server that keeps a copy of the work", async () => {
+      renderBuiltIn(fixtureSyncLink);
+      expect(
+        await screen.findByRole("button", {
+          name: "Log out of cloud.example.org",
+        }),
+      ).toBeDefined();
     });
   });
 });

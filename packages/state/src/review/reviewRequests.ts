@@ -57,13 +57,13 @@ export function sendAnswer(
   } satisfies Effect;
 }
 
-/** Undoes the answer whose log entry has the given time, which must be the project's latest. */
-export function sendUndo(projectId: string, answeredAtMs: number) {
+/** Undoes the answer whose log entry has the given id, which must be the project's latest. */
+export function sendUndo(projectId: string, answerId: string) {
   return {
     type: "sendRequest",
     id: reviewRequestIds(projectId).undo,
     scope: reviewScope(projectId),
-    request: { kind: "undoReviewAnswer", projectId, answeredAtMs },
+    request: { kind: "undoReviewAnswer", projectId, answerId },
   } satisfies Effect;
 }
 

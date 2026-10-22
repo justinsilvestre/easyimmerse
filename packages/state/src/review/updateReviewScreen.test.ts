@@ -13,6 +13,7 @@ import { sessionCardOf } from "./reviewScreenState.ts";
 import {
   answerFailed,
   answerLanded,
+  exampleAnswerId,
   exampleQueueCard,
   holdSettled,
   liftSettled,
@@ -85,7 +86,7 @@ describe("updateReviewScreen", () => {
 
   it("keeps the rating for Undo", () => {
     expect(reviewAfter(arrived, ...rated("good")).steps).toEqual([
-      { kind: "answer", card: sessionCardOf(a), answeredAtMs: null },
+      { kind: "answer", card: sessionCardOf(a), answerId: null },
     ]);
   });
 
@@ -139,7 +140,7 @@ describe("updateReviewScreen", () => {
         ...rated("good"),
         answerLanded("a", 7),
       );
-      expect(review.steps[0]).toMatchObject({ answeredAtMs: 7 });
+      expect(review.steps[0]).toMatchObject({ answerId: exampleAnswerId(7) });
     });
 
     it("brings back a card that the answer leaves in a learning step", () => {
@@ -218,7 +219,7 @@ describe("updateReviewScreen", () => {
 
     it("sends the undo of the latest answer", () => {
       expect(effectsOf(actions.reviewUndoRequested(), ...landed)).toEqual([
-        sendUndo("p1", 7),
+        sendUndo("p1", exampleAnswerId(7)),
       ]);
     });
 
@@ -230,7 +231,11 @@ describe("updateReviewScreen", () => {
 
     it("shows the card again once the undo lands", () => {
       expect(
-        shownId(...landed, actions.reviewUndoRequested(), undoSettled(7)),
+        shownId(
+          ...landed,
+          actions.reviewUndoRequested(),
+          undoSettled(exampleAnswerId(7)),
+        ),
       ).toBe("a");
     });
 
@@ -238,7 +243,7 @@ describe("updateReviewScreen", () => {
       const review = reviewAfter(
         ...landed,
         actions.reviewUndoRequested(),
-        undoSettled(7),
+        undoSettled(exampleAnswerId(7)),
       );
       expect(review.queue[0]?.flashcardId).toBe("b");
     });
@@ -247,7 +252,7 @@ describe("updateReviewScreen", () => {
       const review = reviewAfter(
         ...landed,
         actions.reviewUndoRequested(),
-        undoSettled(7),
+        undoSettled(exampleAnswerId(7)),
       );
       expect(review.steps).toEqual([]);
     });
@@ -256,7 +261,7 @@ describe("updateReviewScreen", () => {
       const review = reviewAfter(
         ...landed,
         actions.reviewUndoRequested(),
-        undoSettled(7, false),
+        undoSettled(exampleAnswerId(7), false),
       );
       expect(review.steps).toHaveLength(1);
     });

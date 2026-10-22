@@ -412,6 +412,8 @@ describe("MediaPlayer", () => {
             track_selection_json: null,
             origin: null,
             translation_media_file_id: null,
+            is_upload_chosen: false,
+            has_stored_copy: false,
           },
         ],
       };
@@ -474,6 +476,37 @@ describe("MediaPlayer", () => {
       const { mediaFiles } = registryHolding(null);
       renderPlayer([], { mediaFiles, mediaFileId: "m2" });
       expect(await findAlertText()).toContain("this app cannot reach it");
+    });
+
+    describe("whose copy the server keeps", () => {
+      const storedEpisode: ListMediaFilesResponse = {
+        media_files: [
+          {
+            ...episode,
+            source: { kind: "browser_file", size: 1, last_modified_ms: 1 },
+            has_stored_copy: true,
+          },
+        ],
+      };
+
+      it("plays the server's copy when the browser no longer holds the file", async () => {
+        renderPlayer(directPlaybackRoutes, {
+          mediaFiles: storedEpisode,
+          browserFileRegistry: createBrowserFileRegistry<File>(),
+        });
+        expect((await findVideo()).getAttribute("src")).toBe(
+          "http://127.0.0.1:1/projects/p1/media/m1/stream?token=t0k3n",
+        );
+      });
+
+      it("shows no failure when the browser no longer holds the file", async () => {
+        renderPlayer(directPlaybackRoutes, {
+          mediaFiles: storedEpisode,
+          browserFileRegistry: createBrowserFileRegistry<File>(),
+        });
+        await findVideo();
+        expect(screen.queryByRole("alert")).toBeNull();
+      });
     });
   });
 });

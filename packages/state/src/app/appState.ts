@@ -9,6 +9,7 @@ import type { Route } from "../route/route.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
+import type { SyncState } from "../sync/updateSync.ts";
 
 /** The app's own state, one slice per feature. */
 export type AppState = {
@@ -29,4 +30,6 @@ export type AppState = {
   /** Each project's media import dialog, which lasts across screens while its fetch runs or its failure waits to be seen. */
   mediaImports: MediaImports;
   account: AccountState;
+  /** What the person was told of the native app's syncing with the remote its built-in server is linked to. */
+  sync: SyncState;
 };

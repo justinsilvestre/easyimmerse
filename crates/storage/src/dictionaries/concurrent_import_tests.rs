@@ -37,7 +37,7 @@ fn import_paused(
         finish.recv().unwrap_or(Ok(()))
     };
     storage
-        .write(|conn| import_with(conn, 1_000, read))
+        .write(|conn| import_with(conn, &crate::OwnerId::launch(), 1_000, read))
         .map(|_| ())
 }
 
@@ -55,7 +55,9 @@ fn look_up_during_import(
         started.recv().unwrap();
         let (found_sender, found) = channel();
         scope.spawn(move || {
-            let _ = found_sender.send(storage.find_dictionary_entries(&[term.to_string()]));
+            let _ = found_sender.send(
+                storage.find_dictionary_entries(&crate::OwnerId::launch(), &[term.to_string()]),
+            );
         });
         let in_time = found.recv_timeout(LOOKUP_DEADLINE).ok();
         finish.send(outcome).unwrap();
@@ -86,7 +88,7 @@ fn finds_the_entries_of_an_import_once_it_finishes() {
     let storage = open_file_storage(&dir);
     look_up_during_import(&storage, "cat", Ok(()));
     let found = storage
-        .find_dictionary_entries(&["cat".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["cat".to_string()])
         .unwrap();
     assert_eq!(found.len(), 1);
 }
@@ -97,5 +99,10 @@ fn stores_nothing_from_an_import_that_fails_while_a_lookup_runs() {
     let storage = open_file_storage(&dir);
     let failure = Err(DictionaryError::MissingFile("rest.csv".to_string()));
     look_up_during_import(&storage, "cat", failure);
-    assert!(storage.list_dictionaries().unwrap().is_empty());
+    assert!(
+        storage
+            .list_dictionaries(&crate::OwnerId::launch())
+            .unwrap()
+            .is_empty()
+    );
 }

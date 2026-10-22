@@ -7,6 +7,7 @@ mod archive;
 mod archive_compression;
 mod csv;
 mod dictionary_media;
+mod dump_line;
 mod error;
 mod format;
 mod kanji_entry;
@@ -29,6 +30,7 @@ pub use csv::{
     ColumnRole, CsvError, CsvFormat, TableLayout, TablePreview, preview_table, preview_table_in,
 };
 pub use dictionary_media::{DictionaryMedia, media_key};
+pub use dump_line::{DictionaryDumpLine, DumpLineCollector};
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;
 pub use kanji_entry::{KanjiEntry, KanjiMeta};

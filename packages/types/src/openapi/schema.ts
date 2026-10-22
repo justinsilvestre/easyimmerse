@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/auth/confirm-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirms the email address of an account with the token of the link mailed to it. Needs no token. */
+        post: operations["confirmEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirmation-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mails the account a new link that confirms its email address. The link of an earlier mail stops working. */
+        post: operations["resendConfirmationEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -55,6 +89,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gives an account a new password with the token of the link mailed for a reset, and logs it in on this device.
+         *     Every other session of the account ends. Needs no token.
+         */
+        post: operations["chooseNewPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mails a link to choose a new password to the account with the email address. Needs no token.
+         *     The answer is the same whether or not an account has the address, so that it reveals none.
+         */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/server": {
         parameters: {
             query?: never;
@@ -62,11 +136,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tells whether the server has accounts and whether sign-up is open. Needs no token. */
+        /** Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token. */
         get: operations["getServerAuthInfo"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the devices that the account is logged in on. */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Logs the account out on one of its devices. Deleting the current session logs out like `/auth/logout`. */
+        delete: operations["deleteSession"];
         options?: never;
         head?: never;
         patch?: never;
@@ -81,7 +189,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Creates an account with the `library_user` role and logs it in. Needs no token. */
+        /**
+         * Creates an account with the `library_user` role and logs it in. Needs no token.
+         *     On a server that sends email, it also mails a link that confirms the address.
+         */
         post: operations["signUp"];
         delete?: never;
         options?: never;
@@ -716,8 +827,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Checks whether each path-backed media file of a project can be opened. Files the browser
-         *     holds are left out, since only the browser can tell whether it still has them. A
+         * Checks whether each path-backed media file of a project can be opened, or else played from this server's copy.
+         *     Files the browser holds are left out unless this server keeps a copy, since only the browser can tell
+         *     whether it still has them. A
          *     path-backed file is also left out when its check takes longer than two seconds, as can
          *     happen on a sleeping network drive, so an omitted file is one whose state is unknown.
          *     At most eight files are checked at once, across all requests.
@@ -961,6 +1073,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/stored-copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves this server's copy of the media file's bytes, with range requests. */
+        get: operations["getStoredCopy"];
+        /**
+         * Stores the request body as this server's copy of the media file's bytes, replacing any earlier copy,
+         *     and records the choice to keep a copy. `Content-Length` is required, so that the quota is checked before the upload.
+         */
+        put: operations["putStoredCopy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/stored-copy/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Downloads the linked remote's copy of the media file into this server's uploads directory,
+         *     so that the media file plays here although its original is elsewhere. The request lasts as long as the download.
+         */
+        post: operations["fetchStoredCopy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/stream": {
         parameters: {
             query?: never;
@@ -969,7 +1122,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Streams the file's bytes. Honors `Range` with 206 and 416 responses and advertises
+         * Streams the file's bytes, or this server's copy of them when the file cannot be read. Honors `Range` with 206 and 416 responses and advertises
          *     `Accept-Ranges: bytes`. The content type is guessed from the file extension.
          */
         get: operations["streamMediaFile"];
@@ -1103,6 +1256,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/upload-choice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Records whether the person wants a copy of the media file kept on a server, and returns the media file.
+         *     Turning it off deletes this server's copy; a device that syncs passes the choice on, and the remote then deletes its copy too.
+         */
+        put: operations["setUploadChoice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/waveform": {
         parameters: {
             query?: never;
@@ -1190,7 +1363,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/review/answers/{answered_at_ms}": {
+    "/projects/{id}/review/answers/{answer_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1254,8 +1427,164 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** What waits in each project's review today, counted as the queue counts it, as the list of projects shows it. */
+        /** What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it. */
         get: operations["listReviewCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the principal's stored copies with their sizes, and the quota they count against.
+         *     A server without an uploads directory reports a quota of 0, since it keeps no copies.
+         */
+        get: operations["getStorageStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the principal's changes after a cursor, oldest first, each with the row's data or as a tombstone. */
+        get: operations["listSyncChanges"];
+        put?: never;
+        /**
+         * Applies a device's changed rows as the principal's, and answers each in the order sent.
+         *     Of two changes made to a row at once, the one with the later `updated_at_ms` is kept;
+         *     a time more than a minute ahead of the server's clock counts as the server's time.
+         */
+        post: operations["pushSyncChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists every conflict of the link, newest first, where the status lists only the most recent. */
+        get: operations["listSyncConflicts"];
+        put?: never;
+        post?: never;
+        /** Forgets the conflicts of the link, once the person has read of them. */
+        delete: operations["dismissSyncConflicts"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/dictionaries/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Streams one of the principal's dictionaries as NDJSON: a `begin` line with its metadata and import time,
+         *     a line for each entry, frequency, tag, kanji and media file, and an `end` line.
+         */
+        get: operations["getDictionaryContent"];
+        /**
+         * Imports a dictionary that a device uploads as the principal's, under the id it has there,
+         *     from the NDJSON that `GET /sync/dictionaries/{id}/content` writes.
+         */
+        put: operations["putDictionaryContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logs in to an account on a remote, or signs up there, and keeps a copy of the device's own data on it from now on.
+         *     A logged-out link to the same account resumes where it stopped; a link to another account starts over.
+         */
+        post: operations["linkSyncRemote"];
+        /** Logs out of the linked remote and stops syncing with it. The device's own data stays as it is. */
+        delete: operations["unlinkSyncRemote"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/remote-auth-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Asks a remote what it offers to clients that want to log in, on behalf of the app, which may not reach it directly. */
+        get: operations["getRemoteAuthInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts a round of syncing now rather than when the next one is due. */
+        post: operations["runSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reports the link of the device's own data and how syncing with it goes. An account gets no link. */
+        get: operations["getSyncStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1350,6 +1679,12 @@ export interface components {
              */
             created_at_ms: number;
             email: string;
+            /**
+             * Format: int64
+             * @description When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.
+             *     None until then, and always on a server that sends no email.
+             */
+            email_confirmed_at_ms?: number | null;
             id: string;
             role: components["schemas"]["AccountRole"];
         };
@@ -1634,6 +1969,15 @@ export interface components {
          * @enum {string}
          */
         ColumnRole: "term" | "reading" | "definition" | "alternates" | "tags" | "frequency" | "ignored";
+        /** @description The token of a mailed link, which the link carries as a query parameter. */
+        ConfirmEmailRequest: {
+            token: string;
+        };
+        /**
+         * @description Which of two changes made at once was kept.
+         * @enum {string}
+         */
+        ConflictKept: "this_device" | "other_device" | "deletion";
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -1769,6 +2113,14 @@ export interface components {
             dictionaryId: string;
             dictionaryTitle: string;
             reading?: string | null;
+        };
+        /**
+         * @description The answer to an uploaded dictionary: when the server's registry recorded it.
+         *     The uploader takes this time as its own, so that its next push leaves the dictionary's row out.
+         */
+        DictionaryStored: {
+            /** Format: int64 */
+            updated_at_ms: number;
         };
         /**
          * @description The CSS that a dictionary ships for its own entries, unsanitized.
@@ -2098,6 +2450,14 @@ export interface components {
             frequencies: components["schemas"]["DictionaryFrequency"][];
             tags: components["schemas"]["TagDefinition"][];
         };
+        /** @description Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it. */
+        LinkRemoteRequest: {
+            email: string;
+            mode: components["schemas"]["SignInMode"];
+            password: string;
+            /** @description The remote's address, such as `https://cloud.example.com`. */
+            server_url: string;
+        };
         ListDictionariesResponse: {
             dictionaries: components["schemas"]["DictionarySummary"][];
         };
@@ -2115,6 +2475,10 @@ export interface components {
         };
         ListReviewCountsResponse: {
             projects: components["schemas"]["ReviewCounts"][];
+        };
+        /** @description Every conflict of the link, newest first. */
+        ListSyncConflictsResponse: {
+            conflicts: components["schemas"]["SyncConflict"][];
         };
         LoginRequest: {
             email: string;
@@ -2156,7 +2520,11 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             created_at_ms: number;
+            /** @description Whether this server keeps a copy of the file's bytes, which it plays when the original cannot be read. */
+            has_stored_copy: boolean;
             id: components["schemas"]["MediaFileId"];
+            /** @description Whether the user chose to keep a copy of the file's bytes on a server. */
+            is_upload_chosen: boolean;
             /** @description The name shown in the project's media list, usually the file name. */
             name: string;
             origin?: components["schemas"]["MediaOrigin"] | null;
@@ -2250,6 +2618,15 @@ export interface components {
             level: components["schemas"]["MediaSourceLogLevel"];
             message: string;
         };
+        /** @description The progress of a media file being uploaded to a remote. */
+        MediaTransfer: {
+            media_file_id: components["schemas"]["MediaFileId"];
+            name: string;
+            /** Format: int64 */
+            sent_bytes: number;
+            /** Format: int64 */
+            total_bytes: number;
+        };
         /**
          * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
          *     Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
@@ -2258,6 +2635,13 @@ export interface components {
             draft: components["schemas"]["FlashcardDraft"];
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
+        };
+        /** @description A new password, chosen through the link mailed for a reset. */
+        NewPasswordRequest: {
+            /** @description At least eight characters. */
+            password: string;
+            /** @description The token that the mailed link carries. */
+            token: string;
         };
         /** @description Where one paragraph came from in its content document. */
         ParagraphProvenance: {
@@ -2275,11 +2659,14 @@ export interface components {
             format?: components["schemas"]["TimedTextFormat"] | null;
             source: components["schemas"]["TextSource"];
         };
+        PasswordResetRequest: {
+            email: string;
+        };
         /**
          * @description Whether the server can open the file at a media file's path.
          * @enum {string}
          */
-        PathAvailability: "available" | "missing" | "not_allowed" | "unreadable";
+        PathAvailability: "available" | "missing" | "not_allowed" | "unreadable" | "stored_copy";
         PictureSize: {
             /** Format: int32 */
             height: number;
@@ -2377,6 +2764,11 @@ export interface components {
             flashcard_count: number;
             id: components["schemas"]["ProjectId"];
             /**
+             * @description Whether a copy of the project's latest change is kept on a server other than this device's own.
+             *     Always true for an account's projects, which live on the server it is logged in to.
+             */
+            is_backed_up: boolean;
+            /**
              * Format: int64
              * @description Milliseconds since the Unix epoch. Equal to `created_at_ms` until the project is first opened.
              */
@@ -2416,6 +2808,30 @@ export interface components {
             /** @description The language translations and definitions are in, as a BCP 47 code. */
             translation_language: string;
         };
+        /** @description What the server did with one pushed row. */
+        PushOutcome: {
+            current?: components["schemas"]["SyncRow"] | null;
+            key: string;
+            kind: components["schemas"]["PushOutcomeKind"];
+            /**
+             * Format: int64
+             * @description The modification time the server now has for the row: the pushed time, or the server's time when that was in the future.
+             *     None when the row was rejected, or when the server kept a version of its own, which `current` carries.
+             */
+            remote_updated_at_ms?: number | null;
+            table: components["schemas"]["SyncTable"];
+        };
+        /** @enum {string} */
+        PushOutcomeKind: "applied" | "applied_over_concurrent" | "unchanged" | "superseded" | "parent_deleted" | "rejected";
+        /** @description A row that a device sends to a server, with the modification time the server had for it when the device last heard of it. */
+        PushedRow: {
+            /**
+             * Format: int64
+             * @description None when the device has never had the server's version of the row.
+             */
+            base_updated_at_ms?: number | null;
+            row: components["schemas"]["SyncRow"];
+        };
         /** @description A positive ratio of two integers, such as a timebase of `1/90000` or a frame rate of `30000/1001`. */
         Rational: {
             /** Format: int64 */
@@ -2423,6 +2839,18 @@ export interface components {
             /** Format: int64 */
             num: number;
         };
+        /** @description The latest media file the remote would not keep a copy of, and the remote's reason. */
+        RefusedUpload: {
+            code: string;
+            media_file_id: components["schemas"]["MediaFileId"];
+            message: string;
+            name: string;
+        };
+        /**
+         * @description Whether a remote is an account server reached over the internet, or a server on the local network.
+         * @enum {string}
+         */
+        RemoteKind: "account" | "lan";
         /** @description Raises the number of new cards, or of reviews, the project's review shows today. */
         ReviewAllowanceRequest: {
             /** Format: int32 */
@@ -2435,6 +2863,8 @@ export interface components {
              */
             utc_offset_min: number;
         };
+        /** @description The identifier of one answer in the review log. */
+        ReviewAnswerId: string;
         /** @description What the review screen sends when the user rates a card. */
         ReviewAnswerRequest: {
             /**
@@ -2557,7 +2987,8 @@ export interface components {
         ReviewLogEntry: {
             /**
              * Format: int64
-             * @description Milliseconds since the Unix epoch, stamped by the server. Unique within a project, and the entry's id.
+             * @description Milliseconds since the Unix epoch, stamped by the server.
+             *     Answers given on two devices may share a time; the id then orders them.
              */
             answered_at_ms: number;
             /**
@@ -2581,6 +3012,7 @@ export interface components {
              */
             elapsed_ms: number;
             flashcard_id: components["schemas"]["FlashcardId"];
+            id: components["schemas"]["ReviewAnswerId"];
             /**
              * Format: int64
              * @description The interval the answer gave the card.
@@ -2671,15 +3103,44 @@ export interface components {
             accounts: boolean;
             /** @description Whether anyone may create an account on the server. */
             open_signup: boolean;
+            /** @description Whether the server sends email, so that accounts can confirm their address and reset a forgotten password. */
+            sends_email: boolean;
         };
         /** @description A new session: the token to present as `Authorization: Bearer <token>`, and its account. */
         SessionCreated: {
             token: string;
             user: components["schemas"]["AccountUser"];
         };
+        SessionList: {
+            /** @description Most recently used first. */
+            sessions: components["schemas"]["SessionSummary"][];
+        };
+        /** @description A device that the account is logged in on. */
+        SessionSummary: {
+            /**
+             * Format: int64
+             * @description When the device logged in, in milliseconds since the Unix epoch.
+             */
+            created_at_ms: number;
+            id: string;
+            /** @description Whether this is the session that asked for the list. */
+            is_current: boolean;
+            /**
+             * Format: int64
+             * @description When the device last sent a request, in milliseconds since the Unix epoch, to within an hour.
+             */
+            last_used_at_ms: number;
+            /** @description The User-Agent header that the device sent when it logged in, which may be empty. */
+            user_agent: string;
+        };
         SetUserRoleRequest: {
             role: components["schemas"]["AccountRole"];
         };
+        /**
+         * @description Whether linking a device creates a new account on the remote or logs in to an existing one.
+         * @enum {string}
+         */
+        SignInMode: "login" | "signup";
         SignupRequest: {
             email: string;
             /** @description At least eight characters. */
@@ -2716,6 +3177,33 @@ export interface components {
             /** @description The media file's subtitle tracks after the changes. */
             tracks: components["schemas"]["SubtitleTrack"][];
         };
+        /** @description How much of the principal's upload allowance their stored copies take, and which copies they are. */
+        StorageStatus: {
+            /** @description The copies, largest first. */
+            copies: components["schemas"]["StoredCopy"][];
+            /**
+             * Format: int64
+             * @description The most bytes the principal may keep in copies; null when there is no limit.
+             */
+            quota_bytes?: number | null;
+            /** Format: int64 */
+            used_bytes: number;
+        };
+        /** @description A copy of a media file's bytes that this server keeps. */
+        StoredCopy: {
+            media_file_id: components["schemas"]["MediaFileId"];
+            /** @description The media file's name, as its project's media list shows it. */
+            name: string;
+            project_id: components["schemas"]["ProjectId"];
+            project_name: string;
+            /** Format: int64 */
+            size_bytes: number;
+            /**
+             * Format: int64
+             * @description When the copy was stored, in milliseconds since the Unix epoch.
+             */
+            stored_at_ms: number;
+        };
         /**
          * @description Which role a subtitle track plays for its media file.
          * @enum {string}
@@ -2746,6 +3234,121 @@ export interface components {
             selection: components["schemas"]["SubtitleSelection"];
             tracks: components["schemas"]["SubtitleTrack"][];
         };
+        /** @description One page of an owner's changes on a server, in the order they were made. */
+        SyncChangesPage: {
+            has_more: boolean;
+            /**
+             * Format: int64
+             * @description The `since` to ask for the next page with.
+             */
+            next_cursor: number;
+            rows: components["schemas"]["SyncRow"][];
+        };
+        /** @description A row that this device and another changed at once. */
+        SyncConflict: {
+            /** @description Names the row itself for the person, such as "a flashcard" or "the reading position". */
+            description: string;
+            /** Format: int64 */
+            detected_at_ms: number;
+            id: string;
+            kept: components["schemas"]["ConflictKept"];
+            /** @description The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded. */
+            media_file_name?: string | null;
+            /** @description The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded. */
+            project_name?: string | null;
+        };
+        /** @description A link to a remote, and how far syncing with it has come. */
+        SyncLink: {
+            account_email: string;
+            account_role: components["schemas"]["AccountRole"];
+            /**
+             * Format: int64
+             * @description How many conflicts there are since they were last dismissed.
+             */
+            conflict_count: number;
+            /** @description The 20 most recent conflicts, newest first. */
+            conflicts: components["schemas"]["SyncConflict"][];
+            kind: components["schemas"]["RemoteKind"];
+            /**
+             * Format: int64
+             * @description When the latest successful round began. Every change made on this device before then is on the remote.
+             */
+            last_synced_at_ms?: number | null;
+            /** Format: int64 */
+            linked_at_ms: number;
+            /**
+             * Format: int64
+             * @description This server's change sequence up to which the remote holds every change.
+             */
+            pushed_through_seq: number;
+            refused_upload?: components["schemas"]["RefusedUpload"] | null;
+            server_url: string;
+            state: components["schemas"]["SyncLinkState"];
+            transfer?: components["schemas"]["MediaTransfer"] | null;
+        };
+        /** @description What syncing with a remote is doing. */
+        SyncLinkState: {
+            /** @enum {string} */
+            kind: "idle";
+        } | {
+            /** @enum {string} */
+            kind: "syncing";
+        } | {
+            /** @enum {string} */
+            kind: "unreachable";
+            /** Format: int64 */
+            since_ms: number;
+        } | {
+            /** @enum {string} */
+            kind: "logged_out";
+        } | {
+            code: string;
+            /** @enum {string} */
+            kind: "failed";
+            message: string;
+        };
+        /** @description The rows a device sends to a server in one request. */
+        SyncPushBatch: {
+            rows: components["schemas"]["PushedRow"][];
+        };
+        /** @description What the server did with each pushed row, in the order the rows were sent. */
+        SyncPushOutcomes: {
+            outcomes: components["schemas"]["PushOutcome"][];
+        };
+        /** @description A synced row as it stands after its latest change, or its tombstone when it was deleted. */
+        SyncRow: {
+            /** @description The row's synced columns by name. None for a deleted row. */
+            data?: Record<string, never> | null;
+            is_deleted: boolean;
+            /** @description The row's id, or for a table with a composite key, its parts joined by `:`. */
+            key: string;
+            table: components["schemas"]["SyncTable"];
+            /**
+             * Format: int64
+             * @description When the row last changed on any server, in milliseconds since the Unix epoch.
+             *     Of two changes made to a row at once, the later is kept.
+             */
+            updated_at_ms: number;
+        };
+        /** @description How a built-in server keeps a copy of its data on a remote. */
+        SyncStatus: {
+            link?: components["schemas"]["SyncLink"] | null;
+            /**
+             * Format: int64
+             * @description The last change sequence this server gave out. Zero for an account.
+             */
+            local_change_seq: number;
+            /**
+             * Format: int64
+             * @description Raised each time rows pulled from the remote change this server's data. Zero for an account.
+             */
+            pulled_revision: number;
+        };
+        /**
+         * @description A table whose rows sync between servers. Each name is the table's name in the server's database.
+         * @enum {string}
+         */
+        SyncTable: "projects" | "media_files" | "subtitle_tracks" | "alignments" | "flashcards" | "review_log" | "review_holds" | "review_day_allowances" | "anki_pending_deletions" | "dictionaries" | "preferences" | "review_parameters";
         /** @description What each column of a table holds, and whether its first row is a header. */
         TableLayout: {
             columns: components["schemas"]["ColumnRole"][];
@@ -2967,6 +3570,10 @@ export interface components {
         };
         /** @enum {string} */
         UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
+        /** @description The person's choice whether to keep a copy of a media file's bytes on a server. */
+        UploadChoiceRequest: {
+            is_upload_chosen: boolean;
+        };
         VideoAction: {
             /** @enum {string} */
             action: "copy";
@@ -3001,6 +3608,129 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    confirmEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description The email address is confirmed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_link`: the token is unknown, used or expired */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `accounts_disabled`: the server has no accounts */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    resendConfirmationEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mail is on its way */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `already_confirmed`: the email address is already confirmed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: a confirmation mail was sent less than a minute ago */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `mail_unavailable`: the server does not send email */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     logIn: {
         parameters: {
             query?: never;
@@ -3146,6 +3876,117 @@ export interface operations {
             };
         };
     };
+    chooseNewPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description The password was changed and the account logged in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionCreated"];
+                };
+            };
+            /** @description `invalid_link`: the token is unknown, used or expired, or `password_too_short` or `password_too_long` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `accounts_disabled`: the server has no accounts */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description If an account has the address, a mail is on its way to it */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_email`: the email address is longer than 254 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: too many login or reset attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `mail_unavailable`: the server does not send email */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getServerAuthInfo: {
         parameters: {
             query?: never;
@@ -3162,6 +4003,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServerAuthInfo"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account's sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionList"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The session's id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session was ended */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_found`: the account has no session with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Unexpected Host header */
@@ -3615,7 +4560,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every imported dictionary, in import order */
+            /** @description The principal's dictionaries, in import order */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3802,7 +4747,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No import job has the id, or its outcome has been forgotten */
+            /** @description The principal has no import job with the id, or its outcome has been forgotten */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4486,7 +5431,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every project, most recently opened first */
+            /** @description The principal's projects, most recently opened first */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6483,6 +7428,239 @@ export interface operations {
             };
         };
     };
+    getStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The copy's bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description The requested byte range */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or `no_stored_copy`: this server keeps no copy of it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The media file's bytes */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The copy was stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredCopy"];
+                };
+            };
+            /** @description The body was shorter or longer than its `Content-Length`, or broke off */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no copies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `length_required`: the request has no `Content-Length` */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `quota_exceeded`: the copy would take the principal past their quota */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    fetchStoredCopy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The copy is stored here */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredCopy"];
+                };
+            };
+            /** @description `remote_logged_out`: the linked server ended this device's session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may fetch */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, `not_linked`, or `no_stored_copy` on the remote */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no copies */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     streamMediaFile: {
         parameters: {
             query?: {
@@ -7115,6 +8293,62 @@ export interface operations {
             };
         };
     };
+    setUploadChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadChoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description The media file with the choice recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getMediaWaveform: {
         parameters: {
             query: {
@@ -7425,8 +8659,8 @@ export interface operations {
             path: {
                 /** @description The project id */
                 id: string;
-                /** @description The time of the answer, as its log entry gives it */
-                answered_at_ms: number;
+                /** @description The id of the answer, as its log entry gives it */
+                answer_id: string;
             };
             cookie?: never;
         };
@@ -7450,7 +8684,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or no answer at that time in it */
+            /** @description No such project, or no answer with that id in it */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7655,6 +8889,672 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListReviewCountsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getStorageStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The principal's copies and quota */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSyncChanges: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; 0 or absent for the first page. */
+                since?: number;
+                /** @description The most rows to return: 500 when absent, at most 2,000. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the principal's changes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncChangesPage"];
+                };
+            };
+            /** @description The cursor or the limit is not a number, or the limit is 0 or above 2,000 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    pushSyncChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncPushBatch"];
+            };
+        };
+        responses: {
+            /** @description What the server did with each row */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncPushOutcomes"];
+                };
+            };
+            /** @description More than 500 rows, a table that does not sync, or a malformed body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 16 MiB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSyncConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every conflict, newest first; none when nothing is linked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListSyncConflictsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    dismissSyncConflicts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The conflicts were forgotten */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getDictionaryContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dictionary, one JSON object per line */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/x-ndjson": string;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The principal has no dictionary with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putDictionaryContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The dictionary, one JSON object per line */
+        requestBody?: {
+            content: {
+                "application/x-ndjson": unknown;
+            };
+        };
+        responses: {
+            /** @description The dictionary was stored */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryStored"];
+                };
+            };
+            /** @description The body is not a whole dump (code `bad_dump`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A dictionary with this id or title is stored already (code `dictionary_exists`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The body is larger than 1 GiB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    linkSyncRemote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRemoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Linked; the first round has started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+            /** @description `invalid_server_url`, or the remote's own 400 such as `invalid_email` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token, or the remote's `invalid_credentials` */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden` for an account, or the remote's 403 such as `signup_closed` or `accounts_disabled` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `already_linked`, or the remote's 409 such as `email_taken` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The remote's `too_many_attempts`, with its Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unlinkSyncRemote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may unlink */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_linked` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getRemoteAuthInfo: {
+        parameters: {
+            query: {
+                /** @description The remote's address, such as `https://cloud.example.com`. */
+                server_url: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the remote offers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerAuthInfo"];
+                };
+            };
+            /** @description `invalid_server_url` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may link */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `remote_unreachable` or `remote_failed` */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    runSync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A round will start shortly */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: only the launch token may sync */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_linked` */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getSyncStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link and its state */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
                 };
             };
             /** @description Missing or invalid token */

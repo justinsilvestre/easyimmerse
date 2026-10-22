@@ -2,9 +2,11 @@ import type {
   AnkiPendingDeletions,
   Document,
   ListDictionariesResponse,
+  ListProjectsResponse,
   MediaFile,
   PlaybackMethodRequest,
   ReviewSummary,
+  SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
 import type { PickedMediaFile } from "../platform/effects.ts";
@@ -49,8 +51,10 @@ export type CachedQueries = {
   listFlashcards: string;
   listAnkiPendingDeletions: string;
   listDictionaries: undefined;
+  listProjects: undefined;
   checkAnkiConnection: undefined;
   getReviewSummary: string;
+  getSyncStatus: undefined;
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
@@ -58,8 +62,10 @@ export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
   openBook: Document;
   listDictionaries: ListDictionariesResponse;
+  listProjects: ListProjectsResponse;
   getSubtitleCues: TimedTextTrack;
   getReviewSummary: ReviewSummary;
+  getSyncStatus: SyncStatus;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

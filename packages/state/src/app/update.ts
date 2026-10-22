@@ -18,6 +18,7 @@ import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
+import { syncFeature } from "../sync/updateSync.ts";
 import type { AppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
 import { closeGuardEffects } from "./closeGuard.ts";
@@ -50,6 +51,7 @@ const features = {
   dictionaryImport: dictionaryImportFeature,
   mediaImports: mediaImportsFeature,
   account: accountFeature,
+  sync: syncFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];

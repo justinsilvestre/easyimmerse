@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use easyimmerse_api::accounts::hash_session_token;
 use easyimmerse_api::{ApiConfig, ServeError, ServeOptions, serve};
 use easyimmerse_core::account::AccountRole;
-use easyimmerse_storage::Storage;
+use easyimmerse_storage::{NewSession, Storage};
 use serde_json::json;
 use tokio::net::TcpListener;
 
@@ -62,7 +62,7 @@ mod server_info {
             .await;
         assert_eq!(
             response.json(),
-            json!({ "accounts": false, "open_signup": false })
+            json!({ "accounts": false, "open_signup": false, "sends_email": false })
         );
     }
 
@@ -76,7 +76,7 @@ mod server_info {
             .await;
         assert_eq!(
             response.json(),
-            json!({ "accounts": true, "open_signup": true })
+            json!({ "accounts": true, "open_signup": true, "sends_email": false })
         );
     }
 }
@@ -363,7 +363,13 @@ mod session_expiry {
             .unwrap();
         let token_hash = hash_session_token("session-token");
         storage
-            .create_session(&token_hash, &user.id, now_ms() + DAY_MS)
+            .create_session(&NewSession {
+                token_hash: &token_hash,
+                user_id: &user.id,
+                user_agent: "",
+                created_at_ms: now_ms(),
+                expires_at_ms: now_ms() + DAY_MS,
+            })
             .unwrap();
     }
 

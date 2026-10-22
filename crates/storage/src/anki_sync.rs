@@ -94,7 +94,7 @@ mod tests {
     /// A storage holding the placeholder projects, the first of which uses AnkiConnect.
     fn seeded_storage() -> Storage {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         storage.set_uses_anki_connect(&project(), true).unwrap();
         storage
     }

@@ -7,18 +7,17 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::ProjectId;
 
 use super::{SampleContentError, fixture_error, fixture_path, project_exists};
+use crate::owners::OwnerId;
 use crate::{Storage, StorageError};
 
+/// Each book with the placeholder project it goes to, by its place in the seeded pair.
 /// Each book's fixtures are named after it: `<name>.epub`, `<name>.en.epub`, `<name>.m4a`,
 /// `<name>-translation-alignment.json`, and `<name>-audio-alignment.json`.
-pub const SAMPLE_BOOKS: [(&str, &str); 2] = [
-    ("placeholder-1", "lazarillo-de-tormes"),
-    ("placeholder-2", "toshishun"),
-];
+pub const SAMPLE_BOOKS: [(usize, &str); 2] = [(0, "lazarillo-de-tormes"), (1, "toshishun")];
 
 /// A sample book's files, read before anything is written.
 pub struct BookFixtures {
-    project_id: ProjectId,
+    project: usize,
     name: &'static str,
     paths: [String; 3],
     translation_alignment: AddAlignmentRequest,
@@ -27,10 +26,10 @@ pub struct BookFixtures {
 
 pub fn read_book_fixtures(
     dir: &Path,
-    (project_id, name): (&str, &'static str),
+    (project, name): (usize, &'static str),
 ) -> Result<BookFixtures, SampleContentError> {
     Ok(BookFixtures {
-        project_id: ProjectId(project_id.to_string()),
+        project,
         name,
         paths: [
             fixture_path(dir, &format!("{name}.epub"))?,
@@ -48,24 +47,37 @@ pub fn read_book_fixtures(
 /// Each book is marked on its own, so that a database seeded before the book existed still receives it.
 pub fn add_sample_book_once(
     storage: &Storage,
+    projects: Option<&[ProjectId; 2]>,
     book: &BookFixtures,
 ) -> Result<(), SampleContentError> {
     let seeded_preference = format!("sample_book_seeded:{}", book.name);
-    if storage.get_preference(&seeded_preference)?.is_some() {
+    let launch = OwnerId::launch();
+    if storage
+        .get_preference(&launch, &seeded_preference)?
+        .is_some()
+    {
         return Ok(());
     }
-    if project_exists(storage, &book.project_id)? {
-        add_sample_book(storage, book)?;
+    let project_id = projects.map(|projects| &projects[book.project]);
+    if let Some(project_id) = project_id
+        && project_exists(storage, project_id)?
+    {
+        add_sample_book(storage, project_id, book)?;
     }
-    Ok(storage.set_preference(&seeded_preference, "true")?)
+    Ok(storage.set_preference(&launch, &seeded_preference, "true")?)
 }
 
-fn add_sample_book(storage: &Storage, book: &BookFixtures) -> Result<(), SampleContentError> {
+fn add_sample_book(
+    storage: &Storage,
+    project_id: &ProjectId,
+    book: &BookFixtures,
+) -> Result<(), SampleContentError> {
     let [original_path, translation_path, audio_path] = &book.paths;
     let name = book.name;
-    let original = add_file(storage, book, &format!("{name}.epub"), original_path)?;
-    let translation = add_file(storage, book, &format!("{name}.en.epub"), translation_path)?;
-    let audio = add_file(storage, book, &format!("{name}.m4a"), audio_path)?;
+    let add = |file_name: &str, path: &str| add_file(storage, project_id, file_name, path);
+    let original = add(&format!("{name}.epub"), original_path)?;
+    let translation = add(&format!("{name}.en.epub"), translation_path)?;
+    let audio = add(&format!("{name}.m4a"), audio_path)?;
     storage.set_translation_document(&original.id, Some(&translation.id))?;
     let alignments = [
         with_counterpart(&book.translation_alignment, &translation.id),
@@ -79,14 +91,14 @@ fn add_sample_book(storage: &Storage, book: &BookFixtures) -> Result<(), SampleC
 
 fn add_file(
     storage: &Storage,
-    book: &BookFixtures,
+    project_id: &ProjectId,
     name: &str,
     path: &str,
 ) -> Result<MediaFile, StorageError> {
     let source = MediaFileSource::Path {
         path: path.to_string(),
     };
-    storage.add_media_file(&book.project_id, name, &source)
+    storage.add_media_file(project_id, name, &source)
 }
 
 /// Replaces the placeholder id that the fixture gives the alignment's counterpart.

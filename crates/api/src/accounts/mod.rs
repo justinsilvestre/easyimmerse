@@ -2,25 +2,29 @@
 //! Passwords are hashed with Argon2id and session tokens with SHA-256 here, and nowhere else.
 
 mod credentials;
+mod email_tokens;
 mod error;
 mod failure_log;
 mod login_throttle;
+mod mail_throttle;
 mod password_hashing;
-mod session_extension;
+mod session_refresh;
 mod session_tokens;
 
 pub use credentials::ensure_credentials_bounded;
+pub use email_tokens::{confirm_email, issue_email_token, reset_password};
 pub use error::AccountsError;
 pub use login_throttle::{LoginAttempt, LoginThrottle};
-pub use session_extension::{PendingExtensions, SessionExtension, extend_in_background};
+pub use mail_throttle::MailThrottle;
+pub use session_refresh::{PendingRefreshes, SessionRefresh, refresh_in_background};
 pub use session_tokens::hash_session_token;
 
 use easyimmerse_core::account::{AccountRole, AccountUser};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{NewSession, Storage, StorageError};
 
 use credentials::{ensure_password_acceptable, normalized_email};
 use password_hashing::{check_against_dummy_hash, hash_password, password_matches};
-use session_tokens::{SESSION_LIFETIME_MS, SESSION_RENEWAL_HORIZON_MS, generate_session_token};
+use session_tokens::{SESSION_LIFETIME_MS, generate_session_token};
 
 /// Creates an account after checking that its email address and password follow the rules.
 pub fn create_account(
@@ -59,26 +63,35 @@ pub fn authenticate(
     }
 }
 
-/// Starts a session of the user and returns its token. Deletes every expired session on the way.
+/// Starts a session of the user on the device that `user_agent` describes and returns its token.
+/// Deletes every expired session on the way.
 pub fn start_session(
     storage: &Storage,
     user_id: &str,
+    user_agent: &str,
     now_ms: u64,
 ) -> Result<String, StorageError> {
     storage.delete_expired_sessions(now_ms)?;
     let token = generate_session_token();
-    let expires_at_ms = now_ms.saturating_add(SESSION_LIFETIME_MS);
-    storage.create_session(&hash_session_token(&token), user_id, expires_at_ms)?;
+    storage.create_session(&NewSession {
+        token_hash: &hash_session_token(&token),
+        user_id,
+        user_agent,
+        created_at_ms: now_ms,
+        expires_at_ms: now_ms.saturating_add(SESSION_LIFETIME_MS),
+    })?;
     Ok(token)
 }
 
-/// The session that a token belongs to: its user, and the extension it is due, if any.
+/// The session that a token belongs to: its id, its user, and the refresh it is due, if any.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FoundSession {
+    pub id: String,
     pub user: AccountUser,
-    /// Present when the session's expiry lies less than 89 days ahead.
-    /// Applying it makes the session last ninety days from now, so that a session in use never expires.
-    pub extension: Option<SessionExtension>,
+    /// Present when the session's last use was recorded an hour or more ago, or its expiry lies less than 89 days ahead.
+    /// Applying it records the use, and in the second case makes the session last ninety days from now,
+    /// so that a session in use never expires.
+    pub refresh: Option<SessionRefresh>,
 }
 
 /// Finds the session with the token, unless it has expired by `now_ms`. Only reads.
@@ -91,14 +104,11 @@ pub fn find_session(
     let Some(session) = storage.find_live_session(&token_hash, now_ms)? else {
         return Ok(None);
     };
-    let is_due = session.expires_at_ms < now_ms.saturating_add(SESSION_RENEWAL_HORIZON_MS);
-    let extension = is_due.then(|| SessionExtension {
-        token_hash,
-        expires_at_ms: now_ms.saturating_add(SESSION_LIFETIME_MS),
-    });
+    let refresh = SessionRefresh::due(token_hash, &session, now_ms);
     Ok(Some(FoundSession {
+        id: session.id,
         user: session.user,
-        extension,
+        refresh,
     }))
 }
 
@@ -119,8 +129,8 @@ mod tests {
         let Some(found) = find_session(storage, token, now_ms)? else {
             return Ok(None);
         };
-        if let Some(extension) = &found.extension {
-            extension.apply(storage)?;
+        if let Some(refresh) = &found.refresh {
+            refresh.apply(storage)?;
         }
         Ok(Some(found.user))
     }
@@ -175,7 +185,7 @@ mod tests {
     fn finds_the_user_of_a_started_session() {
         let storage = storage_with_reader();
         let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
-        let token = start_session(&storage, &user.id, 1_000).unwrap();
+        let token = start_session(&storage, &user.id, "", 1_000).unwrap();
         assert_eq!(
             find_session_user(&storage, &token, 2_000).unwrap(),
             Some(user)
@@ -186,7 +196,7 @@ mod tests {
     fn a_session_expires_after_ninety_days() {
         let storage = storage_with_reader();
         let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
-        let token = start_session(&storage, &user.id, 0).unwrap();
+        let token = start_session(&storage, &user.id, "", 0).unwrap();
         assert_eq!(
             find_session_user(&storage, &token, SESSION_LIFETIME_MS).unwrap(),
             None
@@ -197,7 +207,7 @@ mod tests {
     fn a_session_in_use_outlives_ninety_days() {
         let storage = storage_with_reader();
         let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
-        let token = start_session(&storage, &user.id, 0).unwrap();
+        let token = start_session(&storage, &user.id, "", 0).unwrap();
         find_session_user(&storage, &token, SESSION_LIFETIME_MS / 2).unwrap();
         assert_eq!(
             find_session_user(&storage, &token, SESSION_LIFETIME_MS).unwrap(),
@@ -209,7 +219,7 @@ mod tests {
     fn a_session_used_again_within_a_day_keeps_its_expiry() {
         let storage = storage_with_reader();
         let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
-        let token = start_session(&storage, &user.id, 0).unwrap();
+        let token = start_session(&storage, &user.id, "", 0).unwrap();
         find_session_user(&storage, &token, 1_000).unwrap();
         let session = storage
             .find_live_session(&hash_session_token(&token), 1_000)
@@ -238,7 +248,7 @@ mod tests {
     fn an_ended_session_finds_no_user() {
         let storage = storage_with_reader();
         let user = authenticate(&storage, "reader@example.com", "correct horse").unwrap();
-        let token = start_session(&storage, &user.id, 1_000).unwrap();
+        let token = start_session(&storage, &user.id, "", 1_000).unwrap();
         end_session(&storage, &token).unwrap();
         assert_eq!(find_session_user(&storage, &token, 2_000).unwrap(), None);
     }

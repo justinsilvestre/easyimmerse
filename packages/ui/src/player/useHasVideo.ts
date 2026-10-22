@@ -1,22 +1,22 @@
 import { skipToken, useGetMediaTracksQuery } from "@easyimmerse/backend";
-import { isAudioFileName } from "@easyimmerse/state";
+import { isAudioFileName, isPlayedByServer } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 
 /**
- * Whether the media file shows pictures: probed by the server for a file on its disk,
- * and guessed from the name for a file the browser holds.
+ * Whether the media file shows pictures: probed by the server for a file it plays,
+ * and guessed from the name for a file only the browser holds.
  */
 export function useHasVideo(
   projectId: string,
   mediaFile: MediaFile | null,
 ): boolean {
   const { data } = useGetMediaTracksQuery(
-    mediaFile?.source.kind === "path"
+    mediaFile !== null && isPlayedByServer(mediaFile)
       ? { projectId, mediaFileId: mediaFile.id }
       : skipToken,
   );
   if (mediaFile === null) return false;
-  if (mediaFile.source.kind !== "path") return !isAudioFileName(mediaFile.name);
+  if (!isPlayedByServer(mediaFile)) return !isAudioFileName(mediaFile.name);
   return (
     data?.container.tracks.some((track) => track.kind === "video") ?? false
   );

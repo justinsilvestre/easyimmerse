@@ -6,34 +6,40 @@ use rusqlite::{Connection, Row, params_from_iter};
 
 use super::columns::{get_deflated_json, get_json, split_words};
 use super::origin::{
-    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, placeholders, query_in_chunks,
-    read_origin,
+    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, owner_then, placeholders,
+    query_in_chunks, read_origin,
 };
 use crate::error::StorageError;
+use crate::owners::OwnerId;
 
-/// Finds the entries of every dictionary stored under any of the headwords, ignoring case,
+/// Finds the entries of every dictionary of the owner stored under any of the headwords, ignoring case,
 /// with the definitions of the tags they use.
 pub fn find_entries(
     conn: &Connection,
+    owner: &OwnerId,
     headwords: &[String],
 ) -> Result<Vec<FoundEntry>, StorageError> {
     let folded_headwords = fold_distinct(headwords);
-    let mut found = query_in_chunks(&folded_headwords, |chunk| find_entry_rows(conn, chunk))?;
+    let mut found = query_in_chunks(&folded_headwords, |chunk| {
+        find_entry_rows(conn, owner, chunk)
+    })?;
     // The rows of separate chunks are put back in the order that one query would return them in.
     found.sort_by_key(|found| (found.dictionary.rank, found.entry_id));
     attach_tags(conn, found)
 }
 
-/// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
+/// Finds the frequencies and pronunciations that every dictionary of the owner stores for any of the terms.
 pub fn find_term_meta(
     conn: &Connection,
+    owner: &OwnerId,
     terms: &[String],
 ) -> Result<Vec<FoundTermMeta>, StorageError> {
-    query_in_chunks(terms, |chunk| find_term_meta_rows(conn, chunk))
+    query_in_chunks(terms, |chunk| find_term_meta_rows(conn, owner, chunk))
 }
 
 fn find_entry_rows(
     conn: &Connection,
+    owner: &OwnerId,
     folded_headwords: &[String],
 ) -> Result<Vec<FoundEntry>, StorageError> {
     let mut statement = conn.prepare(&format!(
@@ -42,27 +48,31 @@ fn find_entry_rows(
          FROM dictionary_headwords h
          JOIN dictionary_entries e ON e.id = h.entry_id
          JOIN dictionaries d ON d.number = h.dictionary_number
-         WHERE h.folded_headword IN ({})
+         WHERE d.owner_id = ? AND h.folded_headword IN ({})
          ORDER BY d.number, e.id",
         placeholders(folded_headwords.len())
     ))?;
-    let rows = statement.query_map(params_from_iter(folded_headwords), read_found_entry)?;
+    let rows = statement.query_map(
+        params_from_iter(owner_then(owner, folded_headwords)),
+        read_found_entry,
+    )?;
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
 fn find_term_meta_rows(
     conn: &Connection,
+    owner: &OwnerId,
     terms: &[String],
 ) -> Result<Vec<FoundTermMeta>, StorageError> {
     let mut statement = conn.prepare(&format!(
         "SELECT {ORIGIN_COLUMNS}, m.term, m.reading, m.data
          FROM dictionary_term_meta m
          JOIN dictionaries d ON d.number = m.dictionary_number
-         WHERE m.term IN ({})
+         WHERE d.owner_id = ? AND m.term IN ({})
          ORDER BY d.number, m.rowid",
         placeholders(terms.len())
     ))?;
-    let rows = statement.query_map(params_from_iter(terms), |row| {
+    let rows = statement.query_map(params_from_iter(owner_then(owner, terms)), |row| {
         Ok(FoundTermMeta {
             dictionary: read_origin(row)?,
             meta: TermMeta {

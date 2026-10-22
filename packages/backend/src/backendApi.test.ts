@@ -6,11 +6,14 @@ import type {
   Project,
   SourceStepResponse,
   SubtitleTracksResponse,
+  SyncConflict,
+  SyncLink,
+  SyncStatus,
 } from "@easyimmerse/types";
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, type Middleware } from "@reduxjs/toolkit";
 import { describe, expect, it, vi } from "vitest";
 import type { AnkiConnect } from "./ankiConnect.ts";
-import { backendApi } from "./backendApi.ts";
+import { accountPath, backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
 import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
@@ -194,6 +197,8 @@ const addedBook: MediaFile = {
   track_selection_json: null,
   origin: null,
   translation_media_file_id: null,
+  is_upload_chosen: false,
+  has_stored_copy: false,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
@@ -493,15 +498,15 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends DELETE .../review/answers/{answered_at_ms} for undoReviewAnswer", async () => {
+  it("sends DELETE .../review/answers/{answer_id} for undoReviewAnswer", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
       backendApi.endpoints.undoReviewAnswer.initiate({
         projectId: "p1",
-        answeredAtMs: 1234,
+        answerId: "a1",
       }),
     );
-    expect(client.requests[0]?.path).toBe("/projects/p1/review/answers/1234");
+    expect(client.requests[0]?.path).toBe("/projects/p1/review/answers/a1");
   });
 
   it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
@@ -779,6 +784,7 @@ describe("setAnkiConnect", () => {
       flashcard_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: true,
+      is_backed_up: false,
     };
     const store = createStore({
       send: async <T>() => ({ data: project as T }),
@@ -800,7 +806,7 @@ describe("the account endpoints", () => {
   it("send GET /auth/server for getServerAuthInfo", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.getServerAuthInfo.initiate(),
+      backendApi.endpoints.getServerAuthInfo.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/auth/server" }]);
   });
@@ -808,7 +814,7 @@ describe("the account endpoints", () => {
   it("send GET /auth/me for getCurrentPrincipal", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.getCurrentPrincipal.initiate(),
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/auth/me" }]);
   });
@@ -822,7 +828,7 @@ describe("the account endpoints", () => {
   it("send GET /users for listUsers", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.listUsers.initiate(),
+      backendApi.endpoints.listUsers.initiate("self"),
     );
     expect(client.requests).toEqual([{ method: "GET", path: "/users" }]);
   });
@@ -835,7 +841,7 @@ describe("the account endpoints", () => {
       role: "privileged",
     } as const;
     await createStore(client).dispatch(
-      backendApi.endpoints.createUser.initiate(request),
+      backendApi.endpoints.createUser.initiate({ via: "self", request }),
     );
     expect(client.requests).toEqual([
       {
@@ -850,6 +856,7 @@ describe("the account endpoints", () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
       backendApi.endpoints.setUserRole.initiate({
+        via: "self",
         userId: "u1",
         body: { role: "administrator" },
       }),
@@ -866,9 +873,12 @@ describe("the account endpoints", () => {
   it("fetch the current principal again once an account's role changes", async () => {
     const client = createRecordingClient();
     const store = createStore(client);
-    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
+    await store.dispatch(
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
+    );
     await store.dispatch(
       backendApi.endpoints.setUserRole.initiate({
+        via: "self",
         userId: "u1",
         body: { role: "library_user" },
       }),
@@ -883,8 +893,12 @@ describe("the account endpoints", () => {
   it("fetch the current principal again once an account is deleted", async () => {
     const client = createRecordingClient();
     const store = createStore(client);
-    await store.dispatch(backendApi.endpoints.getCurrentPrincipal.initiate());
-    await store.dispatch(backendApi.endpoints.deleteUser.initiate("u1"));
+    await store.dispatch(
+      backendApi.endpoints.getCurrentPrincipal.initiate("self"),
+    );
+    await store.dispatch(
+      backendApi.endpoints.deleteUser.initiate({ via: "self", userId: "u1" }),
+    );
     await vi.waitFor(() =>
       expect(
         client.requests.filter(({ path }) => path === "/auth/me"),
@@ -895,8 +909,388 @@ describe("the account endpoints", () => {
   it("send DELETE /users/{id} for deleteUser", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.deleteUser.initiate("u1"),
+      backendApi.endpoints.deleteUser.initiate({ via: "self", userId: "u1" }),
     );
     expect(client.requests).toEqual([{ method: "DELETE", path: "/users/u1" }]);
+  });
+
+  it("send GET /auth/sessions for listSessions", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listSessions.initiate("self"),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/auth/sessions" },
+    ]);
+  });
+
+  it("send DELETE /auth/sessions/{id} for deleteSession", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.deleteSession.initiate({
+        via: "self",
+        sessionId: "s1",
+      }),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/auth/sessions/s1" },
+    ]);
+  });
+
+  it("list the sessions again once one is deleted", async () => {
+    const client = createRecordingClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listSessions.initiate("self"));
+    await store.dispatch(
+      backendApi.endpoints.deleteSession.initiate({
+        via: "self",
+        sessionId: "s1",
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(
+        client.requests.filter(({ path }) => path === "/auth/sessions"),
+      ).toHaveLength(2),
+    );
+  });
+
+  it("send POST /auth/confirmation-email for requestConfirmationEmail", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.requestConfirmationEmail.initiate("self"),
+    );
+    expect(client.requests).toEqual([
+      { method: "POST", path: "/auth/confirmation-email" },
+    ]);
+  });
+
+  it("send account requests through the built-in server to the remote it is linked to", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setUserRole.initiate({
+        via: "linkedRemote",
+        userId: "u1",
+        body: { role: "administrator" },
+      }),
+    );
+    expect(client.requests.map(({ path }) => path)).toEqual([
+      "/sync/remote/users/u1/role",
+    ]);
+  });
+});
+
+describe("accountPath", () => {
+  it("leaves the path of a route on the connected server as it is", () => {
+    expect(accountPath("self", "/auth/me")).toBe("/auth/me");
+  });
+
+  it("prefixes the path of a route on the linked remote with the built-in server's forwarding path", () => {
+    expect(accountPath("linkedRemote", "/auth/me")).toBe(
+      "/sync/remote/auth/me",
+    );
+  });
+});
+
+const conflict = (id: string): SyncConflict => ({
+  id,
+  description: "a flashcard",
+  project_name: "Spanish practice",
+  media_file_name: null,
+  kept: "other_device",
+  detected_at_ms: 0,
+});
+
+const syncLink: SyncLink = {
+  kind: "account",
+  server_url: "https://cloud.example.org",
+  account_email: "someone@example.org",
+  account_role: "library_user",
+  linked_at_ms: 0,
+  last_synced_at_ms: null,
+  pushed_through_seq: 4,
+  state: { kind: "idle" },
+  transfer: null,
+  refused_upload: null,
+  conflicts: [],
+  conflict_count: 0,
+};
+
+const syncStatus: SyncStatus = {
+  link: syncLink,
+  pulled_revision: 1,
+  local_change_seq: 4,
+};
+
+/** A built-in server that answers each status request with the next of the statuses, and lists no projects. */
+function createStatusClient(...statuses: SyncStatus[]) {
+  const requests: BackendRequest[] = [];
+  let answered = 0;
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      if (request.path !== "/sync/status")
+        return { data: { projects: [] } as T };
+      const status = statuses[Math.min(answered, statuses.length - 1)];
+      answered += 1;
+      return { data: status as T };
+    },
+  };
+  return { client, requests };
+}
+
+/** A store over the client that records the type of every action dispatched to it. */
+function createRecordingStore(client: BackendClient) {
+  const dispatched: { type: string; conflictId?: string; payload?: unknown }[] =
+    [];
+  const recording: Middleware = () => (next) => (action) => {
+    dispatched.push(action as { type: string });
+    return next(action);
+  };
+  const extra: BackendThunkExtra = {
+    client,
+    browserFileRegistry: null,
+    frameCapturer: null,
+    failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect: createFakeAnkiConnect(),
+  };
+  const store = configureStore({
+    reducer: { [backendApi.reducerPath]: backendApi.reducer },
+    middleware: (getDefault) =>
+      getDefault({ thunk: { extraArgument: extra } }).concat(
+        recording,
+        backendApi.middleware,
+      ),
+  });
+  return { store, dispatched };
+}
+
+/** Fetches the status once for each of the statuses, after the project list is fetched, and returns what the store saw. */
+async function fetchStatuses(...statuses: SyncStatus[]) {
+  const { client, requests } = createStatusClient(...statuses);
+  const { store, dispatched } = createRecordingStore(client);
+  await store.dispatch(backendApi.endpoints.listProjects.initiate());
+  for (const _ of statuses)
+    await store.dispatch(
+      backendApi.endpoints.getSyncStatus.initiate(undefined, {
+        forceRefetch: true,
+      }),
+    );
+  const projectListings = () =>
+    requests.filter(({ path }) => path === "/projects").length;
+  return { dispatched, projectListings };
+}
+
+const typesOf = (dispatched: { type: string }[]) =>
+  dispatched.map(({ type }) => type);
+
+/** The tags that the dispatched invalidations named. */
+const invalidatedTags = (dispatched: { type: string; payload?: unknown }[]) =>
+  dispatched
+    .filter(({ type }) => type.endsWith("invalidateTags"))
+    .flatMap(({ payload }) => payload as string[]);
+
+describe("getSyncStatus", () => {
+  it("sends GET /sync/status", async () => {
+    const { client, requests } = createStatusClient(syncStatus);
+    await createStore(client).dispatch(
+      backendApi.endpoints.getSyncStatus.initiate(),
+    );
+    expect(requests).toEqual([{ method: "GET", path: "/sync/status" }]);
+  });
+
+  it("reports nothing on the first answer", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus);
+    expect(typesOf(dispatched)).not.toContain("syncPulledChanges");
+  });
+
+  it("reports changes pulled from the remote", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 2,
+    });
+    expect(typesOf(dispatched)).toContain("syncPulledChanges");
+  });
+
+  it("reports pulled changes when the revision starts over, as after the built-in server restarts", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 0,
+    });
+    expect(typesOf(dispatched)).toContain("syncPulledChanges");
+  });
+
+  it("lists the projects again once changes are pulled", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      pulled_revision: 2,
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("lists the projects again once changes are pushed", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, pushed_through_seq: 5 },
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("lists the projects again once a change is made on the device", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      local_change_seq: 5,
+    });
+    await vi.waitFor(() => expect(projectListings()).toBe(2));
+  });
+
+  it("leaves the projects alone while nothing changed", async () => {
+    const { projectListings } = await fetchStatuses(syncStatus, syncStatus);
+    expect(projectListings()).toBe(1);
+  });
+
+  it("checks the storage again once changes are pushed", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, pushed_through_seq: 5 },
+    });
+    expect(invalidatedTags(dispatched)).toContain("StorageStatus");
+  });
+
+  it("checks the storage again once an upload ends", async () => {
+    const uploading = {
+      ...syncStatus,
+      link: {
+        ...syncLink,
+        transfer: {
+          media_file_id: "m1",
+          name: "film.mkv",
+          sent_bytes: 1,
+          total_bytes: 2,
+        },
+      },
+    };
+    const { dispatched } = await fetchStatuses(uploading, syncStatus);
+    expect(invalidatedTags(dispatched)).toContain("StorageStatus");
+  });
+
+  it("reports a new latest conflict", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c2"), conflict("c1")] },
+    });
+    expect(
+      dispatched.filter(({ type }) => type === "syncConflictsReported"),
+    ).toEqual([{ type: "syncConflictsReported", conflictId: "c2" }]);
+  });
+
+  it("makes the full list of conflicts stale when a new latest conflict arrives", async () => {
+    const { dispatched } = await fetchStatuses(syncStatus, {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c1")] },
+    });
+    expect(invalidatedTags(dispatched)).toContain("SyncConflicts");
+  });
+
+  it("does not report the same latest conflict again", async () => {
+    const withConflict = {
+      ...syncStatus,
+      link: { ...syncLink, conflicts: [conflict("c1")] },
+    };
+    const { dispatched } = await fetchStatuses(withConflict, withConflict);
+    expect(typesOf(dispatched)).not.toContain("syncConflictsReported");
+  });
+});
+
+const storedCopy = {
+  media_file_id: "m1",
+  project_id: "p1",
+  project_name: "Spanish practice",
+  name: "film.mkv",
+  size_bytes: 2,
+  stored_at_ms: 0,
+};
+
+/** Answers the media list, counting how often it is asked for, and every other request with a stored copy. */
+function createMediaListClient() {
+  let listings = 0;
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) => {
+      if (request.path !== "/projects/p1/media")
+        return { data: storedCopy as T };
+      listings += 1;
+      return { data: { media_files: [] } as T };
+    },
+  };
+  return { client, listings: () => listings };
+}
+
+describe("the storage endpoints", () => {
+  it("send GET /storage for getStorageStatus on the server itself", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getStorageStatus.initiate("self"),
+    );
+    expect(client.requests).toEqual([{ method: "GET", path: "/storage" }]);
+  });
+
+  it("send GET /sync/remote/storage for getStorageStatus on the linked remote", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getStorageStatus.initiate("linkedRemote"),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/sync/remote/storage" },
+    ]);
+  });
+
+  it("put the choice for setUploadChoice", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setUploadChoice.initiate({
+        ...mediaArgs,
+        isUploadChosen: true,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "PUT",
+        path: "/projects/p1/media/m1/upload-choice",
+        body: { kind: "json", value: { is_upload_chosen: true } },
+      },
+    ]);
+  });
+
+  it("send POST .../stored-copy/fetch for fetchStoredCopy", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "POST", path: "/projects/p1/media/m1/stored-copy/fetch" },
+    ]);
+  });
+
+  it("list the project's media files again once the choice is recorded", async () => {
+    const { client, listings } = createMediaListClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await store.dispatch(
+      backendApi.endpoints.setUploadChoice.initiate({
+        ...mediaArgs,
+        isUploadChosen: false,
+      }),
+    );
+    await vi.waitFor(() => expect(listings()).toBe(2));
+  });
+
+  it("list the project's media files again once a copy is fetched", async () => {
+    const { client, listings } = createMediaListClient();
+    const store = createStore(client);
+    await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+    await store.dispatch(
+      backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
+    );
+    await vi.waitFor(() => expect(listings()).toBe(2));
   });
 });

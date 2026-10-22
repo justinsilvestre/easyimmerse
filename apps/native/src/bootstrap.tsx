@@ -24,6 +24,7 @@ export function bootstrap(): void {
   const store = createAppStore(
     effects,
     createBackendStoreParts(createHttpBackendClient(server), server),
+    import.meta.env.VITE_EASYIMMERSE_CLOUD_URL || null,
   );
   createRoot(findRootElement()).render(
     <AppRoot store={store} playerRegistry={playerRegistry} />,

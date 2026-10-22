@@ -8,6 +8,7 @@ use rusqlite::{Connection, Row, params_from_iter};
 
 use super::columns::{get_enum, get_optional_enum};
 use crate::error::StorageError;
+use crate::owners::OwnerId;
 
 /// The columns of `dictionaries d` that `read_origin` reads, to be selected first.
 pub const ORIGIN_COLUMNS: &str = "d.id, d.title, d.format, d.number, d.frequency_mode";
@@ -23,6 +24,14 @@ pub fn read_origin(row: &Row) -> rusqlite::Result<DictionaryOrigin> {
         rank: row.get(3)?,
         frequency_mode: get_optional_enum(row, 4)?,
     })
+}
+
+/// The owner followed by the values, as a query that names the owner before its `IN (...)` list binds them.
+pub fn owner_then<'a>(
+    owner: &'a OwnerId,
+    values: &'a [String],
+) -> impl Iterator<Item = &'a String> {
+    std::iter::once(&owner.0).chain(values)
 }
 
 /// Writes one `?` placeholder per value, for an `IN (...)` list.

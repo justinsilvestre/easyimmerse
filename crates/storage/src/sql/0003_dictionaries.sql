@@ -4,6 +4,7 @@
 CREATE TABLE dictionaries (
     number INTEGER PRIMARY KEY,
     id TEXT NOT NULL UNIQUE,
+    owner_id TEXT NOT NULL REFERENCES owners(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     revision TEXT,
     format TEXT NOT NULL,
@@ -23,6 +24,8 @@ CREATE TABLE dictionaries (
     kanji_meta_count INTEGER NOT NULL DEFAULT 0,
     media_count INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE INDEX dictionaries_by_owner ON dictionaries (owner_id, number);
 
 -- `alternates` is a JSON array. `word_classes`, `term_tags` and `definition_tags` are space-separated.
 -- `definitions` holds the entry's definitions as JSON, compressed with raw deflate.

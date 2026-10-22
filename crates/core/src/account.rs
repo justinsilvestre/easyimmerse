@@ -29,6 +29,9 @@ pub struct AccountUser {
     pub role: AccountRole,
     /// Milliseconds since the Unix epoch.
     pub created_at_ms: u64,
+    /// When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.
+    /// None until then, and always on a server that sends no email.
+    pub email_confirmed_at_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -99,6 +102,7 @@ mod tests {
             email: "admin@example.com".to_string(),
             role: AccountRole::Administrator,
             created_at_ms: 1,
+            email_confirmed_at_ms: None,
         };
         let json = serde_json::to_value(&user).unwrap();
         assert_eq!(json["created_at_ms"], 1);

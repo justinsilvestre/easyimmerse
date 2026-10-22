@@ -4,6 +4,7 @@ import { updated } from "../app/updated.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { isAborted } from "../server/isAborted.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
+import { accountViaOf } from "../server/serverSelectors.ts";
 import {
   canSubmitNewUser,
   createUserRequestId,
@@ -20,8 +21,9 @@ import {
 export function updateUserManagement(
   users: UserManagementState,
   action: AppAction,
-  { operations }: Pick<ReadableState, "operations">,
+  { operations, server }: Pick<ReadableState, "operations" | "server">,
 ) {
+  const via = accountViaOf(server.config);
   switch (action.type) {
     case "newUserFormChanged":
       return updated({
@@ -38,7 +40,11 @@ export function updateUserManagement(
       return updated(users, {
         type: "sendRequest",
         id: createUserRequestId,
-        request: { kind: "createUser", request: { email, password, role } },
+        request: {
+          kind: "createUser",
+          via,
+          request: { email, password, role },
+        },
       });
     }
     case "userRoleChosen":
@@ -49,6 +55,7 @@ export function updateUserManagement(
           id: setUserRoleRequestId(action.userId),
           request: {
             kind: "setUserRole",
+            via,
             userId: action.userId,
             role: action.role,
           },
@@ -66,7 +73,7 @@ export function updateUserManagement(
         {
           type: "sendRequest",
           id: deleteUserRequestId(userId),
-          request: { kind: "deleteUser", userId },
+          request: { kind: "deleteUser", via, userId },
         },
       );
     }

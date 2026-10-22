@@ -13,7 +13,7 @@ pub(super) fn fixtures_dir() -> PathBuf {
 
 pub(super) fn placeholder_storage() -> Storage {
     let storage = Storage::open_in_memory().unwrap();
-    storage.seed_placeholder_projects().unwrap();
+    crate::review_test_support::seed_known_placeholder_projects(&storage);
     storage
 }
 
@@ -45,7 +45,9 @@ fn track_name(storage: &Storage, id: Option<SubtitleTrackId>) -> String {
 }
 
 fn dictionary_titles(storage: &Storage) -> Vec<String> {
-    let dictionaries = storage.list_dictionaries().unwrap();
+    let dictionaries = storage
+        .list_dictionaries(&crate::OwnerId::launch())
+        .unwrap();
     dictionaries.into_iter().map(|d| d.metadata.title).collect()
 }
 
@@ -115,7 +117,7 @@ fn imports_the_sample_dictionaries() {
 #[test]
 fn finds_a_spanish_verb_under_an_inflected_form() {
     let entries = seeded_storage()
-        .find_dictionary_entries(&["está".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["está".to_string()])
         .unwrap();
     assert_eq!(entries[0].entry.term, "estar");
 }
@@ -138,7 +140,9 @@ fn skips_a_dictionary_whose_title_is_already_stored() {
     let storage = placeholder_storage();
     let (name, bytes) = dictionaries::WORD_LISTS[0];
     let mut source = DictionarySource::single(name, bytes.to_vec()).unwrap();
-    storage.import_dictionary(&mut source).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut source)
+        .unwrap();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
     assert_eq!(dictionary_titles(&storage).len(), 3);
 }
