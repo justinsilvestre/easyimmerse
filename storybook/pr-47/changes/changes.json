@@ -33,99 +33,475 @@
       }
     }
   ],
-  "storyCount": 486,
+  "storyCount": 559,
   "changes": [
     {
-      "id": "account-notbackedupsign--not-backed-up",
+      "id": "account-notbackedupsign--browser-only",
       "title": "Account/NotBackedUpSign",
-      "name": "Not Backed Up",
+      "name": "Browser Only",
       "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 638,
-        "light-desktop.png": 1061,
-        "dark-phone.png": 644,
-        "dark-desktop.png": 1101
+        "light-phone.png": 193,
+        "light-desktop.png": 6069,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 6304
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         }
       }
     },
     {
-      "id": "account-notbackedupsign--explained",
+      "id": "account-notbackedupsign--failed-saves",
       "title": "Account/NotBackedUpSign",
-      "name": "Explained",
+      "name": "Failed Saves",
       "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 26226,
-        "light-desktop.png": 6205,
-        "dark-phone.png": 27262,
-        "dark-desktop.png": 6466
+        "light-phone.png": 193,
+        "light-desktop.png": 6338,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 6568
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "after-light-phone.png": {
-          "width": 416,
-          "height": 844
+          "width": 390,
+          "height": 828
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 844
+          "height": 828
         },
         "after-dark-phone.png": {
-          "width": 416,
-          "height": 844
+          "width": 390,
+          "height": 828
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 800
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--device-only-desktop",
+      "title": "Account/NotBackedUpSign",
+      "name": "Device Only Desktop",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 7813,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 8252
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--device-only-mobile",
+      "title": "Account/NotBackedUpSign",
+      "name": "Device Only Mobile",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 7825,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 8239
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--device-only-without-official-server",
+      "title": "Account/NotBackedUpSign",
+      "name": "Device Only Without Official Server",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 7748,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 8183
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--device-only-on-a-phone",
+      "title": "Account/NotBackedUpSign",
+      "name": "Device Only On A Phone",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 7825,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 8239
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--link-unreachable",
+      "title": "Account/NotBackedUpSign",
+      "name": "Link Unreachable",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 7388,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 7689
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--link-failed",
+      "title": "Account/NotBackedUpSign",
+      "name": "Link Failed",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 9630,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 10052
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--logged-out",
+      "title": "Account/NotBackedUpSign",
+      "name": "Logged Out",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 193,
+        "light-desktop.png": 6705,
+        "dark-phone.png": 168,
+        "dark-desktop.png": 7031
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        }
+      }
+    },
+    {
+      "id": "account-notbackedupsign--hidden",
+      "title": "Account/NotBackedUpSign",
+      "name": "Hidden",
+      "importPath": "./src/account/NotBackedUpSign.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 96,
+        "light-desktop.png": 96,
+        "dark-phone.png": 91,
+        "dark-desktop.png": 91
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 828
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 784
         }
       }
     },
@@ -3893,43 +4269,43 @@
       "importPath": "./src/screens/SettingsScreen.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 57594,
-        "light-desktop.png": 150226,
-        "dark-phone.png": 58537,
-        "dark-desktop.png": 151198
+        "light-phone.png": 57593,
+        "light-desktop.png": 150230,
+        "dark-phone.png": 58540,
+        "dark-desktop.png": 151196
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 1764
+          "height": 1790
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1868
+          "height": 1894
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 1692
+          "height": 1698
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1796
+          "height": 1802
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 1764
+          "height": 1790
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1868
+          "height": 1894
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 1692
+          "height": 1698
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1796
+          "height": 1802
         }
       }
     },
@@ -3940,43 +4316,43 @@
       "importPath": "./src/screens/SettingsScreen.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 62212,
-        "light-desktop.png": 156258,
-        "dark-phone.png": 67744,
-        "dark-desktop.png": 167301
+        "light-phone.png": 62206,
+        "light-desktop.png": 156253,
+        "dark-phone.png": 67748,
+        "dark-desktop.png": 167298
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 1920
+          "height": 1946
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 2024
+          "height": 2050
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 1848
+          "height": 1854
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1952
+          "height": 1958
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 1920
+          "height": 1946
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 2024
+          "height": 2050
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 1848
+          "height": 1854
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1952
+          "height": 1958
         }
       }
     },
@@ -3988,42 +4364,42 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 71112,
-        "light-desktop.png": 166687,
-        "dark-phone.png": 104734,
-        "dark-desktop.png": 230525
+        "light-desktop.png": 166692,
+        "dark-phone.png": 104731,
+        "dark-desktop.png": 230523
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 1988
+          "height": 2014
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 2092
+          "height": 2118
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 1896
+          "height": 1902
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 2000
+          "height": 2006
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 1988
+          "height": 2014
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 2092
+          "height": 2118
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 1896
+          "height": 1902
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 2000
+          "height": 2006
         }
       }
     },
@@ -4037,19 +4413,19 @@
       "imageSizes": {
         "after-light-phone.png": {
           "width": 390,
-          "height": 2639
+          "height": 2955
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 2411
+          "height": 2747
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 2639
+          "height": 2955
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 2411
+          "height": 2747
         }
       }
     },
