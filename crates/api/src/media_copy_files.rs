@@ -28,16 +28,30 @@ pub fn quota_of(uploads: &UploadsConfig, principal: &Principal) -> Option<u64> {
 }
 
 /// A new file name for a copy of the media file, keeping the original's extension so that its type can be told.
+/// The name holds only ASCII letters, digits, `-`, `_` and the dot before the extension,
+/// so it stays inside the uploads directory whatever id a device gave the media file.
 pub fn copy_file_name(media_file: &MediaFile) -> String {
     let original = match &media_file.source {
         MediaFileSource::Path { path } => path.as_str(),
         MediaFileSource::BrowserFile { .. } => media_file.name.as_str(),
     };
     let random = hex::encode(rand::random::<[u8; 8]>());
+    let id = plain_part_of(&media_file.id.0);
+    let stem = if id.is_empty() {
+        random
+    } else {
+        format!("{id}-{random}")
+    };
     match extension_of(original) {
-        Some(extension) => format!("{}-{random}.{extension}", media_file.id.0),
-        None => format!("{}-{random}", media_file.id.0),
+        Some(extension) => format!("{stem}.{extension}"),
+        None => stem,
     }
+}
+
+fn plain_part_of(id: &str) -> String {
+    id.chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .collect()
 }
 
 fn extension_of(name: &str) -> Option<String> {
@@ -106,8 +120,12 @@ mod tests {
     }
 
     fn media_file(source: MediaFileSource) -> MediaFile {
+        media_file_with_id("m", source)
+    }
+
+    fn media_file_with_id(id: &str, source: MediaFileSource) -> MediaFile {
         MediaFile {
-            id: MediaFileId("m".to_string()),
+            id: MediaFileId(id.to_string()),
             project_id: ProjectId("p".to_string()),
             name: "Film.MKV".to_string(),
             source,
@@ -172,5 +190,27 @@ mod tests {
             path: "/films/a.m p4".to_string(),
         }));
         assert!(!name.contains('.'), "{name}");
+    }
+
+    #[test]
+    fn a_copy_of_a_media_file_whose_id_climbs_out_has_no_separator() {
+        let name = copy_file_name(&media_file_with_id(
+            "../../etc/x",
+            MediaFileSource::Path {
+                path: "/films/a.mp4".to_string(),
+            },
+        ));
+        assert!(!name.contains('/') && !name.contains(".."), "{name}");
+    }
+
+    #[test]
+    fn a_copy_of_a_media_file_whose_id_has_no_plain_character_is_named_by_the_random_part() {
+        let name = copy_file_name(&media_file_with_id(
+            "../..",
+            MediaFileSource::Path {
+                path: "/films/a".to_string(),
+            },
+        ));
+        assert_eq!(name.len(), 16, "{name}");
     }
 }

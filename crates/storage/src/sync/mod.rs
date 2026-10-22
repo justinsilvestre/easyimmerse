@@ -9,6 +9,7 @@ mod conflict_descriptions;
 pub mod conflicts;
 pub mod dictionary_rows;
 pub mod inbox;
+pub mod plain_keys;
 mod pulled_rows;
 pub mod push_answers;
 pub mod remote_copies;

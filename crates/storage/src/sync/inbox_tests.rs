@@ -266,3 +266,36 @@ fn a_dictionary_not_here_stays_in_the_inbox() {
     pull(&storage, &remote, unknown_dictionary());
     assert_eq!(storage.sync_inbox_size(&remote.id).unwrap(), 1);
 }
+
+/// A flashcard as another server holds it, under an id that climbs out of a directory.
+fn pulled_flashcard_with_unplain_id(storage: &Storage) -> PulledRow {
+    let flashcard = make_flashcard(storage, &project(), "Haus");
+    let mut data = local(storage, SyncTable::Flashcards, &flashcard.0)
+        .unwrap()
+        .data
+        .unwrap();
+    data.insert("id".to_string(), Value::from("../x"));
+    PulledRow {
+        table: SyncTable::Flashcards,
+        key: "../x".to_string(),
+        updated_at_ms: LATER_MS,
+        is_deleted: false,
+        data: Some(data),
+    }
+}
+
+#[test]
+fn drops_a_pulled_row_whose_id_climbs_out_of_a_directory() {
+    let (storage, remote) = storage_with_remote();
+    let row = pulled_flashcard_with_unplain_id(&storage);
+    let applied = pull(&storage, &remote, row);
+    assert_eq!(applied.dropped_rows.len(), 1);
+}
+
+#[test]
+fn stores_nothing_of_a_pulled_row_whose_id_climbs_out_of_a_directory() {
+    let (storage, remote) = storage_with_remote();
+    let row = pulled_flashcard_with_unplain_id(&storage);
+    pull(&storage, &remote, row);
+    assert_eq!(local(&storage, SyncTable::Flashcards, "../x"), None);
+}

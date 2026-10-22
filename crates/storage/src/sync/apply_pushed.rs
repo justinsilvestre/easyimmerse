@@ -6,6 +6,7 @@ use serde_json::Value;
 
 use super::changes::{SyncChange, change_of};
 use super::codec::{RowData, delete_row, read_row, stamp, write_row};
+use super::plain_keys::unplain_key_reason;
 use super::tables::{SyncTable, SyncTableSpec};
 use crate::error::StorageError;
 use crate::owners::OwnerId;
@@ -193,6 +194,9 @@ fn validate(
     spec: &SyncTableSpec,
     row: &PushedChange,
 ) -> Result<Option<PushRejection>, StorageError> {
+    if let Some(reason) = unplain_key_reason(row.table, &row.key, row.data.as_ref()) {
+        return Ok(Some(PushRejection::InvalidData(reason)));
+    }
     if row.table == SyncTable::Preferences && !is_synced_preference(&row.key) {
         return Ok(Some(PushRejection::DeviceBoundPreference));
     }

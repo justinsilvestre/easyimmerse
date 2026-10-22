@@ -461,6 +461,26 @@ mod rejections {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn rejects_a_media_file_whose_id_climbs_out_of_the_uploads_directory() {
+        let (server, token) = server_with_account().await;
+        let project = create_project(&server, &token).await;
+        let id = "../../../outside/x";
+        let row = json!({
+            "table": "media_files", "key": id, "updated_at_ms": now_ms(), "is_deleted": false,
+            "data": {
+                "id": id, "project_id": project, "name": "clip.webm", "source_kind": "browser_file",
+                "source_path": null, "browser_file_size": 1, "browser_file_last_modified_ms": 2,
+                "created_at_ms": 1_000, "track_selection_json": null, "origin_plugin": null,
+                "origin_locator": null, "target_subtitle_track_id": null,
+                "translation_subtitle_track_id": null, "translation_media_file_id": null,
+                "is_upload_chosen": 1,
+            },
+        });
+        let outcome = push_one(&server, &token, row, None).await;
+        assert_eq!(outcome["kind"], "rejected");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn rejects_a_device_bound_preference() {
         let (server, token) = server_with_account().await;
         let row = json!({

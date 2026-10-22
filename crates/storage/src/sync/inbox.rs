@@ -9,6 +9,7 @@ use rusqlite::{Connection, Row, TransactionBehavior, params};
 
 use super::changes::change_of;
 use super::codec::{RowData, stamp};
+use super::plain_keys::unplain_key_reason;
 use super::pulled_rows::{ParentState, Puller, apply_deletion, parent_state, write_upsert};
 use super::remotes::{StoredRemote, set_pulled_cursor};
 use super::tables::SyncTable;
@@ -49,6 +50,7 @@ impl AppliedInbox {
         self.refreshed_flashcards.extend(other.refreshed_flashcards);
         self.dictionaries_to_fetch
             .extend(other.dictionaries_to_fetch);
+        self.dropped_rows.extend(other.dropped_rows);
     }
 }
 
@@ -125,6 +127,10 @@ pub fn apply_inbox(
     let rows = inbox_rows(&transaction, &remote.id, rank)?;
     let mut upserts = Vec::new();
     for row in rows {
+        if let Some(reason) = unplain_key_reason(row.table, &row.key, row.data.as_ref()) {
+            puller.drop_row(&transaction, &row, &reason)?;
+            continue;
+        }
         match decide(&transaction, &remote.owner_id, &remote.id, &row)? {
             Decision::Agreed => puller.settle(&transaction, &row)?,
             Decision::KeepLocal => {

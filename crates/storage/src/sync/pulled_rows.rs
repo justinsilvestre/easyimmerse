@@ -11,6 +11,7 @@ use super::codec::{delete_row, read_row, stamp, write_row};
 use super::conflict_descriptions::describe_row;
 use super::conflicts::{NewConflict, record_conflict};
 use super::inbox::{AppliedInbox, PulledRow, keep_in_inbox};
+use super::plain_keys::unplain_key_reason;
 use super::remotes::record_base;
 use super::tables::SyncTable;
 use crate::error::StorageError;
@@ -208,6 +209,9 @@ pub(crate) fn apply_remote_version(
     puller: &mut Puller,
     row: &PulledRow,
 ) -> Result<(), StorageError> {
+    if let Some(reason) = unplain_key_reason(row.table, &row.key, row.data.as_ref()) {
+        return puller.drop_row(transaction, row, &reason);
+    }
     if row.is_deleted {
         return apply_deletion(transaction, puller, row, Some(ConflictKept::OtherDevice));
     }
