@@ -391,7 +391,6 @@
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
         document.querySelectorAll("details.story[open]").forEach(layoutStory);
       }
-      render();
 
       // Keeps a collapsed story's header in view, since collapsing a long story while its header is stuck to the top would scroll it out of sight.
       document.addEventListener("toggle", (event) => {
@@ -494,6 +493,8 @@
           Object.assign(shot.parentElement.style, { width: `${metric.width * scale}px`, height: `${metric.height * scale}px` });
         }
       }
+
+      render();
     </script>
   </body>
 </html>
