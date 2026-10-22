@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";var t,n;function r(){return(r=e((()=>{t=e=>e.app.server.config,n=e=>e.app.server.config?.bundledIn??null})))()}export{n,t as r,r as t};
