@@ -16,8 +16,6 @@ pub enum RoundError {
     Storage(StorageError),
     /// A file this server needed for a transfer could not be written or read.
     Local(std::io::Error),
-    /// The remote refused to keep a media copy, for lack of room. Everything else of the round went through.
-    MediaRefused(RemoteError),
 }
 
 impl From<RemoteError> for RoundError {
@@ -51,7 +49,6 @@ impl RoundError {
             ),
             RoundError::Storage(error) => ("storage".to_string(), error.to_string()),
             RoundError::Local(error) => ("local_file".to_string(), error.to_string()),
-            RoundError::MediaRefused(error) => RoundError::Remote(error.clone()).code_and_message(),
         }
     }
 }

@@ -41,6 +41,7 @@ impl SyncEngine {
             pushed_through_seq: remote.pushed_through_seq,
             state,
             transfer: self.transfer(),
+            refused_upload: self.refused_upload(),
         })
     }
 }

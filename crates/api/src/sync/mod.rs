@@ -18,7 +18,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
-use easyimmerse_core::sync::{MediaTransfer, SyncLinkState};
+use easyimmerse_core::sync::{MediaTransfer, RefusedUpload, SyncLinkState};
 use easyimmerse_storage::Storage;
 use tokio::sync::Notify;
 
@@ -36,6 +36,8 @@ struct EngineState {
     /// Idle, syncing, unreachable or failed. A logged-out link is told by its missing session token instead.
     link_state: SyncLinkState,
     transfer: Option<MediaTransfer>,
+    /// The first media file the latest pass of uploads could not leave on the remote.
+    refused_upload: Option<RefusedUpload>,
     pulled_revision: u64,
     is_round_requested: bool,
     last_round_at: Option<Instant>,
@@ -48,6 +50,7 @@ impl Default for EngineState {
         Self {
             link_state: SyncLinkState::Idle,
             transfer: None,
+            refused_upload: None,
             pulled_revision: 0,
             is_round_requested: false,
             last_round_at: None,
@@ -89,6 +92,14 @@ impl SyncEngine {
 
     pub fn transfer(&self) -> Option<MediaTransfer> {
         self.state().transfer.clone()
+    }
+
+    pub fn refused_upload(&self) -> Option<RefusedUpload> {
+        self.state().refused_upload.clone()
+    }
+
+    fn set_refused_upload(&self, refused_upload: Option<RefusedUpload>) {
+        self.state().refused_upload = refused_upload;
     }
 
     /// Reports the media transfer in progress, or None once it is over.

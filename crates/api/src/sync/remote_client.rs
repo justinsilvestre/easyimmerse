@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use axum::http::Method;
+use easyimmerse_core::media_copy::StorageStatus;
 use easyimmerse_core::sync::{SyncChangesPage, SyncPushBatch, SyncPushOutcomes};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -111,6 +112,11 @@ impl RemoteClient {
 
     pub fn push(&self, batch: &SyncPushBatch) -> Result<SyncPushOutcomes, RemoteError> {
         self.call_json(Method::POST, "/sync/changes", Some(batch))
+    }
+
+    /// The account's quota on the remote and how much of it its copies take.
+    pub fn storage_status(&self) -> Result<StorageStatus, RemoteError> {
+        self.call_json(Method::GET, "/storage", None::<&()>)
     }
 
     /// Sends a request as it came, and returns whatever the remote answered, except that a 401 means logged out.

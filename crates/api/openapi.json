@@ -11993,6 +11993,30 @@
           }
         }
       },
+      "RefusedUpload": {
+        "type": "object",
+        "description": "The latest media file the remote would not keep a copy of, and the remote's reason.",
+        "required": [
+          "media_file_id",
+          "name",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "RemoteKind": {
         "type": "string",
         "description": "Whether a remote is an account server reached over the internet, or a server on the local network.",
@@ -13003,6 +13027,17 @@
             "format": "int64",
             "description": "This server's change sequence up to which the remote holds every change.",
             "minimum": 0
+          },
+          "refused_upload": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RefusedUpload",
+                "description": "None when the latest round found room on the remote for every media file chosen for a copy there."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "server_url": {
             "type": "string"

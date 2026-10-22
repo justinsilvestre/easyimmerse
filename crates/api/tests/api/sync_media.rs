@@ -9,7 +9,7 @@ use tempfile::TempDir;
 
 use crate::stored_copies::{browser_media, put_copy, server_with_uploads};
 use crate::support::{TOKEN, TestServer, fixture_path, read_fixture, spawn_configured_test_server};
-use crate::sync::{account_token, link, send_as, settings, status, sync_round, wait_for};
+use crate::sync::{account_token, link, send_as, settings, status, sync_round};
 
 const FIXTURE: &str = "conversion-tone.ogg";
 
@@ -115,27 +115,42 @@ mod uploads {
         assert_eq!(remote_storage(&remote, &token).await["copies"], json!([]));
     }
 
+    /// A device whose chosen media file is larger than its account's quota on the remote, after one round.
+    async fn past_the_quota() -> (TestServer, TempDir, TestServer, TempDir, String, Value) {
+        let (remote, remote_dir, device, device_dir) = linked_with_uploads(10).await;
+        let (project, _) = chosen_media(&device).await;
+        let status = sync_round(&device).await;
+        (remote, remote_dir, device, device_dir, project, status)
+    }
+
     #[tokio::test(flavor = "multi_thread")]
-    async fn a_media_file_past_the_quota_fails_the_link_with_quota_exceeded() {
-        let (_remote, _rd, device, _dd) = linked_with_uploads(10).await;
-        chosen_media(&device).await;
-        device.request("POST", "/sync/run").send().await;
-        let status = wait_for(&device, |status| {
-            status["link"]["state"]["kind"] == "failed"
-        })
-        .await;
-        assert_eq!(status["link"]["state"]["code"], "quota_exceeded");
+    async fn a_media_file_past_the_quota_leaves_the_link_idle() {
+        let (.., status) = past_the_quota().await;
+        assert_eq!(status["link"]["state"]["kind"], "idle");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_media_file_past_the_quota_is_named_as_the_refused_upload() {
+        let (.., status) = past_the_quota().await;
+        assert_eq!(status["link"]["refused_upload"]["name"], FIXTURE);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_media_file_past_the_quota_is_refused_with_quota_exceeded() {
+        let (.., status) = past_the_quota().await;
+        assert_eq!(status["link"]["refused_upload"]["code"], "quota_exceeded");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_media_file_past_the_quota_leaves_no_copy_on_the_remote() {
+        let (remote, ..) = past_the_quota().await;
+        let token = account_token(&remote).await;
+        assert_eq!(remote_storage(&remote, &token).await["copies"], json!([]));
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn a_media_file_past_the_quota_still_lets_its_row_through() {
-        let (remote, _rd, device, _dd) = linked_with_uploads(10).await;
-        let (project, _) = chosen_media(&device).await;
-        device.request("POST", "/sync/run").send().await;
-        wait_for(&device, |status| {
-            status["link"]["state"]["kind"] == "failed"
-        })
-        .await;
+        let (remote, _rd, _device, _dd, project, _) = past_the_quota().await;
         let token = account_token(&remote).await;
         let media = send_as(
             &remote,
@@ -146,6 +161,41 @@ mod uploads {
         )
         .await;
         assert_eq!(media.json()["media_files"][0]["name"], FIXTURE);
+    }
+
+    /// A device whose chosen media file would fit on the remote but for another copy there, after one round;
+    /// the other copy's project and media file ids.
+    async fn crowded_by_another_copy() -> (TestServer, TempDir, TestServer, TempDir, String, String)
+    {
+        let fixture_bytes = std::fs::metadata(fixture_path(FIXTURE)).unwrap().len();
+        let (remote, remote_dir, device, device_dir) = linked_with_uploads(fixture_bytes + 5).await;
+        let token = account_token(&remote).await;
+        let (project, media) = browser_media(&remote, &token).await;
+        put_copy(&remote, &token, &project, &media, b"0123456789").await;
+        chosen_media(&device).await;
+        sync_round(&device).await;
+        (remote, remote_dir, device, device_dir, project, media)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_media_file_is_refused_while_another_copy_takes_its_room() {
+        let (_remote, _rd, device, ..) = crowded_by_another_copy().await;
+        let sync_status = status(&device).await;
+        assert_eq!(
+            sync_status["link"]["refused_upload"]["code"],
+            "quota_exceeded"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn no_upload_is_refused_once_the_other_copy_is_gone() {
+        let (remote, _rd, device, _dd, project, media) = crowded_by_another_copy().await;
+        let token = account_token(&remote).await;
+        let path = format!("/projects/{project}/media/{media}/upload-choice");
+        let body = json!({ "is_upload_chosen": false });
+        send_as(&remote, &token, "PUT", &path, Some(&body)).await;
+        let status = sync_round(&device).await;
+        assert_eq!(status["link"]["refused_upload"], Value::Null);
     }
 }
 

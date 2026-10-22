@@ -2834,6 +2834,13 @@ export interface components {
             /** Format: int64 */
             num: number;
         };
+        /** @description The latest media file the remote would not keep a copy of, and the remote's reason. */
+        RefusedUpload: {
+            code: string;
+            media_file_id: components["schemas"]["MediaFileId"];
+            message: string;
+            name: string;
+        };
         /**
          * @description Whether a remote is an account server reached over the internet, or a server on the local network.
          * @enum {string}
@@ -3265,6 +3272,7 @@ export interface components {
              * @description This server's change sequence up to which the remote holds every change.
              */
             pushed_through_seq: number;
+            refused_upload?: components["schemas"]["RefusedUpload"] | null;
             server_url: string;
             state: components["schemas"]["SyncLinkState"];
             transfer?: components["schemas"]["MediaTransfer"] | null;

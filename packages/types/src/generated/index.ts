@@ -150,6 +150,7 @@ export type * from "./PushOutcome";
 export type * from "./PushOutcomeKind";
 export type * from "./PushedRow";
 export type * from "./Rational";
+export type * from "./RefusedUpload";
 export type * from "./RemoteKind";
 export type * from "./ResolvedMedia";
 export type * from "./ResolvedSubtitle";

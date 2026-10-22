@@ -163,6 +163,8 @@ pub struct SyncLink {
     pub state: SyncLinkState,
     /// The media file being uploaded, while one is.
     pub transfer: Option<MediaTransfer>,
+    /// None when the latest round found room on the remote for every media file chosen for a copy there.
+    pub refused_upload: Option<RefusedUpload>,
     /// The 20 most recent conflicts, newest first.
     pub conflicts: Vec<SyncConflict>,
     /// How many conflicts there are since they were last dismissed.
@@ -197,6 +199,16 @@ pub struct MediaTransfer {
     pub name: String,
     pub sent_bytes: u64,
     pub total_bytes: u64,
+}
+
+/// The latest media file the remote would not keep a copy of, and the remote's reason.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct RefusedUpload {
+    pub media_file_id: MediaFileId,
+    pub name: String,
+    pub code: String,
+    pub message: String,
 }
 
 /// Which of two changes made at once was kept.

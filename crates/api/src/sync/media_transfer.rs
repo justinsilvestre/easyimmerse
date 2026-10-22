@@ -5,9 +5,9 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
-use easyimmerse_core::media_copy::StoredCopy;
+use easyimmerse_core::media_copy::{StorageStatus, StoredCopy};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
-use easyimmerse_core::sync::MediaTransfer;
+use easyimmerse_core::sync::{MediaTransfer, RefusedUpload};
 use easyimmerse_storage::{NewMediaCopy, Storage, StorageError, StoredRemote};
 
 use super::SyncEngine;
@@ -17,21 +17,41 @@ use crate::media_copy_files::release_copy_files;
 use crate::now_ms::now_ms;
 
 /// Uploads each chosen media file that the remote holds no copy of and whose bytes this server can read,
-/// reporting progress as the link's transfer. A file the remote refuses for lack of room is left for a later round,
-/// and the round then ends as failed with `quota_exceeded`, once every other file has had its turn.
+/// reporting progress as the link's transfer. A file the remote has no room for or will not keep is skipped,
+/// and the first such file is reported as the link's refused upload, so that it never holds back the rest of the round.
 pub fn upload_media(
     engine: &SyncEngine,
     client: &RemoteClient,
     remote: &StoredRemote,
 ) -> Result<(), RoundError> {
+    let mut refusal = None;
+    let uploaded = upload_each(engine, client, remote, &mut refusal);
+    engine.set_refused_upload(refusal);
+    uploaded
+}
+
+fn upload_each(
+    engine: &SyncEngine,
+    client: &RemoteClient,
+    remote: &StoredRemote,
+    refusal: &mut Option<RefusedUpload>,
+) -> Result<(), RoundError> {
     let media_files = engine
         .storage
         .list_media_files_to_upload(&remote.owner_id, &remote.id)?;
-    let mut refusal = None;
+    if media_files.is_empty() {
+        return Ok(());
+    }
+    let mut room = Room::of(&client.storage_status()?);
     for media_file in media_files {
         let Some(path) = readable_bytes(engine, &media_file)? else {
             continue;
         };
+        let size_bytes = std::fs::metadata(&path).map_err(RoundError::Local)?.len();
+        if let Some((code, message)) = room.refusal_of(size_bytes) {
+            refusal.get_or_insert_with(|| refused(&media_file, code, message));
+            continue;
+        }
         let uploaded = upload_one(engine, client, &media_file, &path);
         engine.set_transfer(None);
         match uploaded {
@@ -39,23 +59,70 @@ pub fn upload_media(
                 engine
                     .storage
                     .record_remote_copy(&remote.id, &media_file.id, size_bytes)?;
+                room.take(size_bytes);
             }
-            Err(RoundError::Remote(
-                error @ RemoteError::Refused {
-                    status: 413 | 404, ..
-                },
-            )) => {
-                // A 404 means the media file has not reached the remote yet; the next round tries again.
-                if let RemoteError::Refused { status: 413, .. } = error {
-                    refusal = Some(error);
-                }
+            // A 404 means the media file has not reached the remote yet; the next round tries again.
+            Err(RoundError::Remote(RemoteError::Refused { status: 404, .. })) => {}
+            Err(RoundError::Remote(RemoteError::Refused {
+                status: 400..500,
+                code,
+                message,
+                ..
+            })) => {
+                refusal.get_or_insert_with(|| refused(&media_file, code, message));
             }
             Err(error) => return Err(error),
         }
     }
-    match refusal {
-        Some(error) => Err(RoundError::MediaRefused(error)),
-        None => Ok(()),
+    Ok(())
+}
+
+fn refused(media_file: &MediaFile, code: String, message: String) -> RefusedUpload {
+    RefusedUpload {
+        media_file_id: media_file.id.clone(),
+        name: media_file.name.clone(),
+        code,
+        message,
+    }
+}
+
+/// How many more bytes of copies the remote will keep for the account.
+#[derive(Debug, PartialEq)]
+enum Room {
+    Unlimited,
+    Left(u64),
+    /// The account's quota is zero, as on a remote without an uploads directory.
+    NoCopies,
+}
+
+impl Room {
+    fn of(status: &StorageStatus) -> Self {
+        match status.quota_bytes {
+            None => Room::Unlimited,
+            Some(0) => Room::NoCopies,
+            Some(quota) => Room::Left(quota.saturating_sub(status.used_bytes)),
+        }
+    }
+
+    /// The code and message of a refusal to keep a copy of this size, or None when it fits.
+    fn refusal_of(&self, size_bytes: u64) -> Option<(String, String)> {
+        match self {
+            Room::NoCopies => Some((
+                "uploads_unavailable".to_string(),
+                "the remote keeps no copies of media files for this account".to_string(),
+            )),
+            Room::Left(room) if size_bytes > *room => Some((
+                "quota_exceeded".to_string(),
+                format!("the copy takes {size_bytes} bytes, and only {room} bytes are free"),
+            )),
+            _ => None,
+        }
+    }
+
+    fn take(&mut self, size_bytes: u64) {
+        if let Room::Left(room) = self {
+            *room = room.saturating_sub(size_bytes);
+        }
     }
 }
 
@@ -176,4 +243,74 @@ fn write_download(download: &mut impl Read, path: &Path) -> Result<u64, FetchErr
     let mut file = File::create(path).map_err(FetchError::Local)?;
     io::copy(download, &mut file)
         .map_err(|error| FetchError::Remote(RemoteError::Unreachable(error.to_string())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn status(quota_bytes: Option<u64>, used_bytes: u64) -> StorageStatus {
+        StorageStatus {
+            quota_bytes,
+            used_bytes,
+            copies: Vec::new(),
+        }
+    }
+
+    fn code_of_refusal(room: &Room, size_bytes: u64) -> Option<String> {
+        room.refusal_of(size_bytes).map(|(code, _)| code)
+    }
+
+    #[test]
+    fn the_room_is_the_quota_less_what_copies_take() {
+        assert_eq!(Room::of(&status(Some(100), 30)), Room::Left(70));
+    }
+
+    #[test]
+    fn the_room_is_unlimited_without_a_quota() {
+        assert_eq!(Room::of(&status(None, 30)), Room::Unlimited);
+    }
+
+    #[test]
+    fn the_room_is_empty_when_copies_take_more_than_the_quota() {
+        assert_eq!(Room::of(&status(Some(100), 130)), Room::Left(0));
+    }
+
+    #[test]
+    fn a_quota_of_zero_means_the_remote_keeps_no_copies() {
+        assert_eq!(Room::of(&status(Some(0), 0)), Room::NoCopies);
+    }
+
+    #[test]
+    fn a_copy_that_fills_the_room_exactly_fits() {
+        assert_eq!(code_of_refusal(&Room::Left(70), 70), None);
+    }
+
+    #[test]
+    fn a_copy_larger_than_the_room_is_refused_for_lack_of_room() {
+        assert_eq!(
+            code_of_refusal(&Room::Left(70), 71).as_deref(),
+            Some("quota_exceeded")
+        );
+    }
+
+    #[test]
+    fn any_copy_fits_without_a_quota() {
+        assert_eq!(code_of_refusal(&Room::Unlimited, u64::MAX), None);
+    }
+
+    #[test]
+    fn every_copy_is_refused_where_the_remote_keeps_none() {
+        assert_eq!(
+            code_of_refusal(&Room::NoCopies, 1).as_deref(),
+            Some("uploads_unavailable")
+        );
+    }
+
+    #[test]
+    fn an_upload_takes_its_size_from_the_room() {
+        let mut room = Room::Left(70);
+        room.take(30);
+        assert_eq!(room, Room::Left(40));
+    }
 }
