@@ -9,6 +9,7 @@ import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { accountRoleName } from "./accountRoleName.ts";
+import { cloudStorageSectionId } from "./CloudStorageSection.tsx";
 import { DeviceList } from "./DeviceList.tsx";
 import { deviceNames } from "./deviceNames.ts";
 import { EmailConfirmation } from "./EmailConfirmation.tsx";
@@ -21,7 +22,7 @@ import { UserManagement } from "./users/UserManagement.tsx";
 
 /**
  * The account on the server that the built-in server keeps a copy of the work on: who it is, how copying fares,
- * and, while that server answers for it, its devices, its email confirmation and, for an administrator, the server's accounts.
+ * a link to the media files it keeps, and, while that server answers for it, its devices, its email confirmation and, for an administrator, the server's accounts.
  */
 export function RemoteAccountDetails({
   link,
@@ -61,6 +62,14 @@ export function RemoteAccountDetails({
           conflicts={link.conflicts}
           count={link.conflict_count}
         />
+      )}
+      {answersForAccount && (
+        <a
+          href={`#${cloudStorageSectionId}`}
+          className="self-start text-sm text-accent-fg underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          Storage on {hostOf(link.server_url)}
+        </a>
       )}
       {link.state.kind !== "logged_out" && (
         <LogOut host={hostOf(link.server_url)} platform={platform} />

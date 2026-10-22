@@ -141,6 +141,14 @@ describe("BuiltInServerAccount", () => {
       expect(await screen.findByText(/^today at /)).toBeDefined();
     });
 
+    it("links to the storage the account has on the server", async () => {
+      renderBuiltIn(linked);
+      const link = await screen.findByRole("link", {
+        name: "Storage on cloud.example.org",
+      });
+      expect(link.getAttribute("href")).toBe("#settings-storage");
+    });
+
     it("lists the devices the account is logged in on", async () => {
       renderBuiltIn(linked);
       expect(await screen.findByText("This device")).toBeDefined();
