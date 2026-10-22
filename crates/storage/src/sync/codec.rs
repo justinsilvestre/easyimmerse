@@ -1,11 +1,4 @@
 //! Reading a synced row as a JSON object of its columns, and writing such an object back.
-#![cfg_attr(
-    not(test),
-    allow(
-        dead_code,
-        reason = "the sync engine, which applies pulled and pushed rows, writes them through this codec"
-    )
-)]
 
 use rusqlite::types::{Value as SqlValue, ValueRef};
 use rusqlite::{Connection, OptionalExtension, params_from_iter};
