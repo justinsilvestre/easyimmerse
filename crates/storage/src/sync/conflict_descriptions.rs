@@ -8,7 +8,7 @@ use super::tables::SyncTable;
 use crate::error::StorageError;
 use crate::owners::OwnerId;
 
-/// Names the row, such as "a flashcard in Spanish practice" or "the preference showTranslations".
+/// Names the row, such as "a flashcard in Spanish practice" or "whether translations are shown".
 /// Reads the project's name here, or from the pulled data when the project is not here.
 pub fn describe_row(
     conn: &Connection,
@@ -25,7 +25,7 @@ pub fn describe_row(
                 |name| format!("the settings of {name}"),
             ));
         }
-        SyncTable::Preferences => return Ok(format!("the preference {key}")),
+        SyncTable::Preferences => return describe_preference(conn, owner, key),
         SyncTable::ReviewParameters => return Ok("the review parameters".to_string()),
         SyncTable::Dictionaries => {
             let title = data.and_then(|data| text_of(data, "title"));
@@ -49,6 +49,43 @@ pub fn describe_row(
         None => None,
     };
     Ok(name.map_or_else(|| thing.to_string(), |name| format!("{thing} in {name}")))
+}
+
+/// Names a preference in plain words, with the name of the media file that a position preference is for.
+fn describe_preference(
+    conn: &Connection,
+    owner: &OwnerId,
+    key: &str,
+) -> Result<String, StorageError> {
+    let (position, media_file_id, fallback) = match key {
+        "showTranslations" => return Ok("whether translations are shown".to_string()),
+        "showReviewIntervals" => return Ok("whether review intervals are shown".to_string()),
+        _ => match key.split_once(':') {
+            Some(("readingLocation", id)) => ("the reading position", id, "a document"),
+            Some(("playbackPosition", id)) => ("the playback position", id, "a media file"),
+            _ => return Ok(format!("the setting {key}")),
+        },
+    };
+    let name = media_file_name(conn, owner, media_file_id)?;
+    Ok(format!(
+        "{position} in {}",
+        name.as_deref().unwrap_or(fallback)
+    ))
+}
+
+fn media_file_name(
+    conn: &Connection,
+    owner: &OwnerId,
+    media_file_id: &str,
+) -> Result<Option<String>, StorageError> {
+    Ok(conn
+        .query_row(
+            "SELECT m.name FROM media_files m JOIN projects p ON p.id = m.project_id \
+             WHERE m.id = ?1 AND p.owner_id = ?2",
+            params![media_file_id, owner.0],
+            |row| row.get(0),
+        )
+        .optional()?)
 }
 
 /// The project a row belongs to: from its registry entry here, else from its data.
@@ -99,6 +136,8 @@ fn project_name(conn: &Connection, project_id: &str) -> Result<Option<String>, S
 
 #[cfg(test)]
 mod tests {
+    use easyimmerse_core::media_file::MediaFileSource;
+
     use super::*;
     use crate::Storage;
     use crate::review_test_support::{launch, make_flashcard, project, seeded_storage};
@@ -121,11 +160,39 @@ mod tests {
     }
 
     #[test]
-    fn names_a_preference_by_its_key() {
+    fn names_a_preference_in_plain_words() {
         let storage = seeded_storage();
         assert_eq!(
             describe(&storage, SyncTable::Preferences, "showTranslations"),
-            "the preference showTranslations"
+            "whether translations are shown"
+        );
+    }
+
+    #[test]
+    fn names_a_reading_position_by_its_document() {
+        let storage = seeded_storage();
+        let media_file = storage
+            .add_media_file(
+                &project(),
+                "Der Prozess.epub",
+                &MediaFileSource::Path {
+                    path: "/books/Der Prozess.epub".to_string(),
+                },
+            )
+            .unwrap();
+        let key = format!("readingLocation:{}", media_file.id.0);
+        assert_eq!(
+            describe(&storage, SyncTable::Preferences, &key),
+            "the reading position in Der Prozess.epub"
+        );
+    }
+
+    #[test]
+    fn names_the_reading_position_of_a_document_not_here_without_its_name() {
+        let storage = seeded_storage();
+        assert_eq!(
+            describe(&storage, SyncTable::Preferences, "readingLocation:missing"),
+            "the reading position in a document"
         );
     }
 
