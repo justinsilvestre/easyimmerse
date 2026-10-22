@@ -13,6 +13,7 @@ pub mod providers;
 pub mod review;
 pub mod sidecar_subtitles;
 pub mod subtitle_track;
+pub mod sync;
 pub mod text_source;
 pub mod timed_text;
 pub mod tokenize;
