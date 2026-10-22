@@ -32,7 +32,7 @@ fn pulled_dictionary(storage: &Storage, remote: &StoredRemote) -> PulledRow {
         data: None,
     };
     storage
-        .receive_sync_page(&remote.id, &[row.clone()], 1)
+        .receive_sync_page(&remote.id, std::slice::from_ref(&row), 1)
         .unwrap();
     row
 }
