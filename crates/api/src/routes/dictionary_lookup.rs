@@ -1,5 +1,5 @@
+use axum::Json;
 use axum::extract::{Query, State};
-use axum::{Extension, Json};
 use easyimmerse_core::lookup::{DictionaryStylesheet, KanjiResult, LookupResult};
 use easyimmerse_storage::{OwnerId, Storage, StorageError};
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
 use crate::lookup::{LookupRows, PositionLookup, defining_dictionary_ids};
 use crate::state::AppState;
 
@@ -58,10 +58,9 @@ pub struct LookupResponse {
 )]
 pub async fn lookup_text(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Query(query): Query<LookupQuery>,
 ) -> Result<Json<LookupResponse>, ApiFailure> {
-    let owner = principal.owner_id();
     let response = state
         .with_storage(move |storage| look_up(storage, &owner, &query))
         .await?;

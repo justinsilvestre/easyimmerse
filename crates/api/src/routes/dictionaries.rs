@@ -1,7 +1,7 @@
+use axum::Json;
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::{Extension, Json};
 use easyimmerse_core::dictionary::{
     ColumnRole, DictionaryFormatKind, SourceFile, TableLayout, TablePreview, preview_table,
 };
@@ -11,7 +11,7 @@ use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
 use crate::routes::dictionary_imports::{ImportJobStarted, start_import};
 use crate::state::AppState;
 
@@ -87,7 +87,7 @@ pub struct ListDictionariesResponse {
 )]
 pub async fn import_dictionary(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Query(query): Query<ImportDictionaryQuery>,
     body: Bytes,
 ) -> Result<(StatusCode, Json<ImportJobStarted>), ApiFailure> {
@@ -96,12 +96,7 @@ pub async fn import_dictionary(
         name: query.file_name,
         bytes: body.to_vec(),
     };
-    Ok(start_import(
-        &state,
-        principal.owner_id(),
-        vec![file],
-        table_layout,
-    ))
+    Ok(start_import(&state, owner, vec![file], table_layout))
 }
 
 /// Detects what each column of a table holds and returns that layout with the table's first rows,
@@ -149,9 +144,8 @@ pub async fn preview_dictionary_table(
 )]
 pub async fn list_dictionaries(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
 ) -> Result<Json<ListDictionariesResponse>, ApiFailure> {
-    let owner = principal.owner_id();
     let dictionaries = state
         .with_storage(move |storage| storage.list_dictionaries(&owner))
         .await?;

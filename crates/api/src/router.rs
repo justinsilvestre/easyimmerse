@@ -13,6 +13,7 @@ use utoipa_axum::routes;
 
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
+use crate::auth::owned_path::require_owned_path;
 use crate::routes::{
     account_sessions, alignments, anki, anki_exported, anki_package, anki_pending_deletions,
     auth_server, conversion_cache, conversions, current_principal, dictionaries,
@@ -39,6 +40,8 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let (protected, _) = protected_routes().split_for_parts();
     let protected = protected
         .layer(Extension(Arc::new(document.clone())))
+        // A layer added later runs earlier, so the path check sees the principal the bearer token gives.
+        .layer(from_fn_with_state(state.clone(), require_owned_path))
         .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
     let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));

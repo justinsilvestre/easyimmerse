@@ -3,4 +3,6 @@ pub mod administrator;
 pub mod bearer_token;
 pub mod error_body;
 pub mod host_check;
+pub mod owned_path;
+pub mod owner;
 pub mod principal;

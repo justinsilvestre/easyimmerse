@@ -1,12 +1,12 @@
+use axum::Json;
 use axum::extract::State;
-use axum::{Extension, Json};
 use easyimmerse_storage::{OwnerId, Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
 use crate::lookup::{BatchLookupResponse, BatchPools, LookupRows, PositionLookup};
 use crate::state::AppState;
 
@@ -42,11 +42,10 @@ pub struct BatchLookupRequest {
 )]
 pub async fn lookup_texts(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Json(request): Json<BatchLookupRequest>,
 ) -> Result<Json<BatchLookupResponse>, ApiFailure> {
     check_limits(&request)?;
-    let owner = principal.owner_id();
     let response = state
         .with_storage(move |storage| look_up_all(storage, &owner, &request))
         .await?;

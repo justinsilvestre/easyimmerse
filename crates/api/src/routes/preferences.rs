@@ -1,12 +1,12 @@
+use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::{Extension, Json};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
 use crate::state::AppState;
 
 /// A preference value. `null` means the preference has not been set.
@@ -31,10 +31,9 @@ pub struct PreferenceValue {
 )]
 pub async fn get_preference(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Path(key): Path<String>,
 ) -> Result<Json<PreferenceValue>, ApiFailure> {
-    let owner = principal.owner_id();
     let value = state
         .with_storage(move |storage| storage.get_preference(&owner, &key))
         .await?;
@@ -58,14 +57,13 @@ pub async fn get_preference(
 )]
 pub async fn set_preference(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Path(key): Path<String>,
     Json(body): Json<PreferenceValue>,
 ) -> Result<StatusCode, ApiFailure> {
     let value = body
         .value
         .ok_or_else(|| bad_request("a preference value must not be null"))?;
-    let owner = principal.owner_id();
     state
         .with_storage(move |storage| storage.set_preference(&owner, &key, &value))
         .await?;

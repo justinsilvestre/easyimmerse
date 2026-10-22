@@ -1,8 +1,8 @@
 //! Projects: listing, creating, reading, changing, and deleting them.
 
+use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::{Extension, Json};
 use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::principal::Principal;
+use crate::auth::owner::Owner;
 use crate::routes::media::remove_unreferenced_conversions;
 use crate::state::AppState;
 
@@ -34,9 +34,8 @@ pub struct ListProjectsResponse {
 )]
 pub async fn list_projects(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
 ) -> Result<Json<ListProjectsResponse>, ApiFailure> {
-    let owner = principal.owner_id();
     let projects = state
         .with_storage(move |storage| storage.list_projects(&owner))
         .await?;
@@ -58,10 +57,9 @@ pub async fn list_projects(
 )]
 pub async fn create_project(
     State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
+    Owner(owner): Owner,
     Json(settings): Json<ProjectSettings>,
 ) -> Result<(StatusCode, Json<Project>), ApiFailure> {
-    let owner = principal.owner_id();
     let project = state
         .with_storage(move |storage| storage.create_project(&owner, &settings))
         .await?;
