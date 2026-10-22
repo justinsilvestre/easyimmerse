@@ -237,12 +237,24 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("tells when the server no longer accepts the app's sign-in", async () => {
+    it("tells when the server has logged the app out", async () => {
       renderConnected(
         fakeFailure({ status: 401, code: "unauthorized", message: "" }),
       );
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "The server no longer accepts this app's sign-in. Log out, then log in again.",
+        "You were logged out of books.example.org. Log in again to keep using your account here.",
+      );
+    });
+
+    it("goes back to the form to log in again once the server has logged the app out", async () => {
+      const { effects } = renderConnected(
+        fakeFailure({ status: 401, code: "unauthorized", message: "" }),
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Log in again" }),
+      );
+      await waitFor(() =>
+        expect(effects.calls).toContainEqual({ type: "disconnectFromServer" }),
       );
     });
 

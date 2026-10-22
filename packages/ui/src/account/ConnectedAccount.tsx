@@ -95,6 +95,18 @@ function PrincipalFailure({
   error: PrincipalError;
   serverUrl: string;
 }) {
+  const serverName = useAppSelector((state) =>
+    selectServerName(state, serverUrl),
+  );
+  if (isLoggedOutByServer(error))
+    return (
+      <>
+        <p role="alert" className="text-sm text-danger-fg">
+          {`You were logged out of ${serverName}. Log in again to keep using your account here.`}
+        </p>
+        <LogInAgain serverName={serverName} />
+      </>
+    );
   return (
     <>
       <p role="alert" className="text-sm text-danger-fg">
@@ -102,6 +114,34 @@ function PrincipalFailure({
       </p>
       <LogOut serverUrl={serverUrl} />
     </>
+  );
+}
+
+/** Tells whether the server refused the app's session, as it does once the session has ended elsewhere or expired. */
+function isLoggedOutByServer(error: PrincipalError): boolean {
+  return error !== undefined && "status" in error && isOwnTokenRefused(error);
+}
+
+/** Forgets the session the server refused, which leaves the form to log in again, once any unsaved flashcards may be dropped. */
+function LogInAgain({ serverName }: { serverName: string }) {
+  const dispatch = useAppDispatch();
+  const isSigningOut = useAppSelector(selectIsSigningOut);
+  const droppedCount = useAppSelector(selectLogOutDroppedCount);
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Button
+        variant="primary"
+        aria-disabled={isSigningOut || droppedCount !== null}
+        onClick={() => {
+          if (!isSigningOut) dispatch(actions.signOutRequested());
+        }}
+      >
+        Log in again
+      </Button>
+      {droppedCount !== null && (
+        <LogOutConfirmation droppedCount={droppedCount} host={serverName} />
+      )}
+    </div>
   );
 }
 
@@ -167,8 +207,6 @@ function LogOutConfirmation({
 }
 
 function principalFailureMessage(error: PrincipalError): string {
-  if (error !== undefined && "status" in error && isOwnTokenRefused(error))
-    return "The server no longer accepts this app's sign-in. Log out, then log in again.";
   const detail = error?.message ? `: ${error.message}` : ".";
   return `Couldn't tell which account this app uses${detail}`;
 }
