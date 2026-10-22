@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Storybook changes</title>
     <script>
-      // Sets the theme before the first paint, so a dark page does not flash light.
-      function savedTheme() {
-        try { return localStorage.getItem("theme"); } catch { return null; }
-      }
-      document.documentElement.dataset.theme =
-        savedTheme() ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      // Sets the page's theme from the system's before the first paint, so a dark page does not flash light.
+      const darkScheme = matchMedia("(prefers-color-scheme: dark)");
+      const systemTheme = () => (darkScheme.matches ? "dark" : "light");
+      document.documentElement.dataset.theme = systemTheme();
     </script>
     <style>
-      :root {
+      :root, [data-theme="light"] {
         color-scheme: light;
         --bg: #fff;
         --fg: #1a1a1a;
@@ -25,7 +23,7 @@
         --added: #15803d;
         --removed: #b91c1c;
       }
-      :root[data-theme="dark"] {
+      [data-theme="dark"] {
         color-scheme: dark;
         --bg: #141414;
         --fg: #eee;
@@ -70,7 +68,7 @@
         gap: 8px;
         flex-wrap: wrap;
       }
-      .toolbar button {
+      .toolbar button, summary button {
         font: inherit;
         padding: 4px 10px;
         border: 1px solid var(--line);
@@ -79,7 +77,7 @@
         color: var(--fg);
         cursor: pointer;
       }
-      .toolbar button[aria-pressed="true"] {
+      :is(.toolbar, summary) button[aria-pressed="true"] {
         border-color: var(--accent);
         color: var(--accent);
       }
@@ -97,6 +95,7 @@
         border-radius: 8px;
         margin-bottom: 16px;
         background: var(--card);
+        color: var(--fg);
         scroll-margin-top: calc(var(--toolbar-height, 0px) + 8px);
       }
       details.story > summary {
@@ -127,6 +126,14 @@
       .title {
         font-size: 15px;
         font-weight: 600;
+      }
+      summary .copy {
+        font-size: 12px;
+        padding: 0 8px;
+      }
+      summary .segmented {
+        margin-left: auto;
+        align-self: center;
       }
       .kind {
         font-size: 12px;
@@ -216,8 +223,8 @@
         margin: 12px 0 0;
       }
       .empty { color: var(--muted); }
-      :root[data-theme="light"] [data-variants="dark"],
-      :root[data-theme="dark"] [data-variants="light"] {
+      .story[data-theme="light"] [data-variants="dark"],
+      .story[data-theme="dark"] [data-variants="light"] {
         display: none;
       }
     </style>
@@ -230,7 +237,6 @@
       <div>
         <button type="button" id="collapse-all">Collapse all</button>
         <button type="button" id="expand-all">Expand all</button>
-        <fieldset class="segmented" id="themes" aria-label="Theme"></fieldset>
       </div>
     </header>
     <main id="changes"></main>
@@ -239,8 +245,8 @@
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
       const themeNames = ["light", "dark"];
-      const state = { kind: "all", collapsed: new Set() };
-      const theme = () => document.documentElement.dataset.theme;
+      const state = { kind: "all", collapsed: new Set(), themes: new Map() };
+      const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
       const toolbar = document.getElementById("toolbar");
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
@@ -248,7 +254,7 @@
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
         (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
-        ". The page theme picks which screenshots are shown. Click a screenshot to flip between before and after.";
+        ". Each story has a switch between its light and dark screenshots. Click a screenshot to flip between before and after.";
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
@@ -260,56 +266,38 @@
         filters.append(button);
       }
 
-      const themes = document.getElementById("themes");
-      for (const name of themeNames) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = name === "light" ? "Light" : "Dark";
-        button.dataset.theme = name;
-        button.addEventListener("click", () => switchTheme(name));
-        themes.append(button);
+      // Both themes are already in the story, so switching only changes which one is visible.
+      function switchTheme(story, name) {
+        state.themes.set(story.dataset.id, name);
+        story.dataset.theme = name;
+        for (const button of story.querySelectorAll("[data-theme-choice]")) button.setAttribute("aria-pressed", String(button.dataset.themeChoice === name));
+        layoutStory(story);
       }
 
-      // Both themes are already on the page, so switching only changes which one is visible.
-      // The story at the top of the screen is kept at the same point, in case the two themes' screenshots differ in size.
-      function switchTheme(name) {
-        const anchor = findAnchor();
-        document.documentElement.dataset.theme = name;
-        try { localStorage.setItem("theme", name); } catch {}
-        markPressedTheme();
-        document.querySelectorAll("details.story[open]").forEach(layoutStory);
-        restoreAnchor(anchor);
-      }
-
-      function markPressedTheme() {
-        for (const button of themes.children) button.setAttribute("aria-pressed", String(button.dataset.theme === theme()));
-      }
-
-      /** Finds the story under the toolbar's lower edge, and the viewport's screenshots under it if any, with how far down that edge falls. */
-      function findAnchor() {
-        const top = toolbar.offsetHeight;
-        const story = [...document.querySelectorAll("details.story")].find((candidate) => candidate.getBoundingClientRect().bottom > top);
-        if (!story) return null;
-        const section = [...story.querySelectorAll(`[data-variants="${theme()}"] .variant`)].find((candidate) => {
-          const rect = candidate.getBoundingClientRect();
-          return rect.top <= top && rect.bottom > top;
-        });
-        if (!section) return { story, offset: top - story.getBoundingClientRect().top };
-        const rect = section.getBoundingClientRect();
-        return { story, viewport: section.dataset.viewport, ratio: (top - rect.top) / rect.height };
-      }
-
-      function restoreAnchor(anchor) {
-        if (!anchor) return;
-        const top = toolbar.offsetHeight;
-        const section = anchor.viewport && anchor.story.querySelector(`[data-variants="${theme()}"] .variant[data-viewport="${anchor.viewport}"]`);
-        if (section) {
-          const rect = section.getBoundingClientRect();
-          scrollBy(0, rect.top + anchor.ratio * rect.height - top);
-        } else {
-          scrollBy(0, anchor.story.getBoundingClientRect().top + (anchor.offset ?? 0) - top);
+      async function copyTitle(button) {
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy);
+          button.textContent = "Copied";
+        } catch {
+          button.textContent = "Copy failed";
         }
+        setTimeout(() => { button.textContent = "Copy"; }, 1500);
       }
+
+      // Buttons in a story's header act on their own instead of also opening or closing the story.
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("summary button");
+        if (!button) return;
+        event.preventDefault();
+        if (button.dataset.themeChoice) switchTheme(button.closest("details.story"), button.dataset.themeChoice);
+        else copyTitle(button);
+      });
+
+      // Stories left on the system's theme follow it when it changes.
+      darkScheme.addEventListener("change", () => {
+        document.documentElement.dataset.theme = systemTheme();
+        render();
+      });
 
       document.getElementById("collapse-all").addEventListener("click", () => {
         for (const story of document.querySelectorAll("details.story")) story.open = false;
@@ -369,10 +357,17 @@
         themeNames.map((themeName) => `<div class="variants" data-variants="${themeName}">
           ${shownVariants(change, themeName).map((variant) => variantSection(change, variant)).join("")}</div>`).join("");
 
+      const themeSwitch = (change) =>
+        `<span class="segmented" role="group" aria-label="Theme">${themeNames.map((name) =>
+          `<button type="button" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
+
       function card(change) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
-        return `<details class="story" data-id="${change.id}" ${state.collapsed.has(change.id) ? "" : "open"}>
-          <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${change.title} / ${change.name}</span><span class="meta">${storyLink(change)}</span></summary>
+        const title = `${change.title} / ${change.name}`;
+        return `<details class="story" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
+          <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${title}</span>
+            <button type="button" class="copy" data-copy="${title.replaceAll('"', "&quot;")}">Copy</button>
+            <span class="meta">${storyLink(change)}</span>${themeSwitch(change)}</summary>
           <div class="story-body">
             ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
             ${variantsBody(change)}
@@ -382,7 +377,6 @@
 
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        markPressedTheme();
         const shown = report.changes
           .filter((change) => state.kind === "all" || change.kind === state.kind)
           .sort((a, b) => pixelsOf(b) - pixelsOf(a));
@@ -391,7 +385,6 @@
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
         document.querySelectorAll("details.story[open]").forEach(layoutStory);
       }
-      render();
 
       // Keeps a collapsed story's header in view, since collapsing a long story while its header is stuck to the top would scroll it out of sight.
       document.addEventListener("toggle", (event) => {
@@ -437,7 +430,7 @@
       // and the diff image has that same size, so the highlight fills the frame.
       // Variants are packed into rows, such as phone beside desktop, when they fit side by side at a common scale cap without shrinking too far.
       function layoutStory(story) {
-        const variants = story.querySelector(`.variants[data-variants="${theme()}"]`);
+        const variants = story.querySelector(`.variants[data-variants="${story.dataset.theme}"]`);
         const room = variants?.clientWidth;
         if (!room) return;
         const metrics = [...variants.querySelectorAll(".variant")].map((section) => measureVariant(section, room));
@@ -494,6 +487,8 @@
           Object.assign(shot.parentElement.style, { width: `${metric.width * scale}px`, height: `${metric.height * scale}px` });
         }
       }
+
+      render();
     </script>
   </body>
 </html>
