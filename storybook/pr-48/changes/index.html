@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Storybook changes</title>
+    <script>
+      // Sets the theme before the first paint, so a dark page does not flash light.
+      function savedTheme() {
+        try { return localStorage.getItem("theme"); } catch { return null; }
+      }
+      document.documentElement.dataset.theme =
+        savedTheme() ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #fff;
+        --fg: #1a1a1a;
+        --muted: #666;
+        --line: #ddd;
+        --card: #f6f6f6;
+        --accent: #2563eb;
+        --changed: #b45309;
+        --added: #15803d;
+        --removed: #b91c1c;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #141414;
+        --fg: #eee;
+        --muted: #999;
+        --line: #333;
+        --card: #1f1f1f;
+        --accent: #60a5fa;
+        --changed: #f59e0b;
+        --added: #4ade80;
+        --removed: #f87171;
+      }
+      body {
+        margin: 0;
+        padding: 0 16px 16px;
+        font: 14px/1.5 system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+        padding-top: 16px;
+      }
+      .summary {
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 8px 0;
+        margin-bottom: 8px;
+        background: var(--bg);
+        display: flex;
+        gap: 8px 16px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      .toolbar > div {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .toolbar button {
+        font: inherit;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--card);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      .toolbar button[aria-pressed="true"] {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .segmented {
+        display: flex;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      .segmented button:first-child { border-radius: 999px 0 0 999px; }
+      .segmented button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
+      .segmented button[aria-pressed="true"] { position: relative; }
+      details.story {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 16px;
+        background: var(--card);
+        scroll-margin-top: calc(var(--toolbar-height, 0px) + 8px);
+      }
+      details.story > summary {
+        position: sticky;
+        top: var(--toolbar-height, 0px);
+        z-index: 1;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: var(--card);
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        gap: 4px 8px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      details.story[open] > summary {
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--line);
+      }
+      details.story > summary::-webkit-details-marker { display: none; }
+      details.story > summary::before {
+        content: "▸";
+        width: 1em;
+        color: var(--muted);
+      }
+      details.story[open] > summary::before { content: "▾"; }
+      .title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .kind {
+        font-size: 12px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+      }
+      .kind-changed { color: var(--changed); }
+      .kind-added { color: var(--added); }
+      .kind-removed, .kind-errored { color: var(--removed); }
+      .meta {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .meta a { color: var(--accent); }
+      .story-body { padding: 0 12px 12px; }
+      .full-size { margin-left: 6px; color: var(--accent); }
+      .variants {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px 16px;
+      }
+      .variant {
+        margin-top: 12px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .variant h3 {
+        font-size: 13px;
+        margin: 0 0 6px;
+        color: var(--muted);
+        font-weight: normal;
+        display: flex;
+        gap: 0 12px;
+        flex-wrap: wrap;
+      }
+      .variant label { cursor: pointer; }
+      .resized { color: var(--changed); }
+      .images {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      figure {
+        flex: 0 1 auto;
+        margin: 0;
+        min-width: 0;
+      }
+      figcaption {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .frame {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        vertical-align: top;
+        border: 1px solid var(--line);
+        background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
+      }
+      .frame .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: none;
+        opacity: 0.8;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      :is(.variant:has(.highlight:checked), .flash) .overlay { visibility: visible; }
+      figure img {
+        display: block;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        background: #fff;
+        cursor: pointer;
+      }
+      pre.error {
+        white-space: pre-wrap;
+        font-size: 12px;
+        color: var(--removed);
+        margin: 12px 0 0;
+      }
+      .empty { color: var(--muted); }
+      :root[data-theme="light"] [data-variants="dark"],
+      :root[data-theme="dark"] [data-variants="light"] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Storybook changes</h1>
+    <p class="summary" id="summary"></p>
+    <header class="toolbar" id="toolbar">
+      <div id="filters"></div>
+      <div>
+        <button type="button" id="collapse-all">Collapse all</button>
+        <button type="button" id="expand-all">Expand all</button>
+        <fieldset class="segmented" id="themes" aria-label="Theme"></fieldset>
+      </div>
+    </header>
+    <main id="changes"></main>
+    <script id="report" type="application/json">{"variants":[{"theme":"light","viewport":{"name":"phone","width":390,"height":844}},{"theme":"light","viewport":{"name":"desktop","width":1280,"height":800}},{"theme":"dark","viewport":{"name":"phone","width":390,"height":844}},{"theme":"dark","viewport":{"name":"desktop","width":1280,"height":800}}],"storyCount":512,"changes":[{"id":"account-accountsection--offline-own-server-only","title":"Account/AccountSection","name":"Offline Own Server Only","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":8012,"light-desktop.png":19547,"dark-phone.png":8176,"dark-desktop.png":19746},"imageSizes":{"before-light-phone.png":{"width":390,"height":638},"after-light-phone.png":{"width":390,"height":651},"before-light-desktop.png":{"width":1280,"height":616},"after-light-desktop.png":{"width":1280,"height":629},"before-dark-phone.png":{"width":390,"height":638},"after-dark-phone.png":{"width":390,"height":651},"before-dark-desktop.png":{"width":1280,"height":616},"after-dark-desktop.png":{"width":1280,"height":629}}},{"id":"account-accountsection--offline-with-official-server","title":"Account/AccountSection","name":"Offline With Official Server","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":8012,"light-desktop.png":19547,"dark-phone.png":8176,"dark-desktop.png":19746},"imageSizes":{"before-light-phone.png":{"width":390,"height":620},"after-light-phone.png":{"width":390,"height":633},"before-light-desktop.png":{"width":1280,"height":598},"after-light-desktop.png":{"width":1280,"height":611},"before-dark-phone.png":{"width":390,"height":620},"after-dark-phone.png":{"width":390,"height":633},"before-dark-desktop.png":{"width":1280,"height":598},"after-dark-desktop.png":{"width":1280,"height":611}}},{"id":"account-accountsection--checking-server","title":"Account/AccountSection","name":"Checking Server","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":11936,"light-desktop.png":23506,"dark-phone.png":12364,"dark-desktop.png":23934},"imageSizes":{"before-light-phone.png":{"width":390,"height":638},"after-light-phone.png":{"width":390,"height":651},"before-light-desktop.png":{"width":1280,"height":616},"after-light-desktop.png":{"width":1280,"height":629},"before-dark-phone.png":{"width":390,"height":638},"after-dark-phone.png":{"width":390,"height":651},"before-dark-desktop.png":{"width":1280,"height":616},"after-dark-desktop.png":{"width":1280,"height":629}}},{"id":"account-accountsection--server-without-accounts","title":"Account/AccountSection","name":"Server Without Accounts","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":8012,"light-desktop.png":19547,"dark-phone.png":8176,"dark-desktop.png":19746},"imageSizes":{"before-light-phone.png":{"width":390,"height":664},"after-light-phone.png":{"width":390,"height":677},"before-light-desktop.png":{"width":1280,"height":632},"after-light-desktop.png":{"width":1280,"height":645},"before-dark-phone.png":{"width":390,"height":664},"after-dark-phone.png":{"width":390,"height":677},"before-dark-desktop.png":{"width":1280,"height":632},"after-dark-desktop.png":{"width":1280,"height":645}}},{"id":"account-accountsection--sign-up-closed","title":"Account/AccountSection","name":"Sign Up Closed","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":15507,"light-desktop.png":36940,"dark-phone.png":15981,"dark-desktop.png":37442},"imageSizes":{"before-light-phone.png":{"width":390,"height":674},"after-light-phone.png":{"width":390,"height":698},"before-light-desktop.png":{"width":1280,"height":652},"after-light-desktop.png":{"width":1280,"height":676},"before-dark-phone.png":{"width":390,"height":674},"after-dark-phone.png":{"width":390,"height":698},"before-dark-desktop.png":{"width":1280,"height":652},"after-dark-desktop.png":{"width":1280,"height":676}}},{"id":"account-accountsection--sign-up-with-short-password","title":"Account/AccountSection","name":"Sign Up With Short Password","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":663},"after-light-desktop.png":{"width":1280,"height":641},"after-dark-phone.png":{"width":390,"height":663},"after-dark-desktop.png":{"width":1280,"height":641}}},{"id":"account-accountsection--sign-up-with-weak-password","title":"Account/AccountSection","name":"Sign Up With Weak Password","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":672},"after-light-desktop.png":{"width":1280,"height":650},"after-dark-phone.png":{"width":390,"height":672},"after-dark-desktop.png":{"width":1280,"height":650}}},{"id":"account-accountsection--sign-up-with-fair-password","title":"Account/AccountSection","name":"Sign Up With Fair Password","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":663},"after-light-desktop.png":{"width":1280,"height":641},"after-dark-phone.png":{"width":390,"height":663},"after-dark-desktop.png":{"width":1280,"height":641}}},{"id":"account-accountsection--sign-up-with-strong-password","title":"Account/AccountSection","name":"Sign Up With Strong Password","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":653},"after-light-desktop.png":{"width":1280,"height":631},"after-dark-phone.png":{"width":390,"height":653},"after-dark-desktop.png":{"width":1280,"height":631}}},{"id":"account-accountsection--submitting","title":"Account/AccountSection","name":"Submitting","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":9597,"light-desktop.png":21167,"dark-phone.png":9867,"dark-desktop.png":21437},"imageSizes":{"before-light-phone.png":{"width":390,"height":638},"after-light-phone.png":{"width":390,"height":651},"before-light-desktop.png":{"width":1280,"height":616},"after-light-desktop.png":{"width":1280,"height":629},"before-dark-phone.png":{"width":390,"height":638},"after-dark-phone.png":{"width":390,"height":651},"before-dark-desktop.png":{"width":1280,"height":616},"after-dark-desktop.png":{"width":1280,"height":629}}},{"id":"account-accountsection--wrong-password","title":"Account/AccountSection","name":"Wrong Password","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":9734,"light-desktop.png":21304,"dark-phone.png":10078,"dark-desktop.png":21648},"imageSizes":{"before-light-phone.png":{"width":390,"height":654},"after-light-phone.png":{"width":390,"height":667},"before-light-desktop.png":{"width":1280,"height":632},"after-light-desktop.png":{"width":1280,"height":645},"before-dark-phone.png":{"width":390,"height":654},"after-dark-phone.png":{"width":390,"height":667},"before-dark-desktop.png":{"width":1280,"height":632},"after-dark-desktop.png":{"width":1280,"height":645}}},{"id":"account-accountsection--too-many-attempts","title":"Account/AccountSection","name":"Too Many Attempts","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":9956,"light-desktop.png":21526,"dark-phone.png":10268,"dark-desktop.png":21838},"imageSizes":{"before-light-phone.png":{"width":390,"height":654},"after-light-phone.png":{"width":390,"height":667},"before-light-desktop.png":{"width":1280,"height":632},"after-light-desktop.png":{"width":1280,"height":645},"before-dark-phone.png":{"width":390,"height":654},"after-dark-phone.png":{"width":390,"height":667},"before-dark-desktop.png":{"width":1280,"height":632},"after-dark-desktop.png":{"width":1280,"height":645}}},{"id":"account-accountsection--server-unreachable","title":"Account/AccountSection","name":"Server Unreachable","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":11896,"light-desktop.png":23534,"dark-phone.png":12603,"dark-desktop.png":24246},"imageSizes":{"before-light-phone.png":{"width":390,"height":664},"after-light-phone.png":{"width":390,"height":677},"before-light-desktop.png":{"width":1280,"height":642},"after-light-desktop.png":{"width":1280,"height":655},"before-dark-phone.png":{"width":390,"height":664},"after-dark-phone.png":{"width":390,"height":677},"before-dark-desktop.png":{"width":1280,"height":642},"after-dark-desktop.png":{"width":1280,"height":655}}},{"id":"account-accountsection--logged-in","title":"Account/AccountSection","name":"Logged In","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":49624,"light-desktop.png":140404,"dark-phone.png":52130,"dark-desktop.png":142910},"imageSizes":{"before-light-phone.png":{"width":390,"height":507},"after-light-phone.png":{"width":390,"height":609},"before-light-desktop.png":{"width":1280,"height":485},"after-light-desktop.png":{"width":1280,"height":587},"before-dark-phone.png":{"width":390,"height":507},"after-dark-phone.png":{"width":390,"height":609},"before-dark-desktop.png":{"width":1280,"height":485},"after-dark-desktop.png":{"width":1280,"height":587}}},{"id":"account-accountsection--logging-out","title":"Account/AccountSection","name":"Logging Out","importPath":"./src/account/AccountSection.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":49779,"light-desktop.png":140559,"dark-phone.png":52263,"dark-desktop.png":143043},"imageSizes":{"before-light-phone.png":{"width":390,"height":507},"after-light-phone.png":{"width":390,"height":609},"before-light-desktop.png":{"width":1280,"height":485},"after-light-desktop.png":{"width":1280,"height":587},"before-dark-phone.png":{"width":390,"height":507},"after-dark-phone.png":{"width":390,"height":609},"before-dark-desktop.png":{"width":1280,"height":485},"after-dark-desktop.png":{"width":1280,"height":587}}},{"id":"account-accountsection--desktop-app-not-linked","title":"Account/AccountSection","name":"Desktop App Not Linked","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":633},"after-light-desktop.png":{"width":1280,"height":611},"after-dark-phone.png":{"width":390,"height":633},"after-dark-desktop.png":{"width":1280,"height":611}}},{"id":"account-accountsection--desktop-app-linked","title":"Account/AccountSection","name":"Desktop App Linked","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":594},"after-light-desktop.png":{"width":1280,"height":572},"after-dark-phone.png":{"width":390,"height":594},"after-dark-desktop.png":{"width":1280,"height":572}}},{"id":"account-accountsection--logged-in-with-devices","title":"Account/AccountSection","name":"Logged In With Devices","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":609},"after-light-desktop.png":{"width":1280,"height":587},"after-dark-phone.png":{"width":390,"height":609},"after-dark-desktop.png":{"width":1280,"height":587}}},{"id":"account-accountsection--logging-out-another-device","title":"Account/AccountSection","name":"Logging Out Another Device","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":609},"after-light-desktop.png":{"width":1280,"height":587},"after-dark-phone.png":{"width":390,"height":609},"after-dark-desktop.png":{"width":1280,"height":587}}},{"id":"account-accountsection--email-not-confirmed","title":"Account/AccountSection","name":"Email Not Confirmed","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":634},"after-light-desktop.png":{"width":1280,"height":612},"after-dark-phone.png":{"width":390,"height":634},"after-dark-desktop.png":{"width":1280,"height":612}}},{"id":"account-accountsection--email-confirmed","title":"Account/AccountSection","name":"Email Confirmed","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":617},"after-light-desktop.png":{"width":1280,"height":595},"after-dark-phone.png":{"width":390,"height":617},"after-dark-desktop.png":{"width":1280,"height":595}}},{"id":"account-accountsection--confirmation-link-sent","title":"Account/AccountSection","name":"Confirmation Link Sent","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":644},"after-light-desktop.png":{"width":1280,"height":622},"after-dark-phone.png":{"width":390,"height":644},"after-dark-desktop.png":{"width":1280,"height":622}}},{"id":"account-accountsection--resend-too-soon","title":"Account/AccountSection","name":"Resend Too Soon","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":644},"after-light-desktop.png":{"width":1280,"height":622},"after-dark-phone.png":{"width":390,"height":644},"after-dark-desktop.png":{"width":1280,"height":622}}},{"id":"account-accountsection--forgot-password-on-mail-server","title":"Account/AccountSection","name":"Forgot Password On Mail Server","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":534},"after-light-desktop.png":{"width":1280,"height":512},"after-dark-phone.png":{"width":390,"height":534},"after-dark-desktop.png":{"width":1280,"height":512}}},{"id":"account-accountsection--forgot-password-on-server-without-mail","title":"Account/AccountSection","name":"Forgot Password On Server Without Mail","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":677},"after-light-desktop.png":{"width":1280,"height":655},"after-dark-phone.png":{"width":390,"height":677},"after-dark-desktop.png":{"width":1280,"height":655}}},{"id":"account-accountsection--reset-link-sent","title":"Account/AccountSection","name":"Reset Link Sent","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":560},"after-light-desktop.png":{"width":1280,"height":538},"after-dark-phone.png":{"width":390,"height":560},"after-dark-desktop.png":{"width":1280,"height":538}}},{"id":"account-accountsection--new-password-form","title":"Account/AccountSection","name":"New Password Form","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":548},"after-light-desktop.png":{"width":1280,"height":526},"after-dark-phone.png":{"width":390,"height":548},"after-dark-desktop.png":{"width":1280,"height":526}}},{"id":"account-accountsection--new-password-form-without-server","title":"Account/AccountSection","name":"New Password Form Without Server","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":588},"after-light-desktop.png":{"width":1280,"height":566},"after-dark-phone.png":{"width":390,"height":588},"after-dark-desktop.png":{"width":1280,"height":566}}},{"id":"account-accountsection--new-password-link-invalid","title":"Account/AccountSection","name":"New Password Link Invalid","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":574},"after-light-desktop.png":{"width":1280,"height":552},"after-dark-phone.png":{"width":390,"height":574},"after-dark-desktop.png":{"width":1280,"height":552}}},{"id":"account-accountsection--email-confirmed-by-link","title":"Account/AccountSection","name":"Email Confirmed By Link","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":649},"after-light-desktop.png":{"width":1280,"height":627},"after-dark-phone.png":{"width":390,"height":649},"after-dark-desktop.png":{"width":1280,"height":627}}},{"id":"account-accountsection--confirmation-link-invalid","title":"Account/AccountSection","name":"Confirmation Link Invalid","importPath":"./src/account/AccountSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":659},"after-light-desktop.png":{"width":1280,"height":637},"after-dark-phone.png":{"width":390,"height":659},"after-dark-desktop.png":{"width":1280,"height":637}}},{"id":"account-builtinserveraccount--not-linked","title":"Account/BuiltInServerAccount","name":"Not Linked","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":615},"after-light-desktop.png":{"width":1280,"height":593},"after-dark-phone.png":{"width":390,"height":615},"after-dark-desktop.png":{"width":1280,"height":593}}},{"id":"account-builtinserveraccount--not-linked-on-mobile","title":"Account/BuiltInServerAccount","name":"Not Linked On Mobile","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":615},"after-light-desktop.png":{"width":1280,"height":593},"after-dark-phone.png":{"width":390,"height":615},"after-dark-desktop.png":{"width":1280,"height":593}}},{"id":"account-builtinserveraccount--not-linked-without-cloud","title":"Account/BuiltInServerAccount","name":"Not Linked Without Cloud","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":615},"after-light-desktop.png":{"width":1280,"height":593},"after-dark-phone.png":{"width":390,"height":615},"after-dark-desktop.png":{"width":1280,"height":593}}},{"id":"account-builtinserveraccount--linking","title":"Account/BuiltInServerAccount","name":"Linking","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":615},"after-light-desktop.png":{"width":1280,"height":593},"after-dark-phone.png":{"width":390,"height":615},"after-dark-desktop.png":{"width":1280,"height":593}}},{"id":"account-builtinserveraccount--linking-failed","title":"Account/BuiltInServerAccount","name":"Linking Failed","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":641},"after-light-desktop.png":{"width":1280,"height":619},"after-dark-phone.png":{"width":390,"height":641},"after-dark-desktop.png":{"width":1280,"height":619}}},{"id":"account-builtinserveraccount--first-sync","title":"Account/BuiltInServerAccount","name":"First Sync","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":548},"after-light-desktop.png":{"width":1280,"height":526},"after-dark-phone.png":{"width":390,"height":548},"after-dark-desktop.png":{"width":1280,"height":526}}},{"id":"account-builtinserveraccount--linked","title":"Account/BuiltInServerAccount","name":"Linked","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":560},"after-light-desktop.png":{"width":1280,"height":538},"after-dark-phone.png":{"width":390,"height":560},"after-dark-desktop.png":{"width":1280,"height":538}}},{"id":"account-builtinserveraccount--synchronizing","title":"Account/BuiltInServerAccount","name":"Synchronizing","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":560},"after-light-desktop.png":{"width":1280,"height":538},"after-dark-phone.png":{"width":390,"height":560},"after-dark-desktop.png":{"width":1280,"height":538}}},{"id":"account-builtinserveraccount--upload-refused","title":"Account/BuiltInServerAccount","name":"Upload Refused","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":580},"after-light-desktop.png":{"width":1280,"height":558},"after-dark-phone.png":{"width":390,"height":580},"after-dark-desktop.png":{"width":1280,"height":558}}},{"id":"account-builtinserveraccount--linked-as-administrator","title":"Account/BuiltInServerAccount","name":"Linked As Administrator","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":751},"after-light-desktop.png":{"width":1280,"height":729},"after-dark-phone.png":{"width":390,"height":751},"after-dark-desktop.png":{"width":1280,"height":729}}},{"id":"account-builtinserveraccount--linked-on-mobile","title":"Account/BuiltInServerAccount","name":"Linked On Mobile","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":560},"after-light-desktop.png":{"width":1280,"height":538},"after-dark-phone.png":{"width":390,"height":560},"after-dark-desktop.png":{"width":1280,"height":538}}},{"id":"account-builtinserveraccount--logging-out","title":"Account/BuiltInServerAccount","name":"Logging Out","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":560},"after-light-desktop.png":{"width":1280,"height":538},"after-dark-phone.png":{"width":390,"height":560},"after-dark-desktop.png":{"width":1280,"height":538}}},{"id":"account-builtinserveraccount--with-conflicts","title":"Account/BuiltInServerAccount","name":"With Conflicts","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":688},"after-light-desktop.png":{"width":1280,"height":636},"after-dark-phone.png":{"width":390,"height":688},"after-dark-desktop.png":{"width":1280,"height":636}}},{"id":"account-builtinserveraccount--unreachable","title":"Account/BuiltInServerAccount","name":"Unreachable","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":558},"after-light-desktop.png":{"width":1280,"height":526},"after-dark-phone.png":{"width":390,"height":558},"after-dark-desktop.png":{"width":1280,"height":526}}},{"id":"account-builtinserveraccount--trying-again","title":"Account/BuiltInServerAccount","name":"Trying Again","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":558},"after-light-desktop.png":{"width":1280,"height":526},"after-dark-phone.png":{"width":390,"height":558},"after-dark-desktop.png":{"width":1280,"height":526}}},{"id":"account-builtinserveraccount--logged-out","title":"Account/BuiltInServerAccount","name":"Logged Out","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":520},"after-light-desktop.png":{"width":1280,"height":498},"after-dark-phone.png":{"width":390,"height":520},"after-dark-desktop.png":{"width":1280,"height":498}}},{"id":"account-builtinserveraccount--logging-in-again","title":"Account/BuiltInServerAccount","name":"Logging In Again","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":671},"after-light-desktop.png":{"width":1280,"height":649},"after-dark-phone.png":{"width":390,"height":671},"after-dark-desktop.png":{"width":1280,"height":649}}},{"id":"account-builtinserveraccount--failed","title":"Account/BuiltInServerAccount","name":"Failed","importPath":"./src/account/BuiltInServerAccount.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":611},"after-light-desktop.png":{"width":1280,"height":569},"after-dark-phone.png":{"width":390,"height":611},"after-dark-desktop.png":{"width":1280,"height":569}}},{"id":"account-cloudstoragesection--with-files","title":"Account/CloudStorageSection","name":"With Files","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":516},"after-light-desktop.png":{"width":1280,"height":494},"after-dark-phone.png":{"width":390,"height":516},"after-dark-desktop.png":{"width":1280,"height":494}}},{"id":"account-cloudstoragesection--empty","title":"Account/CloudStorageSection","name":"Empty","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":473},"after-light-desktop.png":{"width":1280,"height":451},"after-dark-phone.png":{"width":390,"height":473},"after-dark-desktop.png":{"width":1280,"height":451}}},{"id":"account-cloudstoragesection--near-quota","title":"Account/CloudStorageSection","name":"Near Quota","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":516},"after-light-desktop.png":{"width":1280,"height":494},"after-dark-phone.png":{"width":390,"height":516},"after-dark-desktop.png":{"width":1280,"height":494}}},{"id":"account-cloudstoragesection--without-quota","title":"Account/CloudStorageSection","name":"Without Quota","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":509},"after-light-desktop.png":{"width":1280,"height":487},"after-dark-phone.png":{"width":390,"height":509},"after-dark-desktop.png":{"width":1280,"height":487}}},{"id":"account-cloudstoragesection--unavailable","title":"Account/CloudStorageSection","name":"Unavailable","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":450},"after-light-desktop.png":{"width":1280,"height":428},"after-dark-phone.png":{"width":390,"height":450},"after-dark-desktop.png":{"width":1280,"height":428}}},{"id":"account-cloudstoragesection--confirming-deletion","title":"Account/CloudStorageSection","name":"Confirming Deletion","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":559},"after-light-desktop.png":{"width":1280,"height":520},"after-dark-phone.png":{"width":390,"height":559},"after-dark-desktop.png":{"width":1280,"height":520}}},{"id":"account-cloudstoragesection--deleting","title":"Account/CloudStorageSection","name":"Deleting","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":516},"after-light-desktop.png":{"width":1280,"height":494},"after-dark-phone.png":{"width":390,"height":516},"after-dark-desktop.png":{"width":1280,"height":494}}},{"id":"account-cloudstoragesection--on-built-in-server","title":"Account/CloudStorageSection","name":"On Built In Server","importPath":"./src/account/CloudStorageSection.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":516},"after-light-desktop.png":{"width":1280,"height":494},"after-dark-phone.png":{"width":390,"height":516},"after-dark-desktop.png":{"width":1280,"height":494}}},{"id":"account-notbackedupsign--browser-only","title":"Account/NotBackedUpSign","name":"Browser Only","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--failed-saves","title":"Account/NotBackedUpSign","name":"Failed Saves","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--device-only-desktop","title":"Account/NotBackedUpSign","name":"Device Only Desktop","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--device-only-mobile","title":"Account/NotBackedUpSign","name":"Device Only Mobile","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--device-only-without-official-server","title":"Account/NotBackedUpSign","name":"Device Only Without Official Server","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--link-failing","title":"Account/NotBackedUpSign","name":"Link Failing","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--link-refused","title":"Account/NotBackedUpSign","name":"Link Refused","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--logged-out","title":"Account/NotBackedUpSign","name":"Logged Out","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--hidden","title":"Account/NotBackedUpSign","name":"Hidden","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":844},"after-light-desktop.png":{"width":1280,"height":800},"after-dark-phone.png":{"width":390,"height":844},"after-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-syncconflictsnotice--one-conflict","title":"Account/SyncConflictsNotice","name":"One Conflict","importPath":"./src/account/SyncConflictsNotice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":496},"after-light-desktop.png":{"width":1280,"height":464},"after-dark-phone.png":{"width":390,"height":496},"after-dark-desktop.png":{"width":1280,"height":464}}},{"id":"account-syncconflictsnotice--several-conflicts","title":"Account/SyncConflictsNotice","name":"Several Conflicts","importPath":"./src/account/SyncConflictsNotice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":550},"after-light-desktop.png":{"width":1280,"height":498},"after-dark-phone.png":{"width":390,"height":550},"after-dark-desktop.png":{"width":1280,"height":498}}},{"id":"account-syncconflictsnotice--more-than-listed","title":"Account/SyncConflictsNotice","name":"More Than Listed","importPath":"./src/account/SyncConflictsNotice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":562},"after-light-desktop.png":{"width":1280,"height":510},"after-dark-phone.png":{"width":390,"height":562},"after-dark-desktop.png":{"width":1280,"height":510}}},{"id":"account-syncconflictsnotice--dismissing","title":"Account/SyncConflictsNotice","name":"Dismissing","importPath":"./src/account/SyncConflictsNotice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":550},"after-light-desktop.png":{"width":1280,"height":498},"after-dark-phone.png":{"width":390,"height":550},"after-dark-desktop.png":{"width":1280,"height":498}}},{"id":"account-syncstateline--up-to-date","title":"Account/SyncStateLine","name":"Up To Date","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":106,"height":56},"after-light-desktop.png":{"width":106,"height":56},"after-dark-phone.png":{"width":106,"height":56},"after-dark-desktop.png":{"width":106,"height":56}}},{"id":"account-syncstateline--synchronizing","title":"Account/SyncStateLine","name":"Synchronizing","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":149,"height":56},"after-light-desktop.png":{"width":149,"height":56},"after-dark-phone.png":{"width":149,"height":56},"after-dark-desktop.png":{"width":149,"height":56}}},{"id":"account-syncstateline--first-copy","title":"Account/SyncStateLine","name":"First Copy","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":334,"height":56},"after-light-desktop.png":{"width":334,"height":56},"after-dark-phone.png":{"width":334,"height":56},"after-dark-desktop.png":{"width":334,"height":56}}},{"id":"account-syncstateline--unreachable","title":"Account/SyncStateLine","name":"Unreachable","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":270,"height":56},"after-light-desktop.png":{"width":270,"height":56},"after-dark-phone.png":{"width":270,"height":56},"after-dark-desktop.png":{"width":270,"height":56}}},{"id":"account-syncstateline--logged-out","title":"Account/SyncStateLine","name":"Logged Out","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":113,"height":56},"after-light-desktop.png":{"width":113,"height":56},"after-dark-phone.png":{"width":113,"height":56},"after-dark-desktop.png":{"width":113,"height":56}}},{"id":"account-syncstateline--failed","title":"Account/SyncStateLine","name":"Failed","importPath":"./src/account/SyncStateLine.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":80},"after-light-desktop.png":{"width":456,"height":56},"after-dark-phone.png":{"width":390,"height":80},"after-dark-desktop.png":{"width":456,"height":56}}},{"id":"account-usermanagement--several-users","title":"Account/UserManagement","name":"Several Users","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":38536,"light-desktop.png":60515,"dark-phone.png":41480,"dark-desktop.png":63640},"imageSizes":{"before-light-phone.png":{"width":390,"height":749},"after-light-phone.png":{"width":390,"height":789},"before-light-desktop.png":{"width":1280,"height":727},"after-light-desktop.png":{"width":1280,"height":757},"before-dark-phone.png":{"width":390,"height":749},"after-dark-phone.png":{"width":390,"height":789},"before-dark-desktop.png":{"width":1280,"height":727},"after-dark-desktop.png":{"width":1280,"height":757}}},{"id":"account-usermanagement--empty-list","title":"Account/UserManagement","name":"Empty List","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":31509,"light-desktop.png":54608,"dark-phone.png":32716,"dark-desktop.png":55600},"imageSizes":{"before-light-phone.png":{"width":390,"height":692},"after-light-phone.png":{"width":390,"height":732},"before-light-desktop.png":{"width":1280,"height":670},"after-light-desktop.png":{"width":1280,"height":700},"before-dark-phone.png":{"width":390,"height":692},"after-dark-phone.png":{"width":390,"height":732},"before-dark-desktop.png":{"width":1280,"height":670},"after-dark-desktop.png":{"width":1280,"height":700}}},{"id":"account-usermanagement--creating","title":"Account/UserManagement","name":"Creating","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":39350,"light-desktop.png":61333,"dark-phone.png":42328,"dark-desktop.png":64675},"imageSizes":{"before-light-phone.png":{"width":390,"height":749},"after-light-phone.png":{"width":390,"height":789},"before-light-desktop.png":{"width":1280,"height":727},"after-light-desktop.png":{"width":1280,"height":757},"before-dark-phone.png":{"width":390,"height":749},"after-dark-phone.png":{"width":390,"height":789},"before-dark-desktop.png":{"width":1280,"height":727},"after-dark-desktop.png":{"width":1280,"height":757}}},{"id":"account-usermanagement--creation-failed","title":"Account/UserManagement","name":"Creation Failed","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":41783,"light-desktop.png":69913,"dark-phone.png":45114,"dark-desktop.png":73596},"imageSizes":{"before-light-phone.png":{"width":390,"height":765},"after-light-phone.png":{"width":390,"height":805},"before-light-desktop.png":{"width":1280,"height":743},"after-light-desktop.png":{"width":1280,"height":778},"before-dark-phone.png":{"width":390,"height":765},"after-dark-phone.png":{"width":390,"height":805},"before-dark-desktop.png":{"width":1280,"height":743},"after-dark-desktop.png":{"width":1280,"height":778}}},{"id":"account-usermanagement--confirming-deletion","title":"Account/UserManagement","name":"Confirming Deletion","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":49611,"light-desktop.png":90403,"dark-phone.png":86415,"dark-desktop.png":132005},"imageSizes":{"before-light-phone.png":{"width":390,"height":802},"after-light-phone.png":{"width":390,"height":872},"before-light-desktop.png":{"width":1280,"height":760},"after-light-desktop.png":{"width":1280,"height":812},"before-dark-phone.png":{"width":390,"height":802},"after-dark-phone.png":{"width":390,"height":872},"before-dark-desktop.png":{"width":1280,"height":760},"after-dark-desktop.png":{"width":1280,"height":812}}},{"id":"account-usermanagement--list-failed","title":"Account/UserManagement","name":"List Failed","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":31786,"light-desktop.png":54961,"dark-phone.png":33098,"dark-desktop.png":56099},"imageSizes":{"before-light-phone.png":{"width":390,"height":692},"after-light-phone.png":{"width":390,"height":732},"before-light-desktop.png":{"width":1280,"height":670},"after-light-desktop.png":{"width":1280,"height":700},"before-dark-phone.png":{"width":390,"height":692},"after-dark-phone.png":{"width":390,"height":732},"before-dark-desktop.png":{"width":1280,"height":670},"after-dark-desktop.png":{"width":1280,"height":700}}},{"id":"account-usermanagement--role-changing","title":"Account/UserManagement","name":"Role Changing","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":33854,"light-desktop.png":56487,"dark-phone.png":36810,"dark-desktop.png":60024},"imageSizes":{"before-light-phone.png":{"width":390,"height":755},"after-light-phone.png":{"width":390,"height":795},"before-light-desktop.png":{"width":1280,"height":727},"after-light-desktop.png":{"width":1280,"height":757},"before-dark-phone.png":{"width":390,"height":755},"after-dark-phone.png":{"width":390,"height":795},"before-dark-desktop.png":{"width":1280,"height":727},"after-dark-desktop.png":{"width":1280,"height":757}}},{"id":"account-usermanagement--deleting","title":"Account/UserManagement","name":"Deleting","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":33079,"light-desktop.png":55763,"dark-phone.png":36161,"dark-desktop.png":58834},"imageSizes":{"before-light-phone.png":{"width":390,"height":755},"after-light-phone.png":{"width":390,"height":795},"before-light-desktop.png":{"width":1280,"height":727},"after-light-desktop.png":{"width":1280,"height":757},"before-dark-phone.png":{"width":390,"height":755},"after-dark-phone.png":{"width":390,"height":795},"before-dark-desktop.png":{"width":1280,"height":727},"after-dark-desktop.png":{"width":1280,"height":757}}},{"id":"account-usermanagement--last-administrator","title":"Account/UserManagement","name":"Last Administrator","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":41965,"light-desktop.png":66227,"dark-phone.png":45200,"dark-desktop.png":70228},"imageSizes":{"before-light-phone.png":{"width":390,"height":785},"after-light-phone.png":{"width":390,"height":838},"before-light-desktop.png":{"width":1280,"height":743},"after-light-desktop.png":{"width":1280,"height":778},"before-dark-phone.png":{"width":390,"height":785},"after-dark-phone.png":{"width":390,"height":838},"before-dark-desktop.png":{"width":1280,"height":743},"after-dark-desktop.png":{"width":1280,"height":778}}},{"id":"account-usermanagement--not-an-administrator","title":"Account/UserManagement","name":"Not An Administrator","importPath":"./src/account/users/UserManagement.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":22456,"light-desktop.png":45393,"dark-phone.png":23126,"dark-desktop.png":46069},"imageSizes":{"before-light-phone.png":{"width":390,"height":507},"after-light-phone.png":{"width":390,"height":547},"before-light-desktop.png":{"width":1280,"height":485},"after-light-desktop.png":{"width":1280,"height":515},"before-dark-phone.png":{"width":390,"height":507},"after-dark-phone.png":{"width":390,"height":547},"before-dark-desktop.png":{"width":1280,"height":485},"after-dark-desktop.png":{"width":1280,"height":515}}},{"id":"player-mediaplayer--browser-file-from-server-copy","title":"Player/MediaPlayer","name":"Browser File From Server Copy","importPath":"./src/player/MediaPlayer.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":812},"after-light-desktop.png":{"width":1280,"height":768},"after-dark-phone.png":{"width":390,"height":812},"after-dark-desktop.png":{"width":1280,"height":768}}},{"id":"projects-mediauploadchoice--not-kept","title":"Projects/MediaUploadChoice","name":"Not Kept","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":436},"after-light-desktop.png":{"width":1280,"height":414},"after-dark-phone.png":{"width":390,"height":436},"after-dark-desktop.png":{"width":1280,"height":414}}},{"id":"projects-mediauploadchoice--kept","title":"Projects/MediaUploadChoice","name":"Kept","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":436},"after-light-desktop.png":{"width":1280,"height":414},"after-dark-phone.png":{"width":390,"height":436},"after-dark-desktop.png":{"width":1280,"height":414}}},{"id":"projects-mediauploadchoice--uploading","title":"Projects/MediaUploadChoice","name":"Uploading","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":446},"after-light-desktop.png":{"width":1280,"height":414},"after-dark-phone.png":{"width":390,"height":446},"after-dark-desktop.png":{"width":1280,"height":414}}},{"id":"projects-mediauploadchoice--download-offered","title":"Projects/MediaUploadChoice","name":"Download Offered","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":451},"after-light-desktop.png":{"width":1280,"height":417},"after-dark-phone.png":{"width":390,"height":451},"after-dark-desktop.png":{"width":1280,"height":417}}},{"id":"projects-mediauploadchoice--downloading","title":"Projects/MediaUploadChoice","name":"Downloading","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":451},"after-light-desktop.png":{"width":1280,"height":417},"after-dark-phone.png":{"width":390,"height":451},"after-dark-desktop.png":{"width":1280,"height":417}}},{"id":"projects-mediauploadchoice--upload-offered","title":"Projects/MediaUploadChoice","name":"Upload Offered","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":422},"after-light-desktop.png":{"width":1280,"height":400},"after-dark-phone.png":{"width":390,"height":422},"after-dark-desktop.png":{"width":1280,"height":400}}},{"id":"projects-mediauploadchoice--uploading-from-browser","title":"Projects/MediaUploadChoice","name":"Uploading From Browser","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":422},"after-light-desktop.png":{"width":1280,"height":400},"after-dark-phone.png":{"width":390,"height":422},"after-dark-desktop.png":{"width":1280,"height":400}}},{"id":"projects-mediauploadchoice--upload-unavailable","title":"Projects/MediaUploadChoice","name":"Upload Unavailable","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":422},"after-light-desktop.png":{"width":1280,"height":400},"after-dark-phone.png":{"width":390,"height":422},"after-dark-desktop.png":{"width":1280,"height":400}}},{"id":"projects-mediauploadchoice--kept-on-server","title":"Projects/MediaUploadChoice","name":"Kept On Server","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":422},"after-light-desktop.png":{"width":1280,"height":400},"after-dark-phone.png":{"width":390,"height":422},"after-dark-desktop.png":{"width":1280,"height":400}}},{"id":"projects-mediauploadchoice--removing","title":"Projects/MediaUploadChoice","name":"Removing","importPath":"./src/projects/MediaUploadChoice.stories.tsx","kind":"added","changedVariants":{},"imageSizes":{"after-light-phone.png":{"width":390,"height":422},"after-light-desktop.png":{"width":1280,"height":400},"after-dark-phone.png":{"width":390,"height":422},"after-dark-desktop.png":{"width":1280,"height":400}}},{"id":"screens-settingsscreen--without-conversion","title":"Screens/SettingsScreen","name":"Without Conversion","importPath":"./src/screens/SettingsScreen.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":71341,"light-desktop.png":92295,"dark-phone.png":101659,"dark-desktop.png":137312},"imageSizes":{"before-light-phone.png":{"width":390,"height":1764},"after-light-phone.png":{"width":390,"height":1790},"before-light-desktop.png":{"width":1280,"height":1692},"after-light-desktop.png":{"width":1280,"height":1718},"before-dark-phone.png":{"width":390,"height":1764},"after-dark-phone.png":{"width":390,"height":1790},"before-dark-desktop.png":{"width":1280,"height":1692},"after-dark-desktop.png":{"width":1280,"height":1718}}},{"id":"screens-settingsscreen--with-converted-videos","title":"Screens/SettingsScreen","name":"With Converted Videos","importPath":"./src/screens/SettingsScreen.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":75346,"light-desktop.png":97824,"dark-phone.png":109762,"dark-desktop.png":151827},"imageSizes":{"before-light-phone.png":{"width":390,"height":1920},"after-light-phone.png":{"width":390,"height":1946},"before-light-desktop.png":{"width":1280,"height":1848},"after-light-desktop.png":{"width":1280,"height":1874},"before-dark-phone.png":{"width":390,"height":1920},"after-dark-phone.png":{"width":390,"height":1946},"before-dark-desktop.png":{"width":1280,"height":1848},"after-dark-desktop.png":{"width":1280,"height":1874}}},{"id":"screens-settingsscreen--low-disk-space","title":"Screens/SettingsScreen","name":"Low Disk Space","importPath":"./src/screens/SettingsScreen.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":84421,"light-desktop.png":108367,"dark-phone.png":129736,"dark-desktop.png":186417},"imageSizes":{"before-light-phone.png":{"width":390,"height":1988},"after-light-phone.png":{"width":390,"height":2014},"before-light-desktop.png":{"width":1280,"height":1896},"after-light-desktop.png":{"width":1280,"height":1922},"before-dark-phone.png":{"width":390,"height":1988},"after-dark-phone.png":{"width":390,"height":2014},"before-dark-desktop.png":{"width":1280,"height":1896},"after-dark-desktop.png":{"width":1280,"height":1922}}},{"id":"account-accountsection--desktop-app","title":"Account/AccountSection","name":"Desktop App","importPath":"./src/account/AccountSection.stories.tsx","kind":"removed","changedVariants":{},"imageSizes":{"before-light-phone.png":{"width":390,"height":470},"before-light-desktop.png":{"width":1280,"height":428},"before-dark-phone.png":{"width":390,"height":470},"before-dark-desktop.png":{"width":1280,"height":428}}},{"id":"account-accountsection--mobile-app","title":"Account/AccountSection","name":"Mobile App","importPath":"./src/account/AccountSection.stories.tsx","kind":"removed","changedVariants":{},"imageSizes":{"before-light-phone.png":{"width":390,"height":470},"before-light-desktop.png":{"width":1280,"height":428},"before-dark-phone.png":{"width":390,"height":470},"before-dark-desktop.png":{"width":1280,"height":428}}},{"id":"account-notbackedupsign--not-backed-up","title":"Account/NotBackedUpSign","name":"Not Backed Up","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"removed","changedVariants":{},"imageSizes":{"before-light-phone.png":{"width":390,"height":844},"before-light-desktop.png":{"width":1280,"height":800},"before-dark-phone.png":{"width":390,"height":844},"before-dark-desktop.png":{"width":1280,"height":800}}},{"id":"account-notbackedupsign--explained","title":"Account/NotBackedUpSign","name":"Explained","importPath":"./src/account/NotBackedUpSign.stories.tsx","kind":"removed","changedVariants":{},"imageSizes":{"before-light-phone.png":{"width":390,"height":844},"before-light-desktop.png":{"width":1280,"height":800},"before-dark-phone.png":{"width":390,"height":844},"before-dark-desktop.png":{"width":1280,"height":800}}}],"storybookUrl":"../","baseLabel":"main (a452c9d)"}</script>
+    <script>
+      const report = JSON.parse(document.getElementById("report").textContent);
+      const kinds = ["changed", "added", "removed", "errored"];
+      const themeNames = ["light", "dark"];
+      const state = { kind: "all", collapsed: new Set() };
+      const theme = () => document.documentElement.dataset.theme;
+      const toolbar = document.getElementById("toolbar");
+
+      const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
+      document.getElementById("summary").textContent =
+        kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
+        ` of ${report.storyCount} stories` +
+        (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
+        ". The page theme picks which screenshots are shown. Click a screenshot to flip between before and after.";
+
+      const filters = document.getElementById("filters");
+      for (const kind of ["all", ...kinds]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = kind === "all" ? `All (${report.changes.length})` : `${kind} (${count(kind)})`;
+        button.addEventListener("click", () => { state.kind = kind; render(); });
+        button.dataset.kind = kind;
+        filters.append(button);
+      }
+
+      const themes = document.getElementById("themes");
+      for (const name of themeNames) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = name === "light" ? "Light" : "Dark";
+        button.dataset.theme = name;
+        button.addEventListener("click", () => switchTheme(name));
+        themes.append(button);
+      }
+
+      // Both themes are already on the page, so switching only changes which one is visible.
+      // The story at the top of the screen is kept at the same point, in case the two themes' screenshots differ in size.
+      function switchTheme(name) {
+        const anchor = findAnchor();
+        document.documentElement.dataset.theme = name;
+        try { localStorage.setItem("theme", name); } catch {}
+        markPressedTheme();
+        document.querySelectorAll("details.story[open]").forEach(layoutStory);
+        restoreAnchor(anchor);
+      }
+
+      function markPressedTheme() {
+        for (const button of themes.children) button.setAttribute("aria-pressed", String(button.dataset.theme === theme()));
+      }
+
+      /** Finds the story under the toolbar's lower edge, and the viewport's screenshots under it if any, with how far down that edge falls. */
+      function findAnchor() {
+        const top = toolbar.offsetHeight;
+        const story = [...document.querySelectorAll("details.story")].find((candidate) => candidate.getBoundingClientRect().bottom > top);
+        if (!story) return null;
+        const section = [...story.querySelectorAll(`[data-variants="${theme()}"] .variant`)].find((candidate) => {
+          const rect = candidate.getBoundingClientRect();
+          return rect.top <= top && rect.bottom > top;
+        });
+        if (!section) return { story, offset: top - story.getBoundingClientRect().top };
+        const rect = section.getBoundingClientRect();
+        return { story, viewport: section.dataset.viewport, ratio: (top - rect.top) / rect.height };
+      }
+
+      function restoreAnchor(anchor) {
+        if (!anchor) return;
+        const top = toolbar.offsetHeight;
+        const section = anchor.viewport && anchor.story.querySelector(`[data-variants="${theme()}"] .variant[data-viewport="${anchor.viewport}"]`);
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          scrollBy(0, rect.top + anchor.ratio * rect.height - top);
+        } else {
+          scrollBy(0, anchor.story.getBoundingClientRect().top + (anchor.offset ?? 0) - top);
+        }
+      }
+
+      document.getElementById("collapse-all").addEventListener("click", () => {
+        for (const story of document.querySelectorAll("details.story")) story.open = false;
+      });
+      document.getElementById("expand-all").addEventListener("click", () => {
+        for (const story of document.querySelectorAll("details.story")) story.open = true;
+      });
+
+      new ResizeObserver(([entry]) => {
+        document.documentElement.style.setProperty("--toolbar-height", `${entry.borderBoxSize[0].blockSize}px`);
+      }).observe(toolbar);
+
+      function storyLink(change) {
+        if (!report.storybookUrl) return change.importPath;
+        const url = new URL(report.storybookUrl, location.href);
+        url.search = `?path=/story/${change.id}`;
+        return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
+      }
+
+      const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
+      const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
+      const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
+      const describeSize = (size) => size && `${size.width}×${size.height}`;
+
+      /** Lists a theme's screenshots that the comparison copied for a story. */
+      const shownVariants = (change, themeName) =>
+        report.variants
+          .filter((variant) => variant.theme === themeName)
+          .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
+
+      function image(change, side, fileName) {
+        const src = `${change.id}/${side}-${fileName}`;
+        const size = sizeOf(change, side, fileName);
+        const other = side === "before" ? "after" : "before";
+        const flip = change.kind === "changed"
+          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${sizeOf(change, other, fileName)?.width}"` : "";
+        const overlay = change.changedVariants[fileName]
+          ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
+        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
+      }
+
+      function variantSection(change, variant) {
+        const fileName = fileNameOf(variant);
+        const pixels = change.changedVariants[fileName];
+        const sides = ["before", "after"].filter((side) => sizeOf(change, side, fileName));
+        const status = pixels
+          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>`
+          : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
+        const [before, after] = ["before", "after"].map((side) => describeSize(sizeOf(change, side, fileName)));
+        const resized = before && after && before !== after ? `<span class="resized">Size changed: ${before} → ${after}</span>` : "";
+        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span>${variant.viewport.name}</span>${status}${resized}</h3>
+          <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
+      }
+
+      const variantsBody = (change) =>
+        themeNames.map((themeName) => `<div class="variants" data-variants="${themeName}">
+          ${shownVariants(change, themeName).map((variant) => variantSection(change, variant)).join("")}</div>`).join("");
+
+      function card(change) {
+        const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
+        return `<details class="story" data-id="${change.id}" ${state.collapsed.has(change.id) ? "" : "open"}>
+          <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${change.title} / ${change.name}</span><span class="meta">${storyLink(change)}</span></summary>
+          <div class="story-body">
+            ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
+            ${variantsBody(change)}
+          </div>
+        </details>`;
+      }
+
+      function render() {
+        for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
+        markPressedTheme();
+        const shown = report.changes
+          .filter((change) => state.kind === "all" || change.kind === state.kind)
+          .sort((a, b) => pixelsOf(b) - pixelsOf(a));
+        document.getElementById("changes").innerHTML = shown.length
+          ? shown.map(card).join("")
+          : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
+        document.querySelectorAll("details.story[open]").forEach(layoutStory);
+      }
+      render();
+
+      // Keeps a collapsed story's header in view, since collapsing a long story while its header is stuck to the top would scroll it out of sight.
+      document.addEventListener("toggle", (event) => {
+        const story = event.target;
+        if (!story.matches?.("details.story")) return;
+        if (story.open) {
+          state.collapsed.delete(story.dataset.id);
+          layoutStory(story);
+        } else {
+          state.collapsed.add(story.dataset.id);
+          if (story.getBoundingClientRect().top < toolbar.offsetHeight) story.scrollIntoView({ block: "start" });
+        }
+      }, true);
+
+      document.addEventListener("click", (event) => {
+        const img = event.target.closest("img[data-flip]");
+        if (!img) return;
+        const flipped = img.dataset.flip;
+        img.dataset.flip = img.getAttribute("src");
+        img.src = flipped;
+        [img.dataset.width, img.dataset.flipWidth] = [img.dataset.flipWidth, img.dataset.width];
+        img.style.width = `${img.dataset.width * img.closest(".variant").dataset.scale}px`;
+        img.parentElement.classList.add("flash");
+        setTimeout(() => img.parentElement.classList.remove("flash"), 200);
+        const caption = img.closest("figure").querySelector("figcaption span");
+        caption.textContent = flipped.includes("/before-") ? "Before" : "After";
+      });
+
+      let resizeFrame = 0;
+      addEventListener("resize", () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(() => document.querySelectorAll("details.story[open]").forEach(layoutStory));
+      });
+
+      const gap = 16;
+      const border = 2;
+      const minVariantWidth = 180;
+      /** Variants share a row only when none is shown at less than this scale, or than its scale on a row of its own if that is smaller. */
+      const minSharedScale = 0.5;
+
+      // Sizes the screenshots of a story's visible theme from the sizes the report records, so nothing moves while they load.
+      // Within a variant, both sides share one scale and one frame, sized to the larger of the two, so that flipping moves nothing,
+      // and the diff image has that same size, so the highlight fills the frame.
+      // Variants are packed into rows, such as phone beside desktop, when they fit side by side at a common scale cap without shrinking too far.
+      function layoutStory(story) {
+        const variants = story.querySelector(`.variants[data-variants="${theme()}"]`);
+        const room = variants?.clientWidth;
+        if (!room) return;
+        const metrics = [...variants.querySelectorAll(".variant")].map((section) => measureVariant(section, room));
+        for (const row of packRows(metrics, room)) {
+          const cap = largestCap(row, room);
+          for (const metric of row) applyScale(metric, Math.min(metric.fullScale, cap));
+        }
+      }
+
+      function measureVariant(section, room) {
+        const shots = [...section.querySelectorAll(".frame img:not(.overlay)")];
+        const width = Math.max(...shots.map((shot) => Number(shot.dataset.width)));
+        const height = Math.max(...shots.map((shot) => Number(shot.dataset.height)));
+        const fixed = shots.length * border + gap * (shots.length - 1);
+        const fullScale = Math.min(1, (room - fixed) / (shots.length * width), (innerHeight * 0.8) / height);
+        return { section, shots, width, height, fixed, fullScale };
+      }
+
+      const variantWidth = (metric, cap) =>
+        Math.max(minVariantWidth, metric.fixed + metric.shots.length * metric.width * Math.min(metric.fullScale, cap));
+
+      const rowFits = (row, cap, room) =>
+        row.reduce((sum, metric) => sum + variantWidth(metric, cap), gap * (row.length - 1)) <= room;
+
+      function largestCap(row, room) {
+        if (rowFits(row, 1, room)) return 1;
+        let low = 0;
+        let high = 1;
+        for (let step = 0; step < 20; step++) {
+          const middle = (low + high) / 2;
+          if (rowFits(row, middle, room)) low = middle;
+          else high = middle;
+        }
+        return low;
+      }
+
+      function packRows(metrics, room) {
+        const rows = [];
+        for (const metric of metrics) {
+          const row = rows.at(-1);
+          const candidate = row && [...row, metric];
+          const floor = candidate && Math.min(minSharedScale, Math.max(...candidate.map((item) => item.fullScale)));
+          if (candidate && largestCap(candidate, room) >= floor) row.push(metric);
+          else rows.push([metric]);
+        }
+        return rows;
+      }
+
+      function applyScale(metric, scale) {
+        metric.section.style.width = `${variantWidth(metric, scale)}px`;
+        metric.section.dataset.scale = scale;
+        for (const shot of metric.shots) {
+          shot.style.width = `${shot.dataset.width * scale}px`;
+          Object.assign(shot.parentElement.style, { width: `${metric.width * scale}px`, height: `${metric.height * scale}px` });
+        }
+      }
+    </script>
+  </body>
+</html>
