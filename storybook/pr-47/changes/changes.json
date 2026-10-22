@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 490,
+  "storyCount": 486,
   "changes": [
     {
       "id": "account-notbackedupsign--not-backed-up",
@@ -42,10 +42,10 @@
       "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 191,
-        "light-desktop.png": 614,
-        "dark-phone.png": 167,
-        "dark-desktop.png": 624
+        "light-phone.png": 638,
+        "light-desktop.png": 1061,
+        "dark-phone.png": 644,
+        "dark-desktop.png": 1101
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -89,10 +89,10 @@
       "importPath": "./src/account/NotBackedUpSign.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 25779,
-        "light-desktop.png": 5758,
-        "dark-phone.png": 26785,
-        "dark-desktop.png": 5989
+        "light-phone.png": 26226,
+        "light-desktop.png": 6205,
+        "dark-phone.png": 27262,
+        "dark-desktop.png": 6466
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2248,10 +2248,10 @@
       "importPath": "./src/media/MediaView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 96,
-        "light-desktop.png": 96,
-        "dark-phone.png": 91,
-        "dark-desktop.png": 91
+        "light-phone.png": 163038,
+        "light-desktop.png": 317664,
+        "dark-phone.png": 157960,
+        "dark-desktop.png": 303996
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -4362,6 +4362,110 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 733
+        }
+      }
+    },
+    {
+      "id": "flashcards-unsavedworkbanner--unsaved",
+      "title": "Flashcards/UnsavedWorkBanner",
+      "name": "Unsaved",
+      "importPath": "./src/flashcards/UnsavedWorkBanner.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 90
+        },
+        "before-light-desktop.png": {
+          "width": 410,
+          "height": 76
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 90
+        },
+        "before-dark-desktop.png": {
+          "width": 410,
+          "height": 76
+        }
+      }
+    },
+    {
+      "id": "flashcards-unsavedworkbanner--not-backed-up",
+      "title": "Flashcards/UnsavedWorkBanner",
+      "name": "Not Backed Up",
+      "importPath": "./src/flashcards/UnsavedWorkBanner.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 90
+        },
+        "before-light-desktop.png": {
+          "width": 408,
+          "height": 76
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 90
+        },
+        "before-dark-desktop.png": {
+          "width": 408,
+          "height": 76
+        }
+      }
+    },
+    {
+      "id": "flashcards-unsavedworkbanner--unsaved-and-not-backed-up",
+      "title": "Flashcards/UnsavedWorkBanner",
+      "name": "Unsaved And Not Backed Up",
+      "importPath": "./src/flashcards/UnsavedWorkBanner.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 138
+        },
+        "before-light-desktop.png": {
+          "width": 775,
+          "height": 76
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 138
+        },
+        "before-dark-desktop.png": {
+          "width": 775,
+          "height": 76
+        }
+      }
+    },
+    {
+      "id": "reader-readerview--unsaved-work",
+      "title": "Reader/ReaderView",
+      "name": "Unsaved Work",
+      "importPath": "./src/reader/ReaderView.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
         }
       }
     }
