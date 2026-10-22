@@ -872,10 +872,13 @@ As a user:
   - [x] I can log in to a self-hosted easyImmerse server, instead of using the easyImmerse cloud, by entering its address (in a field revealed by clicking "More options")
   - [x] I can keep using all offline features of the app without an account
 - while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
-  - [x] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
-  - [x] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
+  - [x] the cloud button in the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+  - [x] clicking the cloud button tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
 - when all my work is backed up:
-  - [x] the sign is gone
+  - [x] the cloud button in the footer shows a plain cloud, without the sign that my work is not backed up
+- when I click the cloud button in the footer:
+  - [x] I can open the "Local network sync" page with the "Local network sync" item
+  - [x] I can open the account settings with the "Account settings" item
 - a project counts as backed up when any of these is true:
   - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
   - [ ] I have exported it to a project file since I last changed it (in any app)
@@ -943,9 +946,9 @@ As a privileged user (a subscriber or a self-hosted server account holder):
 ### LAN sync
 
 As a desktop app user:
-- when I click the button for local network sync while the server is running on the local network:
+- when I open the "Local network sync" page while the server is running on the local network:
   - [x] I see a QR code and an address for pairing with another easyImmerse app on the same local network
-- when I click the button for local network sync while the server is running on the local network with "Launch token only" authentication:
+- when I open the "Local network sync" page while the server is running on the local network with "Launch token only" authentication:
   - [x] I also see a six-digit pairing code
   - [x] I see the time until which the pairing code is valid
   - [x] I am told that the pairing code works for one device
@@ -954,14 +957,14 @@ As a desktop app user:
   - [x] a new pairing code replaces it
 - when another device pairs with the pairing code:
   - [x] a new pairing code replaces it
-- when I click the button for local network sync while the server is not running, or while only this computer can reach it:
+- when I open the "Local network sync" page while the server is not running, or while only this computer can reach it:
   - [x] I am told that other devices cannot reach the server
   - [x] I can start the server on the local network from there
-- when I click the button for local network sync while this computer is not connected to a network:
+- when I open the "Local network sync" page while this computer is not connected to a network:
   - [x] I am told that no other device can reach the server
 
 As a web/mobile app user:
-- when I click the button for local network sync:
+- when I open the "Local network sync" page:
   - [x] I see fields for entering the address and the pairing code of another easyImmerse app on the same local network
   - [x] I see a button for scanning its QR code instead, if my device can scan one
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
