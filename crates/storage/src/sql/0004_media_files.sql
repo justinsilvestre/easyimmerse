@@ -11,7 +11,9 @@ CREATE TABLE media_files (
     origin_plugin TEXT,
     origin_locator TEXT,
     target_subtitle_track_id TEXT,
-    translation_subtitle_track_id TEXT
+    translation_subtitle_track_id TEXT,
+    -- Whether the user chose to keep a copy of the file's bytes on a server.
+    is_upload_chosen INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX media_files_by_project ON media_files (project_id, created_at_ms);

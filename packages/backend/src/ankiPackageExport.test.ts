@@ -46,14 +46,13 @@ describe("exportAnkiPackage", () => {
   it("asks the server for the package's bytes when there is no save path", async () => {
     const { calls, exported } = download();
     await exported;
-    expect(calls[0]?.init?.body).toBe(
-      JSON.stringify({
-        flashcard_ids: ["f1", "f2"],
-        save_path: null,
-        marks_exported: true,
-        staged: false,
-      }),
-    );
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      flashcard_ids: ["f1", "f2"],
+      save_path: null,
+      marks_exported: true,
+      staged: false,
+      utc_offset_min: expect.any(Number),
+    });
   });
 
   it("hands back the package's bytes, named by the server", async () => {
@@ -123,6 +122,7 @@ describe("exportAnkiPackage", () => {
             save_path: "/decks/Korean.apkg",
             marks_exported: true,
             staged: false,
+            utc_offset_min: expect.any(Number),
           },
         },
       },
@@ -178,6 +178,7 @@ describe("exportAnkiPackage", () => {
         save_path: "/cache/Korean.apkg",
         marks_exported: true,
         staged: true,
+        utc_offset_min: expect.any(Number),
       },
     });
   });

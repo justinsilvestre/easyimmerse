@@ -1,5 +1,10 @@
 import type { AppStore, ServerRequest } from "@easyimmerse/state";
-import { createAppStore, createRecordingEffects } from "@easyimmerse/state";
+import {
+  actions,
+  createAppStore,
+  createRecordingEffects,
+  selectSignInForm,
+} from "@easyimmerse/state";
 import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import type { Dispatch, UnknownAction } from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -117,6 +122,7 @@ function savedFlashcard(updatedAtMs: number) {
     exported_at_ms: null,
     was_packaged: false,
     sent_at_ms: null,
+    is_suspended: false,
   } satisfies Flashcard;
 }
 
@@ -342,5 +348,157 @@ describe("runRequest", () => {
       const client = flashcardClient([newer], savedFlashcard(2));
       expect(await listedOnceSaved(client, false)).toEqual([newer]);
     });
+  });
+});
+
+describe("runRequest for setUserRole", () => {
+  it("puts the role chosen at the account's role path", async () => {
+    const sent: BackendRequest[] = [];
+    const client: BackendClient = {
+      send: async <T>(request: BackendRequest) => {
+        sent.push(request);
+        return { data: {} as T };
+      },
+    };
+    await settle(createStore(client), {
+      kind: "setUserRole",
+      via: "self",
+      userId: "u1",
+      role: "privileged",
+    });
+    expect(sent).toEqual([
+      {
+        method: "PUT",
+        path: "/users/u1/role",
+        body: { kind: "json", value: { role: "privileged" } },
+      },
+    ]);
+  });
+});
+
+const refusedCredentials = {
+  status: 401,
+  code: "invalid_credentials",
+  message: "Incorrect email address or password.",
+};
+
+/** A built-in server whose remote refuses every email and password. */
+const refusingLink: BackendClient = {
+  send: async <T>(request: BackendRequest): Promise<BackendResult<T>> =>
+    request.path === "/sync/link"
+      ? { error: refusedCredentials }
+      : { data: {} as T },
+};
+
+const linkRequest: ServerRequest = {
+  kind: "linkSyncRemote",
+  request: {
+    server_url: "https://cloud.example.org",
+    mode: "login",
+    email: "someone@example.org",
+    password: "correct horse",
+  },
+};
+
+describe("runRequest for linkSyncRemote", () => {
+  it("posts the email and password to the built-in server's /sync/link", async () => {
+    const sent: BackendRequest[] = [];
+    const client: BackendClient = {
+      send: async <T>(request: BackendRequest) => {
+        sent.push(request);
+        return { data: {} as T };
+      },
+    };
+    await settle(createStore(client), linkRequest);
+    expect(sent).toEqual([
+      {
+        method: "POST",
+        path: "/sync/link",
+        body: {
+          kind: "json",
+          value: {
+            server_url: "https://cloud.example.org",
+            mode: "login",
+            email: "someone@example.org",
+            password: "correct horse",
+          },
+        },
+      },
+    ]);
+  });
+
+  it("settles with the remote's refusal of the credentials", async () => {
+    expect(await settle(createStore(refusingLink), linkRequest)).toEqual({
+      ok: false,
+      error: refusedCredentials,
+    });
+  });
+});
+
+describe("a store on the native app's built-in server", () => {
+  /** Logs in to a remote that refuses the credentials, and waits until the sign-in form shows why. */
+  async function refusedStore() {
+    const effects = createRecordingEffects();
+    const store = createAppStore(
+      effects,
+      createBackendStoreParts(refusingLink, {
+        serverUrl: "http://127.0.0.1:4000",
+        token: "launch",
+        bundledIn: "desktop",
+      }),
+    );
+    store.dispatch(
+      actions.signInFormChanged({
+        ownServerUrl: "https://books.example.org",
+        email: "someone@example.org",
+        password: "correct horse",
+      }),
+    );
+    store.dispatch(
+      actions.serverAuthInfoReceived("https://books.example.org", {
+        accounts: true,
+        open_signup: true,
+        sends_email: false,
+      }),
+    );
+    store.dispatch(actions.signInSubmitted());
+    await vi.waitFor(() =>
+      expect(selectSignInForm(store.getState()).status).toBe("failed"),
+    );
+    return { effects, store };
+  }
+
+  it("stays connected when the remote refuses the credentials with a 401", async () => {
+    const { effects } = await refusedStore();
+    expect(
+      effects.calls.filter(({ type }) => type === "disconnectFromServer"),
+    ).toEqual([]);
+  });
+
+  it("tells that the email or password is wrong when the remote refuses them", async () => {
+    const { store } = await refusedStore();
+    expect(selectSignInForm(store.getState()).failureMessage).toBe(
+      "Incorrect email address or password.",
+    );
+  });
+});
+
+describe("runRequest for the sync requests", () => {
+  const cases: [ServerRequest, string, string][] = [
+    [{ kind: "unlinkSyncRemote" }, "DELETE", "/sync/link"],
+    [{ kind: "runSync" }, "POST", "/sync/run"],
+    [{ kind: "dismissSyncConflicts" }, "DELETE", "/sync/conflicts"],
+  ];
+
+  it.each(cases)("sends %o as %s %s", async (request, method, path) => {
+    const sent: BackendRequest[] = [];
+    const client: BackendClient = {
+      send: async <T>(sentRequest: BackendRequest) => {
+        sent.push(sentRequest);
+        return { data: undefined as T };
+      },
+    };
+    await settle(createStore(client), request);
+    expect(sent).toEqual([{ method, path }]);
   });
 });

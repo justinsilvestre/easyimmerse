@@ -11,7 +11,13 @@ import type {
   MediaSourceJob,
   PluginForm,
 } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
@@ -124,6 +130,8 @@ describe("ProjectScreen", () => {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
+      has_stored_copy: false,
     };
     const client = createFakeBackendClient({
       ...fixtureResponses,
@@ -320,10 +328,46 @@ describe("ProjectScreen", () => {
     renderImport();
     await startImport();
     await vi.waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain(
-        "downloading the video and subtitles",
-      ),
+      expect(
+        within(screen.getByRole("dialog")).getByRole("status").textContent,
+      ).toContain("downloading the video and subtitles"),
     );
+  });
+
+  /** Starts a fetch, waits for its progress in the dialog, and goes to the home screen. */
+  async function leaveRunningImport() {
+    const rendered = renderImport();
+    await startImport();
+    await vi.waitFor(() =>
+      expect(
+        within(screen.getByRole("dialog")).getByRole("status").textContent,
+      ).toContain("downloading the video and subtitles"),
+    );
+    act(() => rendered.store.dispatch(actions.navigated({ type: "goHome" })));
+    return rendered;
+  }
+
+  it("tells of a running fetch in the footer once the project is left", async () => {
+    await leaveRunningImport();
+    expect(
+      screen.getByRole("button", {
+        name: /downloading the video and subtitles/,
+      }),
+    ).toBeDefined();
+  });
+
+  it("shows the fetch's progress again when its footer activity is opened", async () => {
+    await leaveRunningImport();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /downloading the video and subtitles/,
+      }),
+    );
+    expect(
+      within(screen.getByRole("dialog")).getByRole("progressbar", {
+        name: "Fetch progress",
+      }),
+    ).toBeDefined();
   });
 
   it("starts one import when its action is pressed again before the fetch shows", async () => {

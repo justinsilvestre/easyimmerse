@@ -1,4 +1,9 @@
-import { actions, selectPlayer, selectPlayerFailure } from "@easyimmerse/state";
+import {
+  actions,
+  isPlayedByServer,
+  selectPlayer,
+  selectPlayerFailure,
+} from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -26,7 +31,7 @@ export function ReaderAudioPlayer({
   projectId: string;
   audioFile: MediaFile;
 }) {
-  return audioFile.source.kind === "path" ? (
+  return isPlayedByServer(audioFile) ? (
     <PathAudio key={audioFile.id} projectId={projectId} audioFile={audioFile} />
   ) : (
     <BrowserAudio key={audioFile.id} audioFile={audioFile} />

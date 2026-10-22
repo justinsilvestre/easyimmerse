@@ -1,4 +1,6 @@
 import { BookOpen, ChevronRight } from "lucide-react";
+import { AccountSection } from "../account/AccountSection.tsx";
+import { CloudStorageSection } from "../account/CloudStorageSection.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import {
@@ -31,6 +33,8 @@ export function SettingsScreen({
   return (
     <ScreenLayout onBack={onBack}>
       <h1 className="text-xl font-semibold">Settings</h1>
+      <AccountSection />
+      <CloudStorageSection />
       <button
         type="button"
         onClick={onOpenDictionaries}

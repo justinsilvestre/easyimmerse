@@ -207,6 +207,14 @@ describe("updateMediaScreen", () => {
       expect(screen.playback).toBeNull();
     });
 
+    it("works out path playback for a browser-added audio file whose copy the server keeps", () => {
+      const [screen] = applyToReader(
+        cacheWith({ ...audioInBrowser, has_stored_copy: true }),
+        alignmentsSettled(),
+      );
+      expect(screen.playback).not.toBeNull();
+    });
+
     it("asks for nothing when the book has no audio alignment", () => {
       const [, effects] = applyToReader(
         cacheWith(audioOnDisk, []),

@@ -1,10 +1,16 @@
+import { accountFeature } from "../account/updateAccount.ts";
 import { ankiCommands } from "../anki/ankiCommands.ts";
+import { dictionaryImportFeature } from "../dictionaryImport/dictionaryImportFeature.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
+import { mediaImportsFeature } from "../mediaImports/mediaImportsFeature.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
+import { recoveryEffects } from "../recovery/recoveryEffects.ts";
+import { recoveryFeature } from "../recovery/updateRecovery.ts";
+import { reviewCommands } from "../review/reviewCommands.ts";
 import { routeFeature } from "../route/updateRoute.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
@@ -12,6 +18,7 @@ import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
+import { syncFeature } from "../sync/updateSync.ts";
 import type { AppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
 import { closeGuardEffects } from "./closeGuard.ts";
@@ -38,8 +45,13 @@ const features = {
   server: serverFeature,
   preferences: preferencesFeature,
   storedPlaces: storedPlacesFeature,
+  recovery: recoveryFeature,
   notices: noticesFeature,
   operations: operationsFeature,
+  dictionaryImport: dictionaryImportFeature,
+  mediaImports: mediaImportsFeature,
+  account: accountFeature,
+  sync: syncFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];
@@ -54,8 +66,8 @@ export const initialAppState = Object.fromEntries(
  * The state keeps its reference when no slice changes.
  * Beside the features, the root update takes three fixed steps: it adds the platform, screen, flashcard and Anki commands, which change no state;
  * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
- * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
- * begins, and stops once none is left, as `closeGuardEffects` describes.
+ * records the requests sent, and holds back those that must wait; it guards the app's closing whenever unsaved work
+ * begins, and stops once none is left, as `closeGuardEffects` describes; and it keeps the flashcard saves at risk on the device, as `recoveryEffects` describes.
  */
 export const update: UpdateFunction<
   AppState,
@@ -76,10 +88,16 @@ export const update: UpdateFunction<
   effects.push(...screenCommands(action, readable));
   effects.push(...flashcardCommands(action, state));
   effects.push(...ankiCommands(action, readable));
+  effects.push(...reviewCommands(action));
   const [operations, performed] = trackOperations(next.operations, effects);
   const tracked =
     operations === next.operations ? next : { ...next, operations };
-  return updated(tracked, ...performed, ...closeGuardEffects(state, tracked));
+  return updated(
+    tracked,
+    ...performed,
+    ...closeGuardEffects(state, tracked),
+    ...recoveryEffects(state, tracked),
+  );
 };
 
 function updateSlice<K extends keyof AppState>(

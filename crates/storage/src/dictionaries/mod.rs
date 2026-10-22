@@ -5,6 +5,9 @@ mod added_alternates_tests;
 mod columns;
 #[cfg(test)]
 mod concurrent_import_tests;
+mod dump;
+#[cfg(test)]
+mod dump_tests;
 #[cfg(test)]
 mod import_timing_tests;
 mod importer;
@@ -18,6 +21,8 @@ mod term_lookup;
 #[cfg(test)]
 mod tests;
 
+pub use dump::{DictionaryDump, continue_dump, start_dump};
+pub(crate) use importer::import_into;
 pub use importer::{import_dictionary, import_with};
 pub use kanji_lookup::{find_kanji, find_kanji_meta};
 pub use listing::{delete_dictionary, get_dictionary, list_dictionaries};

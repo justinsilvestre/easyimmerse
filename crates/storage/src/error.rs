@@ -22,6 +22,8 @@ pub enum StorageError {
     DictionaryAlreadyImported(String),
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
+    #[error("a dictionary with the id {0:?} is stored already")]
+    DictionaryExists(String),
     #[error("the dictionary {dictionary_id:?} has no file at {path:?}")]
     DictionaryMediaNotFound { dictionary_id: String, path: String },
     #[error("no project has the id {0:?}")]
@@ -38,6 +40,34 @@ pub enum StorageError {
     AlignmentNotFound(String),
     #[error("the media file {0:?} cannot be aligned or paired with itself")]
     PairedWithItself(String),
+    #[error("an account already has the email address {0:?}")]
+    EmailTaken(String),
+    #[error("no account has the id {0:?}")]
+    UserNotFound(String),
+    #[error("no session of the account has the id {0:?}")]
+    SessionNotFound(String),
+    #[error("the account {0:?} is the last administrator, and the server must keep one")]
+    LastAdministrator(String),
+    #[error("the project has no review answer with the id {0:?}")]
+    ReviewAnswerNotFound(String),
+    #[error(
+        "the review answer {0:?} is not the project's latest, and only the latest can be undone"
+    )]
+    ReviewAnswerNotLatest(String),
+    #[error(transparent)]
+    Scheduling(#[from] easyimmerse_srs::SrsError),
+    #[error("the table {0:?} does not sync")]
+    UnknownSyncTable(String),
+    #[error("a synced row of {table} lacks the column {column}")]
+    SyncColumnMissing { table: String, column: String },
+    #[error("a synced row of {table} holds a list or an object in the column {column}")]
+    SyncValueUnsupported { table: String, column: String },
+    #[error("the owner is not linked to that remote")]
+    RemoteNotLinked,
+    #[error("this device is already linked to a server; unlink it first")]
+    AlreadyLinked,
+    #[error("the copy takes {size} bytes, and {used} of the {quota} bytes you may keep are taken")]
+    QuotaExceeded { used: u64, quota: u64, size: u64 },
 }
 
 impl From<DictionaryError> for StorageError {

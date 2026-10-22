@@ -27,6 +27,7 @@ pub struct SourceFile {
     pub bytes: Vec<u8>,
 }
 
+#[derive(Clone, Copy)]
 enum Location {
     Loose(usize),
     Zipped { archive: usize, index: usize },
@@ -113,16 +114,20 @@ impl DictionarySource {
 
     /// Opens a file for reading by its full name, decompressing an archive member as it is read.
     pub fn open(&mut self, name: &str) -> Result<Box<dyn Read + '_>, DictionaryError> {
-        let location = self
-            .names
-            .iter()
-            .find(|(candidate, _)| candidate == name)
-            .map(|(_, location)| location)
-            .ok_or_else(|| DictionaryError::MissingFile(name.to_string()))?;
-        match *location {
+        match self.location(name)? {
             Location::Loose(index) => Ok(Box::new(self.loose_files[index].bytes.as_slice())),
             Location::Zipped { archive, index } => {
                 Ok(Box::new(self.zip_archives[archive].by_index(index)?))
+            }
+        }
+    }
+
+    /// Returns the size of a file by its full name, uncompressed for an archive member.
+    pub fn size(&mut self, name: &str) -> Result<u64, DictionaryError> {
+        match self.location(name)? {
+            Location::Loose(index) => Ok(self.loose_files[index].bytes.len() as u64),
+            Location::Zipped { archive, index } => {
+                Ok(self.zip_archives[archive].by_index_raw(index)?.size())
             }
         }
     }
@@ -134,6 +139,14 @@ impl DictionarySource {
             .read_to_end(&mut bytes)
             .map_err(|error| DictionaryError::Read(name.to_string(), error))?;
         Ok(bytes)
+    }
+
+    fn location(&self, name: &str) -> Result<Location, DictionaryError> {
+        self.names
+            .iter()
+            .find(|(candidate, _)| candidate == name)
+            .map(|(_, location)| *location)
+            .ok_or_else(|| DictionaryError::MissingFile(name.to_string()))
     }
 }
 
@@ -199,6 +212,19 @@ mod tests {
             source.find(|name| name == "words.csv"),
             Some("dict/words.csv")
         );
+    }
+
+    #[test]
+    fn gives_the_size_of_a_loose_file() {
+        let mut source = DictionarySource::single("words.csv", b"cat,neko".to_vec()).unwrap();
+        assert_eq!(source.size("words.csv").unwrap(), 8);
+    }
+
+    #[test]
+    fn gives_the_uncompressed_size_of_a_zip_member() {
+        let mut source = fixture_source();
+        let length = source.read("index.json").unwrap().len() as u64;
+        assert_eq!(source.size("index.json").unwrap(), length);
     }
 
     #[test]

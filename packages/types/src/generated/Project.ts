@@ -15,6 +15,15 @@ created_at_ms: number,
  */
 last_opened_at_ms: number, media_count: number, flashcard_count: number, 
 /**
+ * The flashcards never answered in the review, less those the user buried or suspended.
+ */
+unreviewed_count: number, 
+/**
  * Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
  */
-uses_anki_connect: boolean, };
+uses_anki_connect: boolean, 
+/**
+ * Whether a copy of the project's latest change is kept on a server other than this device's own.
+ * Always true for an account's projects, which live on the server it is logged in to.
+ */
+is_backed_up: boolean, };

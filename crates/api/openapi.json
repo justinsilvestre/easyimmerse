@@ -10,6 +10,708 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/auth/confirm-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirms the email address of an account with the token of the link mailed to it. Needs no token.",
+        "operationId": "confirmEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The email address is confirmed"
+          },
+          "400": {
+            "description": "`invalid_link`: the token is unknown, used or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`accounts_disabled`: the server has no accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/confirmation-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mails the account a new link that confirms its email address. The link of an earlier mail stops working.",
+        "operationId": "resendConfirmationEmail",
+        "responses": {
+          "202": {
+            "description": "The mail is on its way"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`already_confirmed`: the email address is already confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: a confirmation mail was sent less than a minute ago",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`mail_unavailable`: the server does not send email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logs in to an account. Needs no token.",
+        "operationId": "logIn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The account was logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_email`: the email address is longer than 254 characters, or `password_too_long`: the password is longer than 1024 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`invalid_credentials`: no account has this email address and password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`accounts_disabled`: the server has no accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Ends the session that authenticated the request. With the launch token it does nothing.",
+        "operationId": "logOut",
+        "responses": {
+          "204": {
+            "description": "The session was ended"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Tells who the request's token belongs to.",
+        "operationId": "getCurrentPrincipal",
+        "responses": {
+          "200": {
+            "description": "Who the token belongs to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentPrincipal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Gives an account a new password with the token of the link mailed for a reset, and logs it in on this device.\nEvery other session of the account ends. Needs no token.",
+        "operationId": "chooseNewPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The password was changed and the account logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_link`: the token is unknown, used or expired, or `password_too_short` or `password_too_long`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`accounts_disabled`: the server has no accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password-reset": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mails a link to choose a new password to the account with the email address. Needs no token.\nThe answer is the same whether or not an account has the address, so that it reveals none.",
+        "operationId": "requestPasswordReset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "If an account has the address, a mail is on its way to it"
+          },
+          "400": {
+            "description": "`invalid_email`: the email address is longer than 254 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: too many login or reset attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`mail_unavailable`: the server does not send email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/server": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token.",
+        "operationId": "getServerAuthInfo",
+        "responses": {
+          "200": {
+            "description": "What the server offers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerAuthInfo"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Lists the devices that the account is logged in on.",
+        "operationId": "listSessions",
+        "responses": {
+          "200": {
+            "description": "The account's sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/sessions/{id}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logs the account out on one of its devices. Deleting the current session logs out like `/auth/logout`.",
+        "operationId": "deleteSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The session's id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The session was ended"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: the account has no session with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Creates an account with the `library_user` role and logs it in. Needs no token.\nOn a server that sends email, it also mails a link that confirms the address.",
+        "operationId": "signUp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The account was created and logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_email`, `password_too_short` or `password_too_long`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`signup_closed`: the server has no accounts or does not let anyone sign up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`email_taken`: an account already has this email address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: too many login attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/conversion-cache": {
       "get": {
         "tags": [
@@ -482,7 +1184,7 @@
         "operationId": "listDictionaries",
         "responses": {
           "200": {
-            "description": "Every imported dictionary, in import order",
+            "description": "The principal's dictionaries, in import order",
             "content": {
               "application/json": {
                 "schema": {
@@ -733,7 +1435,7 @@
             }
           },
           "404": {
-            "description": "No import job has the id, or its outcome has been forgotten",
+            "description": "The principal has no import job with the id, or its outcome has been forgotten",
             "content": {
               "application/json": {
                 "schema": {
@@ -1381,7 +2083,7 @@
         "tags": [
           "health"
         ],
-        "summary": "Reports that the server is up. The only route that needs no token.",
+        "summary": "Reports that the server is up. Needs no token.",
         "operationId": "getHealth",
         "responses": {
           "200": {
@@ -1629,7 +2331,7 @@
         "operationId": "listProjects",
         "responses": {
           "200": {
-            "description": "Every project, most recently opened first",
+            "description": "The principal's projects, most recently opened first",
             "content": {
               "application/json": {
                 "schema": {
@@ -3026,7 +3728,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Checks whether each path-backed media file of a project can be opened. Files the browser\nholds are left out, since only the browser can tell whether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.\nAt most eight files are checked at once, across all requests.",
+        "summary": "Checks whether each path-backed media file of a project can be opened, or else played from this server's copy.\nFiles the browser holds are left out unless this server keeps a copy, since only the browser can tell\nwhether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.\nAt most eight files are checked at once, across all requests.",
         "operationId": "getMediaAvailability",
         "parameters": [
           {
@@ -4407,12 +5109,334 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/stored-copy": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Serves this server's copy of the media file's bytes, with range requests.",
+        "operationId": "getStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The copy's bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "The requested byte range",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, or `no_stored_copy`: this server keeps no copy of it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Stores the request body as this server's copy of the media file's bytes, replacing any earlier copy,\nand records the choice to keep a copy. `Content-Length` is required, so that the quota is checked before the upload.",
+        "operationId": "putStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The media file's bytes",
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The copy was stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredCopy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was shorter or longer than its `Content-Length`, or broke off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`uploads_unavailable`: this server keeps no copies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "`length_required`: the request has no `Content-Length`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`quota_exceeded`: the copy would take the principal past their quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/stored-copy/fetch": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Downloads the linked remote's copy of the media file into this server's uploads directory,\nso that the media file plays here although its original is elsewhere. The request lasts as long as the download.",
+        "operationId": "fetchStoredCopy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The copy is stored here",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredCopy"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`remote_logged_out`: the linked server ended this device's session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may fetch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, `not_linked`, or `no_stored_copy` on the remote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`uploads_unavailable`: this server keeps no copies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`remote_unreachable` or `remote_failed`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/stream": {
       "get": {
         "tags": [
           "media"
         ],
-        "summary": "Streams the file's bytes. Honors `Range` with 206 and 416 responses and advertises\n`Accept-Ranges: bytes`. The content type is guessed from the file extension.",
+        "summary": "Streams the file's bytes, or this server's copy of them when the file cannot be read. Honors `Range` with 206 and 416 responses and advertises\n`Accept-Ranges: bytes`. The content type is guessed from the file extension.",
         "operationId": "streamMediaFile",
         "parameters": [
           {
@@ -5309,6 +6333,92 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/upload-choice": {
+      "put": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Records whether the person wants a copy of the media file kept on a server, and returns the media file.\nTurning it off deletes this server's copy; a device that syncs passes the choice on, and the remote then deletes its copy too.",
+        "operationId": "setUploadChoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadChoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The media file with the choice recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/waveform": {
       "get": {
         "tags": [
@@ -5507,6 +6617,1422 @@
         ]
       }
     },
+    "/projects/{id}/review": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "operationId": "getReviewSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What waits in the project's review today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/allowance": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Raises the number of new cards, or of reviews, the project's review shows today, as \"Learn 20 more\" and \"Review 100 more\" do.",
+        "operationId": "raiseReviewAllowance",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAllowanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Today's allowance of new cards or reviews was raised"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/answers": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Records the user's rating of a card, stamped with the server's time, and schedules the card's next review.",
+        "operationId": "answerReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The card's new schedule, the log entry of the answer, and the intervals of its next answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewAnswerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/answers/{answer_id}": {
+      "delete": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Undoes the project's latest answer and restores the card's schedule from before it.",
+        "operationId": "undoReviewAnswer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answer_id",
+            "in": "path",
+            "description": "The id of the answer, as its log entry gives it",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The card as it stood before the answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewAnswerUndone"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no answer with that id in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The answer is not the project's latest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/holds/{flashcard_id}": {
+      "put": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Sets a card aside from the review: buries it until the user's next day begins at 4 a.m., or suspends it until they unsuspend it.",
+        "operationId": "holdReviewCard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewHoldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The card was set aside"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Brings a card back into the review, as unburying or unsuspending it does. A card that was not set aside stays as it is.",
+        "operationId": "liftReviewHold",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The card is back in the review"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such flashcard in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/review/queue": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Lists the cards of a review session in the order they are shown: reviews due today, most overdue first, up to two hundred a day;\nthen learning cards due now or within twenty minutes; then the new cards still allowed today, in the order they were made.\nCards the user buried or suspended are left out.\nStarting a session also fits the FSRS parameters to the user's answers in the background, when the last fit is thirty days old.",
+        "operationId": "getReviewQueue",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session's cards, each with the intervals its ratings would give",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewQueue"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/review/counts": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "What waits in the review of each of the principal's projects today, counted as the queue counts it, as the list of projects shows it.",
+        "operationId": "listReviewCounts",
+        "parameters": [
+          {
+            "name": "utc_offset_min",
+            "in": "query",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts of each project's review today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListReviewCountsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/storage": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Lists the principal's stored copies with their sizes, and the quota they count against.\nA server without an uploads directory reports a quota of 0, since it keeps no copies.",
+        "operationId": "getStorageStatus",
+        "responses": {
+          "200": {
+            "description": "The principal's copies and quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/changes": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Lists the principal's changes after a cursor, oldest first, each with the row's data or as a tombstone.",
+        "operationId": "listSyncChanges",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "description": "The `next_cursor` of the previous page; 0 or absent for the first page.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The most rows to return: 500 when absent, at most 2,000.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the principal's changes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncChangesPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The cursor or the limit is not a number, or the limit is 0 or above 2,000",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Applies a device's changed rows as the principal's, and answers each in the order sent.\nOf two changes made to a row at once, the one with the later `updated_at_ms` is kept;\na time more than a minute ahead of the server's clock counts as the server's time.",
+        "operationId": "pushSyncChanges",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "What the server did with each row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPushOutcomes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "More than 500 rows, a table that does not sync, or a malformed body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is larger than 16 MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/conflicts": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Lists every conflict of the link, newest first, where the status lists only the most recent.",
+        "operationId": "listSyncConflicts",
+        "responses": {
+          "200": {
+            "description": "Every conflict, newest first; none when nothing is linked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSyncConflictsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may sync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Forgets the conflicts of the link, once the person has read of them.",
+        "operationId": "dismissSyncConflicts",
+        "responses": {
+          "204": {
+            "description": "The conflicts were forgotten"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may sync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/dictionaries/{id}/content": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Streams one of the principal's dictionaries as NDJSON: a `begin` line with its metadata and import time,\na line for each entry, frequency, tag, kanji and media file, and an `end` line.",
+        "operationId": "getDictionaryContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The dictionary, one JSON object per line",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The principal has no dictionary with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Imports a dictionary that a device uploads as the principal's, under the id it has there,\nfrom the NDJSON that `GET /sync/dictionaries/{id}/content` writes.",
+        "operationId": "putDictionaryContent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The dictionary, one JSON object per line",
+          "content": {
+            "application/x-ndjson": {}
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The dictionary was stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryStored"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is not a whole dump (code `bad_dump`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A dictionary with this id or title is stored already (code `dictionary_exists`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is larger than 1 GiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/link": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Logs in to an account on a remote, or signs up there, and keeps a copy of the device's own data on it from now on.\nA logged-out link to the same account resumes where it stopped; a link to another account starts over.",
+        "operationId": "linkSyncRemote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkRemoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Linked; the first round has started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_server_url`, or the remote's own 400 such as `invalid_email`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token, or the remote's `invalid_credentials`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden` for an account, or the remote's 403 such as `signup_closed` or `accounts_disabled`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`already_linked`, or the remote's 409 such as `email_taken`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The remote's `too_many_attempts`, with its Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`remote_unreachable` or `remote_failed`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Logs out of the linked remote and stops syncing with it. The device's own data stays as it is.",
+        "operationId": "unlinkSyncRemote",
+        "responses": {
+          "204": {
+            "description": "Unlinked"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may unlink",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_linked`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/remote-auth-info": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Asks a remote what it offers to clients that want to log in, on behalf of the app, which may not reach it directly.",
+        "operationId": "getRemoteAuthInfo",
+        "parameters": [
+          {
+            "name": "server_url",
+            "in": "query",
+            "description": "The remote's address, such as `https://cloud.example.com`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What the remote offers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerAuthInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_server_url`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "`remote_unreachable` or `remote_failed`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/run": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Starts a round of syncing now rather than when the next one is due.",
+        "operationId": "runSync",
+        "responses": {
+          "202": {
+            "description": "A round will start shortly"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: only the launch token may sync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_linked`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/sync/status": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Reports the link of the device's own data and how syncing with it goes. An account gets no link.",
+        "operationId": "getSyncStatus",
+        "responses": {
+          "200": {
+            "description": "The link and its state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/timed-text/parse": {
       "post": {
         "tags": [
@@ -5591,10 +8117,375 @@
           }
         ]
       }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Lists every account, oldest first.",
+        "operationId": "listUsers",
+        "responses": {
+          "200": {
+            "description": "Every account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountUser"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the token is not an administrator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Creates an account with the given role.",
+        "operationId": "createUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The account was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_email`, `password_too_short` or `password_too_long`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the token is not an administrator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`email_taken`: an account already has this email address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Deletes an account together with its sessions. The last administrator account cannot be deleted.",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The account id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The account was deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the token is not an administrator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account has this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`last_administrator`: the change would leave the server without an administrator account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/role": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Changes an account's role. The last administrator account keeps its role.",
+        "operationId": "setUserRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The account id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The account with its new role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountUser"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the token is not an administrator's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account has this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`last_administrator`: the change would leave the server without an administrator account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccountRole": {
+        "type": "string",
+        "description": "What an account may do on its server.\nOn the official server a subscriber is `privileged`; on a self-hosted server the administrator assigns roles.",
+        "enum": [
+          "library_user",
+          "privileged",
+          "administrator"
+        ]
+      },
+      "AccountUser": {
+        "type": "object",
+        "description": "An account as the server shows it, without its password.",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "created_at_ms"
+        ],
+        "properties": {
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "email": {
+            "type": "string"
+          },
+          "email_confirmed_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.\nNone until then, and always on a server that sends no email.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          }
+        }
+      },
       "AddAlignmentRequest": {
         "type": "object",
         "required": [
@@ -6036,7 +8927,8 @@
         "type": "object",
         "required": [
           "flashcard_ids",
-          "marks_exported"
+          "marks_exported",
+          "utc_offset_min"
         ],
         "properties": {
           "flashcard_ids": {
@@ -6060,6 +8952,11 @@
           "staged": {
             "type": "boolean",
             "description": "Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.\nA staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.\nRequires a save path."
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on."
           }
         }
       },
@@ -6386,6 +9283,27 @@
           "ignored"
         ]
       },
+      "ConfirmEmailRequest": {
+        "type": "object",
+        "description": "The token of a mailed link, which the link carries as a query parameter.",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "ConflictKept": {
+        "type": "string",
+        "description": "Which of two changes made at once was kept.",
+        "enum": [
+          "this_device",
+          "other_device",
+          "deletion"
+        ]
+      },
       "ContainerFormat": {
         "type": "string",
         "enum": [
@@ -6567,6 +9485,26 @@
           "codec_unsupported"
         ]
       },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "role"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "description": "At least eight characters."
+          },
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          }
+        }
+      },
       "Cue": {
         "type": "object",
         "description": "One text segment with the time range during which it is shown.\n\nThe text keeps any inline markup from the source file, such as `<i>`, and joins\nmultiple lines with `\\n`.",
@@ -6596,6 +9534,43 @@
             "type": "string"
           }
         }
+      },
+      "CurrentPrincipal": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "launch"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "account"
+                ]
+              },
+              "user": {
+                "$ref": "#/components/schemas/AccountUser"
+              }
+            }
+          }
+        ],
+        "description": "Who a request comes from: the holder of the launch token, who owns the machine the server runs on, or an account."
       },
       "Definition": {
         "oneOf": [
@@ -6793,6 +9768,20 @@
           }
         }
       },
+      "DictionaryStored": {
+        "type": "object",
+        "description": "The answer to an uploaded dictionary: when the server's registry recorded it.\nThe uploader takes this time as its own, so that its next push leaves the dictionary's row out.",
+        "required": [
+          "updated_at_ms"
+        ],
+        "properties": {
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "DictionaryStylesheet": {
         "type": "object",
         "description": "The CSS that a dictionary ships for its own entries, unsanitized.\nDisplays must sanitize it and confine it to that dictionary's entries before applying it.",
@@ -6960,7 +9949,8 @@
           "included_fields",
           "created_at_ms",
           "updated_at_ms",
-          "was_packaged"
+          "was_packaged",
+          "is_suspended"
         ],
         "properties": {
           "content": {
@@ -6999,6 +9989,10 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields the card shows, in no particular order."
+          },
+          "is_suspended": {
+            "type": "boolean",
+            "description": "Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it."
           },
           "media_file_id": {
             "oneOf": [
@@ -7573,6 +10567,15 @@
             "format": "int64",
             "minimum": 0
           },
+          "percent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How much of the dictionary's files the import has read, from 0 to 100, when its format can tell.",
+            "minimum": 0
+          },
           "tags": {
             "type": "integer",
             "format": "int64",
@@ -7815,6 +10818,31 @@
           }
         }
       },
+      "LinkRemoteRequest": {
+        "type": "object",
+        "description": "Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it.",
+        "required": [
+          "server_url",
+          "mode",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/SignInMode"
+          },
+          "password": {
+            "type": "string"
+          },
+          "server_url": {
+            "type": "string",
+            "description": "The remote's address, such as `https://cloud.example.com`."
+          }
+        }
+      },
       "ListDictionariesResponse": {
         "type": "object",
         "required": [
@@ -7882,6 +10910,50 @@
             "items": {
               "$ref": "#/components/schemas/Project"
             }
+          }
+        }
+      },
+      "ListReviewCountsResponse": {
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCounts"
+            }
+          }
+        }
+      },
+      "ListSyncConflictsResponse": {
+        "type": "object",
+        "description": "Every conflict of the link, newest first.",
+        "required": [
+          "conflicts"
+        ],
+        "properties": {
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncConflict"
+            }
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
           }
         }
       },
@@ -8011,7 +11083,9 @@
           "project_id",
           "name",
           "source",
-          "created_at_ms"
+          "created_at_ms",
+          "is_upload_chosen",
+          "has_stored_copy"
         ],
         "properties": {
           "created_at_ms": {
@@ -8020,8 +11094,16 @@
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
           },
+          "has_stored_copy": {
+            "type": "boolean",
+            "description": "Whether this server keeps a copy of the file's bytes, which it plays when the original cannot be read."
+          },
           "id": {
             "$ref": "#/components/schemas/MediaFileId"
+          },
+          "is_upload_chosen": {
+            "type": "boolean",
+            "description": "Whether the user chose to keep a copy of the file's bytes on a server."
           },
           "name": {
             "type": "string",
@@ -8288,6 +11370,34 @@
           }
         }
       },
+      "MediaTransfer": {
+        "type": "object",
+        "description": "The progress of a media file being uploaded to a remote.",
+        "required": [
+          "media_file_id",
+          "name",
+          "sent_bytes",
+          "total_bytes"
+        ],
+        "properties": {
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sent_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "total_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "NewFlashcard": {
         "type": "object",
         "description": "What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.\nSending the same id again replaces that flashcard, so that a retried request cannot create a second one.",
@@ -8302,6 +11412,24 @@
           "id": {
             "$ref": "#/components/schemas/FlashcardId",
             "description": "Thirty-two lowercase hexadecimal digits, as in the ids the app makes."
+          }
+        }
+      },
+      "NewPasswordRequest": {
+        "type": "object",
+        "description": "A new password, chosen through the link mailed for a reset.",
+        "required": [
+          "token",
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "At least eight characters."
+          },
+          "token": {
+            "type": "string",
+            "description": "The token that the mailed link carries."
           }
         }
       },
@@ -8372,6 +11500,17 @@
           }
         }
       },
+      "PasswordResetRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
       "PathAvailability": {
         "type": "string",
         "description": "Whether the server can open the file at a media file's path.",
@@ -8379,7 +11518,8 @@
           "available",
           "missing",
           "not_allowed",
-          "unreadable"
+          "unreadable",
+          "stored_copy"
         ]
       },
       "PictureSize": {
@@ -8717,7 +11857,9 @@
           "last_opened_at_ms",
           "media_count",
           "flashcard_count",
-          "uses_anki_connect"
+          "unreviewed_count",
+          "uses_anki_connect",
+          "is_backed_up"
         ],
         "properties": {
           "created_at_ms": {
@@ -8734,6 +11876,10 @@
           "id": {
             "$ref": "#/components/schemas/ProjectId"
           },
+          "is_backed_up": {
+            "type": "boolean",
+            "description": "Whether a copy of the project's latest change is kept on a server other than this device's own.\nAlways true for an account's projects, which live on the server it is logged in to."
+          },
           "last_opened_at_ms": {
             "type": "integer",
             "format": "int64",
@@ -8747,6 +11893,12 @@
           },
           "settings": {
             "$ref": "#/components/schemas/ProjectSettings"
+          },
+          "unreviewed_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The flashcards never answered in the review, less those the user buried or suspended.",
+            "minimum": 0
           },
           "uses_anki_connect": {
             "type": "boolean",
@@ -8818,6 +11970,78 @@
           }
         }
       },
+      "PushOutcome": {
+        "type": "object",
+        "description": "What the server did with one pushed row.",
+        "required": [
+          "table",
+          "key",
+          "kind"
+        ],
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncRow",
+                "description": "The server's row when it kept its own version, or the tombstone of the deleted parent."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PushOutcomeKind"
+          },
+          "remote_updated_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The modification time the server now has for the row: the pushed time, or the server's time when that was in the future.\nNone when the row was rejected, or when the server kept a version of its own, which `current` carries.",
+            "minimum": 0
+          },
+          "table": {
+            "$ref": "#/components/schemas/SyncTable"
+          }
+        }
+      },
+      "PushOutcomeKind": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "applied_over_concurrent",
+          "unchanged",
+          "superseded",
+          "parent_deleted",
+          "rejected"
+        ]
+      },
+      "PushedRow": {
+        "type": "object",
+        "description": "A row that a device sends to a server, with the modification time the server had for it when the device last heard of it.",
+        "required": [
+          "row"
+        ],
+        "properties": {
+          "base_updated_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "None when the device has never had the server's version of the row.",
+            "minimum": 0
+          },
+          "row": {
+            "$ref": "#/components/schemas/SyncRow"
+          }
+        }
+      },
       "Rational": {
         "type": "object",
         "description": "A positive ratio of two integers, such as a timebase of `1/90000` or a frame rate of `30000/1001`.",
@@ -8834,6 +12058,511 @@
           "num": {
             "type": "integer",
             "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "RefusedUpload": {
+        "type": "object",
+        "description": "The latest media file the remote would not keep a copy of, and the remote's reason.",
+        "required": [
+          "media_file_id",
+          "name",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "RemoteKind": {
+        "type": "string",
+        "description": "Whether a remote is an account server reached over the internet, or a server on the local network.",
+        "enum": [
+          "account",
+          "lan"
+        ]
+      },
+      "ReviewAllowanceRequest": {
+        "type": "object",
+        "description": "Raises the number of new cards, or of reviews, the project's review shows today.",
+        "required": [
+          "utc_offset_min",
+          "extra_new_cards",
+          "extra_reviews"
+        ],
+        "properties": {
+          "extra_new_cards": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "extra_reviews": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device."
+          }
+        }
+      },
+      "ReviewAnswerId": {
+        "type": "string",
+        "description": "The identifier of one answer in the review log."
+      },
+      "ReviewAnswerRequest": {
+        "type": "object",
+        "description": "What the review screen sends when the user rates a card.",
+        "required": [
+          "flashcard_id",
+          "rating",
+          "utc_offset_min",
+          "duration_ms"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the card appearing to the answer, as measured by the client.",
+            "minimum": 0
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ReviewRating"
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device: 120 in Central European Summer Time."
+          }
+        }
+      },
+      "ReviewAnswerResponse": {
+        "type": "object",
+        "description": "A card after an answer.",
+        "required": [
+          "state",
+          "entry",
+          "intervals"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/ReviewLogEntry"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals",
+            "description": "The intervals of the card's next answer, were it given now."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewCardState"
+          }
+        }
+      },
+      "ReviewAnswerUndone": {
+        "type": "object",
+        "description": "A card after its latest answer was undone.",
+        "required": [
+          "flashcard_id",
+          "intervals"
+        ],
+        "properties": {
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReviewCardState",
+                "description": "The state before the undone answer. Null when the card is new again."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ReviewCardState": {
+        "type": "object",
+        "description": "The schedule of a card that has been answered at least once.",
+        "required": [
+          "state",
+          "due_at_ms",
+          "stability",
+          "difficulty",
+          "interval_ms",
+          "reps",
+          "lapses",
+          "learning_step",
+          "last_reviewed_at_ms",
+          "is_leech"
+        ],
+        "properties": {
+          "difficulty": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS difficulty, from 1 to 10."
+          },
+          "due_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "interval_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the latest answer to `due_at_ms`.",
+            "minimum": 0
+          },
+          "is_leech": {
+            "type": "boolean",
+            "description": "Whether the user has forgotten the card under review so often that it is a leech: a card worth rewording, or suspending."
+          },
+          "lapses": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of times the user forgot the card under review.",
+            "minimum": 0
+          },
+          "last_reviewed_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "learning_step": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of learning or relearning steps passed in the current phase. Zero under review.",
+            "minimum": 0
+          },
+          "reps": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The number of answers given.",
+            "minimum": 0
+          },
+          "stability": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS stability in days: how long until the chance of remembering the card falls to 90%."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewPhase"
+          }
+        }
+      },
+      "ReviewCounts": {
+        "type": "object",
+        "description": "What waits in each project's review, as the list of projects shows it. Each count is that of the cards the review would show.",
+        "required": [
+          "project_id",
+          "due_count",
+          "learning_count",
+          "new_count"
+        ],
+        "properties": {
+          "due_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today, up to the day's limit.",
+            "minimum": 0
+          },
+          "learning_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards in learning or relearning that are due now or within the learn-ahead time.",
+            "minimum": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "New cards that may still be introduced today.",
+            "minimum": 0
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          }
+        }
+      },
+      "ReviewHoldKind": {
+        "type": "string",
+        "description": "How the user set a card aside from the review.",
+        "enum": [
+          "buried",
+          "suspended"
+        ]
+      },
+      "ReviewHoldRequest": {
+        "type": "object",
+        "description": "Sets a card aside from the review: buries it until the next local day, or suspends it.",
+        "required": [
+          "kind",
+          "utc_offset_min"
+        ],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ReviewHoldKind"
+          },
+          "utc_offset_min": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Local time minus UTC, in minutes, as on the user's device, which places the end of a buried card's day."
+          }
+        }
+      },
+      "ReviewIntervals": {
+        "type": "object",
+        "description": "The interval each rating would give a card if it were answered now.",
+        "required": [
+          "again_ms",
+          "hard_ms",
+          "good_ms",
+          "easy_ms"
+        ],
+        "properties": {
+          "again_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "easy_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "good_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "hard_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ReviewLogEntry": {
+        "type": "object",
+        "description": "One answer, as kept in the review log, with what Anki's review log needs to carry the card's history across.",
+        "required": [
+          "id",
+          "flashcard_id",
+          "answered_at_ms",
+          "rating",
+          "kind",
+          "state",
+          "elapsed_ms",
+          "duration_ms",
+          "stability",
+          "difficulty",
+          "interval_ms_before",
+          "interval_ms_after",
+          "desired_retention"
+        ],
+        "properties": {
+          "answered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch, stamped by the server.\nAnswers given on two devices may share a time; the id then orders them.",
+            "minimum": 0
+          },
+          "desired_retention": {
+            "type": "number",
+            "format": "double",
+            "description": "The chance of remembering the card when it comes due that its interval was chosen for, from 0 to 1."
+          },
+          "difficulty": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS difficulty after the answer, from 1 to 10."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time from the card appearing to the answer, at most one minute.",
+            "minimum": 0
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time since the card's previous answer. Zero for its first answer.",
+            "minimum": 0
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ReviewAnswerId"
+          },
+          "interval_ms_after": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The interval the answer gave the card.",
+            "minimum": 0
+          },
+          "interval_ms_before": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The interval the card had before the answer. Zero for its first answer.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ReviewPhase",
+            "description": "The phase the card was in when answered. A new card's first answer is a learning answer."
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ReviewRating"
+          },
+          "stability": {
+            "type": "number",
+            "format": "double",
+            "description": "The FSRS stability after the answer, in days."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ReviewPhase",
+            "description": "The phase the answer put the card in."
+          }
+        }
+      },
+      "ReviewPhase": {
+        "type": "string",
+        "description": "Where a card stands in its schedule.\nA card is learning from its first answer until it graduates, under review once it has graduated,\nand relearning after the user forgot it under review, until it graduates again.",
+        "enum": [
+          "learning",
+          "review",
+          "relearning"
+        ]
+      },
+      "ReviewQueue": {
+        "type": "object",
+        "description": "The cards of a review session, in the order they are shown.",
+        "required": [
+          "cards"
+        ],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewQueueCard"
+            }
+          }
+        }
+      },
+      "ReviewQueueCard": {
+        "type": "object",
+        "required": [
+          "flashcard",
+          "intervals"
+        ],
+        "properties": {
+          "flashcard": {
+            "$ref": "#/components/schemas/Flashcard"
+          },
+          "intervals": {
+            "$ref": "#/components/schemas/ReviewIntervals"
+          },
+          "state": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReviewCardState",
+                "description": "Null for a new card."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ReviewRating": {
+        "type": "string",
+        "description": "The button the user pressed after seeing the answer.",
+        "enum": [
+          "again",
+          "hard",
+          "good",
+          "easy"
+        ]
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "description": "What waits in a project's review, as the flashcards panel shows it.",
+        "required": [
+          "due_count",
+          "learning_count",
+          "new_count",
+          "held_back_count",
+          "has_progress"
+        ],
+        "properties": {
+          "due_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today.",
+            "minimum": 0
+          },
+          "has_progress": {
+            "type": "boolean",
+            "description": "Whether any flashcard of the project has been answered."
+          },
+          "held_back_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards under review that are due today but left for later days, because more are due than a day's limit.\nWhile any are, no new cards are introduced.",
+            "minimum": 0
+          },
+          "learning_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cards in learning or relearning that are due now or within the learn-ahead time.",
+            "minimum": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "New cards that may still be introduced today.",
+            "minimum": 0
+          },
+          "next_card": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Flashcard",
+                "description": "The flashcard the review would show first. Null when nothing waits."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_due_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the earliest answered card is due. Null when no card has been answered.",
             "minimum": 0
           }
         }
@@ -8865,6 +12594,131 @@
           },
           "verb": {
             "$ref": "#/components/schemas/ContextWord"
+          }
+        }
+      },
+      "ServerAuthInfo": {
+        "type": "object",
+        "description": "What a server offers to clients that want to log in.",
+        "required": [
+          "accounts",
+          "open_signup",
+          "sends_email"
+        ],
+        "properties": {
+          "accounts": {
+            "type": "boolean",
+            "description": "Whether the server has accounts that a client can log in to."
+          },
+          "open_signup": {
+            "type": "boolean",
+            "description": "Whether anyone may create an account on the server."
+          },
+          "sends_email": {
+            "type": "boolean",
+            "description": "Whether the server sends email, so that accounts can confirm their address and reset a forgotten password."
+          }
+        }
+      },
+      "SessionCreated": {
+        "type": "object",
+        "description": "A new session: the token to present as `Authorization: Bearer <token>`, and its account.",
+        "required": [
+          "token",
+          "user"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AccountUser"
+          }
+        }
+      },
+      "SessionList": {
+        "type": "object",
+        "required": [
+          "sessions"
+        ],
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            },
+            "description": "Most recently used first."
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "description": "A device that the account is logged in on.",
+        "required": [
+          "id",
+          "created_at_ms",
+          "last_used_at_ms",
+          "user_agent",
+          "is_current"
+        ],
+        "properties": {
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the device logged in, in milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_current": {
+            "type": "boolean",
+            "description": "Whether this is the session that asked for the list."
+          },
+          "last_used_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the device last sent a request, in milliseconds since the Unix epoch, to within an hour.",
+            "minimum": 0
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "The User-Agent header that the device sent when it logged in, which may be empty."
+          }
+        }
+      },
+      "SetUserRoleRequest": {
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/AccountRole"
+          }
+        }
+      },
+      "SignInMode": {
+        "type": "string",
+        "description": "Whether linking a device creates a new account on the remote or logs in to an existing one.",
+        "enum": [
+          "login",
+          "signup"
+        ]
+      },
+      "SignupRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "description": "At least eight characters."
           }
         }
       },
@@ -8970,6 +12824,75 @@
         ],
         "description": "The plugin's answer to an action in its media interface: the next form to show, or the\nchanges the server applied."
       },
+      "StorageStatus": {
+        "type": "object",
+        "description": "How much of the principal's upload allowance their stored copies take, and which copies they are.",
+        "required": [
+          "used_bytes",
+          "copies"
+        ],
+        "properties": {
+          "copies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoredCopy"
+            },
+            "description": "The copies, largest first."
+          },
+          "quota_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The most bytes the principal may keep in copies; null when there is no limit.",
+            "minimum": 0
+          },
+          "used_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "StoredCopy": {
+        "type": "object",
+        "description": "A copy of a media file's bytes that this server keeps.",
+        "required": [
+          "media_file_id",
+          "project_id",
+          "project_name",
+          "name",
+          "size_bytes",
+          "stored_at_ms"
+        ],
+        "properties": {
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "name": {
+            "type": "string",
+            "description": "The media file's name, as its project's media list shows it."
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "project_name": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "stored_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the copy was stored, in milliseconds since the Unix epoch.",
+            "minimum": 0
+          }
+        }
+      },
       "SubtitleRole": {
         "type": "string",
         "description": "Which role a subtitle track plays for its media file.",
@@ -9063,6 +12986,368 @@
             }
           }
         }
+      },
+      "SyncChangesPage": {
+        "type": "object",
+        "description": "One page of an owner's changes on a server, in the order they were made.",
+        "required": [
+          "rows",
+          "next_cursor",
+          "has_more"
+        ],
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `since` to ask for the next page with.",
+            "minimum": 0
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncRow"
+            }
+          }
+        }
+      },
+      "SyncConflict": {
+        "type": "object",
+        "description": "A row that this device and another changed at once.",
+        "required": [
+          "id",
+          "description",
+          "kept",
+          "detected_at_ms"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Names the row itself for the person, such as \"a flashcard\" or \"the reading position\"."
+          },
+          "detected_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "kept": {
+            "$ref": "#/components/schemas/ConflictKept"
+          },
+          "media_file_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the media file the row belongs to, when it belongs to one that was known when the conflict was recorded."
+          },
+          "project_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The name of the project the row belongs to, when it belongs to one that was known when the conflict was recorded."
+          }
+        }
+      },
+      "SyncLink": {
+        "type": "object",
+        "description": "A link to a remote, and how far syncing with it has come.",
+        "required": [
+          "kind",
+          "server_url",
+          "account_email",
+          "account_role",
+          "linked_at_ms",
+          "pushed_through_seq",
+          "state",
+          "conflicts",
+          "conflict_count"
+        ],
+        "properties": {
+          "account_email": {
+            "type": "string"
+          },
+          "account_role": {
+            "$ref": "#/components/schemas/AccountRole"
+          },
+          "conflict_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many conflicts there are since they were last dismissed.",
+            "minimum": 0
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncConflict"
+            },
+            "description": "The 20 most recent conflicts, newest first."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RemoteKind"
+          },
+          "last_synced_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "When the latest successful round began. Every change made on this device before then is on the remote.",
+            "minimum": 0
+          },
+          "linked_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "pushed_through_seq": {
+            "type": "integer",
+            "format": "int64",
+            "description": "This server's change sequence up to which the remote holds every change.",
+            "minimum": 0
+          },
+          "refused_upload": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RefusedUpload",
+                "description": "None when the latest round found room on the remote for every media file chosen for a copy there."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "server_url": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SyncLinkState"
+          },
+          "transfer": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaTransfer",
+                "description": "The media file being uploaded, while one is."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "SyncLinkState": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "idle"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "syncing"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The remote could not be reached since this time.",
+            "required": [
+              "since_ms",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "unreachable"
+                ]
+              },
+              "since_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The remote ended this device's session, so the person must log in again.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "logged_out"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The remote refused a request or answered in a way this server does not understand.",
+            "required": [
+              "code",
+              "message",
+              "kind"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "failed"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "What syncing with a remote is doing."
+      },
+      "SyncPushBatch": {
+        "type": "object",
+        "description": "The rows a device sends to a server in one request.",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PushedRow"
+            }
+          }
+        }
+      },
+      "SyncPushOutcomes": {
+        "type": "object",
+        "description": "What the server did with each pushed row, in the order the rows were sent.",
+        "required": [
+          "outcomes"
+        ],
+        "properties": {
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PushOutcome"
+            }
+          }
+        }
+      },
+      "SyncRow": {
+        "type": "object",
+        "description": "A synced row as it stands after its latest change, or its tombstone when it was deleted.",
+        "required": [
+          "table",
+          "key",
+          "updated_at_ms",
+          "is_deleted"
+        ],
+        "properties": {
+          "data": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "The row's synced columns by name. None for a deleted row."
+          },
+          "is_deleted": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string",
+            "description": "The row's id, or for a table with a composite key, its parts joined by `:`."
+          },
+          "table": {
+            "$ref": "#/components/schemas/SyncTable"
+          },
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the row last changed on any server, in milliseconds since the Unix epoch.\nOf two changes made to a row at once, the later is kept.",
+            "minimum": 0
+          }
+        }
+      },
+      "SyncStatus": {
+        "type": "object",
+        "description": "How a built-in server keeps a copy of its data on a remote.",
+        "required": [
+          "pulled_revision",
+          "local_change_seq"
+        ],
+        "properties": {
+          "link": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SyncLink",
+                "description": "The account link of the device's own data. None when the device is not linked, and always for an account."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "local_change_seq": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The last change sequence this server gave out. Zero for an account.",
+            "minimum": 0
+          },
+          "pulled_revision": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Raised each time rows pulled from the remote change this server's data. Zero for an account.",
+            "minimum": 0
+          }
+        }
+      },
+      "SyncTable": {
+        "type": "string",
+        "description": "A table whose rows sync between servers. Each name is the table's name in the server's database.",
+        "enum": [
+          "projects",
+          "media_files",
+          "subtitle_tracks",
+          "alignments",
+          "flashcards",
+          "review_log",
+          "review_holds",
+          "review_day_allowances",
+          "anki_pending_deletions",
+          "dictionaries",
+          "preferences",
+          "review_parameters"
+        ]
       },
       "TableLayout": {
         "type": "object",
@@ -9660,6 +13945,18 @@
           "conversion_unavailable",
           "picture_too_tall"
         ]
+      },
+      "UploadChoiceRequest": {
+        "type": "object",
+        "description": "The person's choice whether to keep a copy of a media file's bytes on a server.",
+        "required": [
+          "is_upload_chosen"
+        ],
+        "properties": {
+          "is_upload_chosen": {
+            "type": "boolean"
+          }
+        }
       },
       "VideoAction": {
         "oneOf": [

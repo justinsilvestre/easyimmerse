@@ -16,7 +16,7 @@ use easyimmerse_media_ffmpeg::{
 use tokio::process::Command;
 
 use crate::auth::error_body::ApiFailure;
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media_support::{conversion_unavailable, probe_media};
 use crate::routes::subtitles::store_subtitle_track;
 use crate::state::AppState;
@@ -26,7 +26,7 @@ use crate::state::AppState;
 /// of pictures, such as PGS tracks, are skipped, as is any track that ffmpeg cannot convert.
 pub async fn add_embedded_subtitle_tracks(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     path: &str,
 ) -> Result<Vec<FoundTrack>, ApiFailure> {
@@ -48,7 +48,7 @@ pub async fn add_embedded_subtitle_tracks(
                     format: Some(TimedTextFormat::Srt),
                     role: None,
                 };
-                if let Some(track_id) = add_track(state, token, media_file, request).await {
+                if let Some(track_id) = add_track(state, principal, media_file, request).await {
                     added.push((track_id, track.language.clone()));
                 }
             }
@@ -108,12 +108,12 @@ fn embedded_track_name(number: usize, track: &TrackInfo) -> String {
 
 async fn add_track(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     request: AddSubtitleTrackRequest,
 ) -> Option<SubtitleTrackId> {
     let name = request.name.clone();
-    match store_subtitle_track(state, token, media_file.id.clone(), request).await {
+    match store_subtitle_track(state, principal, media_file.id.clone(), request).await {
         Ok(track) => Some(track.id),
         Err(failure) => {
             tracing::warn!("skipped {name:?}: {}", failure.error.message);

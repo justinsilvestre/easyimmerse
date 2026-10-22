@@ -15,7 +15,12 @@ describe("assignFreeRequestIds", () => {
   });
 
   it("skips an id a recorded request holds", () => {
-    const recorded = { id: "hover/1", request: listing, isWaiting: false };
+    const recorded = {
+      id: "hover/1",
+      request: listing,
+      isWaiting: false,
+      isSlow: false,
+    };
     const [send] = assignFreeRequestIds([recorded], [under("hover")]);
     expect(send).toMatchObject({ id: "hover/2" });
   });

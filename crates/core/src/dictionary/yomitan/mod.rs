@@ -17,6 +17,7 @@ mod term_bank;
 mod term_meta_bank;
 #[cfg(test)]
 mod test_source;
+mod yomitan_import;
 
 pub use error::YomitanError;
 
@@ -26,10 +27,11 @@ use super::metadata::DictionaryFormatKind;
 use super::sink::DictionarySink;
 use super::source::DictionarySource;
 use bank::json_error;
-use bank_import::import_banks;
+use bank_import::{all_bank_names, import_banks};
 use index::Index;
-use media::import_media;
+use media::{import_media, media_files};
 use row_layout::RowLayout;
+use yomitan_import::YomitanImport;
 
 pub struct YomitanFormat;
 
@@ -51,8 +53,11 @@ impl DictionaryFormat for YomitanFormat {
         sink: &mut dyn DictionarySink,
     ) -> Result<(), DictionaryError> {
         let layout = import_index(source, sink)?;
-        import_banks(source, sink, layout)?;
-        import_media(source, sink)
+        let mut names = all_bank_names(source);
+        names.extend(media_files(source).into_iter().map(|(path, _)| path));
+        let mut import = YomitanImport::new(source, sink, &names)?;
+        import_banks(&mut import, layout)?;
+        import_media(&mut import)
     }
 }
 
@@ -91,6 +96,7 @@ fn read_stylesheet(source: &mut DictionarySource) -> Result<Option<String>, Dict
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dictionary::media_collector::MediaCollector;
     use crate::dictionary::{Definition, Dictionary, TermEntry, parse_dictionary};
     use crate::test_support::read_fixture_bytes;
     use test_source::source_of;
@@ -188,6 +194,16 @@ mod tests {
     #[test]
     fn reads_the_kanji_meta_of_the_fixture() {
         assert_eq!(fixture().kanji_meta.len(), 1);
+    }
+
+    #[test]
+    fn reports_every_bank_and_media_file_read_by_the_end() {
+        let mut collector = MediaCollector::default();
+        YomitanFormat
+            .import(&mut fixture_source(), &mut collector)
+            .unwrap();
+        let (read, total) = collector.last_progress.unwrap();
+        assert_eq!(read, total);
     }
 
     #[test]

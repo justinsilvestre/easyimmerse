@@ -198,7 +198,7 @@ mod tests {
 
     fn storage_with_media() -> (Storage, MediaFileId) {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         let media = storage
             .add_media_file(
                 &ProjectId("placeholder-1".to_string()),

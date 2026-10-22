@@ -33,7 +33,18 @@ describe("createAppStore", () => {
       createRecordingEffects(),
       createFakeServerStoreParts(server),
     );
-    expect(store.getState().app.server).toEqual({ config: server });
+    expect(store.getState().app.server.config).toEqual(server);
+  });
+
+  it("seeds the official server's address", () => {
+    const store = createAppStore(
+      createRecordingEffects(),
+      createFakeServerStoreParts(),
+      "https://cloud.example.com",
+    );
+    expect(store.getState().app.server.cloudUrl).toBe(
+      "https://cloud.example.com",
+    );
   });
 
   it("mounts the server cache under backend", () => {
@@ -125,6 +136,7 @@ describe("createAppStore", () => {
     createAppStore(
       createRecordingEffects(),
       createFakeServerStoreParts(),
+      null,
       (...enhancers) => {
         composed.push(enhancers);
         return (next) => next;
@@ -204,11 +216,11 @@ describe("createAppStore", () => {
       expect(statusRequests(server)).toHaveLength(1);
     });
 
-    it("stops asking once the dictionaries page closes", async () => {
+    it("goes on asking once the dictionaries page closes", async () => {
       const { effects, server, store } = await startRunningImport();
       store.dispatch(actions.navigated({ type: "closeSettings" }));
       effects.clock.advanceBy(500);
-      expect(statusRequests(server)).toHaveLength(1);
+      expect(statusRequests(server)).toHaveLength(2);
     });
   });
 

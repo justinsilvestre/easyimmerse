@@ -67,11 +67,24 @@ jobs:
           cargo build -p easyimmerse-server
           mise run wasm:build
 
-      - name: Chrome build
-        run: pnpm --filter @easyimmerse/extension build
+      # Zipping builds the extension first, so the zips come from the same builds the later steps test.
+      - name: Chrome build and zip
+        run: pnpm --filter @easyimmerse/extension zip
 
-      - name: Firefox build
-        run: pnpm --filter @easyimmerse/extension build:firefox
+      - name: Firefox build and zip
+        run: pnpm --filter @easyimmerse/extension zip:firefox
+
+      - name: Upload the zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: easyimmerse-extension
+          path: |
+            apps/extension/.output/*.zip
+            !apps/extension/.output/*-sources.zip
+          if-no-files-found: error
+          # The action skips hidden directories such as .output unless told otherwise.
+          include-hidden-files: true
+          retention-days: 14
 
       - name: Firefox manifest lint
         run: pnpm --filter @easyimmerse/extension lint:firefox

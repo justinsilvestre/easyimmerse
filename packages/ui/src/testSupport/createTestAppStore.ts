@@ -1,6 +1,6 @@
 import type { BackendClient, BrowserFiles } from "@easyimmerse/backend";
 import { createBackendStoreParts } from "@easyimmerse/backend";
-import type { ServerConfig } from "@easyimmerse/state";
+import type { ServerState } from "@easyimmerse/state";
 import {
   createAppStore,
   createPlayerRegistry,
@@ -12,13 +12,13 @@ import { fixtureResponses } from "./fixtureResponses.ts";
 
 /**
  * Builds a fresh store with recording effects and a player registry, whose backend requests go through the given client.
- * A server config makes hooks that build media URLs treat the client as a connected server.
+ * A server config makes hooks that build media URLs treat the client as a connected server, and a cloud URL names the official server the app offers to log in to.
  * Browser files let requests read the bytes and frames of the files their registry holds.
  * The store starts by loading the preferences that the given recording effects hold.
  */
 export function createTestAppStore(
   client: BackendClient = createFakeBackendClient(fixtureResponses),
-  server: ServerConfig | null = null,
+  servers: ServerState = { config: null, cloudUrl: null },
   browserFiles: BrowserFiles | null = null,
   effects: ReturnType<typeof createRecordingEffects> = createRecordingEffects(
     {},
@@ -28,7 +28,8 @@ export function createTestAppStore(
 ) {
   const store = createAppStore(
     effects,
-    createBackendStoreParts(client, server, browserFiles),
+    createBackendStoreParts(client, servers.config, browserFiles),
+    servers.cloudUrl,
   );
   return { effects, store, playerRegistry: createPlayerRegistry() };
 }

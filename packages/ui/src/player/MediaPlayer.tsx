@@ -1,5 +1,5 @@
 import { useListMediaFilesQuery } from "@easyimmerse/backend";
-import { selectCurrentMediaFileId } from "@easyimmerse/state";
+import { isPlayedByServer, selectCurrentMediaFileId } from "@easyimmerse/state";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { BrowserFilePlayer } from "./BrowserFilePlayer.tsx";
 import { PathMediaPlayer } from "./PathMediaPlayer.tsx";
@@ -23,7 +23,7 @@ export function MediaPlayer({ projectId }: { projectId: string }) {
         }
       />
     );
-  return mediaFile.source.kind === "path" ? (
+  return isPlayedByServer(mediaFile) ? (
     <PathMediaPlayer
       key={mediaFile.id}
       projectId={projectId}

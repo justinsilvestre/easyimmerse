@@ -1,3 +1,4 @@
+import type { BackendRequest } from "@easyimmerse/backend";
 import type {
   InstalledPlugin,
   ListFlashcardsResponse,
@@ -5,9 +6,17 @@ import type {
   ListProjectsResponse,
   Project,
   ProjectSettings,
+  ReviewAnswerRequest,
   SubtitleTracksResponse,
+  SyncLink,
+  SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
+import {
+  answerReviewFixture,
+  fixtureReviewQueue,
+  fixtureReviewSummary,
+} from "./reviewFixtures.ts";
 
 /** The cues of `fixtures/sample.srt`, as the backend returns them. */
 export const fixtureTrack: TimedTextTrack = {
@@ -55,7 +64,9 @@ export const fixtureProject: Project = {
   last_opened_at_ms: 1767398400000,
   media_count: 2,
   flashcard_count: 0,
+  unreviewed_count: 0,
   uses_anki_connect: false,
+  is_backed_up: false,
 };
 
 const fixtureProjects: ListProjectsResponse = {
@@ -68,7 +79,9 @@ const fixtureProjects: ListProjectsResponse = {
       last_opened_at_ms: 1767312000000,
       media_count: 0,
       flashcard_count: 0,
+      unreviewed_count: 0,
       uses_anki_connect: false,
+      is_backed_up: false,
     },
   ],
 };
@@ -102,6 +115,8 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
+      has_stored_copy: false,
     },
     {
       id: "m2",
@@ -116,6 +131,8 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
+      has_stored_copy: false,
     },
   ],
 };
@@ -144,9 +161,36 @@ export const fixtureImportedMediaFiles: ListMediaFilesResponse = {
   ),
 };
 
+/** A built-in server's link to the easyImmerse cloud, idle after a round that began at the Unix epoch. */
+export const fixtureSyncLink: SyncLink = {
+  kind: "account",
+  server_url: "https://cloud.example.org",
+  account_email: "someone@example.org",
+  account_role: "library_user",
+  linked_at_ms: 0,
+  last_synced_at_ms: 0,
+  pushed_through_seq: 0,
+  state: { kind: "idle" },
+  transfer: null,
+  refused_upload: null,
+  conflicts: [],
+  conflict_count: 0,
+};
+
+/** The sync status of a built-in server with the given link, or with none. */
+export const fixtureSyncStatus = (
+  link: SyncLink | null = null,
+): SyncStatus => ({
+  link,
+  pulled_revision: 0,
+  local_change_seq: 0,
+});
+
 export const fixtureResponses = {
   "GET /plugins": { plugins: [] },
+  "GET /sync/status": fixtureSyncStatus(),
   "GET /projects": fixtureProjects,
+  "GET /review/counts": { projects: [] },
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,
@@ -159,4 +203,9 @@ export const fixtureResponses = {
     selection: { target_track_id: null, translation_track_id: null },
   } satisfies SubtitleTracksResponse,
   "POST /timed-text/parse": fixtureTrack,
+  "GET /projects/p1/review": fixtureReviewSummary,
+  "GET /projects/p1/review/queue": fixtureReviewQueue,
+  "POST /projects/p1/review/answers": (request: BackendRequest) =>
+    answerReviewFixture(request.body?.value as ReviewAnswerRequest, Date.now()),
+  "POST /projects/p1/review/allowance": undefined,
 };

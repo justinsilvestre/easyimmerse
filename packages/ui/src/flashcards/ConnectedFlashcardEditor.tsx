@@ -4,6 +4,7 @@ import {
   isAwaitingLookup,
   saveStatusOf,
   selectAnkiFateOfDeletion,
+  selectIsFlashcardSuspended,
   selectMediaDurationMs,
 } from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -35,6 +36,11 @@ export function ConnectedFlashcardEditor({
       ? null
       : selectAnkiFateOfDeletion(state, saved.project_id, saved.id),
   );
+  const isSuspended = useAppSelector(
+    (state) =>
+      saved !== null &&
+      selectIsFlashcardSuspended(state, saved.project_id, saved.id),
+  );
   return (
     <FlashcardEditor
       key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
@@ -49,8 +55,17 @@ export function ConnectedFlashcardEditor({
       isAwaitingLookup={isAwaitingLookup(form.stage)}
       ankiFate={ankiFate}
       hasSaveFailed={form.saveFailure !== null}
+      hasUnsavedChanges={form.card.isChanged}
       onSave={() => dispatch(actions.flashcardSaveRequested())}
       onDelete={() => dispatch(actions.flashcardDeleteRequested())}
+      onUnsuspend={
+        saved && isSuspended
+          ? () =>
+              dispatch(
+                actions.flashcardUnsuspendRequested(saved.project_id, saved.id),
+              )
+          : null
+      }
       onClose={() => dispatch(actions.flashcardClosed())}
       onPlayClip={(clip) => dispatch(actions.clipPlayRequested(clip))}
     />

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::extract::DefaultBodyLimit;
 use axum::middleware::from_fn_with_state;
+use axum::routing::any;
 use axum::{Extension, Router};
 use tower_http::cors::{AllowHeaders, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -13,40 +14,60 @@ use utoipa_axum::routes;
 
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
+use crate::auth::owned_path::require_owned_path;
 use crate::routes::{
-    alignments, anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache,
-    conversions, dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup,
-    dictionary_media, documents, flashcards, health, local_dictionaries, media, media_availability,
+    account_sessions, alignments, anki, anki_exported, anki_package, anki_pending_deletions,
+    auth_server, conversion_cache, conversions, current_principal, dictionaries,
+    dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media, documents,
+    email_confirmation, flashcards, health, local_dictionaries, media, media_availability,
     media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
-    media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
+    media_waveform, openapi, password_reset, plugins, preferences, projects, review, sessions,
+    source_form, storage_status, stored_copies, stored_copy_fetch, subtitles, sync_changes,
+    sync_device_side, sync_dictionaries, timed_text, users,
 };
 use crate::state::AppState;
+use crate::sync::proxy::forward_to_remote;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
+/// The routes that need no token take only small JSON bodies.
+const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 
 /// Builds the complete application router together with its OpenAPI document.
 ///
-/// Every route checks the `Host` header. Every route except `/health` requires the bearer
-/// token.
+/// Every route checks the `Host` header. Every route except `/health`, `/auth/server`,
+/// `/auth/signup`, `/auth/login`, `/auth/confirm-email`, `/auth/password-reset` and `/auth/password`
+/// requires a bearer token.
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
     let (protected, _) = protected_routes().split_for_parts();
+    // The proxy reuses the documented account routes of the remote, so it stays out of the document.
     let protected = protected
+        .route("/sync/remote/{*path}", any(forward_to_remote))
         .layer(Extension(Arc::new(document.clone())))
-        .layer(from_fn_with_state(
-            Arc::clone(&state.config),
-            require_bearer_token,
-        ));
+        // A layer added later runs earlier, so the path check sees the principal the bearer token gives.
+        .layer(from_fn_with_state(state.clone(), require_owned_path))
+        .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
+    let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));
     let router = protected
         .merge(public)
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
-        .layer(TraceLayer::new_for_http())
+        .layer(TraceLayer::new_for_http().make_span_with(request_span))
         .with_state(state);
     (router, document)
+}
+
+/// Records the method and the path of a request, but not its query,
+/// since the media routes accept a token as a query parameter.
+fn request_span(request: &axum::extract::Request) -> tracing::Span {
+    tracing::debug_span!(
+        "request",
+        method = %request.method(),
+        path = %request.uri().path(),
+    )
 }
 
 /// Allows any origin, since the bearer token is what protects the API.
@@ -82,6 +103,13 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::update_flashcard,
             flashcards::delete_flashcard
         ))
+        .routes(routes!(review::get_review_summary))
+        .routes(routes!(review::list_review_counts))
+        .routes(routes!(review::get_review_queue))
+        .routes(routes!(review::answer_review))
+        .routes(routes!(review::undo_review_answer))
+        .routes(routes!(review::raise_review_allowance))
+        .routes(routes!(review::hold_review_card, review::lift_review_hold))
         .routes(routes!(anki_package::export_anki_package))
         .routes(routes!(anki_exported::record_anki_exported))
         .routes(routes!(anki::render_anki_notes))
@@ -102,6 +130,13 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(source_form::get_source_form))
         .routes(routes!(source_form::submit_source_step))
         .routes(routes!(media_stream::stream_media_file))
+        .routes(routes!(
+            stored_copies::put_stored_copy,
+            stored_copies::get_stored_copy
+        ))
+        .routes(routes!(stored_copies::set_upload_choice))
+        .routes(routes!(stored_copy_fetch::fetch_stored_copy_route))
+        .routes(routes!(storage_status::get_storage_status))
         .routes(routes!(media_frame::get_media_frame))
         .routes(routes!(media_clip::get_media_clip))
         .routes(routes!(media_tracks::get_media_tracks))
@@ -150,10 +185,44 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(dictionary_lookup::lookup_text))
         .routes(routes!(dictionary_batch_lookup::lookup_texts))
         .routes(routes!(dictionary_media::get_dictionary_media))
+        .routes(routes!(current_principal::get_current_principal))
+        .routes(routes!(sessions::log_out))
+        .routes(routes!(account_sessions::list_sessions))
+        .routes(routes!(account_sessions::delete_session))
+        .routes(routes!(email_confirmation::resend_confirmation_email))
+        .routes(routes!(users::list_users, users::create_user))
+        .routes(routes!(users::set_user_role))
+        .routes(routes!(users::delete_user))
+        .routes(routes!(
+            sync_changes::list_sync_changes,
+            sync_changes::push_sync_changes
+        ))
+        .routes(routes!(
+            sync_dictionaries::get_dictionary_content,
+            sync_dictionaries::put_dictionary_content
+        ))
+        .routes(routes!(sync_device_side::get_sync_status))
+        .routes(routes!(sync_device_side::get_remote_auth_info))
+        .routes(routes!(
+            sync_device_side::link_sync_remote,
+            sync_device_side::unlink_sync_remote
+        ))
+        .routes(routes!(sync_device_side::run_sync))
+        .routes(routes!(
+            sync_device_side::list_sync_conflicts,
+            sync_device_side::dismiss_sync_conflicts
+        ))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(health::get_health))
+    OpenApiRouter::new()
+        .routes(routes!(health::get_health))
+        .routes(routes!(auth_server::get_server_auth_info))
+        .routes(routes!(sessions::sign_up))
+        .routes(routes!(sessions::log_in))
+        .routes(routes!(email_confirmation::confirm_email_address))
+        .routes(routes!(password_reset::request_password_reset))
+        .routes(routes!(password_reset::choose_new_password))
 }
 
 #[derive(utoipa::OpenApi)]

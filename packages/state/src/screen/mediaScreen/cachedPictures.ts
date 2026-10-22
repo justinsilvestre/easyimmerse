@@ -1,12 +1,13 @@
 import type { MediaFile } from "@easyimmerse/types";
 import { cacheEntry, type ServerCacheSlice } from "../../server/cacheEntry.ts";
 import type { ServerConfig } from "../../server/serverState.ts";
+import { isPlayedByServer } from "../isPlayedByServer.ts";
 import { isAudioFileName } from "../mediaFileExtensions.ts";
 
 /**
  * Tells whether a media file is known to show pictures, which a flashcard made from it takes a screenshot of:
- * for a file on the server's disk, the server found a video track among its tracks;
- * for a file the browser holds, whose name is not that of a sound file, the browser's probe found pictures.
+ * for a file the server plays, the server found a video track among its tracks;
+ * for a file only the browser holds, whose name is not that of a sound file, the browser's probe found pictures.
  * False while neither answer is in the server cache.
  */
 export function cachedHasPictures(
@@ -15,7 +16,7 @@ export function cachedHasPictures(
   mediaFile: MediaFile,
 ): boolean {
   const { source } = mediaFile;
-  if (source.kind === "path") {
+  if (isPlayedByServer(mediaFile)) {
     if (server === null) return false;
     const file = { projectId: mediaFile.project_id, mediaFileId: mediaFile.id };
     const tracks = cacheEntry(backend, "getMediaTracks", file)?.data;

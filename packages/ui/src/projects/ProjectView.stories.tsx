@@ -85,6 +85,7 @@ function sections(
         onSetUpAnkiConnect={fn()}
         onTurnOffAnkiConnect={fn()}
         onStartReview={fn()}
+        onReviewMore={fn()}
         onCheckConnection={fn()}
         onTryAnkiSyncAgain={fn()}
         onCopyAnkiSearch={fn()}

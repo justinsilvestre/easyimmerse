@@ -18,6 +18,8 @@ export type BackendError = {
   status: number | "OFFLINE" | "NETWORK";
   code?: string;
   message: string;
+  /** How many seconds the server asked the app to wait before trying again, when it said. */
+  retryAfterSeconds?: number;
 };
 
 export type BackendResult<T> = { data: T } | { error: BackendError };

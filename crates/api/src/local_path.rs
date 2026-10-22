@@ -1,51 +1,51 @@
 //! The one gate for every request that names a file on the server's own file system.
 //! A file inside one of the server's own directories is readable with any token, since
-//! the server put it there itself; any other path needs a token allowed to read local paths.
+//! the server put it there itself; any other path needs a principal allowed to read local paths.
 
 use std::io::ErrorKind;
 
 use axum::http::StatusCode;
 
 use crate::auth::error_body::{ApiFailure, bad_request, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
 
 /// The error code of a request whose token may not read files on the server.
 pub const LOCAL_PATHS_NOT_ALLOWED: &str = "local_paths_not_allowed";
 
-/// Reads the file at `path` when the request's token kind allows local paths.
+/// Reads the file at `path` when the request's principal may read local paths.
 pub async fn resolve_local_path(
-    token: TokenKind,
+    principal: &Principal,
     config: &ApiConfig,
     path: &str,
 ) -> Result<Vec<u8>, ApiFailure> {
-    ensure_local_path_readable(token, config, path)?;
+    ensure_local_path_readable(principal, config, path)?;
     tokio::fs::read(path)
         .await
         .map_err(|error| describe_read_error(path, error))
 }
 
-/// Reads the file at `path` as UTF-8 text when the request's token kind allows local paths.
+/// Reads the file at `path` as UTF-8 text when the request's principal may read local paths.
 pub async fn resolve_local_text(
-    token: TokenKind,
+    principal: &Principal,
     config: &ApiConfig,
     path: &str,
 ) -> Result<String, ApiFailure> {
-    ensure_local_path_readable(token, config, path)?;
+    ensure_local_path_readable(principal, config, path)?;
     tokio::fs::read_to_string(path)
         .await
         .map_err(|error| describe_read_error(path, error))
 }
 
-/// Checks that a file exists at `path` without reading it, when the request's token kind
+/// Checks that a file exists at `path` without reading it, when the request's principal
 /// allows local paths, and returns the file's canonical absolute path. Store this path rather
 /// than the one given, so that each file has a single spelling in storage.
 pub async fn resolve_local_file(
-    token: TokenKind,
+    principal: &Principal,
     config: &ApiConfig,
     path: &str,
 ) -> Result<String, ApiFailure> {
-    ensure_local_path_readable(token, config, path)?;
+    ensure_local_path_readable(principal, config, path)?;
     let canonical = tokio::fs::canonicalize(path)
         .await
         .map_err(|error| describe_read_error(path, error))?;
@@ -63,21 +63,24 @@ pub async fn resolve_local_file(
 }
 
 /// Checks that the request may read the file at `path`: any token may read a file in one
-/// of the server's own directories, and a token allowed to read local paths may read any.
+/// of the server's own directories, and a principal allowed to read local paths may read any.
 pub fn ensure_local_path_readable(
-    token: TokenKind,
+    principal: &Principal,
     config: &ApiConfig,
     path: &str,
 ) -> Result<(), ApiFailure> {
     if config.is_server_path(path) {
         return Ok(());
     }
-    ensure_local_paths_allowed(token, config)
+    ensure_local_paths_allowed(principal, config)
 }
 
 /// Checks that the request may name any file on the server's machine.
-pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Result<(), ApiFailure> {
-    if token.allows_local_paths(config) {
+pub fn ensure_local_paths_allowed(
+    principal: &Principal,
+    config: &ApiConfig,
+) -> Result<(), ApiFailure> {
+    if principal.allows_local_paths(config) {
         Ok(())
     } else {
         Err(ApiFailure::new(
@@ -109,7 +112,7 @@ mod tests {
 
     #[tokio::test]
     async fn reads_a_file_when_allowed() {
-        let text = resolve_local_text(TokenKind::Launch, &config(true), &fixture("sample.srt"))
+        let text = resolve_local_text(&Principal::Launch, &config(true), &fixture("sample.srt"))
             .await
             .unwrap();
         assert!(text.contains("-->"));
@@ -117,17 +120,19 @@ mod tests {
 
     #[tokio::test]
     async fn refuses_with_forbidden_when_not_allowed() {
-        let failure = resolve_local_text(TokenKind::Launch, &config(false), &fixture("sample.srt"))
-            .await
-            .unwrap_err();
+        let failure =
+            resolve_local_text(&Principal::Launch, &config(false), &fixture("sample.srt"))
+                .await
+                .unwrap_err();
         assert_eq!(failure.status, StatusCode::FORBIDDEN);
     }
 
     #[tokio::test]
     async fn names_the_refusal_code() {
-        let failure = resolve_local_path(TokenKind::Launch, &config(false), &fixture("sample.srt"))
-            .await
-            .unwrap_err();
+        let failure =
+            resolve_local_path(&Principal::Launch, &config(false), &fixture("sample.srt"))
+                .await
+                .unwrap_err();
         assert_eq!(failure.error.code, "local_paths_not_allowed");
     }
 
@@ -138,7 +143,7 @@ mod tests {
         std::fs::write(&file, "1\n00:00:00,000 --> 00:00:01,000\nhi\n").unwrap();
         let mut config = config(false);
         config.server_dirs.push(dir.path().to_path_buf());
-        let text = resolve_local_text(TokenKind::Launch, &config, &file.to_string_lossy())
+        let text = resolve_local_text(&Principal::Launch, &config, &file.to_string_lossy())
             .await
             .unwrap();
         assert!(text.contains("-->"));
@@ -148,13 +153,13 @@ mod tests {
     async fn resolves_an_existing_file_to_its_canonical_path() {
         let path = format!("{}/../../fixtures/./sample.mp4", env!("CARGO_MANIFEST_DIR"));
         let canonical = dunce::canonicalize(&path).unwrap();
-        let result = resolve_local_file(TokenKind::Launch, &config(true), &path).await;
+        let result = resolve_local_file(&Principal::Launch, &config(true), &path).await;
         assert_eq!(result, Ok(canonical.to_string_lossy().into_owned()));
     }
 
     #[tokio::test]
     async fn reports_a_directory_as_not_found() {
-        let failure = resolve_local_file(TokenKind::Launch, &config(true), &fixture(""))
+        let failure = resolve_local_file(&Principal::Launch, &config(true), &fixture(""))
             .await
             .unwrap_err();
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
@@ -162,7 +167,7 @@ mod tests {
 
     #[tokio::test]
     async fn reports_a_missing_file_as_not_found() {
-        let failure = resolve_local_path(TokenKind::Launch, &config(true), &fixture("missing"))
+        let failure = resolve_local_path(&Principal::Launch, &config(true), &fixture("missing"))
             .await
             .unwrap_err();
         assert_eq!(failure.status, StatusCode::NOT_FOUND);

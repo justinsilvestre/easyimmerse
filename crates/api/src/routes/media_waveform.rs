@@ -13,7 +13,7 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{chosen_audio_track, probe_media, resolve_source_path};
 use crate::state::AppState;
@@ -53,12 +53,12 @@ pub struct WaveformQuery {
 )]
 pub async fn get_media_waveform(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Query(query): Query<WaveformQuery>,
 ) -> Result<Json<WaveformResponse>, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = resolve_source_path(&state, token, &media_file).await?;
+    let path = resolve_source_path(&state, &principal, &media_file).await?;
     let service = state.conversion.as_ref().ok_or_else(waveform_unavailable)?;
     let container = probe_media(&state, &path).await?;
     let Some(track) = chosen_audio_track(&container, &media_file) else {

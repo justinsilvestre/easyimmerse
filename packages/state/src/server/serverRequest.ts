@@ -1,9 +1,13 @@
 import type {
+  AccountRole,
+  AccountUser,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
   AlignmentsResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  CreateUserRequest,
+  CurrentPrincipal,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
@@ -11,6 +15,7 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LinkRemoteRequest,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
   LookupQuery,
@@ -23,11 +28,18 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  ReviewAnswerResponse,
+  ReviewAnswerUndone,
+  ReviewHoldKind,
+  ReviewQueue,
+  ReviewRating,
   SourceStepRequest,
   SourceStepResponse,
+  StoredCopy,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
+  SyncStatus,
   TableLayout,
   TablePreview,
   TimedTextTrack,
@@ -51,6 +63,7 @@ import type {
   PickedDictionaryFile,
   PickedMediaFile,
 } from "../platform/effects.ts";
+import type { AccountVia } from "./serverSelectors.ts";
 
 /** A request to the server that an update may send, one member per endpoint an update needs. */
 export type ServerRequest =
@@ -193,7 +206,78 @@ export type ServerRequest =
       kind: "setAnkiConnect";
       projectId: string;
       usesAnkiConnect: boolean;
-    };
+    }
+  /** Ends the session the app's token belongs to. */
+  | { kind: "logOut" }
+  /** Creates an account on the server that `via` names, as only an administrator may. */
+  | { kind: "createUser"; via: AccountVia; request: CreateUserRequest }
+  /** Gives an account on the server that `via` names another role, as only an administrator may. */
+  | { kind: "setUserRole"; via: AccountVia; userId: string; role: AccountRole }
+  /** Deletes an account on the server that `via` names, and its sessions, as only an administrator may. */
+  | { kind: "deleteUser"; via: AccountVia; userId: string }
+  /** Fetches anew who the token used on the server that `via` names belongs to, as after the account's email address is confirmed. */
+  | { kind: "getCurrentPrincipal"; via: AccountVia }
+  /** Logs the account out on one of its devices. `isCurrent` tells whether it is this one; it is not sent. */
+  | {
+      kind: "deleteSession";
+      via: AccountVia;
+      sessionId: string;
+      isCurrent: boolean;
+    }
+  /** Mails the account another link that confirms its email address. */
+  | { kind: "requestConfirmationEmail"; via: AccountVia }
+  /** Logs the built-in server in to a remote, or signs up there, to keep a copy of the device's work on it. */
+  | { kind: "linkSyncRemote"; request: LinkRemoteRequest }
+  /** Logs the built-in server out of the remote it is linked to. The work on the device stays. */
+  | { kind: "unlinkSyncRemote" }
+  /** Asks the built-in server to sync with its linked remote now. */
+  | { kind: "runSync" }
+  /** Forgets the conflicts the built-in server recorded while syncing. */
+  | { kind: "dismissSyncConflicts" }
+  /** Records whether to keep a copy of a media file's bytes on a server. */
+  | {
+      kind: "setUploadChoice";
+      projectId: string;
+      mediaFileId: string;
+      isUploadChosen: boolean;
+    }
+  /** Sends the bytes of a file a browser holds for the server to keep a copy of. */
+  | {
+      kind: "uploadStoredCopy";
+      projectId: string;
+      mediaFileId: string;
+      file: PickedMediaFile;
+    }
+  /** Has the built-in server download the copy its remote keeps of a media file. */
+  | { kind: "fetchStoredCopy"; projectId: string; mediaFileId: string }
+  /** Lists the cards of a review session of the project, in the order they are shown. */
+  | { kind: "getReviewQueue"; projectId: string }
+  /** Records the user's rating of a card, with the time from the card appearing to the rating. */
+  | {
+      kind: "answerReview";
+      projectId: string;
+      flashcardId: string;
+      rating: ReviewRating;
+      durationMs: number;
+    }
+  /** Undoes the project's latest answer, which the time of its log entry names. */
+  | { kind: "undoReviewAnswer"; projectId: string; answerId: string }
+  /** Raises the number of new cards, or of reviews, the project's review shows today. */
+  | {
+      kind: "raiseReviewAllowance";
+      projectId: string;
+      extraNewCards: number;
+      extraReviews: number;
+    }
+  /** Sets a card aside from the review: buries it until tomorrow, or suspends it. */
+  | {
+      kind: "holdReviewCard";
+      projectId: string;
+      flashcardId: string;
+      hold: ReviewHoldKind;
+    }
+  /** Brings a card back into the review, as unburying or unsuspending it does. */
+  | { kind: "liftReviewHold"; projectId: string; flashcardId: string };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -248,6 +332,36 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  logOut: void;
+  createUser: AccountUser;
+  setUserRole: AccountUser;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteUser: void;
+  getCurrentPrincipal: CurrentPrincipal;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteSession: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  requestConfirmationEmail: void;
+  linkSyncRemote: SyncStatus;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  unlinkSyncRemote: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  runSync: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  dismissSyncConflicts: void;
+  setUploadChoice: MediaFile;
+  uploadStoredCopy: StoredCopy;
+  fetchStoredCopy: StoredCopy;
+  getReviewQueue: ReviewQueue;
+  answerReview: ReviewAnswerResponse;
+  undoReviewAnswer: ReviewAnswerUndone;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  raiseReviewAllowance: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  holdReviewCard: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  liftReviewHold: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */
@@ -255,6 +369,8 @@ export type RequestFailure = {
   status: number | "OFFLINE" | "NETWORK" | "ABORTED" | "NO_DATA";
   code?: string;
   message: string;
+  /** How many seconds the server asked the app to wait before trying again, when it said. */
+  retryAfterSeconds?: number;
 };
 
 /** The failure of a request that was aborted, whether in flight or while it waited. */

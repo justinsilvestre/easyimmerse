@@ -41,7 +41,8 @@ mise run devtools       # Redux DevTools server for the desktop and mobile apps;
 - The **development database** is the file `.dev/server.sqlite`. To start with a fresh database, stop the task, delete `.dev/`, and start the task again.
 - A new database is **seeded with two placeholder projects**: "Spanish practice", with Spanish as the target language, and "Japanese drama", with Japanese. Both translate into English.
 - Once per database, the server also **adds sample content** from the checkout's `fixtures/` directory. Each placeholder project that has no media yet receives a short sample video with subtitles in its target language and in English, the Japanese project also receives a Japanese novel, and small dictionaries for both languages are imported.
-- The **sample video and novel do not open under this task.** They are stored as paths into `fixtures/`, and this server runs without `--allow-local-paths`, so it refuses to read files outside its own directories. The desktop app and `web:desktop` allow local paths, so the same sample content opens there.
+- Each placeholder project also receives a **sample book with its English translation and a narrated clip**: the opening of *Lazarillo de Tormes* for Spanish and of Akutagawa's 杜子春 for Japanese. Each book is paired with its translation and aligned with it sentence by sentence, and the clip, about a minute of a LibriVox reading, is aligned with the book's first sentences. Each book is added once per database, so an older database receives a book that was added to the seed after it was created.
+- The **sample media do not open under this task.** They are stored as paths into `fixtures/`, and this server runs without `--allow-local-paths`, so it refuses to read files outside its own directories. The desktop app and `web:desktop` allow local paths, so the same sample content opens there.
 - The server's **directories** are set with a flag or an environment variable each.
 
   | Directory | Flag | Environment variable | Under `web-dev` |
@@ -115,6 +116,23 @@ mise exec -- pnpm --filter @easyimmerse/extension build:firefox    # Firefox, in
 
 Set `VITE_EASYIMMERSE_SERVER_URL` and `VITE_EASYIMMERSE_TOKEN` before building to point the extension at a server. Without them it runs offline through the WebAssembly module.
 
+Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
+
+### Running a server of your own
+
+To run an instance of the easyImmerse server, build its release binary and start it on a database file:
+
+```sh
+cargo build --release -p easyimmerse-server
+target/release/easyimmerse-server serve --db server.sqlite
+```
+
+- Without `--db`, the server keeps its **data in memory**, and the data is lost when the server stops.
+- The server **listens at `127.0.0.1:8787`** by default. To reach it from other machines, bind it to every interface with `--bind 0.0.0.0:8787`, and name each address that clients use with `--expected-host`, for example `--expected-host 192.168.1.5:8787`. The server refuses a request whose Host header names any other address.
+- The server's **directories and ffmpeg** are set as described under `web-dev` above. `easyimmerse-server serve --help` lists every flag.
+- The server is meant to serve the web app at its own address, but **does not serve it yet**. Until it does, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and serve `apps/web/dist` with any static file server.
+- By default every client presents the server's launch token. To let several people log in with their own accounts, and to send them email for address confirmation and password resets, see [docs/self-hosting.md](docs/self-hosting.md).
+
 ### Generated code
 
 Rust types are the source of truth for everything that crosses HTTP or WebAssembly. After changing one, regenerate the TypeScript types and the OpenAPI document and commit the output. CI fails when it is stale.
@@ -175,7 +193,21 @@ On Linux the Tauri runtime initializes GTK before the check runs, so the command
 
 #### One-off CI runs
 
-To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` job never runs on pull requests, so a bundle tag is how to check a branch's installers before it merges.
+To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `apk`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` and `apk` jobs never run on pull requests, so a tag is how to check a branch's installers before it merges.
+
+#### Test builds
+
+CI keeps the builds it makes as artifacts of each workflow run for 14 days, so prerelease versions can be tested without a GitHub release. Open a run of the workflow on the Actions tab and download from the Artifacts list at the bottom of its summary page. Downloading needs a GitHub sign-in.
+
+- `easyimmerse-desktop-<runner>`: the installers from the `native` workflow's `bundle` job, one artifact per platform (`.dmg` on macOS; `.deb`, `.rpm`, and `.AppImage` on Linux; `.msi` and `-setup.exe` on Windows).
+- `easyimmerse-android-arm64`: a debug APK from the `native` workflow's `apk` job, for 64-bit ARM phones. Allow installs from unknown sources on the phone to open it.
+- `easyimmerse-extension`: the Chrome and Firefox zips from the `extension` workflow. Unzip one and load it unpacked as described under Browser extension.
+
+The desktop installers and the APK are built only on pushes to main and on tags, and a run that touches none of a workflow's paths builds nothing new. The installers are unsigned: macOS refuses to open the app until `xattr -dr com.apple.quarantine /Applications/easyImmerse.app` clears its quarantine flag, and Windows shows a SmartScreen warning that "More info" then "Run anyway" passes.
+
+For a link that needs no sign-in, [nightly.link](https://nightly.link) serves the newest artifact of a branch, for example `https://nightly.link/justinsilvestre/easyimmerse/workflows/native/main/easyimmerse-android-arm64.zip`.
+
+iOS has no CI build for devices, because installing on an iPhone needs code signing; see the native app's README to build and install one from a Mac.
 
 ## Repository structure
 
@@ -204,6 +236,7 @@ crates/               the Rust workspace
 ├── media-ffmpeg/     ffprobe probing, keyframe listing, encoder discovery, and ffmpeg command lines, including frame grabs and audio clips for flashcards
 ├── conversion/ *     converting media into HLS segments as it plays, with the on-disk cache and its budget
 ├── storage/          persistence
+├── srs/              scheduling of flashcard reviews with FSRS: the next state and interval of a card after an answer
 ├── anki/             Anki notes, note types and deck packages (.apkg) made from flashcards
 ├── api/              the HTTP API; routes in src/routes/, generated document in openapi.json
 ├── plugin-api/       the plugin interfaces, written in WIT under wit/ (MIT licensed)
@@ -250,6 +283,7 @@ Notes on the internals of individual parts live beside them:
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
 - [scripts/storybook-diff/README.md](scripts/storybook-diff/README.md): the Storybook screenshot diff, locally and on pull requests, and how its captures stay deterministic.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
+- [docs/self-hosting.md](docs/self-hosting.md): running the standalone server with accounts, and managing them with the `users` command.
 - [docs/](docs/): the product documentation: overview, user stories, UX refinements, bug reports, and the [alignment data](docs/alignment-data.md) format.
 
 ## License

@@ -13,7 +13,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_dictionary_files::read_dictionary_files;
 use crate::local_path::ensure_local_paths_allowed;
 use crate::local_table_file::{PREVIEW_BYTES, is_table_file, read_table_file};
@@ -63,12 +63,17 @@ pub struct PreviewLocalDictionaryTableRequest {
 )]
 pub async fn import_local_dictionary(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Json(request): Json<ImportLocalDictionaryRequest>,
 ) -> Result<(StatusCode, Json<ImportJobStarted>), ApiFailure> {
-    ensure_local_paths_allowed(token, &state.config)?;
+    ensure_local_paths_allowed(&principal, &state.config)?;
     let files = read_local_dictionary(request.path, None).await?;
-    Ok(start_import(&state, files, request.table_layout))
+    Ok(start_import(
+        &state,
+        principal.owner_id(),
+        files,
+        request.table_layout,
+    ))
 }
 
 /// Detects what each column of a table at a local path holds and returns that layout with the table's first rows,
@@ -91,10 +96,10 @@ pub async fn import_local_dictionary(
 )]
 pub async fn preview_local_dictionary_table(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Json(request): Json<PreviewLocalDictionaryTableRequest>,
 ) -> Result<Json<TablePreview>, ApiFailure> {
-    ensure_local_paths_allowed(token, &state.config)?;
+    ensure_local_paths_allowed(&principal, &state.config)?;
     let files = read_local_dictionary(request.path, Some(PREVIEW_BYTES)).await?;
     let preview =
         tokio::task::spawn_blocking(move || preview_table_in(DictionarySource::new(files)?))

@@ -28,7 +28,7 @@ As a user:
   - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
-    - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
+    - File menu: New project, Open project, Export flashcards, Import/export project, Exit
     - Edit menu: Undo, Redo, Cut, Copy, Paste
     - View menu: Toggle fullscreen, Toggle subtitles panel, Toggle waveform visualization
     - Window menu: Minimize, Zoom, Bring all to front
@@ -48,6 +48,12 @@ As a user:
 - when I am on the home screen:
   - [x] I see a list of my recent projects (if I have any), most recently opened first
   - [x] I see a button to create a new project
+- when cards of a project are due for review in the easyImmerse SRS:
+  - [x] the project in the list shows how many are due
+  - [x] the project's row in the list shows how many cards I would review if I started now: reviews due today, cards I am learning that are due now, and new cards left for today
+  - [x] I can start reviewing them from the list with one click or tap, without opening the project first
+- when no card of a project is due, but it has new cards I have never reviewed:
+  - [x] I can start learning them from the list with one click or tap
 - when I click on a project in the list:
   - [x] I am taken to the project's screen
 - when I click on the "Create new project" button:
@@ -104,7 +110,6 @@ As a user:
   - [x] the list's heading is a menu that narrows it to videos, audio or ebooks, each choice counting its files
   - [x] I can click on a media file to open it
   - [x] I can remove a media file from the project through the menu on its row
-  - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
   - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
   - [x] I can see the project flashcards panel
@@ -114,21 +119,28 @@ As a user:
   - [x] I can see a button tagged with the plugin name button beside "Add media", which opens the plugin's media-import interface
 - when I submit within the plugin's media-adding interface:
   - [x] I see progress for the operation of adding resources
+- when I leave the project while a plugin is adding media to it:
+  - [x] the footer shows its progress
+  - [x] clicking it in the footer brings me back to the project
+- when a plugin fails to add media while I am outside the project:
+  - [x] the footer says so until I close the plugin's window
+- when a plugin finishes adding media while I am outside the project:
+  - [x] a notice tells me
 - when I add a media file to the project:
   - [x] I see the new media file in the list of media files
   - [x] the new media file is opened
 - when I click "Remove" next to a media file:
   - [x] the media file is removed from the project's list; the user's files are left alone
-- when I save the project via the menu bar or keyboard shortcut:
-  - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
-- while I am working in a project:
-  - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- while I am editing a flashcard:
+  - [x] my changes that are not saved yet are kept on my device as I make them, so an unexpected crash does not lose them
 - when I try to close the app while a flashcard has unsaved changes or is still being saved:
   - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
-- when I open the app after it closed unexpectedly:
-  - [ ] the last automatically saved state of my project is reloaded
-- when the last automatically saved state cannot be loaded:
-  - [ ] I am told about the problem, and the app falls back to the most recent earlier autosave that loads
+- when a flashcard has waited more than about two seconds to be saved, as when the server is slow or unreachable:
+  - [x] the footer says how many flashcards are being saved, until their saves land or fail
+- when I open the app after it closed while flashcards had changes that were not saved, were being saved, or had failed to be saved:
+  - [x] a notice says how many flashcards were not saved, and opens a list of them, where I can retry, open or discard each one with the changes I had made
+- when the changes kept on my device cannot be read:
+  - [x] I am told that they could not be recovered
 
 ---
 
@@ -515,10 +527,8 @@ As a user:
   - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
   - [x] the dictionary pop-up prompts me to set up a dictionary
-- when I have made flashcards without having saved my work:
-  - [ ] I see an indication that my work is unsaved, and a button to save it
-- when I have made flashcards without having logged in:
-  - [ ] I see an indication that my work is not backed up, and a button to log in or sign up
+- while the open flashcard has changes that are not saved yet:
+  - [x] the form shows that they are not saved yet beside the save button
 
 ---
 
@@ -531,6 +541,9 @@ As a user:
   - [x] I can remove a dictionary
 - when I add a dictionary that is to be stored locally:
   - [ ] I can see the import progress visualized in the progress bar and as a number of entries out of the total which have been processed so far
+    - The bar fills to the share of the dictionary's files read, for Yomitan dictionaries so far, and the entries stored so far are counted; the total number of entries is not known before the import ends.
+  - [x] when I leave the dictionaries settings, the import goes on, and the footer shows the file being added and how far it is; clicking it brings me back to the dictionaries settings
+  - [x] if the import fails while I am elsewhere, the footer says so until I dismiss the failure in the dictionaries settings
 - when a dictionary fails to be added:
   - [ ] a notice informing me of the failure stays on the screen until dismissed
 - when I attempt to add a dictionary that is already in my list:
@@ -592,9 +605,19 @@ As a user:
   - [x] I can open a "More options" menu with buttons to set up AnkiConnect and to start reviewing flashcards in the easyImmerse SRS
 - when flashcards are waiting in the Anki updates queue, and I have no reviews in the easyImmerse SRS due in the future for flashcards of this project:
   - [x] I see a preview of the first-created flashcard in the Anki updates queue
-- when AnkiConnect is off, and I have reviews in the easyImmerse SRS due in the future for flashcards of this project:
-  - [ ] I can see the front of the next flashcard due for review, and a button to continue reviewing
-  - [ ] I can open a "More options" menu with buttons to export an Anki deck package and to set up AnkiConnect
+- when AnkiConnect is off, and I have reviewed flashcards of this project in the easyImmerse SRS:
+  - [x] I can see how many cards are due now and how many new cards are left for today
+  - [x] I can see the front of the next card due for review, or of the next new card when nothing is due
+  - [x] I can open a "More options" menu with buttons to export an Anki deck package and to set up AnkiConnect
+- when cards are due now:
+  - [x] I see a button to review them, which names their number
+- when nothing is due now, but new cards are left for today:
+  - [x] I see a button to learn them, which names their number
+- when nothing is due now, and today's new cards are done:
+  - [x] I see that I am done for today, and when the next card is due
+- when the day's limit of reviews is reached and more are due:
+  - [x] the panel says "Daily limit reached" and how many more are due
+  - [x] I can review 100 more now, which opens the review
 - when I click the button to set up AnkiConnect for direct export to Anki:
   - [x] I see what to install, and that Anki must be running
 - when I switch on AnkiConnect for the project:
@@ -680,6 +703,7 @@ As a user:
 - when I choose to export a project:
   - [ ] I am prompted to choose where to save a project file containing the project's settings, flashcards, and media files registry
   - [ ] I can choose whether to include the media files and dictionaries in the project file
+  - [ ] the project counts as backed up until I next change it, so on its own it no longer keeps the footer's sign that my work is not backed up
 - when I choose to import a project:
   - [ ] I am prompted to select a project file
   - [ ] the imported project appears in my list of projects
@@ -690,11 +714,88 @@ As a user:
 
 ### Reviewing flashcards
 
-To be implemented after MVP.
+The built-in review schedules cards with FSRS, the algorithm Anki uses, at a desired retention of 90%, with no settings to adjust. A user who wants to tune the scheduling exports to Anki, with the review progress.
 
 As a user:
+- when I start reviewing the flashcards of a project:
+  - [x] the review takes the whole screen, with nothing but the card, a way back, Undo and a "More" menu
+  - [x] the cards due for review come first, then the cards I am learning, then up to twenty new cards for the day, in the order I made them
+- when a card is shown:
+  - [x] I see its front, laid out as my project's flashcard settings say
+  - [x] I can open a "More" menu that shows how many cards are left in the session (new, learning and due), with buttons to edit the card's flashcard, bury the card, suspend it, turn "Show intervals on answer buttons" on or off, and delete the flashcard
+  - [ ] its audio plays by itself when the audio is on the front
+  - [x] I can replay the audio with its button, or with R
+  - [x] I can show the answer with the button, Space or Enter
+- when the answer is shown:
+  - [x] the back appears beneath the front, which stays in view
+  - [ ] its audio plays by itself when the audio is on the back
+  - [x] I can rate the card Forgot or Remembered, with the buttons or with 1 and 2; Space rates it Remembered
+  - [x] the next card appears as soon as I rate
+- when I turn on "Show intervals on answer buttons" in the More menu, which is off at first:
+  - [x] each rating button shows the corresponding review interval
+  - [x] the setting stays on for later sessions on this device, until I turn it off
+- when I rate a card Forgot:
+  - [x] it comes back ten minutes later, or sooner once nothing else is left in the session
+- when I rate a new card Remembered:
+  - [x] it is due again in a couple of days
+- when I rate a card by mistake:
+  - [x] I can undo the latest rating with Undo or Z, and the card is shown again
+- when a card is longer than the screen:
+  - [x] the card scrolls, while the counts, the way back and the rating buttons stay in place
+- when the card's media file cannot be read on this device:
+  - [x] the audio and the screenshot are left out, and a line under the card says so
+- when the media file the card was made from has been removed from the project:
+  - [x] the More menu does not offer to edit the card's flashcard
+- when I have reviewed every card for today:
+  - [x] I see that I am done for today, how many cards I reviewed, and when a card I am learning comes back later today
+  - [x] I can go back to the project
+  - [x] I can learn twenty more new cards, when the project has more
+- when I open the review while nothing is due and no new cards are left for today:
+  - [x] I see that there is nothing to review, and when the next card is due
+- when I open the review of a project with no flashcards:
+  - [x] I am told to make flashcards while I watch or read
+- when I leave the review, with the arrow, Escape or by closing the app:
+  - [x] every rating I gave is kept, since each is saved as I give it
+- when it is late at night:
+  - [x] the day's new cards and due counts roll over at 4 a.m. in my own time zone, not at midnight
+- when I delete a flashcard:
+  - [x] its review history goes with it
+- when I bury or suspend a card, from the More menu:
+  - [x] I can bury it until tomorrow, so that it leaves the session and comes back when the next day begins at 4 a.m.
+  - [x] I can suspend it, so that it stays out of the review until I unsuspend it
+  - [x] the next card appears at once
+  - [x] Undo takes a bury or a suspension back, as it does a rating
+- when I edit the card's flashcard, from the More menu:
+  - [x] the media file the flashcard was made from opens, with the flashcard in the editor
+- when I delete the card's flashcard, from the More menu:
+  - [x] I am asked to confirm first, and once I do, the next card appears at once
+- when I have forgotten a card under review eight times:
+  - [x] it is flagged as a leech above the card, telling me how often I forgot it
+  - [x] I can suspend it from the flag
+- when more than 200 reviews are due in a day:
+  - [x] a day shows at most 200 reviews, and the reviews due beyond that wait for the next days
+  - [x] no new cards are introduced while any wait
+  - [x] at the end of the session I see how many are held back, that they will be distributed across the next few days' review sessions and that new cards are paused
+  - [x] I can review 100 more now
+- when I tap the card's screenshot:
+  - [x] it shows at full size over the review
+  - [x] closing it, or moving to the next card, hides it
+- when I have given 64 answers on later days than each card's previous answer, across all my projects:
+  - [x] the scheduling is fitted to my own answers in the background when I start a session, and fitted again every thirty days
+  - [x] until then, the default FSRS parameters schedule
+- when I open a flashcard that I suspended, in the editor:
+  - [x] it says so and offers to unsuspend it
+- when I delete a flashcard elsewhere while its card is in the session:
+  - [x] the session skips it
+- when I edit a flashcard while its card is in the session:
+  - [x] the card shows the new content
 - when I export flashcards that I have reviewed in easyImmerse to Anki:
-  - [ ] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
+  - [x] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
+  - [x] my review history comes with the cards, so Anki's scheduling continues from it
+  - [x] buried and suspended cards reach Anki buried and suspended
+  - [x] a leech reaches Anki with its "leech" tag
+  - [x] the package tells Anki that my days begin at 4 a.m. in my time zone, so due days match
+  - [x] a card's progress reaches Anki with the first package that holds the card; a later package refreshes its content but not its progress, as Anki works
 
 ---
 
@@ -745,12 +846,14 @@ As a web app user:
 
 As a web/mobile app user connected to my own server (self-hosted or on the local network):
 - when I add a media file from the browser:
-  - [ ] I can upload it to the server to make it available on other devices
+  - [x] I can upload it to the server to make it available on other devices
   - [ ] I can choose to delete the local copy of the file after it is uploaded, to save space on my device
 - when I add a media file from the browser, but it is in a format not widely supported:
   - [ ] I am notified that the server will convert it to a widely supported format, and that the original file will not be kept if I choose to delete it after upload
 
 As a web/mobile app user who is not logged in:
+- when I create a project, save flashcards or change a project's settings:
+  - [ ] they are saved in this browser, and are there when I next open the app in it
 - when I add a resource (media file, subtitles file, dictionary file, etc.) to the app:
   - [ ] the file stays on my device and is not uploaded anywhere
   - [ ] I see a warning that the resources are only available on this device, will be cleared if my browser data is cleared (either by me or by an automatic cleanup), and that I should back them up if I want to keep them or use them on other devices
@@ -765,23 +868,75 @@ As a web/mobile app user who is not logged in:
 
 As a user:
 - when I choose to sign up or log in:
-  - [ ] I can create an account with my email address
-  - [ ] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
-  - [ ] I can keep using all offline features of the app without an account
+  - [x] I can create an account with my email address
+  - [x] I can log in to a self-hosted easyImmerse server, instead of using the easyImmerse cloud, by entering its address (in a field revealed by clicking "More options")
+  - [x] I can keep using all offline features of the app without an account
+- while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
+  - [x] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+  - [x] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
+- when all my work is backed up:
+  - [x] the sign is gone
+- a project counts as backed up when any of these is true:
+  - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
+  - [ ] I have exported it to a project file since I last changed it (in any app)
+  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
+- when I enter the address of a server that does not have accounts:
+  - [x] I am told that the server has no accounts, and I stay in offline mode
+- when I try to sign up on a server whose sign-up is closed:
+  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I choose a password while signing up:
+  - [x] I see how strong it is as I type, and how to make it stronger
+- when I sign up on a server that can send email:
+  - [x] I confirm my email address by following a link sent to it
+- when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
+  - [x] I am told which of the two is wrong
+- when I try to log in with a wrong password:
+  - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
+- when I fail to log in too many times in a row:
+  - [x] I am told how many minutes to wait before trying again
+- when I have forgotten my password, on a server that can send email:
+  - [x] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
+- when I am logged in:
+  - [x] I see my email address and my role, and a button to log out
+  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+  - [x] I see the devices I am logged in on, and can log out any of them from here
+  - [x] I see my own projects, flashcards and dictionaries
+- when I am logged into a server besides the easyImmerse cloud:
+  - [x] I see the server's address, and can log out of it
+- when I log out:
+  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
+  - [x] other users logged in on the same machine or server cannot see or change them
+- when I log out of the web app while some of my flashcards have not been saved to the server yet:
+  - [x] I am told how many would be lost, and can stay logged in to save them or log out anyway
+- when I log out in the desktop app or the mobile app:
+  - [x] my work stays on this device, and my new changes are no longer backed up
+- when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
+  - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
+  - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
+- when I am an administrator and open the Account section:
+  - [x] I see the server's accounts with their roles
+  - [x] I can create an account by giving an email address, a password and a role
+  - [x] I can change an account's role
+  - [x] I can delete an account after confirming, which logs out anyone using it
+- when I try to demote or delete the server's only administrator:
+  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
 - when I subscribe:
   - [ ] I can choose the amount I pay on a sliding scale
   - [ ] I can manage or cancel my subscription from the account settings
 
 As a privileged user (a subscriber or a self-hosted server account holder):
 - when I am logged in on a device:
-  - [ ] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
-  - [ ] changes I make on one device appear on my other devices
-  - [ ] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
-  - [ ] I can choose which media files are uploaded to the cloud
+  - [x] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
+  - [x] changes I make on one device appear on my other devices
+  - [x] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
+  - [x] I can choose which media files are uploaded to the cloud
 - when I open the cloud storage settings:
-  - [ ] I see how much of my storage quota is used, and can delete files from the cloud
+  - [x] I see how much of my storage quota is used, and can delete files from the cloud
 - when a change conflicts with one made on another device:
-  - [ ] the more recent change is kept, and I am notified
+  - [x] the more recent change is kept, and I am notified
+  - [x] the account settings list the conflicting changes by project, and within a project by media file
+- when there are more conflicting changes than the account settings list at first:
+  - [x] I can list all of them with a "Show all" button
 
 ---
 
@@ -797,6 +952,7 @@ As a web/mobile app user:
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
   - [ ] the two devices are paired, and my projects, flashcards, and dictionaries are synchronized between them
   - [ ] media files on the desktop can be played on the paired device without copying them
+  - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
 
 ---
 
@@ -810,6 +966,7 @@ As a desktop app user:
   - [ ] I can see the server's status, including whether it is running and whether it is reachable from other devices on the local network
   - [ ] I can see the server's logs, including any errors or warnings
   - [ ] I can configure whether to start the server automatically when the app starts
+  - [ ] I can choose whether the server serves the complete web app or only the API
 - when I close the app with the server running:
   - [ ] the server continues to run in the background, and I can see its status in the system tray or menu bar
 - when I use the CLI:
@@ -834,6 +991,23 @@ As a standalone server user:
 - when I install the server without the desktop app:
   - [ ] I can start and stop it from the command line, and configure it through a config file or command-line options
   - [ ] the server offers the same user account management as the desktop app's server
+- when I start the server:
+  - [ ] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
+- when I start the server with `--accounts`:
+  - [x] people can log in to it with an email address and password
+  - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
+- when I start the server with `--accounts --open-signup`:
+  - [x] anyone who can reach the server can sign up for an account, and is a library user
+- when I start the server with `--accounts` but not `--open-signup`:
+  - [x] nobody can sign up, and only an administrator can add accounts
+- when I start the server with neither `--accounts` nor `--token`:
+  - [x] it makes a random launch token and prints it to standard error
+- when I run `easyimmerse-server users create` with an email address and a role:
+  - [x] an account is created in the server's database, with the password I give on standard input or in `EASYIMMERSE_PASSWORD`, so that I can create the first administrator without the server running
+- when I run `easyimmerse-server users list`, `users set-role` or `users delete`:
+  - [x] I see the accounts with their roles, change an account's role, or delete an account together with its sessions
+- when I run `easyimmerse-server users set-password` with an email address:
+  - [x] the account gets the new password, and everyone logged in to it is logged out
 
 ---
 

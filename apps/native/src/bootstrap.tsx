@@ -26,6 +26,7 @@ export async function bootstrap(): Promise<void> {
   const store = createAppStore(
     effects,
     createBackendStoreParts(createHttpBackendClient(server), server),
+    import.meta.env.VITE_EASYIMMERSE_CLOUD_URL || null,
     await findDevToolsComposer(platform),
   );
   createRoot(findRootElement()).render(
@@ -61,7 +62,10 @@ function readInjectedConfig(): {
       "The native shell did not inject window.__EASYIMMERSE__ before the app started.",
     );
   }
-  return { server, platform: injected.platform };
+  return {
+    server: { ...server, bundledIn: injected.platform },
+    platform: injected.platform,
+  };
 }
 
 function findRootElement(): HTMLElement {

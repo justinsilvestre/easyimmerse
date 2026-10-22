@@ -1,4 +1,6 @@
 import type { Action } from "redux";
+import type { AccountAction } from "../account/accountActions.ts";
+import { accountActions } from "../account/accountActions.ts";
 import type { AnkiAction } from "../anki/ankiActions.ts";
 import { ankiActions } from "../anki/ankiActions.ts";
 import type { FlashcardAction } from "../flashcards/flashcardActions.ts";
@@ -11,6 +13,10 @@ import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
+import type { RecoveryAction } from "../recovery/recoveryActions.ts";
+import { recoveryActions } from "../recovery/recoveryActions.ts";
+import type { ReviewAction } from "../review/reviewActions.ts";
+import { reviewActions } from "../review/reviewActions.ts";
 import type { RouteAction } from "../route/routeActions.ts";
 import { routeActions } from "../route/routeActions.ts";
 import type { LookupAction } from "../screen/lookup/lookupActions.ts";
@@ -25,6 +31,8 @@ import type { ServerAction } from "../server/serverActions.ts";
 import { serverActions } from "../server/serverActions.ts";
 import type { StoredPlacesAction } from "../storedPlaces/storedPlacesActions.ts";
 import { storedPlacesActions } from "../storedPlaces/storedPlacesActions.ts";
+import type { SyncAction } from "../sync/syncActions.ts";
+import { syncActions } from "../sync/syncActions.ts";
 import type { StartupAction } from "./startupActions.ts";
 import { startupActions } from "./startupActions.ts";
 
@@ -37,12 +45,16 @@ const featureActionCreators = [
   readerScreenActions,
   preferencesActions,
   storedPlacesActions,
+  recoveryActions,
   flashcardActions,
   platformActions,
   serverActions,
   noticesActions,
   operationsActions,
   ankiActions,
+  accountActions,
+  reviewActions,
+  syncActions,
 ] as const;
 
 /** The action creators of each feature. A type-level test checks that no two declare the same action type. */
@@ -71,12 +83,16 @@ export type AppAction =
   | ReaderScreenAction
   | PreferencesAction
   | StoredPlacesAction
+  | RecoveryAction
   | FlashcardAction
   | PlatformAction
   | ServerAction
   | NoticesAction
   | OperationsAction
-  | AnkiAction;
+  | AnkiAction
+  | AccountAction
+  | ReviewAction
+  | SyncAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

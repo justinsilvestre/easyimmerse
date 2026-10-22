@@ -1,3 +1,53 @@
+export {
+  type AccountServerOptions,
+  type SignInFormView,
+  selectAccountServerOptions,
+  selectCanSubmitSignIn,
+  selectIsLinking,
+  selectIsSignInFormStarted,
+  selectIsSigningOut,
+  selectIsUnlinking,
+  selectLogOutDroppedCount,
+  selectPasswordStrength,
+  selectSignInForm,
+} from "./account/accountSelectors.ts";
+export {
+  selectConfirmationEmailMessage,
+  selectHasSentConfirmationEmail,
+  selectIsSendingConfirmationEmail,
+} from "./account/confirmationEmailSelectors.ts";
+export { describeDevice } from "./account/describeDevice.ts";
+export {
+  selectDeviceLogOutFailureMessage,
+  selectIsLoggingOutDevice,
+} from "./account/devicesSelectors.ts";
+export {
+  type MailedLinkView,
+  selectMailedLink,
+  selectNewPasswordStrength,
+} from "./account/mailedLinkSelectors.ts";
+export type {
+  PasswordStrength,
+  PasswordStrengthLevel,
+} from "./account/passwordStrength.ts";
+export { type MailedLink, readMailedLink } from "./account/readMailedLink.ts";
+export {
+  connectionNotKeptCode,
+  type SignInAttempt,
+  type SignInOutcome,
+} from "./account/signInAttempt.ts";
+export type {
+  ServerOffer,
+  SignInMode,
+  SignInServerChoice,
+} from "./account/signInForm.ts";
+export {
+  type NewUserFormView,
+  selectDeletionToConfirm,
+  selectNewUserForm,
+  selectUserChangeFailureMessage,
+  selectUserChangeInFlight,
+} from "./account/userManagementSelectors.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
 export type {
@@ -26,6 +76,7 @@ export {
   type AnkiUpdatesQueue,
   type FlashcardSync,
   type PackageSync,
+  type ReviewSync,
   selectFlashcardSync,
 } from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";
@@ -40,6 +91,11 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export {
+  type BackupSign,
+  selectBackupSign,
+} from "./backup/selectBackupSign.ts";
+export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
 export { draftFromCue } from "./flashcards/draftFromCue.ts";
@@ -76,9 +132,14 @@ export {
   type StatusLineSave,
   selectStatusLineSaves,
 } from "./flashcards/selectStatusLineSaves.ts";
+export type { FooterActivity } from "./footer/footerActivity.ts";
+export { selectFooterActivities } from "./footer/selectFooterActivities.ts";
 export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
 export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
 export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
+export { selectReviewKeyBinding } from "./keys/selectReviewKeyBinding.ts";
+export type { MediaImportSource } from "./mediaImports/mediaImportWizard.ts";
+export { selectMediaImport } from "./mediaImports/selectMediaImport.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -102,6 +163,10 @@ export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
 export type { Appearance } from "./preferences/appearance.ts";
 export {
+  isPersonBoundPreferenceKey,
+  personBoundPreferenceKeys,
+} from "./preferences/preferenceScope.ts";
+export {
   selectPlayerControls,
   selectPreference,
   selectPreferencesLoaded,
@@ -122,6 +187,15 @@ export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
 export type {
+  ReviewEnd,
+  ReviewSessionProgress,
+} from "./review/reviewSessionView.ts";
+export { selectIsFlashcardSuspended } from "./review/selectIsFlashcardSuspended.ts";
+export {
+  selectReviewProjectId,
+  selectReviewSession,
+} from "./review/selectReviewSession.ts";
+export type {
   MainRoute,
   NavigationStep,
   SettingsPage,
@@ -134,8 +208,8 @@ export {
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
-export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
+export { isPlayedByServer } from "./screen/isPlayedByServer.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
 export {
   selectLookup,
@@ -214,8 +288,6 @@ export {
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
-export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
-export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { latestAlignments } from "./screen/readerScreen/latestAlignments.ts";
 export {
   type AlignedAudio,
@@ -257,7 +329,11 @@ export {
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
+export { hostOf } from "./server/hostOf.ts";
+export { isOwnTokenRefused } from "./server/isOwnTokenRefused.ts";
 export { serverCacheWith } from "./server/serverCacheWith.ts";
+export { serverConfigStorageKey } from "./server/serverConfigStorageKey.ts";
+export { isCloudServer, serverNameOf } from "./server/serverNameOf.ts";
 export type {
   RequestFailure,
   RequestOutcome,
@@ -268,9 +344,46 @@ export type {
   ServerResponses,
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
-export { selectServerConfig } from "./server/serverSelectors.ts";
-export type { ServerConfig } from "./server/serverState.ts";
+export type { AccountVia, WorkHome } from "./server/serverSelectors.ts";
+export {
+  accountViaOf,
+  selectAccountVia,
+  selectBundledServerPlatform,
+  selectCloudUrl,
+  selectIsCloudServer,
+  selectServerConfig,
+  selectServerName,
+  selectWorkHome,
+} from "./server/serverSelectors.ts";
+export type {
+  NativePlatform,
+  ServerConfig,
+  ServerState,
+} from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export { selectIsReadingLocationLoaded } from "./storedPlaces/storedPlacesSelectors.ts";
+export {
+  storedCopyFetchRequestId,
+  storedCopyUploadRequestId,
+  uploadChoiceRequestId,
+} from "./sync/storedCopies.ts";
+export { type SyncAction, syncActions } from "./sync/syncActions.ts";
+export {
+  selectIsDismissingSyncConflicts,
+  selectIsShowingAllSyncConflicts,
+  selectIsStoredCopyFetching,
+  selectIsStoredCopyUploading,
+  selectIsSyncRunRequested,
+  selectIsUploadChoiceChanging,
+  selectStoredCopyDeletionToConfirm,
+  selectSyncLink,
+  selectSyncStatus,
+} from "./sync/syncSelectors.ts";
+export {
+  dismissSyncConflictsRequestId,
+  runSyncRequestId,
+  type SyncState,
+  syncConflictsNoticeKey,
+} from "./sync/updateSync.ts";
 export type { Clock } from "./timers/clock.ts";
 export { systemClock } from "./timers/clock.ts";

@@ -1,8 +1,9 @@
 import type { ImportProgress } from "@easyimmerse/types";
+import { ProgressBar } from "../components/ProgressBar.tsx";
 
 /**
- * Shows that a file is being added, with an indeterminate bar, since a dictionary's size is not known
- * until it has been read, and how many entries the import has stored so far.
+ * Shows that a file is being added, with how much of it has been read when its format can tell, and how many entries the import has stored so far.
+ * The bar is indeterminate until the share read is known.
  */
 export function DictionaryImportProgress({
   fileName,
@@ -13,21 +14,19 @@ export function DictionaryImportProgress({
   progress: ImportProgress | null;
 }) {
   const label = `Adding ${fileName}…`;
+  const percent = progress?.percent ?? null;
   return (
     <div
       role="status"
       className="flex flex-col gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-sm"
     >
-      <p className="font-medium">{label}</p>
-      <div
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        className="h-1.5 overflow-hidden rounded-full bg-surface-strong"
-      >
-        <div className="h-full w-1/3 animate-progress-slide rounded-full bg-accent" />
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-medium">{label}</p>
+        {percent !== null && (
+          <p className="text-fg-muted tabular-nums">{percent}%</p>
+        )}
       </div>
+      <ProgressBar label={label} percent={percent} />
       {progress && (
         <p className="text-fg-muted">{describeProgress(progress)}</p>
       )}

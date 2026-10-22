@@ -42,7 +42,7 @@ type StartRequest<K extends ServerRequestKind> = (
  * Starts each kind of request through its endpoint, so that its cache tags and lifecycle apply as for any other caller.
  * Queries subscribe until they settle, so a tag invalidated meanwhile refetches the entry instead of removing it, and the entry then expires as any unused entry does.
  * Mutations are not tracked, so they leave no entry.
- * A job's status and the connection to Anki are always fetched anew, since the cached answer is the one the request wants to replace.
+ * A job's status, the connection to Anki and the current principal are always fetched anew, since the cached answer is the one the request wants to replace.
  */
 export const requestEndpoints = {
   listSubtitleTracks: ({ projectId, mediaFileId }) =>
@@ -226,6 +226,85 @@ export const requestEndpoints = {
   setAnkiConnect: ({ projectId, usesAnkiConnect }) =>
     backendApi.endpoints.setAnkiConnect.initiate(
       { projectId, usesAnkiConnect },
+      { track: false },
+    ),
+  logOut: () =>
+    backendApi.endpoints.logOut.initiate(undefined, { track: false }),
+  createUser: ({ via, request }) =>
+    backendApi.endpoints.createUser.initiate(
+      { via, request },
+      { track: false },
+    ),
+  setUserRole: ({ via, userId, role }) =>
+    backendApi.endpoints.setUserRole.initiate(
+      { via, userId, body: { role } },
+      { track: false },
+    ),
+  deleteUser: ({ via, userId }) =>
+    backendApi.endpoints.deleteUser.initiate({ via, userId }, { track: false }),
+  getCurrentPrincipal: ({ via }) =>
+    backendApi.endpoints.getCurrentPrincipal.initiate(via, {
+      forceRefetch: true,
+    }),
+  deleteSession: ({ via, sessionId }) =>
+    backendApi.endpoints.deleteSession.initiate(
+      { via, sessionId },
+      { track: false },
+    ),
+  requestConfirmationEmail: ({ via }) =>
+    backendApi.endpoints.requestConfirmationEmail.initiate(via, {
+      track: false,
+    }),
+  linkSyncRemote: ({ request }) =>
+    backendApi.endpoints.linkSyncRemote.initiate(request, { track: false }),
+  unlinkSyncRemote: () =>
+    backendApi.endpoints.unlinkSyncRemote.initiate(undefined, { track: false }),
+  runSync: () =>
+    backendApi.endpoints.runSync.initiate(undefined, { track: false }),
+  dismissSyncConflicts: () =>
+    backendApi.endpoints.dismissSyncConflicts.initiate(undefined, {
+      track: false,
+    }),
+  setUploadChoice: ({ projectId, mediaFileId, isUploadChosen }) =>
+    backendApi.endpoints.setUploadChoice.initiate(
+      { projectId, mediaFileId, isUploadChosen },
+      { track: false },
+    ),
+  uploadStoredCopy: ({ projectId, mediaFileId, file }) =>
+    backendApi.endpoints.uploadStoredCopy.initiate(
+      { projectId, mediaFileId, file },
+      { track: false },
+    ),
+  fetchStoredCopy: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.fetchStoredCopy.initiate(
+      { projectId, mediaFileId },
+      { track: false },
+    ),
+  getReviewQueue: ({ projectId }) =>
+    backendApi.endpoints.getReviewQueue.initiate(projectId, { track: false }),
+  answerReview: ({ projectId, flashcardId, rating, durationMs }) =>
+    backendApi.endpoints.answerReview.initiate(
+      { projectId, flashcardId, rating, durationMs },
+      { track: false },
+    ),
+  undoReviewAnswer: ({ projectId, answerId }) =>
+    backendApi.endpoints.undoReviewAnswer.initiate(
+      { projectId, answerId },
+      { track: false },
+    ),
+  raiseReviewAllowance: ({ projectId, extraNewCards, extraReviews }) =>
+    backendApi.endpoints.raiseReviewAllowance.initiate(
+      { projectId, extraNewCards, extraReviews },
+      { track: false },
+    ),
+  holdReviewCard: ({ projectId, flashcardId, hold }) =>
+    backendApi.endpoints.holdReviewCard.initiate(
+      { projectId, flashcardId, hold },
+      { track: false },
+    ),
+  liftReviewHold: ({ projectId, flashcardId }) =>
+    backendApi.endpoints.liftReviewHold.initiate(
+      { projectId, flashcardId },
       { track: false },
     ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };

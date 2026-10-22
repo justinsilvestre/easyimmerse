@@ -19,7 +19,9 @@ export function mediaFileOpenedBy(
   const route = mainScreenOf(app.route);
   if (main.kind !== "project" || route.screen !== "project") return null;
   return (
-    openedByPick(main, action, route.projectId) ?? openedByFetch(main, action)
+    openedByPick(main, action, route.projectId) ??
+    fileFetchedBy(route.projectId, action)?.id ??
+    null
   );
 }
 
@@ -46,14 +48,25 @@ function openedByPick(
   return null;
 }
 
-function openedByFetch(
-  main: ProjectScreenState,
+/**
+ * Returns the media file that a settled status of one of the project's fetches says the fetch added, if it says so.
+ * Only watched fetches are polled, since a fetch no longer watched has its status request aborted.
+ */
+export function fileFetchedBy(
+  projectId: string,
   action: AppAction,
-): string | null {
-  const jobId = main.mediaImport?.jobId ?? null;
-  if (jobId === null) return null;
-  if (!isSettled(action, jobKey("mediaSource", jobId), "getMediaSourceJob"))
+): MediaFile | null {
+  if (
+    action.type !== "requestSettled" ||
+    action.request.kind !== "getMediaSourceJob" ||
+    action.request.projectId !== projectId ||
+    !isSettled(
+      action,
+      jobKey("mediaSource", action.request.jobId),
+      "getMediaSourceJob",
+    )
+  )
     return null;
   if (!action.outcome.ok || action.outcome.data.status !== "done") return null;
-  return action.outcome.data.media_file?.id ?? null;
+  return action.outcome.data.media_file;
 }

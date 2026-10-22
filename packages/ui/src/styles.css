@@ -48,6 +48,26 @@
   );
   --color-info-fg: var(--color-violet-700);
   --color-info-soft: var(--color-violet-50);
+
+  /* The counts of a review session, colored as Anki colors them: new cards, cards being learned, and cards due for review. */
+  --color-review-new: var(--color-blue-700);
+  --color-review-learning: var(--color-orange-700);
+  --color-review-due: var(--color-green-700);
+}
+
+/* A card on the review screen fades in with a slight rise when it appears. */
+@theme {
+  --animate-card-in: card-in 180ms ease-out;
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 /* The bar of an import whose length is unknown slides back and forth. */
@@ -307,6 +327,10 @@
       var(--color-violet-500) 15%,
       transparent
     );
+
+    --color-review-new: var(--color-blue-300);
+    --color-review-learning: var(--color-orange-300);
+    --color-review-due: var(--color-green-400);
   }
 
   /* The reader can be set light inside a dark app, so the light values are repeated for a subtree. */
@@ -339,6 +363,10 @@
     );
     --color-info-fg: var(--color-violet-700);
     --color-info-soft: var(--color-violet-50);
+
+    --color-review-new: var(--color-blue-700);
+    --color-review-learning: var(--color-orange-700);
+    --color-review-due: var(--color-green-700);
   }
 
   /* A warm paper tone for reading, which some readers find easier on the eyes than white. */

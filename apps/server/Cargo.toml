@@ -15,6 +15,7 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 clap = { workspace = true }
 easyimmerse-api = { workspace = true }
+easyimmerse-core = { workspace = true }
 easyimmerse-storage = { workspace = true }
 hex = { workspace = true }
 rand = { workspace = true }

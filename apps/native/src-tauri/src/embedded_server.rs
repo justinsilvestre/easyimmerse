@@ -9,7 +9,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use easyimmerse_api::{ApiConfig, ServeError, ServeOptions, ServerHandle, serve};
-use easyimmerse_storage::{Storage, StorageError};
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 use tokio::net::TcpListener;
@@ -151,7 +151,7 @@ fn open_storage(path: &Path) -> Result<Storage, EmbeddedServerError> {
     // Development builds seed an empty database, since the schema still changes often and a
     // developer then deletes the database to start over. Release builds start empty.
     if cfg!(debug_assertions) {
-        storage.seed_placeholder_projects()?;
+        storage.seed_placeholder_projects(&OwnerId::launch())?;
         seed_sample_content(&storage);
     }
     Ok(storage)

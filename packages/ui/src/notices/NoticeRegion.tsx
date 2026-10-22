@@ -10,6 +10,7 @@ import { Notice } from "./Notice.tsx";
  * other notices sit in a polite live region, announced once the screen reader is idle. Their buttons follow the page in keyboard order.
  * A transient notice waits while the pointer or focus is on it.
  * While a modal dialog is open, the dialog shows its own region and a region outside any dialog hides, status line included, so each notice shows once.
+ * While a menu of the footer is open, the region hides too, since the menu opens over the space the notices take.
  */
 export function NoticeRegion({
   statusLine,
@@ -22,7 +23,7 @@ export function NoticeRegion({
   return (
     <section
       aria-label="Notifications"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4 [body:has(dialog:modal)_&:not(dialog_*)]:invisible"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4 [body:has(dialog:modal)_&:not(dialog_*)]:invisible [body:has(footer_[role=menu])_&]:invisible"
     >
       {statusLine}
       <NoticeList notices={notices.filter(isFailure)} />

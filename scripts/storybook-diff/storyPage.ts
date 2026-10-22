@@ -32,15 +32,21 @@ export class StoryPage {
     this.theme = theme;
   }
 
-  /** Shows the story, waits until it has rendered and its fonts and media have loaded, then screenshots it. */
+  /**
+   * Shows the story, waits until it has rendered and its fonts and media have loaded, then screenshots it.
+   * The screenshot is cropped to the story's content, which may extend past the viewport.
+   */
   async capture(storyId: string, outputPath: string): Promise<void> {
     await this.show(storyId);
     const outcome = await awaitRenderOutcome(this.page);
     if (outcome.status === "error") throw new Error(outcome.message);
     await this.page.evaluate(awaitFontsAndMedia, mediaTimeoutMs);
+    const clip = await this.page.evaluate(measureContent);
     await this.page.screenshot({
       path: outputPath,
+      // Without a full-page capture, Playwright trims the clip to the viewport.
       fullPage: true,
+      clip,
       animations: "disabled",
       caret: "hide",
       scale: "css",
@@ -117,6 +123,14 @@ function installRenderRecorder(): void {
         "description" in payload ? ` ${payload.description}` : "";
       return `${payload.title}${description}`;
     }
+    // Storybook sends some errors across its channel as plain objects, which are no longer instances of Error.
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload
+    ) {
+      return String(payload.message);
+    }
     return String(payload);
   };
   const failures = [
@@ -149,7 +163,7 @@ function installRenderRecorder(): void {
   });
 }
 
-/** Runs in the page. Resolves once fonts, images, and the first video frames are ready, or after the timeout. */
+/** Runs in the page. Resolves once fonts and images have loaded and every video shows its frame, or after the timeout. */
 function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
   const settled = (target: EventTarget, events: string[]) =>
     new Promise<void>((resolve) => {
@@ -157,9 +171,21 @@ function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
         target.addEventListener(event, () => resolve(), { once: true });
       }
     });
-  const videos = [...document.querySelectorAll("video")]
-    .filter((video) => video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)
-    .map((video) => settled(video, ["loadeddata", "error"]));
+  // A video can have its frame decoded but not yet painted, which shows as black.
+  // Seeking to the current position makes the browser present the frame again and report when it has.
+  const presentFrame = (video: HTMLVideoElement) =>
+    new Promise<void>((resolve) => {
+      if (video.error) return resolve();
+      video.requestVideoFrameCallback(() => resolve());
+      const position = video.currentTime;
+      video.currentTime = position;
+    });
+  const videos = [...document.querySelectorAll("video")].map((video) =>
+    (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+      ? settled(video, ["loadeddata", "error"])
+      : Promise.resolve()
+    ).then(() => presentFrame(video)),
+  );
   const images = [...document.images]
     .filter((image) => !image.complete)
     .map((image) => settled(image, ["load", "error"]));
@@ -168,4 +194,33 @@ function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
     setTimeout(resolve, timeoutMs),
   );
   return Promise.race([ready.then(() => undefined), timeout]);
+}
+
+/**
+ * Runs in the page. Measures the box around the story root and anything drawn outside it,
+ * such as a modal dialog, a popover, or a menu positioned beside its button.
+ */
+function measureContent(): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const root = document.getElementById("storybook-root") ?? document.body;
+  const isOverlay = (element: Element) =>
+    element.matches("dialog[open], :popover-open") ||
+    ["fixed", "absolute"].includes(getComputedStyle(element).position);
+  const rects = [root, ...[...root.querySelectorAll("*")].filter(isOverlay)]
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  const left = Math.max(0, Math.min(...rects.map((rect) => rect.left)));
+  const top = Math.max(0, Math.min(...rects.map((rect) => rect.top)));
+  const right = Math.max(...rects.map((rect) => rect.right));
+  const bottom = Math.max(...rects.map((rect) => rect.bottom));
+  return {
+    x: Math.floor(left + window.scrollX),
+    y: Math.floor(top + window.scrollY),
+    width: Math.max(1, Math.ceil(right - left)),
+    height: Math.max(1, Math.ceil(bottom - top)),
+  };
 }

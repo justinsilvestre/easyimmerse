@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@easyimmerse/state": "workspace:*"
+    "@easyimmerse/state": "workspace:*",
+    "@easyimmerse/types": "workspace:*"
   },
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",

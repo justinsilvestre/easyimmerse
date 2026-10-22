@@ -2,8 +2,11 @@ import type {
   AnkiPendingDeletions,
   Document,
   ListDictionariesResponse,
+  ListProjectsResponse,
   MediaFile,
   PlaybackMethodRequest,
+  ReviewSummary,
+  SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
 import type { PickedMediaFile } from "../platform/effects.ts";
@@ -16,7 +19,16 @@ export const serverCachePath = "backend";
 /** The part of the server cache's slice that state code reads: every query's entry by its key. */
 export type ServerCacheSlice = {
   queries: Partial<
-    Record<string, { status: string; data?: unknown; error?: unknown }>
+    Record<
+      string,
+      {
+        status: string;
+        data?: unknown;
+        error?: unknown;
+        /** When the query last succeeded, in milliseconds since the Unix epoch. */
+        fulfilledTimeStamp?: number;
+      }
+    >
   >;
 };
 
@@ -39,7 +51,10 @@ export type CachedQueries = {
   listFlashcards: string;
   listAnkiPendingDeletions: string;
   listDictionaries: undefined;
+  listProjects: undefined;
   checkAnkiConnection: undefined;
+  getReviewSummary: string;
+  getSyncStatus: undefined;
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
@@ -47,7 +62,10 @@ export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
   openBook: Document;
   listDictionaries: ListDictionariesResponse;
+  listProjects: ListProjectsResponse;
   getSubtitleCues: TimedTextTrack;
+  getReviewSummary: ReviewSummary;
+  getSyncStatus: SyncStatus;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */
@@ -56,6 +74,8 @@ export type CacheEntry<K extends keyof CachedQueries> =
       status: string;
       data?: CachedResponses[K];
       error?: { code?: string; message?: string };
+      /** When the query last succeeded, in milliseconds since the Unix epoch. */
+      fulfilledTimeStamp?: number;
     }
   | undefined;
 

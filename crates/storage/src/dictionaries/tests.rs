@@ -15,7 +15,7 @@ use crate::{Storage, StorageError};
 type Reader = Box<dyn FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>>;
 
 fn import(storage: &Storage, read: Reader) -> Result<DictionaryId, StorageError> {
-    storage.write(|conn| import_with(conn, 1_000, read))
+    storage.write(|conn| import_with(conn, &crate::OwnerId::launch(), 1_000, read))
 }
 
 fn metadata(title: &str, format: DictionaryFormatKind) -> DictionaryMetadata {
@@ -136,7 +136,7 @@ fn storage_with(readers: Vec<Reader>) -> (Storage, Vec<DictionaryId>) {
 
 fn found_terms(storage: &Storage, headword: &str) -> Vec<String> {
     storage
-        .find_dictionary_entries(&[headword.to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &[headword.to_string()])
         .unwrap()
         .into_iter()
         .map(|found| found.entry.term)
@@ -151,8 +151,10 @@ fn fixture_source() -> DictionarySource {
 #[test]
 fn refuses_to_import_a_dictionary_twice() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
-    let again = storage.import_dictionary(&mut fixture_source());
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
+    let again = storage.import_dictionary(&crate::OwnerId::launch(), &mut fixture_source());
     assert!(
         matches!(again, Err(StorageError::DictionaryAlreadyImported(_))),
         "{again:?}"
@@ -162,15 +164,64 @@ fn refuses_to_import_a_dictionary_twice() {
 #[test]
 fn keeps_the_first_dictionary_when_a_second_import_is_refused() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
-    let _ = storage.import_dictionary(&mut fixture_source());
-    assert_eq!(storage.list_dictionaries().unwrap().len(), 1);
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
+    let _ = storage.import_dictionary(&crate::OwnerId::launch(), &mut fixture_source());
+    assert_eq!(
+        storage
+            .list_dictionaries(&crate::OwnerId::launch())
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn lets_another_owner_import_a_dictionary_of_the_same_title() {
+    let storage = Storage::open_in_memory().unwrap();
+    let account = crate::review_test_support::account_owner(&storage);
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
+    let again = storage.import_dictionary(&account, &mut fixture_source());
+    assert!(again.is_ok(), "{again:?}");
+}
+
+#[test]
+fn lists_only_the_dictionaries_of_the_owner() {
+    let storage = Storage::open_in_memory().unwrap();
+    let account = crate::review_test_support::account_owner(&storage);
+    storage
+        .import_dictionary(&account, &mut fixture_source())
+        .unwrap();
+    assert_eq!(
+        storage
+            .list_dictionaries(&crate::OwnerId::launch())
+            .unwrap(),
+        vec![]
+    );
+}
+
+#[test]
+fn finds_no_entry_of_another_owners_dictionary() {
+    let storage = Storage::open_in_memory().unwrap();
+    let account = crate::review_test_support::account_owner(&storage);
+    storage
+        .import_dictionary(&account, &mut fixture_source())
+        .unwrap();
+    let found = storage
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["猫".to_string()])
+        .unwrap();
+    assert_eq!(found, vec![]);
 }
 
 #[test]
 fn imports_the_yomitan_fixture_with_its_title() {
     let storage = Storage::open_in_memory().unwrap();
-    let id = storage.import_dictionary(&mut fixture_source()).unwrap();
+    let id = storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     assert_eq!(
         storage.get_dictionary(&id).unwrap().metadata.title,
         "Sample Dictionary"
@@ -180,9 +231,11 @@ fn imports_the_yomitan_fixture_with_its_title() {
 #[test]
 fn finds_an_entry_of_the_yomitan_fixture() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     let found = storage
-        .find_dictionary_entries(&["猫".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["猫".to_string()])
         .unwrap();
     assert_eq!(found[0].entry.definitions, vec![Definition::text("cat")]);
 }
@@ -192,7 +245,7 @@ fn rejects_files_that_no_format_recognizes() {
     let storage = Storage::open_in_memory().unwrap();
     let mut source = DictionarySource::single("notes.pdf", b"hello".to_vec()).unwrap();
     assert!(matches!(
-        storage.import_dictionary(&mut source),
+        storage.import_dictionary(&crate::OwnerId::launch(), &mut source),
         Err(StorageError::Dictionary(
             DictionaryError::UnrecognizedFormat
         ))
@@ -210,7 +263,12 @@ fn stores_nothing_when_the_format_fails_midway() {
             Err(DictionaryError::MissingFile("rest.csv".to_string()))
         }),
     );
-    assert!(storage.list_dictionaries().unwrap().is_empty());
+    assert!(
+        storage
+            .list_dictionaries(&crate::OwnerId::launch())
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -227,7 +285,7 @@ fn refuses_content_sent_before_the_metadata() {
 fn round_trips_every_field_of_an_entry() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["食べる".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["食べる".to_string()])
         .unwrap();
     assert_eq!(found[0].entry, full_entry());
 }
@@ -270,7 +328,7 @@ fn counts_each_kind_of_row() {
 fn lists_dictionaries_in_import_order() {
     let (storage, ids) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let listed: Vec<DictionaryId> = storage
-        .list_dictionaries()
+        .list_dictionaries(&crate::OwnerId::launch())
         .unwrap()
         .into_iter()
         .map(|dictionary| dictionary.id)
@@ -330,7 +388,7 @@ fn finds_a_japanese_entry_only_by_its_exact_kana() {
 fn reports_the_folded_headword_that_matched() {
     let (storage, _) = storage_with(vec![english_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["CAT".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["CAT".to_string()])
         .unwrap();
     assert_eq!(found[0].folded_headword, "cat");
 }
@@ -340,7 +398,10 @@ fn searches_for_headwords_that_fold_alike_once() {
     let (storage, _) = storage_with(vec![english_dictionary()]);
     let headwords = vec!["Cat".to_string(), "cat".to_string()];
     assert_eq!(
-        storage.find_dictionary_entries(&headwords).unwrap().len(),
+        storage
+            .find_dictionary_entries(&crate::OwnerId::launch(), &headwords)
+            .unwrap()
+            .len(),
         1
     );
 }
@@ -349,7 +410,7 @@ fn searches_for_headwords_that_fold_alike_once() {
 fn finds_entries_of_every_dictionary_in_import_order() {
     let (storage, _) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["猫".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["猫".to_string()])
         .unwrap();
     let titles: Vec<&str> = found
         .iter()
@@ -363,7 +424,10 @@ fn finds_entries_for_several_headwords_at_once() {
     let (storage, _) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let headwords = vec!["猫".to_string(), "kitty".to_string(), "犬".to_string()];
     assert_eq!(
-        storage.find_dictionary_entries(&headwords).unwrap().len(),
+        storage
+            .find_dictionary_entries(&crate::OwnerId::launch(), &headwords)
+            .unwrap()
+            .len(),
         3
     );
 }
@@ -372,7 +436,7 @@ fn finds_entries_for_several_headwords_at_once() {
 fn ranks_a_later_import_after_an_earlier_one() {
     let (storage, _) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["猫".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["猫".to_string()])
         .unwrap();
     assert!(found[0].dictionary.rank < found[1].dictionary.rank);
 }
@@ -381,7 +445,7 @@ fn ranks_a_later_import_after_an_earlier_one() {
 fn attaches_the_definitions_of_the_tags_an_entry_uses() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["食べる".to_string()])
+        .find_dictionary_entries(&crate::OwnerId::launch(), &["食べる".to_string()])
         .unwrap();
     assert_eq!(found[0].tags, vec![tag("P")]);
 }
@@ -389,28 +453,36 @@ fn attaches_the_definitions_of_the_tags_an_entry_uses() {
 #[test]
 fn finds_the_term_meta_of_a_term() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
-    let found = storage.find_term_meta(&["猫".to_string()]).unwrap();
+    let found = storage
+        .find_term_meta(&crate::OwnerId::launch(), &["猫".to_string()])
+        .unwrap();
     assert_eq!(found[0].meta, frequency("猫", 120.0));
 }
 
 #[test]
 fn finds_a_kanji_entry() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
-    let found = storage.find_kanji(&["猫".to_string()]).unwrap();
+    let found = storage
+        .find_kanji(&crate::OwnerId::launch(), &["猫".to_string()])
+        .unwrap();
     assert_eq!(found[0].entry, kanji("猫"));
 }
 
 #[test]
 fn attaches_the_tags_that_name_kanji_stats() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
-    let found = storage.find_kanji(&["猫".to_string()]).unwrap();
+    let found = storage
+        .find_kanji(&crate::OwnerId::launch(), &["猫".to_string()])
+        .unwrap();
     assert_eq!(found[0].tags, vec![tag("jouyou"), tag("strokes")]);
 }
 
 #[test]
 fn finds_the_frequency_of_a_kanji() {
     let (storage, _) = storage_with(vec![japanese_dictionary()]);
-    let found = storage.find_kanji_meta(&["猫".to_string()]).unwrap();
+    let found = storage
+        .find_kanji_meta(&crate::OwnerId::launch(), &["猫".to_string()])
+        .unwrap();
     assert_eq!(found[0].meta.frequency.value, Some(1_702.0));
 }
 
@@ -445,7 +517,7 @@ fn deleting_a_dictionary_removes_its_term_meta() {
     storage.delete_dictionary(&ids[0]).unwrap();
     assert!(
         storage
-            .find_term_meta(&["猫".to_string()])
+            .find_term_meta(&crate::OwnerId::launch(), &["猫".to_string()])
             .unwrap()
             .is_empty()
     );
@@ -491,7 +563,10 @@ fn deleting_an_unknown_dictionary_fails() {
 fn finds_the_stylesheets_of_the_given_dictionaries() {
     let (storage, ids) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let stylesheets = storage
-        .find_dictionary_stylesheets(&[ids[0].0.clone(), ids[1].0.clone()])
+        .find_dictionary_stylesheets(
+            &crate::OwnerId::launch(),
+            &[ids[0].0.clone(), ids[1].0.clone()],
+        )
         .unwrap();
     assert_eq!(
         stylesheets,
@@ -506,7 +581,7 @@ fn finds_the_stylesheets_of_the_given_dictionaries() {
 fn finds_no_stylesheet_of_a_dictionary_not_asked_for() {
     let (storage, ids) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
     let stylesheets = storage
-        .find_dictionary_stylesheets(&[ids[0].0.clone()])
+        .find_dictionary_stylesheets(&crate::OwnerId::launch(), &[ids[0].0.clone()])
         .unwrap();
     assert_eq!(stylesheets, []);
 }
@@ -523,9 +598,14 @@ fn too_many_values_ending_with(last: &str) -> Vec<String> {
 #[test]
 fn finds_entries_for_more_headwords_than_one_statement_binds() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     let found = storage
-        .find_dictionary_entries(&too_many_values_ending_with("猫"))
+        .find_dictionary_entries(
+            &crate::OwnerId::launch(),
+            &too_many_values_ending_with("猫"),
+        )
         .unwrap();
     assert_eq!(found[0].entry.term, "猫");
 }
@@ -533,9 +613,14 @@ fn finds_entries_for_more_headwords_than_one_statement_binds() {
 #[test]
 fn finds_term_meta_for_more_terms_than_one_statement_binds() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     let found = storage
-        .find_term_meta(&too_many_values_ending_with("猫"))
+        .find_term_meta(
+            &crate::OwnerId::launch(),
+            &too_many_values_ending_with("猫"),
+        )
         .unwrap();
     assert_eq!(found[0].meta.term, "猫");
 }
@@ -543,9 +628,14 @@ fn finds_term_meta_for_more_terms_than_one_statement_binds() {
 #[test]
 fn finds_kanji_for_more_characters_than_one_statement_binds() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     let found = storage
-        .find_kanji(&too_many_values_ending_with("猫"))
+        .find_kanji(
+            &crate::OwnerId::launch(),
+            &too_many_values_ending_with("猫"),
+        )
         .unwrap();
     assert_eq!(found[0].entry.character, "猫");
 }
@@ -553,9 +643,14 @@ fn finds_kanji_for_more_characters_than_one_statement_binds() {
 #[test]
 fn finds_kanji_meta_for_more_characters_than_one_statement_binds() {
     let storage = Storage::open_in_memory().unwrap();
-    storage.import_dictionary(&mut fixture_source()).unwrap();
+    storage
+        .import_dictionary(&crate::OwnerId::launch(), &mut fixture_source())
+        .unwrap();
     let found = storage
-        .find_kanji_meta(&too_many_values_ending_with("猫"))
+        .find_kanji_meta(
+            &crate::OwnerId::launch(),
+            &too_many_values_ending_with("猫"),
+        )
         .unwrap();
     assert_eq!(found[0].meta.character, "猫");
 }

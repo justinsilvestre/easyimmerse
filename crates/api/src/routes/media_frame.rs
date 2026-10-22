@@ -13,7 +13,7 @@ use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
     chosen_video_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
@@ -64,12 +64,12 @@ pub struct FrameQuery {
 )]
 pub async fn get_media_frame(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Query(query): Query<FrameQuery>,
 ) -> Result<Response, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let jpeg = render_frame(&state, token, &media_file, query.at_ms).await?;
+    let jpeg = render_frame(&state, &principal, &media_file, query.at_ms).await?;
     Ok(rendered_media_response("image/jpeg", jpeg))
 }
 
@@ -77,11 +77,11 @@ pub async fn get_media_frame(
 /// as a JPEG image at most 640 pixels wide.
 pub async fn render_frame(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     at_ms: u64,
 ) -> Result<Vec<u8>, ApiFailure> {
-    let path = resolve_source_path(state, token, media_file).await?;
+    let path = resolve_source_path(state, principal, media_file).await?;
     let container = probe_media(state, &path).await?;
     let track = chosen_video_track(&container, media_file)
         .ok_or_else(|| not_found("the media file has no video track"))?;

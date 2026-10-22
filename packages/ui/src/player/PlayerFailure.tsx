@@ -24,7 +24,7 @@ export function PlayerFailure({ cause }: { cause: string }) {
         </div>
         <Button
           size="sm"
-          className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
+          variant="overVideo"
           onClick={() => dispatch(actions.closeMedia())}
         >
           Back to the project

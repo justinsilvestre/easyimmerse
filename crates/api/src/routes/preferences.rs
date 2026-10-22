@@ -6,6 +6,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
+use crate::auth::owner::Owner;
 use crate::state::AppState;
 
 /// A preference value. `null` means the preference has not been set.
@@ -30,10 +31,11 @@ pub struct PreferenceValue {
 )]
 pub async fn get_preference(
     State(state): State<AppState>,
+    Owner(owner): Owner,
     Path(key): Path<String>,
 ) -> Result<Json<PreferenceValue>, ApiFailure> {
     let value = state
-        .with_storage(move |storage| storage.get_preference(&key))
+        .with_storage(move |storage| storage.get_preference(&owner, &key))
         .await?;
     Ok(Json(PreferenceValue { value }))
 }
@@ -55,6 +57,7 @@ pub async fn get_preference(
 )]
 pub async fn set_preference(
     State(state): State<AppState>,
+    Owner(owner): Owner,
     Path(key): Path<String>,
     Json(body): Json<PreferenceValue>,
 ) -> Result<StatusCode, ApiFailure> {
@@ -62,7 +65,7 @@ pub async fn set_preference(
         .value
         .ok_or_else(|| bad_request("a preference value must not be null"))?;
     state
-        .with_storage(move |storage| storage.set_preference(&key, &value))
+        .with_storage(move |storage| storage.set_preference(&owner, &key, &value))
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }

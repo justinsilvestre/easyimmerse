@@ -1,5 +1,6 @@
 use axum::Json;
 use axum::http::StatusCode;
+use axum::http::header::RETRY_AFTER;
 use axum::response::{IntoResponse, Response};
 use easyimmerse_core::dictionary::DictionaryError;
 use easyimmerse_core::document::DocumentError;
@@ -23,6 +24,8 @@ pub struct ApiError {
 pub struct ApiFailure {
     pub status: StatusCode,
     pub error: ApiError,
+    /// Sent as the `Retry-After` header, in seconds, when the client must wait before trying again.
+    pub retry_after_secs: Option<u64>,
 }
 
 impl ApiFailure {
@@ -33,6 +36,14 @@ impl ApiFailure {
                 code: code.to_string(),
                 message: message.into(),
             },
+            retry_after_secs: None,
+        }
+    }
+
+    pub fn with_retry_after(self, retry_after_secs: u64) -> Self {
+        Self {
+            retry_after_secs: Some(retry_after_secs),
+            ..self
         }
     }
 }
@@ -42,7 +53,10 @@ impl IntoResponse for ApiFailure {
         if self.status == StatusCode::INTERNAL_SERVER_ERROR {
             tracing::error!(code = %self.error.code, "{}", self.error.message);
         }
-        (self.status, Json(self.error)).into_response()
+        let retry_after = self
+            .retry_after_secs
+            .map(|seconds| [(RETRY_AFTER, seconds.to_string())]);
+        (self.status, retry_after, Json(self.error)).into_response()
     }
 }
 
@@ -78,6 +92,24 @@ pub fn conflict(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::CONFLICT, "conflict", message)
 }
 
+/// The answer to the launch principal on a route that only an account may use.
+pub fn not_an_account() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::FORBIDDEN,
+        "not_an_account",
+        "only an account may do this, and the launch token belongs to none",
+    )
+}
+
+/// The answer on a route that needs email when the server sends none.
+pub fn mail_unavailable() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::SERVICE_UNAVAILABLE,
+        "mail_unavailable",
+        "this server does not send email",
+    )
+}
+
 pub fn internal(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", message)
 }
@@ -91,15 +123,57 @@ impl From<StorageError> for ApiFailure {
             | StorageError::MediaFileNotFound(_)
             | StorageError::FlashcardNotFound(_)
             | StorageError::SubtitleTrackNotFound(_)
-            | StorageError::AlignmentNotFound(_) => not_found(error.to_string()),
+            | StorageError::AlignmentNotFound(_)
+            | StorageError::UserNotFound(_)
+            | StorageError::SessionNotFound(_)
+            | StorageError::ReviewAnswerNotFound(_) => not_found(error.to_string()),
             StorageError::PairedWithItself(_) => bad_request(error.to_string()),
-            StorageError::FlashcardIdTaken(_) => conflict(error.to_string()),
+            StorageError::FlashcardIdTaken(_) | StorageError::ReviewAnswerNotLatest(_) => {
+                conflict(error.to_string())
+            }
+            StorageError::EmailTaken(_) => {
+                ApiFailure::new(StatusCode::CONFLICT, "email_taken", error.to_string())
+            }
+            StorageError::LastAdministrator(_) => ApiFailure::new(
+                StatusCode::CONFLICT,
+                "last_administrator",
+                error.to_string(),
+            ),
+            StorageError::QuotaExceeded { .. } => ApiFailure::new(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "quota_exceeded",
+                error.to_string(),
+            ),
+            StorageError::DictionaryExists(_) => {
+                ApiFailure::new(StatusCode::CONFLICT, "dictionary_exists", error.to_string())
+            }
             StorageError::DictionaryAlreadyImported(_) => ApiFailure::new(
                 StatusCode::CONFLICT,
                 "dictionary_already_imported",
                 error.to_string(),
             ),
             StorageError::Dictionary(error) => error.into(),
+            StorageError::UnknownSyncTable(_) => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "unknown_sync_table",
+                error.to_string(),
+            ),
+            StorageError::SyncColumnMissing { .. } => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "sync_column_missing",
+                error.to_string(),
+            ),
+            StorageError::SyncValueUnsupported { .. } => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "sync_value_unsupported",
+                error.to_string(),
+            ),
+            StorageError::RemoteNotLinked => {
+                ApiFailure::new(StatusCode::NOT_FOUND, "not_linked", error.to_string())
+            }
+            StorageError::AlreadyLinked => {
+                ApiFailure::new(StatusCode::CONFLICT, "already_linked", error.to_string())
+            }
             _ => internal(error.to_string()),
         }
     }
@@ -177,6 +251,30 @@ mod tests {
     fn a_missing_dictionary_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::DictionaryNotFound("x".to_string()));
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_session_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::SessionNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_table_that_does_not_sync_has_its_own_code() {
+        let failure = ApiFailure::from(StorageError::UnknownSyncTable("users".to_string()));
+        assert_eq!(failure.error.code, "unknown_sync_table");
+    }
+
+    #[test]
+    fn a_missing_link_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::RemoteNotLinked);
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn an_existing_link_has_its_own_code() {
+        let failure = ApiFailure::from(StorageError::AlreadyLinked);
+        assert_eq!(failure.error.code, "already_linked");
     }
 
     #[test]

@@ -11,7 +11,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::resolve_local_file;
 use crate::routes::plugins::discard_output_dir;
@@ -76,18 +76,18 @@ pub async fn list_media_files(
 )]
 pub async fn add_media_file(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
     extract::Json(request): extract::Json<AddMediaFileRequest>,
 ) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
     let requested = request.source.clone();
-    let source = resolve_media_source(&state, token, request.source).await?;
+    let source = resolve_media_source(&state, &principal, request.source).await?;
     let media_file = state
         .with_storage(move |storage| storage.add_media_file(&project_id, &request.name, &source))
         .await?;
     // Sidecar files sit beside the path the user chose, which may be a link to the file.
     if let MediaFileSource::Path { path } = requested {
-        add_found_subtitle_tracks(&state, token, &media_file, &path).await;
+        add_found_subtitle_tracks(&state, &principal, &media_file, &path).await;
     }
     Ok((StatusCode::CREATED, Json(media_file)))
 }
@@ -96,12 +96,12 @@ pub async fn add_media_file(
 /// canonical path, once the token may read it and the file exists.
 async fn resolve_media_source(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     source: MediaFileSource,
 ) -> Result<MediaFileSource, ApiFailure> {
     match source {
         MediaFileSource::Path { path } => Ok(MediaFileSource::Path {
-            path: resolve_local_file(token, &state.config, &path).await?,
+            path: resolve_local_file(principal, &state.config, &path).await?,
         }),
         source => Ok(source),
     }

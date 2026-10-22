@@ -1,0 +1,474 @@
+use easyimmerse_core::account::{AccountRole, AccountUser};
+use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
+
+use crate::error::StorageError;
+use crate::new_row::{generate_id, now_ms};
+use crate::stored_integer::{read_optional_unsigned, read_unsigned, to_stored_integer};
+
+/// An account together with the hash of its password, for logging in.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredUser {
+    pub user: AccountUser,
+    pub password_hash: String,
+}
+
+pub const USER_COLUMNS: &str = "u.id, u.email, u.role, u.created_at_ms, u.email_confirmed_at_ms";
+/// How many columns `USER_COLUMNS` names, which is the index of the first column after them.
+pub const USER_COLUMN_COUNT: usize = 5;
+
+/// Creates an account, together with the owner of its data, in one transaction,
+/// unless one already has the email address in any letter case.
+pub fn create_user(
+    conn: &mut Connection,
+    email: &str,
+    password_hash: &str,
+    role: AccountRole,
+) -> Result<AccountUser, StorageError> {
+    let id = generate_id();
+    let transaction = conn.transaction()?;
+    transaction.execute("INSERT INTO owners (id) VALUES (?1)", params![id])?;
+    let inserted = transaction.execute(
+        "INSERT INTO users (id, email, password_hash, role, created_at_ms) \
+         VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT (email) DO NOTHING",
+        params![
+            id,
+            email,
+            password_hash,
+            role.as_str(),
+            to_stored_integer(now_ms())
+        ],
+    )?;
+    if inserted == 0 {
+        return Err(StorageError::EmailTaken(email.to_string()));
+    }
+    let user = get_user(&transaction, &id)?;
+    transaction.commit()?;
+    Ok(user)
+}
+
+pub fn get_user(conn: &Connection, id: &str) -> Result<AccountUser, StorageError> {
+    conn.query_row(
+        &format!("SELECT {USER_COLUMNS} FROM users u WHERE u.id = ?1"),
+        params![id],
+        read_user,
+    )
+    .optional()?
+    .ok_or_else(|| StorageError::UserNotFound(id.to_string()))
+}
+
+/// Finds the account with the email address, compared without regard to letter case.
+pub fn find_user_by_email(
+    conn: &Connection,
+    email: &str,
+) -> Result<Option<StoredUser>, StorageError> {
+    let found = conn
+        .query_row(
+            &format!("SELECT {USER_COLUMNS}, u.password_hash FROM users u WHERE u.email = ?1"),
+            params![email],
+            |row| {
+                Ok(StoredUser {
+                    user: read_user(row)?,
+                    password_hash: row.get(USER_COLUMN_COUNT)?,
+                })
+            },
+        )
+        .optional()?;
+    Ok(found)
+}
+
+/// Lists every account, oldest first.
+pub fn list_users(conn: &Connection) -> Result<Vec<AccountUser>, StorageError> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT {USER_COLUMNS} FROM users u ORDER BY u.created_at_ms, u.rowid"
+    ))?;
+    let users = statement
+        .query_map([], read_user)?
+        .collect::<Result<_, _>>()?;
+    Ok(users)
+}
+
+/// Changes an account's role, unless that would leave no administrator account.
+pub fn set_user_role(
+    conn: &mut Connection,
+    id: &str,
+    role: AccountRole,
+) -> Result<AccountUser, StorageError> {
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    if role != AccountRole::Administrator {
+        ensure_not_last_administrator(&transaction, id)?;
+    }
+    let updated = transaction.execute(
+        "UPDATE users SET role = ?2 WHERE id = ?1",
+        params![id, role.as_str()],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    let user = get_user(&transaction, id)?;
+    transaction.commit()?;
+    Ok(user)
+}
+
+/// Replaces the password hash of an account and ends all of its sessions, in one transaction.
+pub fn set_password_hash(
+    conn: &mut Connection,
+    id: &str,
+    password_hash: &str,
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    let updated = transaction.execute(
+        "UPDATE users SET password_hash = ?2 WHERE id = ?1",
+        params![id, password_hash],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    transaction.execute("DELETE FROM sessions WHERE user_id = ?1", params![id])?;
+    transaction.commit()?;
+    Ok(())
+}
+
+/// Records that the owner of the account confirmed its email address at `at_ms`, unless they did so before.
+pub fn confirm_email(conn: &Connection, id: &str, at_ms: u64) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE users SET email_confirmed_at_ms = COALESCE(email_confirmed_at_ms, ?2) WHERE id = ?1",
+        params![id, to_stored_integer(at_ms)],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    Ok(())
+}
+
+/// Deletes an account together with its sessions and all of its data, unless it is the last administrator account.
+/// Deleting the account's owner cascades to the account and to everything it owns.
+pub fn delete_user(conn: &mut Connection, id: &str) -> Result<(), StorageError> {
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    ensure_not_last_administrator(&transaction, id)?;
+    let deleted = transaction.execute(
+        "DELETE FROM owners WHERE id = ?1 AND EXISTS (SELECT 1 FROM users WHERE id = ?1)",
+        params![id],
+    )?;
+    if deleted == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
+/// Fails when the account is an administrator and no other account is.
+/// Callers run the check and their change in one immediate transaction,
+/// which holds the database's write lock from the start, so that no other connection or process,
+/// such as the `users` command beside a running server, can change the accounts in between.
+fn ensure_not_last_administrator(conn: &Connection, id: &str) -> Result<(), StorageError> {
+    let administrator = AccountRole::Administrator.as_str();
+    let is_last: bool = conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM users WHERE id = ?1 AND role = ?2) \
+         AND (SELECT COUNT(*) FROM users WHERE role = ?2) = 1",
+        params![id, administrator],
+        |row| row.get(0),
+    )?;
+    if is_last {
+        Err(StorageError::LastAdministrator(id.to_string()))
+    } else {
+        Ok(())
+    }
+}
+
+/// Reads the columns of `USER_COLUMNS` at the start of the row.
+pub fn read_user(row: &Row) -> rusqlite::Result<AccountUser> {
+    let role: String = row.get(2)?;
+    Ok(AccountUser {
+        id: row.get(0)?,
+        email: row.get(1)?,
+        role: role.parse().map_err(|error| {
+            rusqlite::Error::FromSqlConversionFailure(
+                2,
+                rusqlite::types::Type::Text,
+                Box::new(error),
+            )
+        })?,
+        created_at_ms: read_unsigned(row, 3)?,
+        email_confirmed_at_ms: read_optional_unsigned(row, 4)?,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use easyimmerse_core::account::AccountRole;
+    use rusqlite::TransactionBehavior;
+
+    use crate::{Storage, StorageError};
+
+    fn storage_with_user(email: &str) -> Storage {
+        let storage = Storage::open_in_memory().unwrap();
+        storage
+            .create_user(email, "hash", AccountRole::LibraryUser)
+            .unwrap();
+        storage
+    }
+
+    #[test]
+    fn creates_a_user_with_the_given_role() {
+        let storage = Storage::open_in_memory().unwrap();
+        let user = storage
+            .create_user("admin@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        assert_eq!(user.role, AccountRole::Administrator);
+    }
+
+    #[test]
+    fn refuses_an_email_taken_in_another_letter_case() {
+        let storage = storage_with_user("reader@example.com");
+        let again = storage.create_user("Reader@Example.com", "hash", AccountRole::LibraryUser);
+        assert!(matches!(again, Err(StorageError::EmailTaken(_))));
+    }
+
+    #[test]
+    fn finds_a_user_by_email_in_another_letter_case() {
+        let storage = storage_with_user("reader@example.com");
+        let found = storage.find_user_by_email("READER@example.com").unwrap();
+        assert_eq!(
+            found.map(|found| found.password_hash),
+            Some("hash".to_string())
+        );
+    }
+
+    #[test]
+    fn finds_no_user_for_an_unknown_email() {
+        let storage = storage_with_user("reader@example.com");
+        assert_eq!(
+            storage.find_user_by_email("other@example.com").unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn lists_users_oldest_first() {
+        let storage = storage_with_user("first@example.com");
+        storage
+            .create_user("second@example.com", "hash", AccountRole::LibraryUser)
+            .unwrap();
+        let emails: Vec<String> = storage
+            .list_users()
+            .unwrap()
+            .into_iter()
+            .map(|user| user.email)
+            .collect();
+        assert_eq!(emails, ["first@example.com", "second@example.com"]);
+    }
+
+    #[test]
+    fn sets_a_users_role() {
+        let storage = Storage::open_in_memory().unwrap();
+        let user = storage
+            .create_user("reader@example.com", "hash", AccountRole::LibraryUser)
+            .unwrap();
+        let updated = storage
+            .set_user_role(&user.id, AccountRole::Privileged)
+            .unwrap();
+        assert_eq!(updated.role, AccountRole::Privileged);
+    }
+
+    #[test]
+    fn reports_setting_the_role_of_an_unknown_user() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.set_user_role("missing", AccountRole::Privileged);
+        assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    #[test]
+    fn replaces_a_password_hash() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.set_password_hash(&id, "new hash").unwrap();
+        let found = storage.find_user_by_email("reader@example.com").unwrap();
+        assert_eq!(
+            found.map(|found| found.password_hash),
+            Some("new hash".to_string())
+        );
+    }
+
+    #[test]
+    fn replacing_a_password_hash_ends_the_sessions() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        let session = crate::NewSession {
+            token_hash: "token-hash",
+            user_id: &id,
+            user_agent: "",
+            created_at_ms: 0,
+            expires_at_ms: u64::MAX,
+        };
+        storage.create_session(&session).unwrap();
+        storage.set_password_hash(&id, "new hash").unwrap();
+        assert_eq!(storage.find_live_session("token-hash", 0).unwrap(), None);
+    }
+
+    #[test]
+    fn reports_replacing_the_password_of_an_unknown_user() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.set_password_hash("missing", "hash");
+        assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    #[test]
+    fn a_new_user_has_no_confirmed_email_address() {
+        let storage = storage_with_user("reader@example.com");
+        assert_eq!(storage.list_users().unwrap()[0].email_confirmed_at_ms, None);
+    }
+
+    #[test]
+    fn records_when_the_email_address_was_confirmed() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.confirm_email(&id, 1_000).unwrap();
+        assert_eq!(
+            storage.get_user(&id).unwrap().email_confirmed_at_ms,
+            Some(1_000)
+        );
+    }
+
+    #[test]
+    fn keeps_the_first_confirmation_time() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.confirm_email(&id, 1_000).unwrap();
+        storage.confirm_email(&id, 2_000).unwrap();
+        assert_eq!(
+            storage.get_user(&id).unwrap().email_confirmed_at_ms,
+            Some(1_000)
+        );
+    }
+
+    fn storage_with_administrator() -> (Storage, String) {
+        let storage = Storage::open_in_memory().unwrap();
+        let admin = storage
+            .create_user("admin@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        (storage, admin.id)
+    }
+
+    #[test]
+    fn keeps_the_role_of_the_last_administrator() {
+        let (storage, id) = storage_with_administrator();
+        let result = storage.set_user_role(&id, AccountRole::Privileged);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
+    }
+
+    #[test]
+    fn keeps_the_last_administrator() {
+        let (storage, id) = storage_with_administrator();
+        let result = storage.delete_user(&id);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
+    }
+
+    #[test]
+    fn demotes_an_administrator_while_another_remains() {
+        let (storage, id) = storage_with_administrator();
+        storage
+            .create_user("second@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        assert!(storage.set_user_role(&id, AccountRole::Privileged).is_ok());
+    }
+
+    #[test]
+    fn lets_the_last_administrator_stay_an_administrator() {
+        let (storage, id) = storage_with_administrator();
+        assert!(
+            storage
+                .set_user_role(&id, AccountRole::Administrator)
+                .is_ok()
+        );
+    }
+
+    /// Two administrators in a database file, and a second connection to it, as another process would have.
+    fn database_with_two_administrators(dir: &std::path::Path) -> (Storage, rusqlite::Connection) {
+        let path = dir.join("accounts.sqlite");
+        let storage = Storage::open(&path).unwrap();
+        storage
+            .create_user("first@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        storage
+            .create_user("second@example.com", "hash", AccountRole::Administrator)
+            .unwrap();
+        (storage, rusqlite::Connection::open(&path).unwrap())
+    }
+
+    /// Starts demoting the second administrator on the other connection, demotes the first through storage
+    /// while the other change is still open, then lets the other change commit.
+    fn demote_both_concurrently(
+        storage: Storage,
+        mut other: rusqlite::Connection,
+    ) -> Result<(), StorageError> {
+        let first = storage
+            .find_user_by_email("first@example.com")
+            .unwrap()
+            .unwrap()
+            .user
+            .id;
+        let transaction = other
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .unwrap();
+        transaction
+            .execute(
+                "UPDATE users SET role = 'privileged' WHERE email = 'second@example.com'",
+                [],
+            )
+            .unwrap();
+        let demotion = std::thread::spawn(move || {
+            storage
+                .set_user_role(&first, AccountRole::Privileged)
+                .map(|_| ())
+        });
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        transaction.commit().unwrap();
+        demotion.join().unwrap()
+    }
+
+    #[test]
+    fn a_concurrent_demotion_by_another_connection_keeps_the_last_administrator() {
+        let dir = tempfile::tempdir().unwrap();
+        let (storage, other) = database_with_two_administrators(dir.path());
+        let result = demote_both_concurrently(storage, other);
+        assert!(matches!(result, Err(StorageError::LastAdministrator(_))));
+    }
+
+    #[test]
+    fn deletes_a_user() {
+        let storage = Storage::open_in_memory().unwrap();
+        let user = storage
+            .create_user("reader@example.com", "hash", AccountRole::LibraryUser)
+            .unwrap();
+        storage.delete_user(&user.id).unwrap();
+        assert!(storage.list_users().unwrap().is_empty());
+    }
+
+    #[test]
+    fn deleting_a_user_deletes_its_projects() {
+        let storage = Storage::open_in_memory().unwrap();
+        let owner = crate::review_test_support::account_owner(&storage);
+        let settings = crate::review_test_support::project_settings("German");
+        let project = storage.create_project(&owner, &settings).unwrap();
+        storage.delete_user(&owner.0).unwrap();
+        let result = storage.get_project(&project.id);
+        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    }
+
+    #[test]
+    fn a_refused_account_leaves_no_owner_behind() {
+        let storage = storage_with_user("reader@example.com");
+        let _ = storage.create_user("READER@example.com", "hash", AccountRole::LibraryUser);
+        let owners: i64 = storage
+            .read(|conn| Ok(conn.query_row("SELECT COUNT(*) FROM owners", [], |row| row.get(0))?))
+            .unwrap();
+        assert_eq!(owners, 2);
+    }
+
+    #[test]
+    fn reports_deleting_an_unknown_user() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.delete_user("missing");
+        assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+}

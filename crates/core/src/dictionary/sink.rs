@@ -23,6 +23,9 @@ pub trait DictionarySink {
     fn kanji_entry(&mut self, entry: KanjiEntry) -> SinkResult;
     fn kanji_meta(&mut self, meta: KanjiMeta) -> SinkResult;
     fn media(&mut self, media: DictionaryMedia) -> SinkResult;
+    /// Learns that the format has read `done` out of `total` units of the source, in a unit the format chooses, such as bytes.
+    /// A format that cannot tell how much is left never calls it. The default ignores it.
+    fn progressed(&mut self, _done: u64, _total: u64) {}
 }
 
 pub type SinkResult = Result<(), SinkError>;

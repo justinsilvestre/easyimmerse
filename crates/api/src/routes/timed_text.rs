@@ -4,7 +4,7 @@ use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{ParseTimedTextRequest, TimedTextTrack, parse_timed_text};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_text;
 use crate::state::AppState;
 
@@ -26,12 +26,12 @@ use crate::state::AppState;
 )]
 pub async fn parse_timed_text_route(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Json(request): Json<ParseTimedTextRequest>,
 ) -> Result<Json<TimedTextTrack>, ApiFailure> {
     let text = match request.source {
         TextSource::Inline { text } => text,
-        TextSource::Path { path } => resolve_local_text(token, &state.config, &path).await?,
+        TextSource::Path { path } => resolve_local_text(&principal, &state.config, &path).await?,
     };
     Ok(Json(parse_timed_text(&text, request.format)?))
 }

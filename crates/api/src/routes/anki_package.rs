@@ -1,5 +1,6 @@
 //! Exporting a project's flashcards as a legacy Anki deck package (.apkg), saved at a path or sent for download.
 
+use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path as FilePath;
 
@@ -7,9 +8,10 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Response;
 use axum::{Extension, Json};
-use easyimmerse_anki::{AnkiNote, CardScheduling, PackageMedia, render_note, write_package};
+use easyimmerse_anki::{AnkiNote, ExportTime, PackageMedia, render_note, write_package};
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::{Project, ProjectId};
+use easyimmerse_core::review::ReviewProgress;
 use easyimmerse_storage::DeliveredPackage;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -19,7 +21,7 @@ use crate::anki_media::{render_media, without_skipped_media};
 use crate::anki_package_delivery::{BuiltPackage, package_download, save_package, stage_package};
 use crate::anki_selection::{Selection, deck_spec, load_selection};
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::file_download::safe_file_name;
 use crate::local_path::ensure_local_paths_allowed;
 use crate::now_ms::now_ms;
@@ -39,6 +41,8 @@ pub struct AnkiPackageRequest {
     /// Requires a save path.
     #[serde(default)]
     pub staged: bool,
+    /// Local time minus UTC, in minutes, as on the user's device, which places the days review cards fall due on.
+    pub utc_offset_min: i32,
 }
 
 /// What the server wrote to the save path.
@@ -84,7 +88,7 @@ pub struct AnkiPackageSaved {
 )]
 pub async fn export_anki_package(
     State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
+    Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiPackageRequest>,
 ) -> Result<Response, ApiFailure> {
@@ -92,17 +96,17 @@ pub async fn export_anki_package(
         return Err(bad_request("a staged export needs a save path"));
     }
     if let Some(path) = &request.save_path {
-        ensure_local_paths_allowed(token, &state.config)?;
+        ensure_local_paths_allowed(&principal, &state.config)?;
         ensure_absolute(path)?;
     }
     if request.flashcard_ids.is_empty() {
         return Err(bad_request("name at least one flashcard"));
     }
-    let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
+    let selection = load_selection(&state, project_id, request.flashcard_ids.clone()).await?;
     if selection.flashcards.is_empty() {
         return Err(not_found("none of the named flashcards is in the project"));
     }
-    let package = build_package(&state, token, selection, request.marks_exported).await?;
+    let package = build_package(&state, &principal, selection, &request).await?;
     match request.save_path {
         Some(path) if request.staged => stage_package(package, &path).await,
         Some(path) => save_package(&state, package, &path).await,
@@ -110,15 +114,17 @@ pub async fn export_anki_package(
     }
 }
 
-/// Builds the package, dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
+/// Builds the package with the review progress of its flashcards,
+/// dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
 async fn build_package(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     selection: Selection,
-    marks_exported: bool,
+    request: &AnkiPackageRequest,
 ) -> Result<BuiltPackage, ApiFailure> {
+    let marks_exported = request.marks_exported;
     let notes: Vec<AnkiNote> = selection.flashcards.iter().map(render_note).collect();
-    let media = render_media(state, token, &notes).await;
+    let media = render_media(state, principal, &notes).await;
     for skipped in &media.skipped {
         tracing::info!(
             "left {} out of the package: {}",
@@ -128,8 +134,21 @@ async fn build_package(
     }
     let notes = without_skipped_media(notes, &media.skipped);
     let project = &selection.project;
+    let project_id = project.id.clone();
+    let review_progress = state
+        .with_storage(move |storage| storage.list_review_progress(&project_id, now_ms()))
+        .await?;
     Ok(BuiltPackage {
-        bytes: write_package_bytes(project, notes, media.files, now_ms()).await?,
+        bytes: write_package_bytes(
+            project,
+            PackageContents {
+                notes,
+                media: media.files,
+                review_progress,
+            },
+            request.utc_offset_min,
+        )
+        .await?,
         file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
         skipped_media_count: media.skipped.len() as u64,
         read_at_ms: selection.read_at_ms,
@@ -145,14 +164,29 @@ async fn build_package(
     })
 }
 
-/// Writes the package in memory on a blocking thread; 500 `package_failed` when it cannot be written.
-async fn write_package_bytes(
-    project: &Project,
+/// What goes into a package: its notes, their media files, and the review progress of their flashcards.
+struct PackageContents {
     notes: Vec<AnkiNote>,
     media: Vec<PackageMedia>,
-    exported_at_ms: u64,
+    review_progress: HashMap<FlashcardId, ReviewProgress>,
+}
+
+/// Writes the package in memory on a blocking thread, dated now; 500 `package_failed` when it cannot be written.
+async fn write_package_bytes(
+    project: &Project,
+    contents: PackageContents,
+    utc_offset_min: i32,
 ) -> Result<Vec<u8>, ApiFailure> {
     let project = project.clone();
+    let PackageContents {
+        notes,
+        media,
+        review_progress,
+    } = contents;
+    let exported_at = ExportTime {
+        at_ms: now_ms(),
+        utc_offset_min,
+    };
     let written = tokio::task::spawn_blocking(move || {
         let mut out = Cursor::new(Vec::new());
         write_package(
@@ -160,8 +194,8 @@ async fn write_package_bytes(
             &deck_spec(&project),
             &notes,
             &media,
-            CardScheduling::New,
-            exported_at_ms,
+            &review_progress,
+            exported_at,
         )
         .map(|()| out.into_inner())
     })

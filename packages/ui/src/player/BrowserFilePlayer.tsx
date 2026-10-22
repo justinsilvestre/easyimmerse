@@ -1,11 +1,11 @@
 import { isAudioFileName } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
-import { useEffect, useMemo } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { browserFileNotices } from "../media/browserFileNotices.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 import type { PlayerStatus } from "./PlayerStatus.ts";
 import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
+import { useObjectUrl } from "./useObjectUrl.ts";
 
 /** Plays a file the browser holds from a blob URL. Such a file is never converted and has no waveform. */
 export function BrowserFilePlayer({ mediaFile }: { mediaFile: MediaFile }) {
@@ -40,17 +40,4 @@ function browserPlayback(
     frameRate: null,
     hasVideo: !isAudioFileName(name),
   };
-}
-
-/** A blob URL for the file, revoked when the file changes or the player unmounts. */
-function useObjectUrl(file: File | null): string | null {
-  const url = useMemo(
-    () => (file === null ? null : URL.createObjectURL(file)),
-    [file],
-  );
-  useEffect(() => {
-    if (url === null) return;
-    return () => URL.revokeObjectURL(url);
-  }, [url]);
-  return url;
 }

@@ -11,7 +11,7 @@ pub struct HealthResponse {
     pub status: String,
 }
 
-/// Reports that the server is up. The only route that needs no token.
+/// Reports that the server is up. Needs no token.
 #[utoipa::path(
     get,
     path = "/health",

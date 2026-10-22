@@ -156,7 +156,7 @@ mod tests {
     /// A storage whose first placeholder project does not use AnkiConnect, and lists deletions or not.
     fn storage_listing_deletions(lists_anki_deletions: bool) -> Storage {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         set_listing(&storage, lists_anki_deletions);
         storage
     }

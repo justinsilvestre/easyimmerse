@@ -18,6 +18,7 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
     exported_at_ms: null,
     was_packaged: false,
     sent_at_ms: null,
+    is_suspended: false,
   };
 }
 
@@ -46,6 +47,16 @@ describe("mediaItemsOf", () => {
       new Map(),
     );
     expect(items.map((item) => item.kind)).toEqual(["ebook", "ebook"]);
+  });
+
+  it("tells where each file's bytes are kept", () => {
+    const items = mediaItemsOf(
+      fixtureMediaFiles.media_files,
+      [],
+      null,
+      new Map(),
+    );
+    expect(items.map((item) => item.copy?.browserFile)).toEqual([null, "gone"]);
   });
 
   it("counts the flashcards made from each file", () => {

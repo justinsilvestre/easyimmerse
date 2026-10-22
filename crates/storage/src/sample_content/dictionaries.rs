@@ -2,6 +2,7 @@
 
 use easyimmerse_core::dictionary::DictionarySource;
 
+use crate::owners::OwnerId;
 use crate::{Storage, StorageError};
 
 /// The name of the Yomitan dictionary among the repository's fixtures.
@@ -16,7 +17,7 @@ pub const WORD_LISTS: [(&str, &[u8]); 2] = [
     ),
 ];
 
-/// Imports each sample dictionary whose title no stored dictionary has yet.
+/// Imports each sample dictionary whose title no dictionary of the launch owner has yet.
 pub fn import_sample_dictionaries(
     storage: &Storage,
     fixture_dictionary: Vec<u8>,
@@ -29,13 +30,14 @@ pub fn import_sample_dictionaries(
     for (name, bytes) in WORD_LISTS {
         dictionaries.push((title_of(bytes), name, bytes.to_vec()));
     }
-    let stored = storage.list_dictionaries()?;
+    let launch = OwnerId::launch();
+    let stored = storage.list_dictionaries(&launch)?;
     for (title, name, bytes) in dictionaries {
         if !stored
             .iter()
             .any(|dictionary| dictionary.metadata.title == title)
         {
-            storage.import_dictionary(&mut DictionarySource::single(name, bytes)?)?;
+            storage.import_dictionary(&launch, &mut DictionarySource::single(name, bytes)?)?;
         }
     }
     Ok(())

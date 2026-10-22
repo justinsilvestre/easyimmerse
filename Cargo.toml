@@ -21,10 +21,12 @@ easyimmerse-plugin-api = { path = "crates/plugin-api" }
 easyimmerse-plugins = { path = "crates/plugins" }
 easyimmerse-api = { path = "crates/api" }
 easyimmerse-anki = { path = "crates/anki" }
+easyimmerse-srs = { path = "crates/srs" }
 tauri-plugin-save-copy = { path = "apps/native/tauri-plugin-save-copy" }
 
 adler2 = "2.0"
 anyhow = "1.0"
+argon2 = "0.6"
 axum = "0.8"
 base64 = "0.22"
 bzip2-rs = "0.1"
@@ -35,8 +37,10 @@ dunce = "1.0"
 encoding_rs = "0.8"
 flate2 = { version = "1.1", default-features = false, features = ["zlib-rs"] }
 fs4 = "1.1"
+fsrs = "6.6"
 futures-util = { version = "0.3", default-features = false }
 hex = "0.4"
+lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1-rustls-tls"] }
 lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
 lzokay = { version = "2.0", default-features = false, features = ["decompress"] }
 matroska = "0.30"
@@ -117,6 +121,13 @@ opt-level = 3
 opt-level = 3
 
 [profile.dev.package.memchr]
+opt-level = 3
+
+# Optimizes password hashing, which every login and sign-up runs and which is several times slower unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
 opt-level = 3
 
 # Optimizes the storage crate, which serializes and compresses each entry during import.

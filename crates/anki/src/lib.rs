@@ -8,6 +8,7 @@ mod collection;
 mod collection_json;
 mod deck_spec;
 mod derived_id;
+mod export_time;
 mod field_html;
 mod guid;
 mod media_ref;
@@ -16,14 +17,15 @@ mod note_type;
 mod package;
 mod render_note;
 mod render_notes;
+mod revlog_rows;
 mod schema;
 mod sort_field;
 
 #[cfg(test)]
 mod test_support;
 
-pub use card_scheduling::CardScheduling;
 pub use deck_spec::DeckSpec;
+pub use export_time::ExportTime;
 pub use media_ref::AnkiMediaRef;
 pub use note_type::{AnkiNoteType, AnkiTemplate, note_type};
 pub use package::{AnkiError, PackageMedia, write_package};

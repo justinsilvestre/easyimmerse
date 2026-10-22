@@ -7,6 +7,7 @@ import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
+import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
@@ -39,10 +40,12 @@ export function FlashcardEditor({
   saveStatus = "idle",
   isNew = false,
   hasSaveFailed = false,
+  hasUnsavedChanges = false,
   isAwaitingLookup = false,
   ankiFate = null,
   onSave,
   onDelete,
+  onUnsuspend = null,
   onClose,
   onPlayClip,
 }: {
@@ -64,12 +67,16 @@ export function FlashcardEditor({
   isNew?: boolean;
   /** Whether the last save failed, which the status line tells until Save is pressed again. */
   hasSaveFailed?: boolean;
+  /** Whether the flashcard has changes that are not saved yet, which a badge beside Save shows, as it does for a new flashcard. */
+  hasUnsavedChanges?: boolean;
   /** Whether the word's lookup has yet to answer, which the fields it fills say while they are empty. */
   isAwaitingLookup?: boolean;
   /** What deleting the flashcard does to its note in Anki, which Delete's confirmation tells, or null when that is not known. */
   ankiFate?: AnkiFateOfDeletion | null;
   onSave: () => void;
   onDelete: () => void;
+  /** Brings the suspended flashcard back into the review. Null, the default, for a flashcard that is not suspended. */
+  onUnsuspend?: (() => void) | null;
   onClose: () => void;
   /** Plays the clip on the media player. */
   onPlayClip: (clip: AudioClip) => void;
@@ -79,6 +86,7 @@ export function FlashcardEditor({
   const isSaveInert = saveStatus !== "idle";
   const [isConfirmingDelete, setConfirmingDelete] = useState(false);
   const showsFailure = hasSaveFailed && saveStatus === "idle";
+  const isUnsaved = (isNew || hasUnsavedChanges) && saveStatus === "idle";
   return (
     <>
       <form
@@ -101,6 +109,7 @@ export function FlashcardEditor({
             <X className="size-4" />
           </IconButton>
         </div>
+        {onUnsuspend && <SuspendedStrip onUnsuspend={onUnsuspend} />}
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
           <TextFieldBlocks
             state={state}
@@ -139,7 +148,14 @@ export function FlashcardEditor({
               showsFailure ? "text-danger-fg" : "text-fg-muted",
             )}
           >
-            {showsFailure ? saveFailedText : saveStatusTexts[saveStatus]}
+            {showsFailure ? (
+              saveFailedText
+            ) : isUnsaved ? (
+              // The badge beside Save shows this; the line still announces it.
+              <span className="sr-only">{unsavedText}</span>
+            ) : (
+              saveStatusTexts[saveStatus]
+            )}
           </p>
           <div className="flex items-center justify-between gap-2">
             <MenuButton
@@ -158,6 +174,11 @@ export function FlashcardEditor({
               More fields
             </MenuButton>
             <div className="flex items-center gap-2">
+              {isUnsaved && !showsFailure && (
+                <span aria-hidden>
+                  <Badge tone="warning">{unsavedText}</Badge>
+                </span>
+              )}
               {!isNew && (
                 <Button
                   variant="danger"
@@ -199,8 +220,22 @@ export function FlashcardEditor({
 
 const saveFailedText = "Could not save the flashcard. Press Save to try again.";
 
+const unsavedText = "Not saved";
+
 const saveStatusTexts = {
   idle: "",
   waitingForDefinitions: "Waiting for definitions…",
   saving: "Saving…",
 };
+
+/** Says that the flashcard is suspended and left out of reviews, with the way to bring it back. */
+function SuspendedStrip({ onUnsuspend }: { onUnsuspend: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-muted px-4 py-1.5 text-sm text-fg-muted">
+      <p>This card won't show up in reviews until you unsuspend it.</p>
+      <Button variant="subtle" onClick={onUnsuspend}>
+        Unsuspend
+      </Button>
+    </div>
+  );
+}

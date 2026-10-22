@@ -5,6 +5,8 @@ export type MainRoute =
   | { screen: "newProject" }
   | { screen: "project"; projectId: string }
   | { screen: "projectSettings"; projectId: string }
+  /** The review of a project's flashcards, which fills the window without the app's frame. */
+  | { screen: "review"; projectId: string }
   /** A media file of a project, shown on the media screen or, for a book, in the reader. */
   | { screen: "media"; projectId: string; mediaFileId: string };
 
@@ -31,22 +33,36 @@ export type Route =
 export type NavigationStep =
   | { type: "openProject"; projectId: string }
   | { type: "openProjectSettings"; projectId: string }
+  | { type: "openReview"; projectId: string }
   | { type: "createProject" }
   | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
+  /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
+  | { type: "openAccountSettings" }
   | { type: "openDictionaries" }
   | { type: "closeSettings" };
 
 export const initialRoute: Route = { screen: "home" };
 
-/** Returns where the app is after taking a step from the current place. */
+/** Returns where the app is after taking a step from the current place, which is `current` itself when the step leads where the app already is. */
 export function navigate(current: Route, step: NavigationStep): Route {
+  const next = stepTarget(current, step);
+  const isSameMain =
+    next.screen !== "settings" &&
+    current.screen !== "settings" &&
+    isSameMainScreen(current, next);
+  return isSameMain ? current : next;
+}
+
+function stepTarget(current: Route, step: NavigationStep): Route {
   switch (step.type) {
     case "openProject":
       return { screen: "project", projectId: step.projectId };
     case "openProjectSettings":
       return { screen: "projectSettings", projectId: step.projectId };
+    case "openReview":
+      return { screen: "review", projectId: step.projectId };
     case "createProject":
       return { screen: "newProject" };
     case "continueOffline":
@@ -57,6 +73,16 @@ export function navigate(current: Route, step: NavigationStep): Route {
       return current.screen === "settings"
         ? current
         : { screen: "settings", beneath: current, pages: ["general"] };
+    case "openAccountSettings":
+      return current.screen === "settings" &&
+        current.pages.length === 1 &&
+        current.pages[0] === "general"
+        ? current
+        : {
+            screen: "settings",
+            beneath: mainScreenOf(current),
+            pages: ["general"],
+          };
     case "openDictionaries":
       return openSettingsPage(current, "dictionaries");
     case "closeSettings":
@@ -69,6 +95,18 @@ export function settingsPageOf(
   route: Extract<Route, { screen: "settings" }>,
 ): SettingsPage {
   return route.pages[route.pages.length - 1] ?? "general";
+}
+
+/** Tells whether the route shows the dictionaries page on top of Settings. */
+export function isOnDictionariesPage(route: Route): boolean {
+  return (
+    route.screen === "settings" && settingsPageOf(route) === "dictionaries"
+  );
+}
+
+/** Tells whether the place a step leads to is already on top, so that taking it would leave the app where it is. */
+export function isAlreadyAt(route: Route, step: NavigationStep): boolean {
+  return navigate(route, step) === route;
 }
 
 function openSettingsPage(current: Route, page: SettingsPage): Route {

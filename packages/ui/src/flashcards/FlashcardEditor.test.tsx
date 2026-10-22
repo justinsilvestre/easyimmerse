@@ -208,6 +208,7 @@ function renderWithLeavingButtons(
   {
     isNew = false,
     hasSaveFailed = false,
+    hasUnsavedChanges = false,
     ankiFate = null as AnkiFateOfDeletion | null,
   } = {},
 ) {
@@ -224,6 +225,7 @@ function renderWithLeavingButtons(
       saveStatus={saveStatus}
       isNew={isNew}
       hasSaveFailed={hasSaveFailed}
+      hasUnsavedChanges={hasUnsavedChanges}
       ankiFate={ankiFate}
       onSave={() => undefined}
       onDelete={() => presses.push("delete")}
@@ -348,6 +350,38 @@ describe("FlashcardEditor after a failed save", () => {
   it("tells of the new save instead once Save is pressed again", () => {
     renderWithLeavingButtons("saving", { hasSaveFailed: true });
     expect(screen.getByRole("status").textContent).toBe("Saving…");
+  });
+});
+
+describe("FlashcardEditor with changes not saved yet", () => {
+  it("tells that they are not saved yet", () => {
+    renderWithLeavingButtons("idle", { hasUnsavedChanges: true });
+    expect(screen.getByRole("status").textContent).toBe("Not saved");
+  });
+
+  it("tells that a new flashcard is not saved yet", () => {
+    renderWithLeavingButtons("idle", { isNew: true });
+    expect(screen.getByRole("status").textContent).toBe("Not saved");
+  });
+
+  it("tells nothing for a saved flashcard left unchanged", () => {
+    renderWithLeavingButtons("idle");
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  it("tells of the save once Save is pressed", () => {
+    renderWithLeavingButtons("saving", { hasUnsavedChanges: true });
+    expect(screen.getByRole("status").textContent).toBe("Saving…");
+  });
+
+  it("tells of a failed save rather than of the changes", () => {
+    renderWithLeavingButtons("idle", {
+      hasUnsavedChanges: true,
+      hasSaveFailed: true,
+    });
+    expect(screen.getByRole("status").textContent).toBe(
+      "Could not save the flashcard. Press Save to try again.",
+    );
   });
 });
 

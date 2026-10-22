@@ -5,7 +5,7 @@ use easyimmerse_core::found_subtitle_tracks::{FoundTrack, select_found_tracks};
 use easyimmerse_core::media_file::MediaFile;
 
 use crate::auth::error_body::ApiFailure;
-use crate::auth::token_kind::TokenKind;
+use crate::auth::principal::Principal;
 use crate::embedded_subtitle_tracks::add_embedded_subtitle_tracks;
 use crate::sidecar_subtitle_tracks::add_sidecar_subtitle_tracks;
 use crate::state::AppState;
@@ -16,11 +16,11 @@ use crate::state::AppState;
 /// rather than returned.
 pub async fn add_found_subtitle_tracks(
     state: &AppState,
-    token: TokenKind,
+    principal: &Principal,
     media_file: &MediaFile,
     path: &str,
 ) {
-    let embedded = add_embedded_subtitle_tracks(state, token, media_file, path)
+    let embedded = add_embedded_subtitle_tracks(state, principal, media_file, path)
         .await
         .unwrap_or_else(|failure| {
             tracing::warn!(
@@ -29,7 +29,7 @@ pub async fn add_found_subtitle_tracks(
             );
             Vec::new()
         });
-    let sidecar = add_sidecar_subtitle_tracks(state, token, media_file, path).await;
+    let sidecar = add_sidecar_subtitle_tracks(state, principal, media_file, path).await;
     if embedded.is_empty() && sidecar.is_empty() {
         return;
     }

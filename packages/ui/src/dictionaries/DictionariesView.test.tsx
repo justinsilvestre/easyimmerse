@@ -13,6 +13,7 @@ const progress = {
   kanji_meta: 0,
   tags: 0,
   media: 0,
+  percent: null,
 };
 
 function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
@@ -48,11 +49,21 @@ describe("DictionariesView", () => {
       ).toBeDefined();
     });
 
-    it("leaves the bar indeterminate, since the dictionary's size is unknown", () => {
+    it("leaves the bar indeterminate while the share read is unknown", () => {
       renderView({ addingFile: "jmdict.zip" });
       expect(
         screen.getByRole("progressbar").getAttribute("aria-valuenow"),
       ).toBeNull();
+    });
+
+    it("fills the bar to the share of the file read, once the server can tell", () => {
+      renderView({
+        addingFile: "jmdict.zip",
+        importProgress: { ...progress, percent: 42 },
+      });
+      expect(
+        screen.getByRole("progressbar").getAttribute("aria-valuenow"),
+      ).toBe("42");
     });
 
     it("counts the entries stored so far in the user's locale", () => {

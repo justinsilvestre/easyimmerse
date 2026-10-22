@@ -44,6 +44,7 @@ function doneJob(id: string, dictionary: Dictionary): ImportJobStatus {
       kanji_meta: summary.kanji_meta_count,
       tags: summary.tag_count,
       media: summary.media_count,
+      percent: 100,
     },
     dictionary: summary,
     error: null,

@@ -97,6 +97,11 @@ export const WithUnavailableMedia: Story = {
   },
 };
 
+export const Loading: Story = {
+  args: { media: undefined },
+  parameters: { layout: "padded" },
+};
+
 export const Empty: Story = {
   args: { media: [] },
 };
