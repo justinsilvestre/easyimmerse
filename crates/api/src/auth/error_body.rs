@@ -139,6 +139,14 @@ impl From<StorageError> for ApiFailure {
                 "last_administrator",
                 error.to_string(),
             ),
+            StorageError::QuotaExceeded { .. } => ApiFailure::new(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "quota_exceeded",
+                error.to_string(),
+            ),
+            StorageError::DictionaryExists(_) => {
+                ApiFailure::new(StatusCode::CONFLICT, "dictionary_exists", error.to_string())
+            }
             StorageError::DictionaryAlreadyImported(_) => ApiFailure::new(
                 StatusCode::CONFLICT,
                 "dictionary_already_imported",

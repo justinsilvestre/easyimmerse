@@ -22,7 +22,8 @@ use crate::routes::{
     email_confirmation, flashcards, health, local_dictionaries, media, media_availability,
     media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
     media_waveform, openapi, password_reset, plugins, preferences, projects, review, sessions,
-    source_form, subtitles, sync_changes, sync_device_side, sync_dictionaries, timed_text, users,
+    source_form, storage_status, stored_copies, stored_copy_fetch, subtitles, sync_changes,
+    sync_device_side, sync_dictionaries, timed_text, users,
 };
 use crate::state::AppState;
 use crate::sync::proxy::forward_to_remote;
@@ -129,6 +130,13 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(source_form::get_source_form))
         .routes(routes!(source_form::submit_source_step))
         .routes(routes!(media_stream::stream_media_file))
+        .routes(routes!(
+            stored_copies::put_stored_copy,
+            stored_copies::get_stored_copy
+        ))
+        .routes(routes!(stored_copies::set_upload_choice))
+        .routes(routes!(stored_copy_fetch::fetch_stored_copy_route))
+        .routes(routes!(storage_status::get_storage_status))
         .routes(routes!(media_frame::get_media_frame))
         .routes(routes!(media_clip::get_media_clip))
         .routes(routes!(media_tracks::get_media_tracks))

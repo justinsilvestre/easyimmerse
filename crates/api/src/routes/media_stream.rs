@@ -3,9 +3,8 @@
 use axum::Extension;
 use axum::body::Body;
 use axum::extract::{Path, Request, State};
-use axum::http::StatusCode;
 use axum::response::Response;
-use easyimmerse_core::media_file::{MediaFileId, MediaFileSource};
+use easyimmerse_core::media_file::MediaFileId;
 use easyimmerse_core::project::ProjectId;
 use tower::ServiceExt;
 use tower_http::services::ServeFile;
@@ -13,8 +12,8 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::auth::principal::Principal;
-use crate::local_path::resolve_local_file;
 use crate::routes::media::load_media_file;
+use crate::routes::media_support::resolve_source_path;
 use crate::state::AppState;
 
 /// The matched path of the stream route, which the bearer middleware lets authenticate
@@ -29,7 +28,7 @@ pub struct StreamQuery {
     pub token: Option<String>,
 }
 
-/// Streams the file's bytes. Honors `Range` with 206 and 416 responses and advertises
+/// Streams the file's bytes, or this server's copy of them when the file cannot be read. Honors `Range` with 206 and 416 responses and advertises
 /// `Accept-Ranges: bytes`. The content type is guessed from the file extension.
 #[utoipa::path(
     get,
@@ -59,11 +58,7 @@ pub async fn stream_media_file(
     request: Request,
 ) -> Result<Response, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = match media_file.source {
-        MediaFileSource::Path { path } => path,
-        MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
-    };
-    resolve_local_file(&principal, &state.config, &path).await?;
+    let path = resolve_source_path(&state, &principal, &media_file).await?;
     Ok(serve_file(&path, request).await)
 }
 
@@ -71,12 +66,4 @@ pub async fn stream_media_file(
 async fn serve_file(path: &str, request: Request) -> Response {
     let Ok(response) = ServeFile::new(path).oneshot(request).await;
     response.map(Body::new)
-}
-
-fn not_resolvable() -> ApiFailure {
-    ApiFailure::new(
-        StatusCode::NOT_FOUND,
-        "not_resolvable",
-        "the browser holds this file; the server cannot stream it",
-    )
 }

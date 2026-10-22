@@ -99,6 +99,12 @@ impl SyncEngine {
                 .storage
                 .set_sync_last_synced(&remote.id, started_at_ms)
                 .map_err(RoundError::Storage),
+            // The data went through, so the round counts as a sync, but the link reports the refusal.
+            Err(error @ RoundError::MediaRefused(_)) => self
+                .storage
+                .set_sync_last_synced(&remote.id, started_at_ms)
+                .map_err(RoundError::Storage)
+                .and(Err(error)),
             Err(error) => Err(error),
         };
         match outcome {

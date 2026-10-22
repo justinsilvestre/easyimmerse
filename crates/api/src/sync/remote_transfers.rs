@@ -7,6 +7,7 @@ use std::io::Read;
 use std::time::Duration;
 
 use axum::http::Method;
+use easyimmerse_core::media_copy::StoredCopy;
 use easyimmerse_core::sync::DictionaryStored;
 use ureq::http::header::{AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE};
 use ureq::http::{Request, Response};
@@ -70,6 +71,33 @@ impl RemoteClient {
             Err(RemoteError::Refused { status: 409, .. }) => Ok(DictionaryUpload::AlreadyThere),
             Err(error) => Err(error),
         }
+    }
+
+    /// Uploads the bytes of a media file as the remote's copy of it.
+    pub fn upload_stored_copy(
+        &self,
+        project_id: &str,
+        media_file_id: &str,
+        bytes: &mut dyn Read,
+        size_bytes: u64,
+    ) -> Result<StoredCopy, RemoteError> {
+        let path = format!("/projects/{project_id}/media/{media_file_id}/stored-copy");
+        let body = SendBody::from_reader(bytes);
+        let content_type = Some("application/octet-stream");
+        let size = Some(size_bytes);
+        let response = self.transfer(Method::PUT, &path, content_type, size, body, size)?;
+        read_json(response)
+    }
+
+    /// Opens the remote's copy of a media file's bytes.
+    pub fn download_stored_copy(
+        &self,
+        project_id: &str,
+        media_file_id: &str,
+    ) -> Result<ureq::BodyReader<'static>, RemoteError> {
+        let path = format!("/projects/{project_id}/media/{media_file_id}/stored-copy");
+        let response = self.transfer(Method::GET, &path, None, None, (), None)?;
+        Ok(response.into_body().into_reader())
     }
 
     /// Sends a transfer and passes on a successful response with its body unread.

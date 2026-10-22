@@ -34,8 +34,6 @@ pub struct AppliedInbox {
     pub applied_count: u64,
     /// How many conflicts were recorded.
     pub conflict_count: u64,
-    /// Files of stored media copies to remove once the transaction is committed.
-    pub removed_copy_files: Vec<String>,
     /// The flashcards whose schedule was rebuilt because their answers changed.
     pub refreshed_flashcards: Vec<FlashcardId>,
     /// Dictionaries that the remote has and this server does not. They stay in the inbox until their content is fetched.
@@ -48,7 +46,6 @@ impl AppliedInbox {
     pub fn merge(&mut self, other: AppliedInbox) {
         self.applied_count += other.applied_count;
         self.conflict_count += other.conflict_count;
-        self.removed_copy_files.extend(other.removed_copy_files);
         self.refreshed_flashcards.extend(other.refreshed_flashcards);
         self.dictionaries_to_fetch
             .extend(other.dictionaries_to_fetch);

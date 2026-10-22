@@ -16,6 +16,7 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::auth::owner::Owner;
+use crate::media_copy_files::release_copies;
 use crate::now_ms::now_ms;
 use crate::state::AppState;
 
@@ -105,6 +106,8 @@ pub async fn push_sync_changes(
     let verdicts = state
         .with_storage(move |storage| storage.apply_pushed_batch(&owner, &changes, now_ms()))
         .await?;
+    // A pushed media file whose choice to keep a copy was turned off has lost its copy here.
+    release_copies(&state).await;
     let outcomes = keys
         .into_iter()
         .zip(verdicts)

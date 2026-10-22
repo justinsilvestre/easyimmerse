@@ -22,6 +22,7 @@ pub mod local_path;
 pub mod local_table_file;
 pub mod lookup;
 pub mod mail;
+pub mod media_copy_files;
 pub mod media_source_jobs;
 mod now_ms;
 mod plugin_compile_cache;
@@ -39,7 +40,8 @@ mod typescript_constants;
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::principal::Principal;
 pub use config::{
-    AccountsConfig, ApiConfig, MailConfig, MailTransport, SmtpConfig, SmtpCredentials, SmtpSecurity,
+    AccountsConfig, ApiConfig, MailConfig, MailTransport, SmtpConfig, SmtpCredentials,
+    SmtpSecurity, UploadsConfig,
 };
 pub use plugins::PluginRegistry;
 pub use router::{build_router, openapi_document};

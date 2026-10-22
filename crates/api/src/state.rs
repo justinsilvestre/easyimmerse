@@ -58,8 +58,9 @@ impl AppState {
         conversion: Option<ConversionService>,
     ) -> Self {
         let storage = Arc::new(storage);
+        let uploads_dir = config.uploads.as_ref().map(|uploads| uploads.dir.clone());
         Self {
-            sync: Arc::new(SyncEngine::new(Arc::clone(&storage))),
+            sync: Arc::new(SyncEngine::new(Arc::clone(&storage), uploads_dir)),
             storage,
             config: Arc::new(config),
             probes: probes.map(Arc::new),

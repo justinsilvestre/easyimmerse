@@ -5,7 +5,7 @@ mod dictionary_transfer;
 mod engine_loop;
 pub mod failures;
 pub mod link;
-mod media_transfer;
+pub mod media_transfer;
 pub mod proxy;
 mod pull;
 mod push;
@@ -14,6 +14,7 @@ mod remote_transfers;
 mod round;
 pub mod status;
 
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
@@ -24,6 +25,8 @@ use tokio::sync::Notify;
 /// Runs rounds of syncing with the linked remote, and holds what the status reports beyond the database.
 pub struct SyncEngine {
     storage: Arc<Storage>,
+    /// Where this server keeps copies of media bytes; None when it keeps none.
+    uploads_dir: Option<PathBuf>,
     wake: Notify,
     state: Mutex<EngineState>,
 }
@@ -55,9 +58,10 @@ impl Default for EngineState {
 }
 
 impl SyncEngine {
-    pub fn new(storage: Arc<Storage>) -> Self {
+    pub fn new(storage: Arc<Storage>, uploads_dir: Option<PathBuf>) -> Self {
         Self {
             storage,
+            uploads_dir,
             wake: Notify::new(),
             state: Mutex::new(EngineState::default()),
         }
@@ -85,6 +89,18 @@ impl SyncEngine {
 
     pub fn transfer(&self) -> Option<MediaTransfer> {
         self.state().transfer.clone()
+    }
+
+    /// Reports the media transfer in progress, or None once it is over.
+    fn set_transfer(&self, transfer: Option<MediaTransfer>) {
+        self.state().transfer = transfer;
+    }
+
+    /// Adds to the bytes the transfer in progress has sent.
+    fn add_sent_bytes(&self, count: u64) {
+        if let Some(transfer) = &mut self.state().transfer {
+            transfer.sent_bytes += count;
+        }
     }
 
     pub fn pulled_revision(&self) -> u64 {

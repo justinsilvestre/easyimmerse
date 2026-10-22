@@ -22,12 +22,32 @@ use tokio::process::Command;
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_file;
+use crate::routes::stored_copies::stored_copy_path;
 use crate::state::AppState;
 
 pub const CONVERSION_UNAVAILABLE: &str = "conversion_unavailable";
 
-/// The local path of a media file, once the token may read it and the file exists.
+/// The local path of a media file's bytes: its own path, once the token may read it and the file exists,
+/// or else this server's copy of the bytes, which lives in the server's own uploads directory.
 pub async fn resolve_source_path(
+    state: &AppState,
+    principal: &Principal,
+    media_file: &MediaFile,
+) -> Result<String, ApiFailure> {
+    let failure = match resolve_own_path(state, principal, media_file).await {
+        Ok(path) => return Ok(path),
+        Err(failure) => failure,
+    };
+    match stored_copy_path(state, media_file).await? {
+        Some(copy) if tokio::fs::metadata(&copy).await.is_ok() => {
+            Ok(copy.to_string_lossy().into_owned())
+        }
+        _ => Err(failure),
+    }
+}
+
+/// The media file's own path, once the token may read it and the file exists, without falling back to a copy.
+pub async fn resolve_own_path(
     state: &AppState,
     principal: &Principal,
     media_file: &MediaFile,
@@ -229,6 +249,7 @@ mod tests {
             track_selection_json: Some(selection_json.to_owned()),
             translation_media_file_id: None,
             is_upload_chosen: false,
+            has_stored_copy: false,
         }
     }
 

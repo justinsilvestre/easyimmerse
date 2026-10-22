@@ -21,6 +21,19 @@ pub struct ApiConfig {
     /// Directories the server writes itself, such as the one plugins fetch media into.
     /// Every token may read the files inside them, since no request chose their paths.
     pub server_dirs: Vec<PathBuf>,
+    /// Where the server keeps copies of media bytes, and how many bytes each account may keep there.
+    /// None when it keeps none.
+    pub uploads: Option<UploadsConfig>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UploadsConfig {
+    /// The directory the copies are written to, which the server creates when it is missing.
+    pub dir: PathBuf,
+    /// The most bytes a privileged account or an administrator may keep; None for no limit.
+    pub account_quota_bytes: Option<u64>,
+    /// The most bytes a library user may keep; 0 lets library users keep none.
+    pub library_user_quota_bytes: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,6 +116,7 @@ impl ApiConfig {
             allow_local_paths,
             expected_hosts: vec![format!("127.0.0.1:{port}"), format!("localhost:{port}")],
             server_dirs: Vec::new(),
+            uploads: None,
         }
     }
 

@@ -369,6 +369,7 @@ mod tests {
             track_selection_json: None,
             translation_media_file_id: None,
             is_upload_chosen: false,
+            has_stored_copy: false,
         }
     }
 
