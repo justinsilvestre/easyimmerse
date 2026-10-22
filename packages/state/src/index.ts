@@ -4,6 +4,7 @@ export {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
   selectIsLinking,
+  selectIsSignInFormStarted,
   selectIsSigningOut,
   selectIsUnlinking,
   selectPasswordStrength,

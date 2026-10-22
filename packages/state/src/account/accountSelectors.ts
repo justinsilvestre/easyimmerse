@@ -7,6 +7,7 @@ import {
   canAskPasswordReset,
   canSubmitPasswordReset,
   canSubmitSignIn,
+  initialSignInForm,
   isBusy,
   type PasswordResetStatus,
   type ServerOffer,
@@ -100,6 +101,13 @@ export const selectAccountServerOptions = createSelector(
 export const selectCanSubmitSignIn = (state: AppRoot) =>
   canSubmitSignIn(selectForm(state), selectCloudUrl(state));
 
+/**
+ * Tells whether the sign-in form holds anything other than its first values,
+ * such as what a person typed or the remote the app offers to log in to again.
+ */
+export const selectIsSignInFormStarted = (state: AppRoot) =>
+  isStarted(selectForm(state));
+
 /** Tells whether the app is logging out of its account. */
 export const selectIsSigningOut = (state: AppRoot) =>
   selectIsRequestInFlight(state.app, logOutRequestId);
@@ -125,4 +133,19 @@ function failureMessageOf(
     );
   if (form.status.kind !== "failed") return null;
   return signInFailureMessage(form.status.failure, address);
+}
+
+function isStarted(form: SignInForm): boolean {
+  const fields = [
+    "mode",
+    "serverChoice",
+    "ownServerUrl",
+    "email",
+    "password",
+  ] as const;
+  return (
+    fields.some((field) => form[field] !== initialSignInForm[field]) ||
+    form.status.kind !== "idle" ||
+    form.passwordReset !== null
+  );
 }

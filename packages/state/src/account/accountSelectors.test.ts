@@ -7,6 +7,7 @@ import {
   selectAccountServerOptions,
   selectCanSubmitSignIn,
   selectIsLinking,
+  selectIsSignInFormStarted,
   selectIsSigningOut,
   selectIsUnlinking,
   selectPasswordStrength,
@@ -170,5 +171,25 @@ describe("selectIsUnlinking", () => {
     const store = builtInStore();
     store.dispatch(actions.signOutRequested());
     expect(selectIsUnlinking(store.getState())).toBe(true);
+  });
+});
+
+describe("selectIsSignInFormStarted", () => {
+  it("tells that a form nobody has filled in is not started", () => {
+    expect(selectIsSignInFormStarted(builtInStore().getState())).toBe(false);
+  });
+
+  it("tells that the form is started once it is filled in to log in again", () => {
+    const store = builtInStore();
+    store.dispatch(
+      actions.relinkRequested("https://own.example.org", "someone@example.com"),
+    );
+    expect(selectIsSignInFormStarted(store.getState())).toBe(true);
+  });
+
+  it("tells that the form is started once a person types in it", () => {
+    const store = builtInStore();
+    store.dispatch(actions.signInFormChanged({ password: "c" }));
+    expect(selectIsSignInFormStarted(store.getState())).toBe(true);
   });
 });
