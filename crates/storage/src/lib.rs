@@ -34,7 +34,7 @@ mod sync;
 mod users;
 
 pub use anki_sync::DeliveredPackage;
-pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
+pub use dictionaries::{DictionaryCounts, DictionaryDump, DictionaryId, StoredDictionary};
 pub use email_tokens::{EmailTokenPurpose, NewEmailToken};
 pub use error::StorageError;
 pub use owned_paths::OwnedPath;
@@ -674,6 +674,88 @@ impl Storage {
     ) -> Result<DictionaryId, StorageError> {
         let imported_at = new_row::now_ms();
         self.write(|conn| dictionaries::import_with(conn, owner, imported_at, read))
+    }
+
+    /// Begins a dump of a dictionary of the owner, for another server to import whole.
+    pub fn start_dictionary_dump(
+        &self,
+        owner: &OwnerId,
+        id: &DictionaryId,
+    ) -> Result<DictionaryDump, StorageError> {
+        self.read(|conn| dictionaries::start_dump(conn, owner, id))
+    }
+
+    /// Passes the next page of the dump to the sink, and tells whether any content remains.
+    /// Each page takes the reader on its own, so a slow receiver never holds up other reads.
+    pub fn continue_dictionary_dump(
+        &self,
+        dump: &mut DictionaryDump,
+        sink: &mut dyn DictionarySink,
+    ) -> Result<bool, StorageError> {
+        self.read(|conn| dictionaries::continue_dump(conn, dump, sink))
+    }
+
+    /// Imports a dictionary that a device uploads, under its own id, and returns the time its registry entry took.
+    pub fn store_synced_dictionary(
+        &self,
+        owner: &OwnerId,
+        id: &DictionaryId,
+        imported_at: u64,
+        read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
+    ) -> Result<u64, StorageError> {
+        self.write(|conn| {
+            sync::dictionary_rows::store_dictionary(conn, owner, id, imported_at, read)
+        })
+    }
+
+    /// Imports a dictionary pulled from the remote under its id and settles its inbox row.
+    pub fn store_pulled_dictionary(
+        &self,
+        remote: &StoredRemote,
+        row: &PulledRow,
+        imported_at: u64,
+        read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            sync::dictionary_rows::store_pulled_dictionary(conn, remote, row, imported_at, read)
+        })
+    }
+
+    /// Settles the inbox row of a pulled dictionary that this server will not import.
+    pub fn settle_pulled_dictionary(
+        &self,
+        remote: &StoredRemote,
+        row: &PulledRow,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| sync::dictionary_rows::settle_pulled_dictionary(conn, remote, row))
+    }
+
+    /// The owner's dictionaries that the remote is not known to hold, each with its modification time here.
+    pub fn dictionaries_to_upload(
+        &self,
+        owner: &OwnerId,
+        remote_id: &str,
+    ) -> Result<Vec<(DictionaryId, u64)>, StorageError> {
+        self.read(|conn| sync::dictionary_rows::dictionaries_to_upload(conn, owner, remote_id))
+    }
+
+    /// Records that the remote stored an uploaded dictionary at its own time, which this server takes too.
+    pub fn record_uploaded_dictionary(
+        &self,
+        owner: &OwnerId,
+        remote_id: &str,
+        id: &DictionaryId,
+        remote_updated_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            sync::dictionary_rows::record_uploaded_dictionary(
+                conn,
+                owner,
+                remote_id,
+                id,
+                remote_updated_at_ms,
+            )
+        })
     }
 
     /// Lists the owner's dictionaries in the order they were imported.

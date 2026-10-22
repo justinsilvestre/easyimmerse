@@ -32,18 +32,49 @@ pub fn import_with(
     read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
 ) -> Result<DictionaryId, StorageError> {
     let transaction = conn.transaction()?;
-    let mut importer = DictionaryImporter {
-        transaction: &transaction,
+    let id = import_into(
+        &transaction,
         owner,
         imported_at,
+        DictionaryId::generate(),
+        read,
+    )?;
+    transaction.commit()?;
+    Ok(id)
+}
+
+/// Stores what `read` passes to the sink as a dictionary of the owner under the given id, inside the caller's transaction.
+/// Syncing uses this so that a dictionary keeps its id on every server.
+pub(crate) fn import_into(
+    transaction: &Transaction,
+    owner: &OwnerId,
+    imported_at: u64,
+    id: DictionaryId,
+    read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
+) -> Result<DictionaryId, StorageError> {
+    if is_dictionary_stored(transaction, &id)? {
+        return Err(StorageError::DictionaryExists(id.0));
+    }
+    let mut importer = DictionaryImporter {
+        transaction,
+        owner,
+        imported_at,
+        id: Some(id),
         started: None,
         deflater: JsonDeflater::new(),
     };
     read(&mut importer)?;
     let started = importer.started.ok_or(StorageError::ImportOutOfOrder)?;
-    record_counts(&transaction, started.number)?;
-    transaction.commit()?;
+    record_counts(transaction, started.number)?;
     Ok(started.id)
+}
+
+fn is_dictionary_stored(conn: &Connection, id: &DictionaryId) -> Result<bool, StorageError> {
+    Ok(conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM dictionaries WHERE id = ?1)",
+        params![id.0],
+        |row| row.get(0),
+    )?)
 }
 
 /// Writes each item a format reads straight to the database through cached prepared statements.
@@ -51,6 +82,8 @@ struct DictionaryImporter<'a> {
     transaction: &'a Transaction<'a>,
     owner: &'a OwnerId,
     imported_at: u64,
+    /// The id to store the dictionary under, until `begin` takes it.
+    id: Option<DictionaryId>,
     /// The dictionary row, once `begin` has written it.
     started: Option<StartedDictionary>,
     deflater: JsonDeflater,
@@ -82,7 +115,7 @@ impl DictionaryImporter<'_> {
     }
 
     fn insert_metadata(
-        &self,
+        &mut self,
         metadata: &DictionaryMetadata,
     ) -> Result<StartedDictionary, StorageError> {
         if self.has_dictionary_titled(&metadata.title)? {
@@ -90,7 +123,7 @@ impl DictionaryImporter<'_> {
                 metadata.title.clone(),
             ));
         }
-        let id = DictionaryId::generate();
+        let id = self.id.take().ok_or(StorageError::ImportOutOfOrder)?;
         let frequency_mode = metadata
             .frequency_mode
             .as_ref()

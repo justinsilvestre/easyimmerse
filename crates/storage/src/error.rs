@@ -22,6 +22,8 @@ pub enum StorageError {
     DictionaryAlreadyImported(String),
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
+    #[error("a dictionary with the id {0:?} is stored already")]
+    DictionaryExists(String),
     #[error("the dictionary {dictionary_id:?} has no file at {path:?}")]
     DictionaryMediaNotFound { dictionary_id: String, path: String },
     #[error("no project has the id {0:?}")]

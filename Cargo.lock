@@ -1482,6 +1482,7 @@ name = "easyimmerse-core"
 version = "0.1.0"
 dependencies = [
  "adler2",
+ "base64 0.22.1",
  "bzip2-rs",
  "chardetng",
  "csv",

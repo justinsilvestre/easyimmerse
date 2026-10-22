@@ -7,6 +7,7 @@ pub mod changes;
 pub mod codec;
 mod conflict_descriptions;
 pub mod conflicts;
+pub mod dictionary_rows;
 pub mod inbox;
 mod pulled_rows;
 pub mod push_answers;
@@ -14,6 +15,8 @@ pub mod remote_copies;
 pub mod remotes;
 pub mod tables;
 
+#[cfg(test)]
+mod dictionary_rows_tests;
 #[cfg(test)]
 mod inbox_tests;
 #[cfg(test)]
