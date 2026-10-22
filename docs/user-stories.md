@@ -961,7 +961,7 @@ As a web/mobile app user:
 - when I enter a pairing code that is wrong or has expired:
   - [x] I am told so
 - when I enter a pairing code that another device has already used:
-  - [ ] I am told that the code has been used, and the desktop app shows a new one
+  - [x] I am told that the code has been used, and the desktop app shows a new one
 - when I have entered too many wrong pairing codes:
   - [x] I am told how long to wait before trying again
 - when I open the address held in the desktop app's QR code in a browser on the same local network:
