@@ -7,15 +7,20 @@ use crate::config::ApiConfig;
 pub enum Principal {
     /// The holder of the launch token, who owns the machine the server runs on.
     Launch,
-    /// The user of a session, with the role the account had when the request arrived.
-    Account { user_id: String, role: AccountRole },
+    /// The user of a session, with the role the account had when the request arrived, and the session's id.
+    Account {
+        user_id: String,
+        role: AccountRole,
+        session_id: String,
+    },
 }
 
 impl Principal {
-    pub fn of_account(user: &AccountUser) -> Self {
+    pub fn of_session(user: &AccountUser, session_id: &str) -> Self {
         Principal::Account {
             user_id: user.id.clone(),
             role: user.role,
+            session_id: session_id.to_string(),
         }
     }
 
@@ -42,6 +47,7 @@ mod tests {
         Principal::Account {
             user_id: "u".to_string(),
             role,
+            session_id: "s".to_string(),
         }
     }
 

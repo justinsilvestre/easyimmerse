@@ -10,6 +10,149 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/auth/confirm-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirms the email address of an account with the token of the link mailed to it. Needs no token.",
+        "operationId": "confirmEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The email address is confirmed"
+          },
+          "400": {
+            "description": "`invalid_link`: the token is unknown, used or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`accounts_disabled`: the server has no accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/confirmation-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mails the account a new link that confirms its email address. The link of an earlier mail stops working.",
+        "operationId": "resendConfirmationEmail",
+        "responses": {
+          "202": {
+            "description": "The mail is on its way"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`already_confirmed`: the email address is already confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: a confirmation mail was sent less than a minute ago",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`mail_unavailable`: the server does not send email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "tags": [
@@ -186,12 +329,147 @@
         ]
       }
     },
+    "/auth/password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Gives an account a new password with the token of the link mailed for a reset, and logs it in on this device.\nEvery other session of the account ends. Needs no token.",
+        "operationId": "chooseNewPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The password was changed and the account logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`invalid_link`: the token is unknown, used or expired, or `password_too_short` or `password_too_long`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`accounts_disabled`: the server has no accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password-reset": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Mails a link to choose a new password to the account with the email address. Needs no token.\nThe answer is the same whether or not an account has the address, so that it reveals none.",
+        "operationId": "requestPasswordReset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "If an account has the address, a mail is on its way to it"
+          },
+          "400": {
+            "description": "`invalid_email`: the email address is longer than 254 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: too many login or reset attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`mail_unavailable`: the server does not send email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/server": {
       "get": {
         "tags": [
           "auth"
         ],
-        "summary": "Tells whether the server has accounts and whether sign-up is open. Needs no token.",
+        "summary": "Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token.",
         "operationId": "getServerAuthInfo",
         "responses": {
           "200": {
@@ -217,12 +495,138 @@
         }
       }
     },
+    "/auth/sessions": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Lists the devices that the account is logged in on.",
+        "operationId": "listSessions",
+        "responses": {
+          "200": {
+            "description": "The account's sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/auth/sessions/{id}": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logs the account out on one of its devices. Deleting the current session logs out like `/auth/logout`.",
+        "operationId": "deleteSession",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The session's id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The session was ended"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`not_an_account`: the launch token belongs to no account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: the account has no session with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/auth/signup": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Creates an account with the `library_user` role and logs it in. Needs no token.",
+        "summary": "Creates an account with the `library_user` role and logs it in. Needs no token.\nOn a server that sends email, it also mails a link that confirms the address.",
         "operationId": "signUp",
         "requestBody": {
           "content": {
@@ -6843,6 +7247,15 @@
           "email": {
             "type": "string"
           },
+          "email_confirmed_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.\nNone until then, and always on a server that sends no email.",
+            "minimum": 0
+          },
           "id": {
             "type": "string"
           },
@@ -7647,6 +8060,18 @@
           "frequency",
           "ignored"
         ]
+      },
+      "ConfirmEmailRequest": {
+        "type": "object",
+        "description": "The token of a mailed link, which the link carries as a query parameter.",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
       },
       "ContainerFormat": {
         "type": "string",
@@ -9667,6 +10092,24 @@
           }
         }
       },
+      "NewPasswordRequest": {
+        "type": "object",
+        "description": "A new password, chosen through the link mailed for a reset.",
+        "required": [
+          "token",
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "At least eight characters."
+          },
+          "token": {
+            "type": "string",
+            "description": "The token that the mailed link carries."
+          }
+        }
+      },
       "ParagraphProvenance": {
         "type": "object",
         "description": "Where one paragraph came from in its content document.",
@@ -9731,6 +10174,17 @@
           },
           "source": {
             "$ref": "#/components/schemas/TextSource"
+          }
+        }
+      },
+      "PasswordResetRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
           }
         }
       },
@@ -10707,7 +11161,8 @@
         "description": "What a server offers to clients that want to log in.",
         "required": [
           "accounts",
-          "open_signup"
+          "open_signup",
+          "sends_email"
         ],
         "properties": {
           "accounts": {
@@ -10717,6 +11172,10 @@
           "open_signup": {
             "type": "boolean",
             "description": "Whether anyone may create an account on the server."
+          },
+          "sends_email": {
+            "type": "boolean",
+            "description": "Whether the server sends email, so that accounts can confirm their address and reset a forgotten password."
           }
         }
       },
@@ -10733,6 +11192,57 @@
           },
           "user": {
             "$ref": "#/components/schemas/AccountUser"
+          }
+        }
+      },
+      "SessionList": {
+        "type": "object",
+        "required": [
+          "sessions"
+        ],
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            },
+            "description": "Most recently used first."
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "description": "A device that the account is logged in on.",
+        "required": [
+          "id",
+          "created_at_ms",
+          "last_used_at_ms",
+          "user_agent",
+          "is_current"
+        ],
+        "properties": {
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the device logged in, in milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_current": {
+            "type": "boolean",
+            "description": "Whether this is the session that asked for the list."
+          },
+          "last_used_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the device last sent a request, in milliseconds since the Unix epoch, to within an hour.",
+            "minimum": 0
+          },
+          "user_agent": {
+            "type": "string",
+            "description": "The User-Agent header that the device sent when it logged in, which may be empty."
           }
         }
       },

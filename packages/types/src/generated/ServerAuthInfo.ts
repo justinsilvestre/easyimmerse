@@ -11,4 +11,8 @@ accounts: boolean,
 /**
  * Whether anyone may create an account on the server.
  */
-open_signup: boolean, };
+open_signup: boolean, 
+/**
+ * Whether the server sends email, so that accounts can confirm their address and reset a forgotten password.
+ */
+sends_email: boolean, };

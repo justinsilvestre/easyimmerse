@@ -5,7 +5,10 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use easyimmerse_api::{AccountsConfig, ApiConfig, ServeOptions, ServerHandle, serve};
+use easyimmerse_api::mail::{OutgoingMail, RecordedMails};
+use easyimmerse_api::{
+    AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions, ServerHandle, serve,
+};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use serde_json::Value;
@@ -111,6 +114,46 @@ pub async fn spawn_test_server_with_accounts_on(storage: Storage, open_signup: b
         ..ApiConfig::for_loopback(port, TOKEN.to_string(), true)
     };
     spawn_configured_test_server(configure, storage, ServeOptions::default()).await
+}
+
+/// Where the mailed links of a test server point.
+pub const PUBLIC_URL: &str = "https://app.example.com/web";
+
+/// A server with open sign-up that sends its mail to the returned recording, besides the launch token.
+pub async fn spawn_test_server_with_mail() -> (TestServer, RecordedMails) {
+    let recorded = RecordedMails::default();
+    let mail = MailConfig {
+        transport: MailTransport::Recording(recorded.clone()),
+        from_address: "easyImmerse <accounts@example.com>".to_string(),
+        public_url: PUBLIC_URL.to_string(),
+    };
+    let configure = |port| ApiConfig {
+        accounts: Some(AccountsConfig { open_signup: true }),
+        mail: Some(mail),
+        ..ApiConfig::for_loopback(port, TOKEN.to_string(), true)
+    };
+    let server =
+        spawn_configured_test_server(configure, seeded_storage(), ServeOptions::default()).await;
+    (server, recorded)
+}
+
+/// The recorded mails once there are `count` of them, which the server sends in the background,
+/// or what there is after two seconds.
+pub async fn wait_for_mails(recorded: &RecordedMails, count: usize) -> Vec<OutgoingMail> {
+    for _ in 0..100 {
+        if recorded.sent().len() >= count {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    recorded.sent()
+}
+
+/// The token of the link in the mail that names the query parameter, such as `confirm_email`.
+pub fn link_token(mail: &OutgoingMail, parameter: &str) -> String {
+    let prefix = format!("{PUBLIC_URL}/?{parameter}=");
+    let start = mail.text.find(&prefix).expect("a link in the mail") + prefix.len();
+    mail.text[start..start + 64].to_string()
 }
 
 /// Starts a server with the configuration that `configure` builds for its port.

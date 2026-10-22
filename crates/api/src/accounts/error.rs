@@ -21,8 +21,16 @@ pub enum AccountsError {
     EmailTaken(String),
     #[error("the email address or the password is wrong")]
     InvalidCredentials,
-    #[error("too many failed logins; try again in {retry_after_secs} seconds")]
+    #[error("too many attempts; try again in {retry_after_secs} seconds")]
     TooManyAttempts { retry_after_secs: u64 },
+    #[error(
+        "a confirmation email was sent less than a minute ago; try again in {retry_after_secs} seconds"
+    )]
+    MailSentRecently { retry_after_secs: u64 },
+    #[error("the link is unknown or has expired")]
+    InvalidLink,
+    #[error("the email address is already confirmed")]
+    AlreadyConfirmed,
     #[error("could not hash the password: {0}")]
     Hashing(String),
     #[error(transparent)]
@@ -57,9 +65,16 @@ impl From<AccountsError> for ApiFailure {
             AccountsError::InvalidCredentials => {
                 ApiFailure::new(StatusCode::UNAUTHORIZED, "invalid_credentials", message)
             }
-            AccountsError::TooManyAttempts { retry_after_secs } => {
+            AccountsError::TooManyAttempts { retry_after_secs }
+            | AccountsError::MailSentRecently { retry_after_secs } => {
                 ApiFailure::new(StatusCode::TOO_MANY_REQUESTS, "too_many_attempts", message)
                     .with_retry_after(retry_after_secs)
+            }
+            AccountsError::InvalidLink => {
+                ApiFailure::new(StatusCode::BAD_REQUEST, "invalid_link", message)
+            }
+            AccountsError::AlreadyConfirmed => {
+                ApiFailure::new(StatusCode::CONFLICT, "already_confirmed", message)
             }
             AccountsError::Hashing(_) => crate::auth::error_body::internal(message),
             AccountsError::Storage(error) => error.into(),
@@ -89,6 +104,20 @@ mod tests {
             retry_after_secs: 60,
         });
         assert_eq!(failure.retry_after_secs, Some(60));
+    }
+
+    #[test]
+    fn an_invalid_link_has_its_own_code() {
+        let failure = ApiFailure::from(AccountsError::InvalidLink);
+        assert_eq!(failure.error.code, "invalid_link");
+    }
+
+    #[test]
+    fn a_recent_mail_tells_when_to_retry() {
+        let failure = ApiFailure::from(AccountsError::MailSentRecently {
+            retry_after_secs: 30,
+        });
+        assert_eq!(failure.retry_after_secs, Some(30));
     }
 
     #[test]

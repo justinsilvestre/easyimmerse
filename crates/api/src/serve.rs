@@ -10,6 +10,7 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
 use crate::config::ApiConfig;
+use crate::mail::{MailError, MailService};
 use crate::plugins::PluginRegistry;
 use crate::router::build_router;
 use crate::routes::conversion_cache::restore_cache_budget;
@@ -25,6 +26,8 @@ pub enum ServeError {
         "the server needs a launch token, accounts, or both, or no request could be authenticated"
     )]
     NoAuthentication,
+    #[error("the mail settings are unusable: {0}")]
+    Mail(#[from] MailError),
 }
 
 /// A running server. Dropping the handle leaves the server running until the runtime
@@ -71,6 +74,7 @@ pub async fn serve(
     if !config.can_authenticate() {
         return Err(ServeError::NoAuthentication);
     }
+    let mail = config.account_mail().map(MailService::open).transpose()?;
     let addr = listener.local_addr()?;
     let conversion = options.cache_dir.and_then(open_conversion_service);
     if let Some(conversion) = &conversion {
@@ -91,7 +95,8 @@ pub async fn serve(
         .map(PluginRegistry::scan)
         .unwrap_or_default();
     let state = AppState::new(storage, config, open_probe_cache(), conversion.clone())
-        .with_plugins(plugins, media_dir);
+        .with_plugins(plugins, media_dir)
+        .with_mail(mail);
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
     let service = router.into_make_service_with_connect_info::<SocketAddr>();

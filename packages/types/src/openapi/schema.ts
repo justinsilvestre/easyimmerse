@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/auth/confirm-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirms the email address of an account with the token of the link mailed to it. Needs no token. */
+        post: operations["confirmEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirmation-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mails the account a new link that confirms its email address. The link of an earlier mail stops working. */
+        post: operations["resendConfirmationEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -55,6 +89,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gives an account a new password with the token of the link mailed for a reset, and logs it in on this device.
+         *     Every other session of the account ends. Needs no token.
+         */
+        post: operations["chooseNewPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mails a link to choose a new password to the account with the email address. Needs no token.
+         *     The answer is the same whether or not an account has the address, so that it reveals none.
+         */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/server": {
         parameters: {
             query?: never;
@@ -62,11 +136,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tells whether the server has accounts and whether sign-up is open. Needs no token. */
+        /** Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token. */
         get: operations["getServerAuthInfo"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the devices that the account is logged in on. */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Logs the account out on one of its devices. Deleting the current session logs out like `/auth/logout`. */
+        delete: operations["deleteSession"];
         options?: never;
         head?: never;
         patch?: never;
@@ -81,7 +189,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Creates an account with the `library_user` role and logs it in. Needs no token. */
+        /**
+         * Creates an account with the `library_user` role and logs it in. Needs no token.
+         *     On a server that sends email, it also mails a link that confirms the address.
+         */
         post: operations["signUp"];
         delete?: never;
         options?: never;
@@ -1350,6 +1461,12 @@ export interface components {
              */
             created_at_ms: number;
             email: string;
+            /**
+             * Format: int64
+             * @description When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.
+             *     None until then, and always on a server that sends no email.
+             */
+            email_confirmed_at_ms?: number | null;
             id: string;
             role: components["schemas"]["AccountRole"];
         };
@@ -1634,6 +1751,10 @@ export interface components {
          * @enum {string}
          */
         ColumnRole: "term" | "reading" | "definition" | "alternates" | "tags" | "frequency" | "ignored";
+        /** @description The token of a mailed link, which the link carries as a query parameter. */
+        ConfirmEmailRequest: {
+            token: string;
+        };
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -2259,6 +2380,13 @@ export interface components {
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
         };
+        /** @description A new password, chosen through the link mailed for a reset. */
+        NewPasswordRequest: {
+            /** @description At least eight characters. */
+            password: string;
+            /** @description The token that the mailed link carries. */
+            token: string;
+        };
         /** @description Where one paragraph came from in its content document. */
         ParagraphProvenance: {
             /** @description The `id` attribute of the block element the paragraph was extracted from. */
@@ -2274,6 +2402,9 @@ export interface components {
         ParseTimedTextRequest: {
             format?: components["schemas"]["TimedTextFormat"] | null;
             source: components["schemas"]["TextSource"];
+        };
+        PasswordResetRequest: {
+            email: string;
         };
         /**
          * @description Whether the server can open the file at a media file's path.
@@ -2671,11 +2802,35 @@ export interface components {
             accounts: boolean;
             /** @description Whether anyone may create an account on the server. */
             open_signup: boolean;
+            /** @description Whether the server sends email, so that accounts can confirm their address and reset a forgotten password. */
+            sends_email: boolean;
         };
         /** @description A new session: the token to present as `Authorization: Bearer <token>`, and its account. */
         SessionCreated: {
             token: string;
             user: components["schemas"]["AccountUser"];
+        };
+        SessionList: {
+            /** @description Most recently used first. */
+            sessions: components["schemas"]["SessionSummary"][];
+        };
+        /** @description A device that the account is logged in on. */
+        SessionSummary: {
+            /**
+             * Format: int64
+             * @description When the device logged in, in milliseconds since the Unix epoch.
+             */
+            created_at_ms: number;
+            id: string;
+            /** @description Whether this is the session that asked for the list. */
+            is_current: boolean;
+            /**
+             * Format: int64
+             * @description When the device last sent a request, in milliseconds since the Unix epoch, to within an hour.
+             */
+            last_used_at_ms: number;
+            /** @description The User-Agent header that the device sent when it logged in, which may be empty. */
+            user_agent: string;
         };
         SetUserRoleRequest: {
             role: components["schemas"]["AccountRole"];
@@ -3001,6 +3156,129 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    confirmEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description The email address is confirmed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_link`: the token is unknown, used or expired */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `accounts_disabled`: the server has no accounts */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    resendConfirmationEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mail is on its way */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `already_confirmed`: the email address is already confirmed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: a confirmation mail was sent less than a minute ago */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `mail_unavailable`: the server does not send email */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     logIn: {
         parameters: {
             query?: never;
@@ -3146,6 +3424,117 @@ export interface operations {
             };
         };
     };
+    chooseNewPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description The password was changed and the account logged in */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionCreated"];
+                };
+            };
+            /** @description `invalid_link`: the token is unknown, used or expired, or `password_too_short` or `password_too_long` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `accounts_disabled`: the server has no accounts */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description If an account has the address, a mail is on its way to it */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `invalid_email`: the email address is longer than 254 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: too many login or reset attempts at this email address from this peer, from this peer, or at this email address within fifteen minutes */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `mail_unavailable`: the server does not send email */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getServerAuthInfo: {
         parameters: {
             query?: never;
@@ -3162,6 +3551,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServerAuthInfo"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account's sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionList"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The session's id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session was ended */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_an_account`: the launch token belongs to no account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_found`: the account has no session with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Unexpected Host header */

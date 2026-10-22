@@ -15,9 +15,11 @@ pub struct ServerAuthInfo {
     pub accounts: bool,
     /// Whether anyone may create an account on the server.
     pub open_signup: bool,
+    /// Whether the server sends email, so that accounts can confirm their address and reset a forgotten password.
+    pub sends_email: bool,
 }
 
-/// Tells whether the server has accounts and whether sign-up is open. Needs no token.
+/// Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token.
 #[utoipa::path(
     get,
     path = "/auth/server",
@@ -33,5 +35,6 @@ pub async fn get_server_auth_info(State(state): State<AppState>) -> Json<ServerA
     Json(ServerAuthInfo {
         accounts: accounts.is_some(),
         open_signup: accounts.is_some_and(|accounts| accounts.open_signup),
+        sends_email: state.mail.is_some(),
     })
 }

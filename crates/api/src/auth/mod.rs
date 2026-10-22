@@ -1,3 +1,4 @@
+pub mod account_principal;
 pub mod administrator;
 pub mod bearer_token;
 pub mod error_body;

@@ -92,6 +92,24 @@ pub fn conflict(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::CONFLICT, "conflict", message)
 }
 
+/// The answer to the launch principal on a route that only an account may use.
+pub fn not_an_account() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::FORBIDDEN,
+        "not_an_account",
+        "only an account may do this, and the launch token belongs to none",
+    )
+}
+
+/// The answer on a route that needs email when the server sends none.
+pub fn mail_unavailable() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::SERVICE_UNAVAILABLE,
+        "mail_unavailable",
+        "this server does not send email",
+    )
+}
+
 pub fn internal(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", message)
 }
@@ -107,6 +125,7 @@ impl From<StorageError> for ApiFailure {
             | StorageError::SubtitleTrackNotFound(_)
             | StorageError::AlignmentNotFound(_)
             | StorageError::UserNotFound(_)
+            | StorageError::SessionNotFound(_)
             | StorageError::ReviewAnswerNotFound(_) => not_found(error.to_string()),
             StorageError::PairedWithItself(_) => bad_request(error.to_string()),
             StorageError::FlashcardIdTaken(_) | StorageError::ReviewAnswerNotLatest(_) => {
@@ -202,6 +221,12 @@ mod tests {
     #[test]
     fn a_missing_dictionary_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::DictionaryNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_session_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::SessionNotFound("x".to_string()));
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
     }
 
