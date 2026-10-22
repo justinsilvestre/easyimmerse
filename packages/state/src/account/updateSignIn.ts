@@ -1,6 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
+import { selectFailedSaves } from "../flashcards/failedSave.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { isAborted } from "../server/isAborted.ts";
 import { isSettled } from "../server/isSettled.ts";
@@ -36,6 +37,7 @@ export const unlinkRequestId = "account/unlink";
  * Keeps the sign-in form, asks the chosen server what it offers before the first attempt on it, sends the email and password,
  * and connects the app to the server once it opens a session.
  * Logging out ends the session on the server and then disconnects the app, whether or not the server could be reached.
+ * While flashcards have not been saved to the server, logging out first waits for the person to confirm that they are dropped.
  * In the native app, the built-in server logs in to the remote and keeps the session itself, so the app stays connected to the built-in server,
  * and logging out asks the built-in server to log out of the remote.
  * Asked for a password reset, the form asks a server that sends email to mail a link to the address instead.
@@ -65,6 +67,10 @@ export function updateSignIn(
       });
     case "signOutRequested":
       return signOutRequested(form, server, operations);
+    case "logOutConfirmed":
+      return logOut({ ...form, isConfirmingLogOut: false }, operations);
+    case "logOutCancelled":
+      return updated({ ...form, isConfirmingLogOut: false });
     case "relinkRequested":
       if (isBusy(form)) return updated(form);
       return updated(relinkForm(action, server));
@@ -147,13 +153,25 @@ function signOutRequested(
   operations: ReadableState["operations"],
 ) {
   const isLinked = server.config?.bundledIn !== undefined;
-  const id = isLinked ? unlinkRequestId : logOutRequestId;
+  if (isLinked)
+    return sendOnce(form, operations, unlinkRequestId, "unlinkSyncRemote");
+  if (selectFailedSaves({ operations }).length > 0)
+    return updated({ ...form, isConfirmingLogOut: true });
+  return logOut(form, operations);
+}
+
+function logOut(form: SignInForm, operations: ReadableState["operations"]) {
+  return sendOnce(form, operations, logOutRequestId, "logOut");
+}
+
+function sendOnce(
+  form: SignInForm,
+  operations: ReadableState["operations"],
+  id: string,
+  kind: "logOut" | "unlinkSyncRemote",
+) {
   if (selectIsRequestInFlight({ operations }, id)) return updated(form);
-  return updated(form, {
-    type: "sendRequest",
-    id,
-    request: { kind: isLinked ? "unlinkSyncRemote" : "logOut" },
-  });
+  return updated(form, { type: "sendRequest", id, request: { kind } });
 }
 
 function linkSettled(

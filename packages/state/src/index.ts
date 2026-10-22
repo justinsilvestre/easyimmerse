@@ -7,6 +7,7 @@ export {
   selectIsSignInFormStarted,
   selectIsSigningOut,
   selectIsUnlinking,
+  selectLogOutDroppedCount,
   selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";

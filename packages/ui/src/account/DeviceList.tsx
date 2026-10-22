@@ -5,6 +5,8 @@ import {
   selectAccountVia,
   selectDeviceLogOutFailureMessage,
   selectIsLoggingOutDevice,
+  selectIsSigningOut,
+  selectIsUnlinking,
 } from "@easyimmerse/state";
 import type { SessionSummary } from "@easyimmerse/types";
 import { useId } from "react";
@@ -51,8 +53,11 @@ export function DeviceList() {
 
 function DeviceRow({ session }: { session: SessionSummary }) {
   const dispatch = useAppDispatch();
+  // This device logs out as the account section's own button does, which first confirms dropping the flashcards not yet saved.
   const isLoggingOut = useAppSelector((state) =>
-    selectIsLoggingOutDevice(state, session.id),
+    session.is_current
+      ? selectIsSigningOut(state) || selectIsUnlinking(state)
+      : selectIsLoggingOutDevice(state, session.id),
   );
   const device = describeDevice(session.user_agent);
   return (
@@ -74,10 +79,12 @@ function DeviceRow({ session }: { session: SessionSummary }) {
         }
         aria-disabled={isLoggingOut}
         onClick={() => {
-          if (!isLoggingOut)
-            dispatch(
-              actions.deviceLogOutRequested(session.id, session.is_current),
-            );
+          if (isLoggingOut) return;
+          dispatch(
+            session.is_current
+              ? actions.signOutRequested()
+              : actions.deviceLogOutRequested(session.id, false),
+          );
         }}
       >
         {isLoggingOut ? "Logging out…" : "Log out"}

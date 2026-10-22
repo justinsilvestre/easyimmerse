@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { initialAppState } from "../app/update.ts";
+import {
+  appAfter,
+  applied,
+  createNew,
+  failure,
+  selectRequestIds,
+  settle,
+} from "../flashcards/flashcardsTestSupport.ts";
 import type { ServerState } from "../server/serverState.ts";
 import {
   confirmationEmailRequestId,
@@ -58,7 +67,16 @@ function accountAfter(
   server: ServerState,
   ...accountActions: AppAction[]
 ): readonly [AccountState, readonly Effect[]] {
-  const deps = { server, operations: initialAppState.operations };
+  return accountWith(initialAppState.operations, server, ...accountActions);
+}
+
+/** The account after the actions, with the operations given, and the effects of the last one. */
+function accountWith(
+  operations: AppState["operations"],
+  server: ServerState,
+  ...accountActions: AppAction[]
+): readonly [AccountState, readonly Effect[]] {
+  const deps = { server, operations };
   return accountActions.reduce<readonly [AccountState, readonly Effect[]]>(
     ([account], action) => updateAccount(account, action, deps),
     [accountFeature.initialState, []],
@@ -238,6 +256,63 @@ describe("updateAccount", () => {
     expect(effects).toEqual([
       { type: "sendRequest", id: logOutRequestId, request: { kind: "logOut" } },
     ]);
+  });
+
+  describe("while a flashcard has not been saved", () => {
+    /** The operations after saving a new flashcard failed with a server error. */
+    function withFailedSave(): AppState["operations"] {
+      const sending = {
+        ...appAfter(createNew("f1")),
+        server: connected,
+      };
+      const [id] = selectRequestIds(sending, "f1");
+      if (!id) throw new Error("No save was sent.");
+      return applied(sending, settle(sending, id, failure(500))).operations;
+    }
+
+    it("asks to confirm before logging out", () => {
+      const [account] = accountWith(
+        withFailedSave(),
+        connected,
+        actions.signOutRequested(),
+      );
+      expect(account.signInForm.isConfirmingLogOut).toBe(true);
+    });
+
+    it("sends no log-out before the person confirms", () => {
+      const [, effects] = accountWith(
+        withFailedSave(),
+        connected,
+        actions.signOutRequested(),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("ends the session once the person confirms", () => {
+      const [, effects] = accountWith(
+        withFailedSave(),
+        connected,
+        actions.signOutRequested(),
+        actions.logOutConfirmed(),
+      );
+      expect(effects).toEqual([
+        {
+          type: "sendRequest",
+          id: logOutRequestId,
+          request: { kind: "logOut" },
+        },
+      ]);
+    });
+
+    it("stays logged in when the person cancels", () => {
+      const [account] = accountWith(
+        withFailedSave(),
+        connected,
+        actions.signOutRequested(),
+        actions.logOutCancelled(),
+      );
+      expect(account.signInForm.isConfirmingLogOut).toBe(false);
+    });
   });
 
   it("disconnects once the server has answered the log-out", () => {

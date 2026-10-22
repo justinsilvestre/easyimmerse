@@ -7,6 +7,7 @@ import {
   hostOf,
   isOwnTokenRefused,
   selectIsSigningOut,
+  selectLogOutDroppedCount,
 } from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
@@ -56,18 +57,20 @@ function AccountDetails({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <dl className="grid max-w-lg grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        <dt className="text-fg-muted">Email</dt>
-        <dd className="break-all">
-          {user.email}
-          <EmailConfirmation user={user} />
-        </dd>
-        <dt className="text-fg-muted">Role</dt>
-        <dd>{accountRoleName(user.role)}</dd>
-        <dt className="text-fg-muted">Server</dt>
-        <dd className="break-all">{serverUrl}</dd>
-      </dl>
-      <LogOut serverUrl={serverUrl} />
+      <div className="flex flex-col gap-3">
+        <dl className="grid max-w-lg grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+          <dt className="text-fg-muted">Email</dt>
+          <dd className="break-all">
+            {user.email}
+            <EmailConfirmation user={user} />
+          </dd>
+          <dt className="text-fg-muted">Role</dt>
+          <dd>{accountRoleName(user.role)}</dd>
+          <dt className="text-fg-muted">Server</dt>
+          <dd className="break-all">{serverUrl}</dd>
+        </dl>
+        <LogOut serverUrl={serverUrl} />
+      </div>
       <DeviceList />
       {user.role === "administrator" && <UserManagement />}
     </div>
@@ -97,19 +100,61 @@ function PrincipalFailure({
 function LogOut({ serverUrl }: { serverUrl: string }) {
   const dispatch = useAppDispatch();
   const isSigningOut = useAppSelector(selectIsSigningOut);
+  const droppedCount = useAppSelector(selectLogOutDroppedCount);
+  const host = hostOf(serverUrl);
   return (
     <div className="flex flex-col items-start gap-1">
       <Button
-        aria-disabled={isSigningOut}
-        onClick={() => dispatch(actions.signOutRequested())}
+        aria-disabled={isSigningOut || droppedCount !== null}
+        onClick={() => {
+          if (!isSigningOut) dispatch(actions.signOutRequested());
+        }}
       >
         {isSigningOut ? "Logging out…" : "Log out"}
       </Button>
-      <p className="text-xs text-fg-muted">
-        Your projects stay on {hostOf(serverUrl)}. Log in again to open them
-        here.
-      </p>
+      {droppedCount === null ? (
+        <p className="text-xs text-fg-muted">
+          {`Your projects, media, and flashcards are saved to ${host}. Log in again to open them here.`}
+        </p>
+      ) : (
+        <LogOutConfirmation droppedCount={droppedCount} host={host} />
+      )}
     </div>
+  );
+}
+
+/** Asks the person to confirm logging out, which drops the flashcards not yet saved to the server. */
+function LogOutConfirmation({
+  droppedCount,
+  host,
+}: {
+  droppedCount: number;
+  host: string;
+}) {
+  const dispatch = useAppDispatch();
+  const cards =
+    droppedCount === 1
+      ? "1 flashcard hasn't"
+      : `${droppedCount} flashcards haven't`;
+  return (
+    <fieldset
+      aria-label="Log out anyway?"
+      className="mt-2 flex max-w-lg flex-wrap items-center gap-2 rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger-fg"
+    >
+      <p className="flex-1">
+        {`${cards} been saved to ${host} yet. Logging out removes ${droppedCount === 1 ? "it" : "them"} from this browser.`}
+      </p>
+      <Button
+        size="sm"
+        variant="danger"
+        onClick={() => dispatch(actions.logOutConfirmed())}
+      >
+        Log out anyway
+      </Button>
+      <Button size="sm" onClick={() => dispatch(actions.logOutCancelled())}>
+        Stay logged in
+      </Button>
+    </fieldset>
   );
 }
 

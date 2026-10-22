@@ -37,6 +37,10 @@ export const accountActions = {
   passwordResetLeft: () => ({ type: "passwordResetLeft" }) as const,
   /** The person asked to log out of the account the app is connected through, or that the native app's built-in server is linked to. */
   signOutRequested: () => ({ type: "signOutRequested" }) as const,
+  /** The person confirmed logging out, which drops the flashcards not yet saved to the server. */
+  logOutConfirmed: () => ({ type: "logOutConfirmed" }) as const,
+  /** The person chose to stay logged in rather than drop the flashcards not yet saved. */
+  logOutCancelled: () => ({ type: "logOutCancelled" }) as const,
   /** The person asked to log in again to the remote that logged the native app's built-in server out, as the account with this email address. */
   relinkRequested: (serverUrl: string, email: string) =>
     ({ type: "relinkRequested", serverUrl, email }) as const,

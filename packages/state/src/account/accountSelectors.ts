@@ -1,5 +1,6 @@
 import { createSelector } from "reselect";
 import type { AppRoot } from "../app/createAppStore.ts";
+import { selectFailedSaves } from "../flashcards/failedSave.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { assessPasswordStrength } from "./passwordStrength.ts";
 import { signInFailureMessage } from "./signInFailureMessage.ts";
@@ -107,6 +108,12 @@ export const selectCanSubmitSignIn = (state: AppRoot) =>
  */
 export const selectIsSignInFormStarted = (state: AppRoot) =>
   isStarted(selectForm(state));
+
+/** Returns how many flashcards logging out would drop while the person is asked to confirm it, or null while nothing is asked. */
+export const selectLogOutDroppedCount = (state: AppRoot): number | null =>
+  selectForm(state).isConfirmingLogOut
+    ? selectFailedSaves(state.app).length
+    : null;
 
 /** Tells whether the app is logging out of its account. */
 export const selectIsSigningOut = (state: AppRoot) =>
