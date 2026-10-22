@@ -56,6 +56,11 @@ describe("picturesProbeOf", () => {
     );
   });
 
+  it("asks nothing for a browser-added video whose copy the server keeps", () => {
+    const stored = { ...browserFile("clip.mp4"), has_stored_copy: true };
+    expect(picturesProbeOf(listed(stored), { route })).toEqual([]);
+  });
+
   it("asks nothing for a sound file", () => {
     expect(picturesProbeOf(listed(browserFile("song.mp3")), { route })).toEqual(
       [],

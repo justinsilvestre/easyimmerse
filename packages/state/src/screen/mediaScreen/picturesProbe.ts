@@ -2,6 +2,7 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import { isSettled } from "../../server/isSettled.ts";
+import { isPlayedByServer } from "../isPlayedByServer.ts";
 import { isAudioFileName, isDocumentFileName } from "../mediaFileExtensions.ts";
 import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
@@ -10,8 +11,8 @@ const picturesRequestId = (mediaFileId: string) =>
   `media/${mediaFileId}/pictures`;
 
 /**
- * Asks whether the open file shows pictures once its record arrives, when the browser holds it and its name is not that of a sound file or a book.
- * A file on the server's disk is answered by its tracks instead.
+ * Asks whether the open file shows pictures once its record arrives, when only the browser holds it and its name is not that of a sound file or a book.
+ * A file the server plays is answered by its tracks instead.
  */
 export function picturesProbeOf(
   action: AppAction,
@@ -25,7 +26,8 @@ export function picturesProbeOf(
     ({ id }) => id === mediaFileId,
   );
   if (
-    file?.source.kind !== "browser_file" ||
+    file === undefined ||
+    isPlayedByServer(file) ||
     isAudioFileName(file.name) ||
     isDocumentFileName(file.name)
   )
