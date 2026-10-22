@@ -203,14 +203,14 @@ describe("selectBackupSign", () => {
             ),
           ),
         ).toEqual({
-          kind: "linkFailing",
+          kind: "linkUnreachable",
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
           sinceMs: 1000,
         });
       });
 
-      it("tells of a remote that refused to sync while a project is not backed up", () => {
+      it("tells why the last round failed while a project is not backed up", () => {
         expect(
           signOf(
             withServer(appAfter(), desktopServer),
@@ -220,10 +220,10 @@ describe("selectBackupSign", () => {
             ),
           ),
         ).toEqual({
-          kind: "linkFailing",
+          kind: "linkFailed",
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
-          sinceMs: null,
+          code: "storage",
         });
       });
 

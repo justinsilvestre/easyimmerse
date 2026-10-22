@@ -52,7 +52,7 @@ export function RemoteAccountDetails({
           </dd>
           {link.last_synced_at_ms !== null && (
             <>
-              <dt className="text-fg-muted">Last copied</dt>
+              <dt className="text-fg-muted">Last backed up</dt>
               <dd>{formatCopyTime(link.last_synced_at_ms)}</dd>
             </>
           )}
@@ -64,12 +64,10 @@ export function RemoteAccountDetails({
             count={link.conflict_count}
           />
         )}
-      </div>
-      <div className="flex flex-col items-start gap-3">
         {answersForAccount && (
           <a
             href={`#${cloudStorageSectionId}`}
-            className="text-sm text-accent-fg underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+            className="self-start text-sm text-accent-fg underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-accent"
           >
             Storage on {hostOf(link.server_url)}
           </a>
@@ -113,7 +111,7 @@ function LogOut({
         {isUnlinking ? "Logging out…" : `Log out of ${host}`}
       </Button>
       <p className="text-xs text-fg-muted">
-        {`Your work stays on ${deviceNames[platform]}, but new changes won't be copied to ${host}.`}
+        {`Your work stays on ${deviceNames[platform]}, but new changes won't be backed up to ${host}.`}
       </p>
     </div>
   );

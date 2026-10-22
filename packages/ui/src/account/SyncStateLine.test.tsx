@@ -32,10 +32,10 @@ describe("SyncStateLine", () => {
     expect(screen.getByRole("status").textContent).toBe("Logged out");
   });
 
-  it("names the server it couldn't copy the work to", () => {
+  it("names the server it couldn't back up to", () => {
     renderIn({ kind: "failed", code: "forbidden", message: "Not allowed." });
     expect(screen.getByRole("status").textContent).toBe(
-      "Couldn't copy your work to cloud.example.org",
+      "Couldn't back up to cloud.example.org",
     );
   });
 });

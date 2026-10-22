@@ -178,7 +178,7 @@ function UploadButton({ mediaFileId, copy, host }: ChoiceProps) {
           id={`${mediaFileId}-upload-hint`}
           className="text-xs text-fg-muted"
         >
-          Add the file again to upload it
+          This file is no longer open in the browser. Add it again to upload it.
         </span>
       )}
     </ChoiceRow>

@@ -16,7 +16,7 @@ const syncStatusPollMs = 5000;
 
 /**
  * A quiet sign in the footer while some of the user's work is kept only on this device,
- * which opens an explanation of how the work could be lost and, where the app offers one, a way to back it up.
+ * which opens an explanation of how the work could be lost and the ways of backing it up that the app offers.
  * On a narrow screen it shows only its icon. With `isInitiallyOpen`, the explanation starts open.
  */
 export function NotBackedUpSign({
@@ -35,7 +35,7 @@ export function NotBackedUpSign({
   const dispatch = useAppDispatch();
   const explanationId = useId();
   if (texts === null) return null;
-  const { explanation, button } = texts;
+  const { explanation, options } = texts;
   return (
     // On a narrow screen the panel is placed against the footer rather than the sign, which sits too far right for it to fit.
     <MenuShell
@@ -63,18 +63,22 @@ export function NotBackedUpSign({
           <p id={explanationId} className="text-fg-muted">
             {explanation}
           </p>
-          {button && (
-            <Button
-              size="sm"
-              role="menuitem"
-              className="self-start"
-              onClick={() => {
-                close();
-                for (const action of button.actions) dispatch(action);
-              }}
-            >
-              {button.label}
-            </Button>
+          {options.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {options.map((option) => (
+                <Button
+                  key={option.label}
+                  size="sm"
+                  role="menuitem"
+                  onClick={() => {
+                    close();
+                    for (const action of option.actions) dispatch(action);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
           )}
         </div>
       )}

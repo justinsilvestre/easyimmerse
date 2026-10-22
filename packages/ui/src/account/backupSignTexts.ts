@@ -6,25 +6,34 @@ import {
 } from "@easyimmerse/state";
 import { deviceNames } from "./deviceNames.ts";
 import { formatSinceTime } from "./formatSinceTime.ts";
+import { syncFailureReason } from "./syncFailureReason.ts";
 
-/** What the backup sign's panel says, and the button it offers with the actions that button dispatches, if any. */
+/** One way the backup sign's panel offers to back the work up: its button's label and the actions it dispatches. */
+type BackupOption = { label: string; actions: readonly AppAction[] };
+
+/** What the backup sign's panel says, and the ways of backing the work up that it offers. */
 type BackupSignTexts = {
   explanation: string;
-  button: { label: string; actions: readonly AppAction[] } | null;
+  options: readonly BackupOption[];
 };
 
 const deviceLosses = {
   desktop:
-    "Your work is kept only on this computer, so you'll lose it if the computer is lost or its disk fails.",
+    "Your work is currently being stored only on this computer. If the computer is lost or its disk fails, you may lose all your work.",
   mobile:
-    "Your work is kept only on this device, so you'll lose it if the device is lost or the app is deleted.",
+    "Your work is currently being stored only on this device. If the device is lost or the app is deleted, you may lose all your work.",
 };
 
 const openAccountSettings = actions.navigated({ type: "openAccountSettings" });
 
-const logInButton = {
+const logIn: BackupOption = {
   label: "Log in or sign up",
   actions: [openAccountSettings],
+};
+
+const tryAgain: BackupOption = {
+  label: "Try again",
+  actions: [actions.syncRunRequested()],
 };
 
 /** Returns what the backup sign's panel says, or null when the sign is hidden. `now` dates the moment a remote became unreachable. */
@@ -38,50 +47,47 @@ export function backupSignTexts(
     case "browserOnly":
       return {
         explanation:
-          "Your flashcards aren't backed up. They're stored only in this browser, so you'll lose them if its data is cleared.",
-        button: logInButton,
+          "Your flashcards are currently only stored in this browser. If your browser data gets cleared, you may lose all your work.",
+        options: [logIn],
       };
     case "failedSaves":
       return {
         explanation:
-          "Some flashcards couldn't be saved to your server yet. They're kept in this browser until they're saved, so you'll lose them if its data is cleared.",
-        button: null,
+          "Some flashcards haven't been saved to your server yet. Until they are, they're stored only in this browser, and you may lose them if your browser data gets cleared.",
+        options: [],
       };
     case "deviceOnly":
       return {
-        explanation: `${deviceLosses[sign.platform]} Log in to ${sign.hasOfficialServer ? "the easyImmerse cloud or to your own server" : "your own easyImmerse server"} to keep a copy there.`,
-        button: logInButton,
+        explanation: `${deviceLosses[sign.platform]} Log in to ${sign.hasOfficialServer ? "the easyImmerse cloud or to your own server" : "your own easyImmerse server"} to back it up there.`,
+        options: [logIn],
       };
-    case "linkFailing":
+    case "linkUnreachable":
       return {
-        explanation: linkFailingExplanation(sign, now),
-        button: {
-          label: "Open account settings",
-          actions: [openAccountSettings],
-        },
+        explanation: `${hostOf(sign.serverUrl)} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}, so your latest work hasn't been backed up there yet. It will be backed up once the server can be reached.`,
+        options: [tryAgain],
       };
+    case "linkFailed": {
+      const host = hostOf(sign.serverUrl);
+      return {
+        explanation: `Your latest work hasn't been backed up to ${host}. ${syncFailureReason(sign.code, host, deviceNames[sign.platform])}`,
+        options: [
+          tryAgain,
+          { label: "Open account settings", actions: [openAccountSettings] },
+        ],
+      };
+    }
     case "loggedOut":
       return {
-        explanation: `You were logged out of ${hostOf(sign.serverUrl)} on ${deviceNames[sign.platform]}, so your latest work is kept only here. Log in again to keep a copy there.`,
-        button: {
-          label: "Log in again",
-          actions: [
-            actions.relinkRequested(sign.serverUrl, sign.email),
-            openAccountSettings,
-          ],
-        },
+        explanation: `You were logged out of ${hostOf(sign.serverUrl)} on ${deviceNames[sign.platform]}, so your latest work hasn't been backed up there. Log in again to back it up.`,
+        options: [
+          {
+            label: "Log in again",
+            actions: [
+              actions.relinkRequested(sign.serverUrl, sign.email),
+              openAccountSettings,
+            ],
+          },
+        ],
       };
   }
-}
-
-function linkFailingExplanation(
-  sign: Extract<BackupSign, { kind: "linkFailing" }>,
-  now: number,
-): string {
-  const kept = `Your latest work is kept only on ${deviceNames[sign.platform]}, because`;
-  const host = hostOf(sign.serverUrl);
-  // A round that failed for another reason than an unreachable remote may fail again, so the copy says where to see why.
-  if (sign.sinceMs === null)
-    return `${kept} it couldn't be copied to ${host}. Open the account settings to see why.`;
-  return `${kept} ${host} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}. It will be copied there when the server can be reached.`;
 }

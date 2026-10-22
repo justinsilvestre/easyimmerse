@@ -23,17 +23,21 @@ export type BackupSign =
       platform: NativePlatform;
       hasOfficialServer: boolean;
     }
-  /**
-   * Some project is not yet copied to the remote the built-in server is linked to, because syncing with it fails:
-   * the remote could not be reached since `sinceMs`, or a round failed for another reason, when `sinceMs` is null.
-   */
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the remote could not be reached since `sinceMs`. */
   | {
-      kind: "linkFailing";
+      kind: "linkUnreachable";
       platform: NativePlatform;
       serverUrl: string;
-      sinceMs: number | null;
+      sinceMs: number;
     }
-  /** Some project is not yet copied to the remote the built-in server is linked to, because the remote logged out the account with this email address. */
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the last round failed with the error `code`. */
+  | {
+      kind: "linkFailed";
+      platform: NativePlatform;
+      serverUrl: string;
+      code: string;
+    }
+  /** Some project is not yet backed up to the remote the built-in server is linked to, because the remote logged out the account with this email address. */
   | {
       kind: "loggedOut";
       platform: NativePlatform;
@@ -89,13 +93,13 @@ function linkSign(link: SyncLink, platform: NativePlatform): BackupSign {
       };
     case "unreachable":
       return {
-        kind: "linkFailing",
+        kind: "linkUnreachable",
         platform,
         serverUrl,
         sinceMs: state.since_ms,
       };
     case "failed":
-      return { kind: "linkFailing", platform, serverUrl, sinceMs: null };
+      return { kind: "linkFailed", platform, serverUrl, code: state.code };
     case "idle":
     case "syncing":
       return hidden;

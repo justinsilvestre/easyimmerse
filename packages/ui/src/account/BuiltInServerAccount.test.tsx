@@ -121,7 +121,7 @@ describe("BuiltInServerAccount", () => {
       last_synced_at_ms: null,
     });
     expect(
-      await screen.findByText("Copying your work to cloud.example.org…"),
+      await screen.findByText("Backing up your work to cloud.example.org…"),
     ).toBeDefined();
   });
 
@@ -161,7 +161,7 @@ describe("BuiltInServerAccount", () => {
       });
       expect(
         await screen.findByText(
-          "Couldn't keep a copy of Episode 4.mp4 on cloud.example.org: there isn't enough room there.",
+          "Couldn't upload Episode 4.mp4 to cloud.example.org: there isn't enough room there.",
         ),
       ).toBeDefined();
     });
@@ -182,7 +182,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(linked);
       expect(
         await screen.findByText(
-          "Your work stays on this computer, but new changes won't be copied to cloud.example.org.",
+          "Your work stays on this computer, but new changes won't be backed up to cloud.example.org.",
         ),
       ).toBeDefined();
     });
@@ -208,11 +208,11 @@ describe("BuiltInServerAccount", () => {
       since_ms: new Date(2026, 9, 21, 9, 0).getTime(),
     });
 
-    it("tells since when and that the work is kept on this computer", async () => {
+    it("tells since when and that the work will be stored offline on this computer", async () => {
       renderBuiltIn(unreachable);
       expect(
         await screen.findByText(
-          "Couldn't reach cloud.example.org since Oct 21, 2026, 9:00 AM. Your work is kept on this computer and will be copied there when the server can be reached.",
+          "Couldn't reach cloud.example.org since Oct 21, 2026, 9:00 AM. Your work will be stored offline on this computer and backed up to cloud.example.org once it can be reached.",
         ),
       ).toBeDefined();
     });
@@ -231,11 +231,11 @@ describe("BuiltInServerAccount", () => {
   describe("while the server has logged this device out", () => {
     const loggedOut = linkIn({ kind: "logged_out" });
 
-    it("tells that the work is not being copied there", async () => {
+    it("tells that the work is not being backed up there", async () => {
       renderBuiltIn(loggedOut);
       expect(
         await screen.findByText(
-          "You were logged out of cloud.example.org on this computer, so your work isn't being copied there.",
+          "You were logged out of cloud.example.org on this computer, so your work isn't being backed up there.",
         ),
       ).toBeDefined();
     });
@@ -251,7 +251,18 @@ describe("BuiltInServerAccount", () => {
     });
   });
 
-  it("tells why the server refused to synchronize", async () => {
+  it("tells why the last round failed", async () => {
+    renderBuiltIn(
+      linkIn({ kind: "failed", code: "internal", message: "Database locked." }),
+    );
+    expect(
+      await screen.findByText(
+        "cloud.example.org ran into a problem of its own. Trying again later may help.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("gives the failure's own message as a detail", async () => {
     renderBuiltIn(
       linkIn({ kind: "failed", code: "forbidden", message: "Not allowed." }),
     );
