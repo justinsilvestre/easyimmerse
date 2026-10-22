@@ -114,7 +114,7 @@ function LogOut({ serverUrl }: { serverUrl: string }) {
       </Button>
       {droppedCount === null ? (
         <p className="text-xs text-fg-muted">
-          {`Your projects, media, and flashcards are saved to ${host}. Log in again to open them here.`}
+          {`After you log out, your projects, media, and flashcards stay saved on ${host}. Log in again to open them here.`}
         </p>
       ) : (
         <LogOutConfirmation droppedCount={droppedCount} host={host} />

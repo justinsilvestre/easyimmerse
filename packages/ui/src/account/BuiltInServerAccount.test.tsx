@@ -182,7 +182,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(linked);
       expect(
         await screen.findByText(
-          "Your work stays on this computer, but new changes won't be backed up to cloud.example.org.",
+          "After you log out, your work stays on this computer, but new changes won't be backed up to cloud.example.org.",
         ),
       ).toBeDefined();
     });

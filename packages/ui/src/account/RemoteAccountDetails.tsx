@@ -111,7 +111,7 @@ function LogOut({
         {isUnlinking ? "Logging out…" : `Log out of ${host}`}
       </Button>
       <p className="text-xs text-fg-muted">
-        {`Your work stays on ${deviceNames[platform]}, but new changes won't be backed up to ${host}.`}
+        {`After you log out, your work stays on ${deviceNames[platform]}, but new changes won't be backed up to ${host}.`}
       </p>
     </div>
   );
