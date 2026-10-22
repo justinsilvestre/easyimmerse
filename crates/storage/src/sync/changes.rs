@@ -104,6 +104,7 @@ pub fn local_change_seq(conn: &Connection) -> Result<u64, StorageError> {
 /// The owner's changes after the remote's `pushed_through_seq` and up to `through_seq`, in the order to push them:
 /// rows to insert or update first, parents before children, then deletions, children before parents.
 /// A row whose modification time is the one the remote last had for it came from the remote, and is left out.
+/// A dictionary is left out unless it was deleted, since only its content upload may bring it to the remote.
 pub fn pending_pushes(
     conn: &Connection,
     owner: &OwnerId,
@@ -116,7 +117,8 @@ pub fn pending_pushes(
          LEFT JOIN sync_bases b ON b.remote_id = r.id AND b.table_name = s.table_name \
              AND b.row_key = s.row_key \
          WHERE s.owner_id = ?1 AND s.change_seq > r.pushed_through_seq AND s.change_seq <= ?3 \
-             AND (b.updated_at_ms IS NULL OR b.updated_at_ms <> s.updated_at_ms)",
+             AND (b.updated_at_ms IS NULL OR b.updated_at_ms <> s.updated_at_ms) \
+             AND (s.is_deleted = 1 OR s.table_name <> 'dictionaries')",
     )?;
     let mut rows = statement
         .query_map(

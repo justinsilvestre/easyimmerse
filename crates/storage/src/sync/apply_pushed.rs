@@ -68,6 +68,8 @@ pub enum PushRejection {
     AnotherOwner,
     /// A parent the row names was never seen here.
     ParentNotFound,
+    /// A dictionary arrives only with its content, through its own upload; its row alone would leave it empty here.
+    DictionaryWithoutContent,
 }
 
 /// Applies the pushed rows as the owner's in one transaction, and answers each in order.
@@ -199,6 +201,9 @@ fn validate(
     }
     if row.table == SyncTable::Preferences && !is_synced_preference(&row.key) {
         return Ok(Some(PushRejection::DeviceBoundPreference));
+    }
+    if row.table == SyncTable::Dictionaries && !row.is_deleted {
+        return Ok(Some(PushRejection::DictionaryWithoutContent));
     }
     if !row.is_deleted {
         let Some(data) = &row.data else {

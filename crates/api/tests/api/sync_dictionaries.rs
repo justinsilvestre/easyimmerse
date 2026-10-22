@@ -205,6 +205,37 @@ mod content_routes {
     }
 }
 
+mod pushed_rows {
+    use super::*;
+
+    /// The registry row of the first account's dictionary, as the server lists it among the account's changes.
+    async fn dictionary_row(server: &TestServer, token: &str) -> Value {
+        let changes = send_as(
+            server,
+            token,
+            "GET",
+            "/sync/changes?since=0&limit=2000",
+            None,
+        )
+        .await;
+        let rows = changes.json()["rows"].as_array().unwrap().clone();
+        rows.into_iter()
+            .find(|row| row["table"] == "dictionaries")
+            .unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_dictionary_row_pushed_without_its_content_is_rejected() {
+        let (server, first, _, _) = two_accounts().await;
+        let row = dictionary_row(&server, &first).await;
+        let other = spawn_test_server_with_accounts(true).await;
+        let token = sign_up(&other, "reader@example.com").await;
+        let body = json!({ "rows": [{ "row": row, "base_updated_at_ms": null }] });
+        let pushed = send_as(&other, &token, "POST", "/sync/changes", Some(&body)).await;
+        assert_eq!(pushed.json()["outcomes"][0]["kind"], "rejected");
+    }
+}
+
 mod engine {
     use super::*;
 
@@ -261,6 +292,20 @@ mod engine {
         let after =
             send_as(&remote, &token, "GET", changes, None).await.json()["next_cursor"].clone();
         assert_eq!(after, before);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_dictionary_deleted_on_the_device_is_deleted_on_the_remote() {
+        let (remote, device) = linked().await;
+        let id = import_fixture(&device).await["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        sync_round(&device).await;
+        device.delete(&format!("/dictionaries/{id}")).await;
+        sync_round(&device).await;
+        let token = account_token(&remote).await;
+        assert_eq!(dictionaries_of(&remote, &token).await, Vec::<Value>::new());
     }
 
     /// The account imported the fixture on the remote, and the device imported it too, under another id.

@@ -8,12 +8,12 @@ use super::changes::SyncChange;
 use super::codec::{RowData, delete_row, read_row, stamp, write_row};
 use super::sync_test_support::storage_with_remote;
 use super::tables::SyncTable;
-use crate::Storage;
 use crate::new_row::now_ms;
 use crate::owners::OwnerId;
 use crate::review_test_support::{
     NOON_MS, launch, make_flashcard, other_project, project, project_settings, rate, seeded_storage,
 };
+use crate::{DictionaryId, Storage};
 
 fn all_changes(storage: &Storage) -> Vec<SyncChange> {
     storage.changes_since(&launch(), 0, 10_000).unwrap().changes
@@ -449,6 +449,30 @@ mod pending {
             .pending_pushes(&launch(), &remote.id, through)
             .unwrap();
         assert!(pending.iter().all(|row| row.change_seq <= through));
+    }
+
+    fn import_word_list(storage: &Storage) -> DictionaryId {
+        let word_list = include_bytes!("../sample_content/spanish-english.tsv");
+        let mut source = DictionarySource::single("words.tsv", word_list.to_vec()).unwrap();
+        storage.import_dictionary(&launch(), &mut source).unwrap()
+    }
+
+    #[test]
+    fn leaves_out_a_new_dictionary_which_only_its_content_upload_sends() {
+        let (storage, remote) = storage_with_remote();
+        pushed_everything(&storage, &remote.id);
+        import_word_list(&storage);
+        assert_eq!(pending_keys(&storage, &remote.id), vec![]);
+    }
+
+    #[test]
+    fn pushes_the_deletion_of_a_dictionary() {
+        let (storage, remote) = storage_with_remote();
+        let dictionary = import_word_list(&storage);
+        pushed_everything(&storage, &remote.id);
+        storage.delete_dictionary(&dictionary).unwrap();
+        let expected = vec![(SyncTable::Dictionaries, dictionary.0, true)];
+        assert_eq!(pending_keys(&storage, &remote.id), expected);
     }
 
     #[test]
