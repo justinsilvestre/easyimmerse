@@ -10,7 +10,7 @@ import type {
 import { configureStore } from "@reduxjs/toolkit";
 import { describe, expect, it, vi } from "vitest";
 import type { AnkiConnect } from "./ankiConnect.ts";
-import { backendApi } from "./backendApi.ts";
+import { accountPath, backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
 import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
@@ -942,5 +942,17 @@ describe("the account endpoints", () => {
     expect(client.requests).toEqual([
       { method: "POST", path: "/auth/confirmation-email" },
     ]);
+  });
+});
+
+describe("accountPath", () => {
+  it("leaves the path of a route on the connected server as it is", () => {
+    expect(accountPath("self", "/auth/me")).toBe("/auth/me");
+  });
+
+  it("prefixes the path of a route on the linked remote with the built-in server's forwarding path", () => {
+    expect(accountPath("linkedRemote", "/auth/me")).toBe(
+      "/sync/remote/auth/me",
+    );
   });
 });

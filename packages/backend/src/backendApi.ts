@@ -3,6 +3,7 @@ import {
   loadLicenseNoticeGroups,
 } from "@easyimmerse/licenses";
 import type {
+  AccountVia,
   AnkiConnection,
   AnkiDeletionOutcome,
   AnkiPackageExport,
@@ -333,12 +334,12 @@ const mediaFileAddedTags = (projectId: string) =>
     "Projects",
   ] as const;
 
-/** The server whose accounts an endpoint reaches: the one the app is connected to. */
-export type AccountVia = "self";
+/** The path under which the built-in server forwards account routes to the remote it is linked to. */
+const linkedRemotePrefix = "/sync/remote";
 
 /** The path of an account route on the server that `via` names. */
-export function accountPath(_via: AccountVia, path: string): string {
-  return path;
+export function accountPath(via: AccountVia, path: string): string {
+  return via === "linkedRemote" ? `${linkedRemotePrefix}${path}` : path;
 }
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */

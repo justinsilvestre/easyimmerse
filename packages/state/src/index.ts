@@ -332,9 +332,12 @@ export type {
   ServerResponses,
 } from "./server/serverRequest.ts";
 export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
+export type { AccountVia, WorkHome } from "./server/serverSelectors.ts";
 export {
+  selectAccountVia,
   selectBundledServerPlatform,
   selectServerConfig,
+  selectWorkHome,
 } from "./server/serverSelectors.ts";
 export type {
   NativePlatform,
