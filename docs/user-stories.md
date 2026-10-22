@@ -869,7 +869,7 @@ As a web/mobile app user who is not logged in:
 As a user:
 - when I choose to sign up or log in:
   - [x] I can create an account with my email address
-  - [x] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
+  - [x] I can log in to a self-hosted easyImmerse server, instead of using the easyImmerse cloud, by entering its address (in a field revealed by clicking "More options")
   - [x] I can keep using all offline features of the app without an account
 - while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
   - [x] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
@@ -901,11 +901,15 @@ As a user:
   - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
   - [x] I see the devices I am logged in on, and can log out any of them from here
   - [x] I see my own projects, flashcards and dictionaries
+- when I am logged into a server besides the easyImmerse cloud:
+  - [x] I see the server's address, and can log out of it
 - when I log out:
-  - [ ] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
+  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
   - [x] other users logged in on the same machine or server cannot see or change them
 - when I log out of the web app while some of my flashcards have not been saved to the server yet:
-  - [ ] I am told how many would be lost, and can stay logged in to save them or log out anyway
+  - [x] I am told how many would be lost, and can stay logged in to save them or log out anyway
+- when I log out in the desktop app or the mobile app:
+  - [x] my work stays on this device, and my new changes are no longer backed up
 - when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
   - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
   - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
@@ -930,6 +934,9 @@ As a privileged user (a subscriber or a self-hosted server account holder):
   - [x] I see how much of my storage quota is used, and can delete files from the cloud
 - when a change conflicts with one made on another device:
   - [x] the more recent change is kept, and I am notified
+  - [x] the account settings list the conflicting changes by project, and within a project by media file
+- when there are more conflicting changes than the account settings list at first:
+  - [x] I can list all of them with a "Show all" button
 
 ---
 
