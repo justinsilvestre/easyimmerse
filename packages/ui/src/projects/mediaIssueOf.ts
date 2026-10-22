@@ -27,4 +27,5 @@ const pathIssues: Record<PathAvailability, MediaIssue | undefined> = {
   missing: "pathMissing",
   not_allowed: "pathNotAllowed",
   unreadable: "pathUnreadable",
+  stored_copy: undefined,
 };
