@@ -64,7 +64,7 @@ export function backupSignTexts(
     case "linkFailed": {
       const host = sign.serverName;
       return {
-        explanation: `Your latest work hasn't been backed up to ${host}. ${syncFailureReason(sign.code, host, deviceNames[sign.platform])}`,
+        explanation: `Your latest work hasn't been backed up to ${host}. ${syncFailureReason(sign.code, host, deviceNames[sign.platform], sign.isCloudServer)}`,
         options: [tryAgain],
       };
     }

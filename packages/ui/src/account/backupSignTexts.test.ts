@@ -20,6 +20,7 @@ const linkFailed = {
   platform: "desktop",
   serverUrl: "https://cloud.example.org",
   serverName: "cloud.example.org",
+  isCloudServer: false,
   code: "internal",
 } as const;
 
