@@ -256,9 +256,9 @@ export const requestEndpoints = {
       { projectId, flashcardId, rating, durationMs },
       { track: false },
     ),
-  undoReviewAnswer: ({ projectId, answeredAtMs }) =>
+  undoReviewAnswer: ({ projectId, answerId }) =>
     backendApi.endpoints.undoReviewAnswer.initiate(
-      { projectId, answeredAtMs },
+      { projectId, answerId },
       { track: false },
     ),
   raiseReviewAllowance: ({ projectId, extraNewCards, extraReviews }) =>

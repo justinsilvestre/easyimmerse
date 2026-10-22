@@ -35,6 +35,7 @@ export const exampleProjectWithReviewsDue = {
   last_opened_at_ms: daysAgo(0),
   media_count: 10,
   uses_anki_connect: false,
+  is_backed_up: false,
   flashcard_count: 184,
   unreviewed_count: 20,
 } satisfies Project;
@@ -47,6 +48,7 @@ export const exampleProjectWithNewCards = {
   last_opened_at_ms: daysAgo(1),
   media_count: 3,
   uses_anki_connect: false,
+  is_backed_up: false,
   flashcard_count: 42,
   unreviewed_count: 12,
 } satisfies Project;
@@ -59,6 +61,7 @@ export const exampleProjectReviewed = {
   last_opened_at_ms: daysAgo(45),
   media_count: 1,
   uses_anki_connect: false,
+  is_backed_up: false,
   flashcard_count: 7,
   unreviewed_count: 0,
 } satisfies Project;

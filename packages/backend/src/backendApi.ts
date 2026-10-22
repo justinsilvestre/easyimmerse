@@ -174,7 +174,7 @@ type ReviewAnswerArgs = {
   durationMs: number;
 };
 
-type ReviewUndoArgs = { projectId: string; answeredAtMs: number };
+type ReviewUndoArgs = { projectId: string; answerId: string };
 
 type ReviewAllowanceArgs = {
   projectId: string;
@@ -523,11 +523,11 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) =>
         reviewAnsweredTags(projectId),
     }),
-    /** Undoes the project's latest answer, which the time of its log entry names. The server refuses any other with a 409. */
+    /** Undoes the project's latest answer, which the id of its log entry names. The server refuses any other with a 409. */
     undoReviewAnswer: build.mutation<ReviewAnswerUndone, ReviewUndoArgs>({
-      query: ({ projectId, answeredAtMs }) => ({
+      query: ({ projectId, answerId }) => ({
         method: "DELETE",
-        path: `/projects/${projectId}/review/answers/${answeredAtMs}`,
+        path: `/projects/${projectId}/review/answers/${answerId}`,
         query: utcOffsetQuery(),
       }),
       invalidatesTags: (_result, _error, { projectId }) =>

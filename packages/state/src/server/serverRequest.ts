@@ -228,7 +228,7 @@ export type ServerRequest =
       durationMs: number;
     }
   /** Undoes the project's latest answer, which the time of its log entry names. */
-  | { kind: "undoReviewAnswer"; projectId: string; answeredAtMs: number }
+  | { kind: "undoReviewAnswer"; projectId: string; answerId: string }
   /** Raises the number of new cards, or of reviews, the project's review shows today. */
   | {
       kind: "raiseReviewAllowance";

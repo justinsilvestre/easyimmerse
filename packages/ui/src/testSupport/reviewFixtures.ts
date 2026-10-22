@@ -106,6 +106,7 @@ export function answerReviewFixture(
   return {
     state,
     entry: {
+      id: `answer-${answeredAtMs}`,
       flashcard_id: request.flashcard_id,
       answered_at_ms: answeredAtMs,
       rating: request.rating,

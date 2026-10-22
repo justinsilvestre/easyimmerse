@@ -194,6 +194,7 @@ const addedBook: MediaFile = {
   track_selection_json: null,
   origin: null,
   translation_media_file_id: null,
+  is_upload_chosen: false,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
@@ -493,15 +494,15 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends DELETE .../review/answers/{answered_at_ms} for undoReviewAnswer", async () => {
+  it("sends DELETE .../review/answers/{answer_id} for undoReviewAnswer", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
       backendApi.endpoints.undoReviewAnswer.initiate({
         projectId: "p1",
-        answeredAtMs: 1234,
+        answerId: "a1",
       }),
     );
-    expect(client.requests[0]?.path).toBe("/projects/p1/review/answers/1234");
+    expect(client.requests[0]?.path).toBe("/projects/p1/review/answers/a1");
   });
 
   it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
@@ -779,6 +780,7 @@ describe("setAnkiConnect", () => {
       flashcard_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: true,
+      is_backed_up: false,
     };
     const store = createStore({
       send: async <T>() => ({ data: project as T }),

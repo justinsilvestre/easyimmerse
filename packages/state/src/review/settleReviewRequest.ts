@@ -128,7 +128,7 @@ function answerSettled(
   const index = session.steps.findIndex(
     (step) =>
       step.kind === "answer" &&
-      step.answeredAtMs === null &&
+      step.answerId === null &&
       step.card.flashcardId === request.flashcardId,
   );
   const answer = session.steps[index];
@@ -148,7 +148,7 @@ function answerSettled(
     ...session,
     steps: session.steps.with(index, {
       ...answer,
-      answeredAtMs: entry.answered_at_ms,
+      answerId: entry.id,
     }),
     comingBack: isDueWithinSession(state)
       ? comeBack(session.comingBack, back)

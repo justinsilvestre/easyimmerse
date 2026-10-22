@@ -64,6 +64,7 @@ export const fixtureProject: Project = {
   flashcard_count: 0,
   unreviewed_count: 0,
   uses_anki_connect: false,
+  is_backed_up: false,
 };
 
 const fixtureProjects: ListProjectsResponse = {
@@ -78,6 +79,7 @@ const fixtureProjects: ListProjectsResponse = {
       flashcard_count: 0,
       unreviewed_count: 0,
       uses_anki_connect: false,
+      is_backed_up: false,
     },
   ],
 };
@@ -111,6 +113,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
     },
     {
       id: "m2",
@@ -125,6 +128,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       track_selection_json: null,
       origin: null,
       translation_media_file_id: null,
+      is_upload_chosen: false,
     },
   ],
 };

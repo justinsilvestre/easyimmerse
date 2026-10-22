@@ -31,7 +31,7 @@ export function canUndo(session: ReviewScreenState): boolean {
 
 /** Tells whether the server has recorded a step. */
 export function hasLanded(step: SessionStep): boolean {
-  return step.kind === "answer" ? step.answeredAtMs !== null : step.hasLanded;
+  return step.kind === "answer" ? step.answerId !== null : step.hasLanded;
 }
 
 /** The ratings among the steps. */
