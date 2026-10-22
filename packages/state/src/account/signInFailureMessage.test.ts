@@ -24,6 +24,25 @@ describe("signInFailureMessage", () => {
     );
   });
 
+  it("tells of a server that cannot send email right now", () => {
+    expect(
+      signInFailureMessage(
+        { status: 503, code: "mail_unavailable", message: "" },
+        serverUrl,
+      ),
+    ).toBe("This server can't send email right now. Try again later.");
+  });
+
+  it("names the attempt that failed for another reason", () => {
+    expect(
+      signInFailureMessage(
+        { status: 500, message: "Disk full." },
+        serverUrl,
+        "send a reset link",
+      ),
+    ).toBe("The server could not send a reset link: Disk full.");
+  });
+
   it("tells of a password too short", () => {
     expect(
       signInFailureMessage(

@@ -4,8 +4,11 @@ import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { assessPasswordStrength } from "./passwordStrength.ts";
 import { signInFailureMessage } from "./signInFailureMessage.ts";
 import {
+  canAskPasswordReset,
+  canSubmitPasswordReset,
   canSubmitSignIn,
   isBusy,
+  type PasswordResetStatus,
   type ServerOffer,
   type SignInForm,
   type SignInMode,
@@ -29,6 +32,12 @@ export type SignInFormView = {
   failureMessage: string | null;
   /** What the chosen server offers, as far as the form has learned. */
   serverOffer: ServerOffer;
+  /** How far the request for a password reset link has gone, while the form asks for one instead of logging in. */
+  passwordReset: PasswordResetStatus["kind"] | null;
+  /** Whether the person can ask for a password reset link now. */
+  canAskPasswordReset: boolean;
+  /** Whether the request for a password reset link can be sent now. */
+  canSubmitPasswordReset: boolean;
 };
 
 /** Which servers a person may sign in to, and which one the form names. */
@@ -55,6 +64,9 @@ export const selectSignInForm = createSelector(
       isBusy: isBusy(form),
       failureMessage: failureMessageOf(form, serverUrl),
       serverOffer: serverOfferOf(form, serverUrl),
+      passwordReset: form.passwordReset?.kind ?? null,
+      canAskPasswordReset: canAskPasswordReset(form, cloudUrl),
+      canSubmitPasswordReset: canSubmitPasswordReset(form, cloudUrl),
     };
   },
 );
@@ -92,6 +104,13 @@ function failureMessageOf(
   form: SignInForm,
   serverUrl: string | null,
 ): string | null {
+  const address = serverUrl ?? "that address";
+  if (form.passwordReset?.kind === "failed")
+    return signInFailureMessage(
+      form.passwordReset.failure,
+      address,
+      "send a reset link",
+    );
   if (form.status.kind !== "failed") return null;
-  return signInFailureMessage(form.status.failure, serverUrl ?? "that address");
+  return signInFailureMessage(form.status.failure, address);
 }

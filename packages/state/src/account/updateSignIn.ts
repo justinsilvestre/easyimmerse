@@ -12,6 +12,13 @@ import {
   serverOfferOf,
   signInServerUrlOf,
 } from "./signInForm.ts";
+import {
+  passwordResetAnswered,
+  passwordResetAsked,
+  passwordResetDecided,
+  passwordResetSubmitted,
+  signInFieldsChanged,
+} from "./updatePasswordReset.ts";
 
 /** The id of the request that ends the app's session. */
 export const logOutRequestId = "account/logOut";
@@ -20,6 +27,7 @@ export const logOutRequestId = "account/logOut";
  * Keeps the sign-in form, asks the chosen server what it offers before the first attempt on it, sends the email and password,
  * and connects the app to the server once it opens a session.
  * Logging out ends the session on the server and then disconnects the app, whether or not the server could be reached.
+ * Asked for a password reset, the form asks a server that sends email to mail a link to the address instead.
  */
 export function updateSignIn(
   form: SignInForm,
@@ -29,7 +37,7 @@ export function updateSignIn(
   switch (action.type) {
     case "signInFormChanged":
       if (isBusy(form)) return updated(form);
-      return updated({ ...form, ...action.changes, status: { kind: "idle" } });
+      return updated(signInFieldsChanged(form, action.changes));
     case "signInSubmitted":
       return submitted(form, server);
     case "serverAuthInfoReceived":
@@ -51,6 +59,19 @@ export function updateSignIn(
         type: "sendRequest",
         id: logOutRequestId,
         request: { kind: "logOut" },
+      });
+    case "passwordResetAsked":
+      return passwordResetAsked(form, server);
+    case "passwordResetSubmitted":
+      return passwordResetSubmitted(form, server);
+    case "passwordResetAnswered":
+      return updated(passwordResetAnswered(form, action.outcome));
+    case "passwordResetLeft":
+      if (isBusy(form)) return updated(form);
+      return updated({
+        ...form,
+        passwordReset: null,
+        status: { kind: "idle" },
       });
     case "requestSettled":
       return isSettled(action, logOutRequestId, "logOut")
@@ -83,9 +104,10 @@ function infoReceived(
     serverAuthInfo: { serverUrl: action.serverUrl, info: action.info },
   };
   const serverUrl = signInServerUrlOf(form, server.cloudUrl);
-  const isAwaited =
-    form.status.kind === "checkingServer" && serverUrl === action.serverUrl;
-  if (!isAwaited) return updated(form);
+  if (serverUrl !== action.serverUrl) return updated(form);
+  if (form.status.kind === "checkingPasswordReset")
+    return updated(passwordResetDecided(form, action.info));
+  if (form.status.kind !== "checkingServer") return updated(form);
   return offersMode(serverOfferOf(form, serverUrl), form.mode)
     ? sending(form, action.serverUrl)
     : updated({ ...form, status: { kind: "idle" } });

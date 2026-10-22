@@ -7,10 +7,25 @@ export {
   selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
+export {
+  selectConfirmationEmailMessage,
+  selectIsSendingConfirmationEmail,
+} from "./account/confirmationEmailSelectors.ts";
+export { describeDevice } from "./account/describeDevice.ts";
+export {
+  selectDeviceLogOutFailureMessage,
+  selectIsLoggingOutDevice,
+} from "./account/devicesSelectors.ts";
+export {
+  type MailedLinkView,
+  selectMailedLink,
+  selectNewPasswordStrength,
+} from "./account/mailedLinkSelectors.ts";
 export type {
   PasswordStrength,
   PasswordStrengthLevel,
 } from "./account/passwordStrength.ts";
+export { type MailedLink, readMailedLink } from "./account/readMailedLink.ts";
 export {
   connectionNotKeptCode,
   type SignInAttempt,

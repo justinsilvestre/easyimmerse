@@ -33,4 +33,21 @@ export const accountEffectRunners = {
   },
   disconnectFromServer: (_effect, { effects }) =>
     effects.disconnectFromServer(),
+  requestPasswordReset: ({ serverUrl, email }, { effects, dispatch }) => {
+    effects
+      .requestPasswordReset(serverUrl, email)
+      .then((outcome) => dispatch(actions.passwordResetAnswered(outcome)));
+  },
+  confirmEmail: ({ serverUrl, token }, { effects, dispatch }) => {
+    effects
+      .confirmEmail(serverUrl, token)
+      .then((outcome) => dispatch(actions.emailConfirmationAnswered(outcome)));
+  },
+  setNewPassword: ({ serverUrl, token, password }, { effects, dispatch }) => {
+    effects
+      .setNewPassword(serverUrl, token, password)
+      .then((outcome) =>
+        dispatch(actions.newPasswordAnswered(serverUrl, outcome)),
+      );
+  },
 } satisfies EffectRunners<AccountEffect>;
