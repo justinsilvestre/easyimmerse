@@ -47,8 +47,10 @@ ureq = { workspace = true }
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { workspace = true }
 
-# Only Android and iOS have a save picker that keeps a copy of a file, so desktop builds leave the plugin out.
+# Only Android and iOS have a save picker that keeps a copy of a file, or a camera scanner for the pairing QR code,
+# so desktop builds leave these plugins out.
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-barcode-scanner = { workspace = true }
 tauri-plugin-save-copy = { workspace = true }
 
 # iOS forbids just-in-time compilation, so plugins run there only through the Pulley interpreter.

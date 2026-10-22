@@ -141,6 +141,7 @@ const playbackRequest: PlaybackMethodRequest = {
   },
   selection: null,
   preferred_audio_target: null,
+  video_quality: null,
 };
 
 const srtRequest = {
@@ -584,6 +585,16 @@ describe("backendApi", () => {
     );
     expect(client.requests).toEqual([
       { method: "GET", path: "/conversion-cache" },
+    ]);
+  });
+
+  it("sends GET /conversion/capabilities for getConversionCapabilities", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.getConversionCapabilities.initiate(),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/conversion/capabilities" },
     ]);
   });
 

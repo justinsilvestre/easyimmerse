@@ -1,6 +1,7 @@
 import type {
   Definition,
   MediaFileSource,
+  PairingGrant,
   ServerAuthInfo,
   SessionCreated,
   TextSource,
@@ -118,4 +119,14 @@ export interface Effects {
   connectToServer(server: ServerConfig): Promise<SignInOutcome<null>>;
   /** Makes the app run offline from now on, forgetting the server it was connected to, which starts the app anew. */
   disconnectFromServer(): void;
+  /** Exchanges a pairing code for the token of the server at the address. Never rejects. */
+  claimPairingCode(
+    serverUrl: string,
+    code: string,
+  ): Promise<SignInOutcome<PairingGrant>>;
+  /**
+   * Reads a QR code with the platform's own scanner and resolves with the text it holds,
+   * or with null when the platform has no scanner or the person cancelled. Never rejects.
+   */
+  scanPairingCode(): Promise<string | null>;
 }

@@ -3,6 +3,7 @@ import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
 import type { FailedRequestsEffect } from "../operations/failedRequests.ts";
 import type { FreeIdRequestEffect } from "../operations/freeIdRequests.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
+import type { PairingEffect } from "../pairing/pairingEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
 import type { RecoveryEffect } from "../recovery/recoveryEffects.ts";
@@ -26,7 +27,8 @@ export type Effect =
   | DispatchEffect
   | FailedRequestsEffect
   | FreeIdRequestEffect
-  | AccountEffect;
+  | AccountEffect
+  | PairingEffect;
 
 /** An effect that the middleware performs: every effect except those the root update translates into others. */
 export type PerformedEffect = Exclude<

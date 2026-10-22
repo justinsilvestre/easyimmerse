@@ -1,12 +1,12 @@
 import type { FooterActivity } from "@easyimmerse/state";
-import { Settings } from "lucide-react";
+import { Settings, Wifi } from "lucide-react";
 import type { ReactNode } from "react";
 import { FooterActivities } from "./FooterActivities.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 
 /**
- * The thin bar at the bottom of the window, given its state as props: the way to Settings, the theme menu,
+ * The thin bar at the bottom of the window, given its state as props: the way to Settings and to local network sync, the theme menu,
  * a sign of whether the user's work is backed up, and the activities under way at its left edge,
  * and the screen's own buttons, passed as children, at its right edge.
  * `AppFooter` gives it its state from the store.
@@ -14,6 +14,8 @@ import { ThemeMenu } from "./ThemeMenu.tsx";
 export function FooterBar({
   isSettingsOpen,
   onOpenSettings,
+  isPairingOpen,
+  onOpenPairing,
   backupSign,
   activities,
   onOpenActivity,
@@ -21,6 +23,8 @@ export function FooterBar({
 }: {
   isSettingsOpen: boolean;
   onOpenSettings: () => void;
+  isPairingOpen: boolean;
+  onOpenPairing: () => void;
   backupSign?: ReactNode;
   activities: readonly FooterActivity[];
   onOpenActivity: (activity: FooterActivity) => void;
@@ -37,6 +41,14 @@ export function FooterBar({
             onClick={isSettingsOpen ? undefined : onOpenSettings}
           >
             <Settings className="size-4" />
+          </IconButton>
+          <IconButton
+            label="Local network sync"
+            aria-current={isPairingOpen ? "page" : undefined}
+            aria-disabled={isPairingOpen || undefined}
+            onClick={isPairingOpen ? undefined : onOpenPairing}
+          >
+            <Wifi className="size-4" />
           </IconButton>
           <ThemeMenu />
           {backupSign}

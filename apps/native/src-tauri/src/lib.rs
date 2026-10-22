@@ -27,7 +27,9 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init());
     #[cfg(mobile)]
-    let builder = builder.plugin(tauri_plugin_save_copy::init());
+    let builder = builder
+        .plugin(tauri_plugin_save_copy::init())
+        .plugin(tauri_plugin_barcode_scanner::init());
     let builder = webdriver::add_plugins_when_requested(builder);
     let built = plugin_check::register(builder)
         .setup(|app| {

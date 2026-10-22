@@ -12,6 +12,7 @@ import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickPath } from "./pickPath.ts";
 import { createPlatformSaveEffects } from "./platformSaveEffects.ts";
+import { createScanPairingCode } from "./scanPairingCode.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
 import { createWindowCloseGuard } from "./windowCloseGuard.ts";
@@ -49,6 +50,7 @@ export function createNativeEffects(options: {
       confirmClosingWhileSaving,
     ),
     subscribeToSettingsRequests,
+    scanPairingCode: createScanPairingCode(options.platform),
   };
 }
 

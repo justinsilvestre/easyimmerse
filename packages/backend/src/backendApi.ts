@@ -25,6 +25,7 @@ import type {
   BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  ConversionCapabilities,
   CreateUserRequest,
   CurrentPrincipal,
   Document,
@@ -48,6 +49,7 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
+  PairingCode,
   ParseTimedTextRequest,
   PlaybackMethodRequest,
   PlaybackMethodResponse,
@@ -348,6 +350,7 @@ export const backendApi = createApi({
     "Alignments",
     "Dictionaries",
     "ConversionCache",
+    "ConversionCapabilities",
     "Users",
     "CurrentPrincipal",
     "Review",
@@ -824,7 +827,7 @@ export const backendApi = createApi({
     }),
     clearConversionCache: build.mutation<ConversionCacheStatus, void>({
       query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
-      invalidatesTags: ["ConversionCache"],
+      invalidatesTags: ["ConversionCache", "ConversionCapabilities"],
     }),
     setConversionCacheBudget: build.mutation<
       ConversionCacheStatus,
@@ -835,7 +838,11 @@ export const backendApi = createApi({
         path: "/conversion-cache/budget",
         body: { kind: "json", value: budget },
       }),
-      invalidatesTags: ["ConversionCache"],
+      invalidatesTags: ["ConversionCache", "ConversionCapabilities"],
+    }),
+    getConversionCapabilities: build.query<ConversionCapabilities, void>({
+      query: () => ({ method: "GET", path: "/conversion/capabilities" }),
+      providesTags: ["ConversionCapabilities"],
     }),
     parseTimedText: build.mutation<TimedTextTrack, ParseTimedTextRequest>({
       query: (request) => ({
@@ -1128,6 +1135,13 @@ export const backendApi = createApi({
       // The account may be the app's own, whose session then ends.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
+    /**
+     * Issues a new pairing code for another device on the local network, replacing any earlier one.
+     * It is a query rather than a mutation, so that polling it at the code's validity keeps a valid code on screen.
+     */
+    issuePairingCode: build.query<PairingCode, void>({
+      query: () => ({ method: "POST", path: "/pairing/code" }),
+    }),
   }),
 });
 
@@ -1151,6 +1165,7 @@ export const {
   useRemoveAlignmentMutation,
   useSetTranslationDocumentMutation,
   useGetConversionCacheStatusQuery,
+  useGetConversionCapabilitiesQuery,
   useOpenBookQuery,
   useLicenseNoticesQuery,
   useProbePicturesQuery,
@@ -1164,6 +1179,7 @@ export const {
   useListUsersQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
+  useIssuePairingCodeQuery,
 } = backendApi;
 
 type BackendState = Parameters<

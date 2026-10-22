@@ -485,6 +485,52 @@
         ]
       }
     },
+    "/conversion/capabilities": {
+      "get": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Without a conversion service, `ffmpeg` is null and no encoder is reported.",
+        "operationId": "getConversionCapabilities",
+        "responses": {
+          "200": {
+            "description": "The ffmpeg build and the video encoder conversion uses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversionCapabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/conversions/{key}/index.m3u8": {
       "get": {
         "tags": [
@@ -1725,6 +1771,133 @@
           },
           "401": {
             "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/pairing/claim": {
+      "post": {
+        "tags": [
+          "pairing"
+        ],
+        "summary": "Exchanges the active pairing code for the launch token. Needs no token.",
+        "operationId": "claimPairingCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingClaim"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The code was used up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingGrant"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`pairing_code_invalid`: the code is wrong, used up or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`too_many_attempts`: ten failed claims from this peer within fifteen minutes",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "The seconds to wait before trying again"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pairing/code": {
+      "post": {
+        "tags": [
+          "pairing"
+        ],
+        "summary": "Issues a pairing code valid for ten minutes, replacing any earlier one.\nOnly the launch token may do so, and only on a server without accounts.",
+        "operationId": "issuePairingCode",
+        "responses": {
+          "200": {
+            "description": "The new pairing code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingCode"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`pairing_needs_launch_token`: the server has accounts, or the token is an account's",
             "content": {
               "application/json": {
                 "schema": {
@@ -7785,6 +7958,40 @@
           }
         }
       },
+      "ConversionCapabilities": {
+        "type": "object",
+        "required": [
+          "encoder_discovery_finished"
+        ],
+        "properties": {
+          "encoder_discovery_finished": {
+            "type": "boolean",
+            "description": "Whether encoder discovery has finished. While false, `video_encoder` is not known yet."
+          },
+          "ffmpeg": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FfmpegBuild",
+                "description": "None when the server has no conversion service (no ffmpeg found or no cache directory)."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "video_encoder": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/VideoEncoder",
+                "description": "The H.264 encoder that conversion uses. None when none works."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "ConversionPlan": {
         "type": "object",
         "required": [
@@ -8266,6 +8473,28 @@
             "items": {
               "$ref": "#/components/schemas/TrackInfo"
             }
+          }
+        }
+      },
+      "FfmpegBuild": {
+        "type": "object",
+        "required": [
+          "path",
+          "version",
+          "custom"
+        ],
+        "properties": {
+          "custom": {
+            "type": "boolean",
+            "description": "True when the build is not the bundled sidecar."
+          },
+          "path": {
+            "type": "string",
+            "description": "The path of the ffmpeg executable."
+          },
+          "version": {
+            "type": "string",
+            "description": "The version that `ffmpeg -version` reports, such as `8.1.2`."
           }
         }
       },
@@ -9667,6 +9896,49 @@
           }
         }
       },
+      "PairingClaim": {
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "PairingCode": {
+        "type": "object",
+        "description": "A pairing code that another device can exchange for the launch token once.",
+        "required": [
+          "code",
+          "expires_at"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Six decimal digits."
+          },
+          "expires_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "When the code stops being valid, in milliseconds since the Unix epoch.",
+            "minimum": 0
+          }
+        }
+      },
+      "PairingGrant": {
+        "type": "object",
+        "description": "The token to present as `Authorization: Bearer <token>` from now on.",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "ParagraphProvenance": {
         "type": "object",
         "description": "Where one paragraph came from in its content document.",
@@ -9934,6 +10206,17 @@
               {
                 "$ref": "#/components/schemas/TrackSelection",
                 "description": "The tracks to play; the default selection when absent."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "video_quality": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/VideoQuality",
+                "description": "The quality of transcoded video; balanced when absent."
               },
               {
                 "type": "null"
@@ -11553,7 +11836,8 @@
           "video_codec_unsupported",
           "audio_codec_unsupported",
           "conversion_unavailable",
-          "picture_too_tall"
+          "picture_too_tall",
+          "no_video_encoder"
         ]
       },
       "VideoAction": {
@@ -11623,6 +11907,32 @@
               }
             }
           }
+        ]
+      },
+      "VideoEncoder": {
+        "type": "object",
+        "required": [
+          "name",
+          "software"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The ffmpeg encoder name, such as `h264_videotoolbox` or `libx264`."
+          },
+          "software": {
+            "type": "boolean",
+            "description": "Whether the encoder runs on the processor rather than on video hardware."
+          }
+        }
+      },
+      "VideoQuality": {
+        "type": "string",
+        "description": "How much of the bit rate transcoded video may use. Higher quality takes more space in the\nconversion cache.",
+        "enum": [
+          "compact",
+          "balanced",
+          "best"
         ]
       },
       "WaveformResponse": {

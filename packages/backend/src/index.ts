@@ -9,6 +9,7 @@ export {
   useCreateFlashcardMutation,
   useDeleteFlashcardMutation,
   useGetConversionCacheStatusQuery,
+  useGetConversionCapabilitiesQuery,
   useGetCurrentPrincipalQuery,
   useGetMediaAvailabilityQuery,
   useGetMediaTracksQuery,
@@ -16,6 +17,7 @@ export {
   useGetReviewSummaryQuery,
   useGetServerAuthInfoQuery,
   useGetSubtitleCuesQuery,
+  useIssuePairingCodeQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
   useListAlignmentsQuery,
@@ -58,6 +60,11 @@ export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export { isSamePickedFile, type PickedFile } from "./readPickedFile.ts";
+export {
+  resolveServedServer,
+  type ServedServerOutcome,
+  servedServerActions,
+} from "./resolveServedServer.ts";
 export {
   type NativePlatform,
   resolveServerConfig,

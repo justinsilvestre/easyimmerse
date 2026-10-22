@@ -1,4 +1,9 @@
-import { type AppStore, actions, selectRoute } from "@easyimmerse/state";
+import {
+  type AppStore,
+  actions,
+  selectIsPairingOpen,
+  selectRoute,
+} from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -38,6 +43,12 @@ describe("AppFooter", () => {
     const { store } = renderFooter();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(selectRoute(store.getState()).screen).toBe("settings");
+  });
+
+  it("opens the local network sync page from its button", () => {
+    const { store } = renderFooter();
+    fireEvent.click(screen.getByRole("button", { name: "Local network sync" }));
+    expect(selectIsPairingOpen(store.getState())).toBe(true);
   });
 
   it("shows the theme menu", () => {

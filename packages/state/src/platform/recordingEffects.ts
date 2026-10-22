@@ -1,4 +1,8 @@
-import type { ServerAuthInfo, SessionCreated } from "@easyimmerse/types";
+import type {
+  PairingGrant,
+  ServerAuthInfo,
+  SessionCreated,
+} from "@easyimmerse/types";
 import {
   connectionNotKeptCode,
   type SignInAttempt,
@@ -53,7 +57,9 @@ type EffectCall =
   | { type: "fetchServerAuthInfo"; serverUrl: string }
   | { type: "createSession"; attempt: SignInAttempt }
   | { type: "connectToServer"; server: ServerConfig }
-  | { type: "disconnectFromServer" };
+  | { type: "disconnectFromServer" }
+  | { type: "claimPairingCode"; serverUrl: string; code: string }
+  | { type: "scanPairingCode" };
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -94,6 +100,10 @@ export type RecordingEffects = Effects & {
   resolveSession(outcome: SignInOutcome<SessionCreated>): void;
   /** Makes every later connection to a server fail, as a browser whose storage is full does. */
   refuseConnections(): void;
+  /** Settles the pending claimPairingCode promise. Throws when no claim is pending. */
+  resolvePairingClaim(outcome: SignInOutcome<PairingGrant>): void;
+  /** Settles the pending scanPairingCode promise. Throws when no scan is pending. */
+  resolvePairingScan(text: string | null): void;
 };
 
 type PendingPick<R> = {
@@ -157,6 +167,9 @@ export function createRecordingEffects(
     "server auth info question",
   );
   const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
+  const pairingClaim =
+    createPendingPick<SignInOutcome<PairingGrant>>("pairing claim");
+  const pairingScan = createPendingPick<string | null>("pairing scan");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -267,6 +280,14 @@ export function createRecordingEffects(
     disconnectFromServer: () => {
       calls.push({ type: "disconnectFromServer" });
     },
+    claimPairingCode: (serverUrl, code) => {
+      calls.push({ type: "claimPairingCode", serverUrl, code });
+      return pairingClaim.start();
+    },
+    scanPairingCode: () => {
+      calls.push({ type: "scanPairingCode" });
+      return pairingScan.start();
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -309,6 +330,12 @@ export function createRecordingEffects(
     },
     refuseConnections: () => {
       refusesConnections = true;
+    },
+    resolvePairingClaim: (outcome) => {
+      pairingClaim.take().resolve(outcome);
+    },
+    resolvePairingScan: (text) => {
+      pairingScan.take().resolve(text);
     },
   };
 }

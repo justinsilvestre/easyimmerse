@@ -118,6 +118,18 @@ export type {
   NoticeTone,
 } from "./notices/noticesState.ts";
 export { transientNotice } from "./notices/transientNotice.ts";
+export type { PairingFields } from "./pairing/pairingForm.ts";
+export {
+  type PairingFormView,
+  selectIsPairingOpen,
+  selectPairingForm,
+} from "./pairing/pairingSelectors.ts";
+export {
+  type PairingTarget,
+  pairingCodeOf,
+  pairingUrlOf,
+  parsePairingUrl,
+} from "./pairing/pairingUrl.ts";
 export type { BrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export type {

@@ -8,6 +8,7 @@ import { licenseNoticesStateOf } from "./components/licenseNoticesStateOf.ts";
 import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useNavigate } from "./hooks/useNavigate.ts";
+import { PairingScreen } from "./pairing/PairingScreen.tsx";
 import { ConnectedReviewScreen } from "./screens/ConnectedReviewScreen.tsx";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -95,6 +96,14 @@ function SettingsPage({ page }: { page: SettingsPageName }) {
       );
     case "dictionaries":
       return <DictionariesScreen onBack={onBack} />;
+    case "pairing":
+      return (
+        <PairingScreen
+          onBack={onBack}
+          desktopServer={null}
+          onStartDesktopServer={() => undefined}
+        />
+      );
   }
 }
 

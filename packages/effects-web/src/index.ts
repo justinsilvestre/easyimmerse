@@ -12,6 +12,7 @@ import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 import { downloadFile } from "./downloadFile.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
+import { createPairingEffects } from "./pairingEffects.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
@@ -59,6 +60,7 @@ export function createWebEffects(options: {
       localStorage,
       () => location.reload(),
     ),
+    ...createPairingEffects((input, init) => globalThis.fetch(input, init)),
   };
 }
 

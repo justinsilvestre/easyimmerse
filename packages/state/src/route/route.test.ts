@@ -62,6 +62,15 @@ describe("navigate", () => {
     expect(navigate(dictionaries, { type: "closeSettings" })).toEqual(project);
   });
 
+  it("opens the pairing page on top of the general settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openPairing" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general", "pairing"],
+    });
+  });
+
   it("opens the account settings over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",

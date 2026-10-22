@@ -56,7 +56,7 @@ export function createAccountEffects(
 }
 
 /** Sends a request and reads its JSON answer, or the reason there is none. */
-async function requestJson<T>(
+export async function requestJson<T>(
   fetchFn: typeof fetch,
   url: URL,
   init?: RequestInit,

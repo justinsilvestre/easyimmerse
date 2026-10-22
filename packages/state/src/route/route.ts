@@ -14,7 +14,7 @@ export type MainRoute =
 export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
 /** A page of the settings, which open over a main screen. */
-export type SettingsPage = "general" | "dictionaries";
+export type SettingsPage = "general" | "dictionaries" | "pairing";
 
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it so that going back restores it, player state included.
@@ -41,6 +41,8 @@ export type NavigationStep =
   /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
   | { type: "openAccountSettings" }
   | { type: "openDictionaries" }
+  /** Opens the page for pairing with another easyImmerse app on the local network. */
+  | { type: "openPairing" }
   | { type: "closeSettings" };
 
 export const initialRoute: Route = { screen: "home" };
@@ -85,6 +87,8 @@ function stepTarget(current: Route, step: NavigationStep): Route {
           };
     case "openDictionaries":
       return openSettingsPage(current, "dictionaries");
+    case "openPairing":
+      return openSettingsPage(current, "pairing");
     case "closeSettings":
       return closeSettingsPage(current);
   }

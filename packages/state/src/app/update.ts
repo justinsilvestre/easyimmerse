@@ -6,6 +6,7 @@ import { mediaImportsFeature } from "../mediaImports/mediaImportsFeature.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
+import { pairingFeature } from "../pairing/updatePairing.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { recoveryEffects } from "../recovery/recoveryEffects.ts";
@@ -50,6 +51,7 @@ const features = {
   dictionaryImport: dictionaryImportFeature,
   mediaImports: mediaImportsFeature,
   account: accountFeature,
+  pairing: pairingFeature,
 } satisfies FeatureTable;
 
 const featureNames = Object.keys(features) as (keyof AppState)[];
