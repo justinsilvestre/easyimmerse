@@ -14,6 +14,7 @@ mod media;
 mod media_availability;
 mod media_conversion;
 mod openapi;
+mod ownership;
 mod plugin_routes;
 mod preferences;
 mod projects;
