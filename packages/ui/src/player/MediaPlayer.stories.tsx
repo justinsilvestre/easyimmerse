@@ -139,6 +139,27 @@ export const DirectFromBrowserFile: Story = {
   },
 };
 
+/** A file added from a browser that no longer holds it, played from the copy the server keeps. */
+export const BrowserFileFromServerCopy: Story = {
+  parameters: {
+    appStore: {
+      client: clientFor(directPlaybackRoutes, {
+        media_files: episode
+          ? [
+              {
+                ...episode,
+                source: { kind: "browser_file", size: 1, last_modified_ms: 1 },
+                has_stored_copy: true,
+              },
+            ]
+          : [],
+      }),
+      server: fakeServer,
+      browserFileRegistry: createBrowserFileRegistry<File>(),
+    },
+  },
+};
+
 export const Converting: Story = {
   decorators: [withFakeHls],
   parameters: {
