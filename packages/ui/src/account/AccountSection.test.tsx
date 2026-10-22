@@ -287,7 +287,7 @@ describe("AccountSection", () => {
       renderBuiltIn(null);
       expect(
         await screen.findByText(
-          /to back it up and use it on your other devices/,
+          /Log in to back it up to/,
         ),
       ).toBeDefined();
     });
