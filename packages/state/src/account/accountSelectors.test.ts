@@ -45,6 +45,7 @@ describe("selectSignInForm", () => {
       actions.serverAuthInfoReceived(cloudUrl, {
         accounts: true,
         open_signup: false,
+        sends_email: false,
       }),
     );
     expect(selectSignInForm(store.getState()).serverOffer).toBe("signupClosed");

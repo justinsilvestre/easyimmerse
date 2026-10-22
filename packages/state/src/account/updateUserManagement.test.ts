@@ -16,7 +16,12 @@ const newUser = {
   role: "privileged",
 } as const;
 
-const createdUser = { id: "u2", ...newUser, created_at_ms: 0 };
+const createdUser = {
+  id: "u2",
+  ...newUser,
+  created_at_ms: 0,
+  email_confirmed_at_ms: null,
+};
 
 const lastAdministrator = {
   ok: false,

@@ -26,6 +26,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 } as const;
 
@@ -51,6 +52,7 @@ const answered = (accounts: boolean, openSignup: boolean) =>
   actions.serverAuthInfoReceived(ownServer, {
     accounts,
     open_signup: openSignup,
+    sends_email: false,
   });
 
 const signupMode = actions.signInFormChanged({ mode: "signup" });

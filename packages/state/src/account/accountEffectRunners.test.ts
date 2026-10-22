@@ -14,6 +14,7 @@ const session = {
     email: "someone@example.com",
     role: "library_user",
     created_at_ms: 0,
+    email_confirmed_at_ms: null,
   },
 } as const;
 
@@ -37,7 +38,7 @@ async function signedIn(refusesConnections = false) {
   if (refusesConnections) effects.refuseConnections();
   effects.resolveServerAuthInfo({
     ok: true,
-    data: { accounts: true, open_signup: true },
+    data: { accounts: true, open_signup: true, sends_email: false },
   });
   await vi.waitFor(() =>
     expect(effects.calls).toContainEqual(
