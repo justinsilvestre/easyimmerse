@@ -852,6 +852,8 @@ As a web/mobile app user connected to my own server (self-hosted or on the local
   - [ ] I am notified that the server will convert it to a widely supported format, and that the original file will not be kept if I choose to delete it after upload
 
 As a web/mobile app user who is not logged in:
+- when I create a project, save flashcards or change a project's settings:
+  - [ ] they are saved in this browser, and are there when I next open the app in it
 - when I add a resource (media file, subtitles file, dictionary file, etc.) to the app:
   - [ ] the file stays on my device and is not uploaded anywhere
   - [ ] I see a warning that the resources are only available on this device, will be cleared if my browser data is cleared (either by me or by an automatic cleanup), and that I should back them up if I want to keep them or use them on other devices
@@ -900,10 +902,12 @@ As a user:
   - [x] I see the devices I am logged in on, and can log out any of them from here
   - [x] I see my own projects, flashcards and dictionaries
 - when I log out:
-  - [x] the web app returns to offline mode, using only the data stored on this device
+  - [ ] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
   - [x] other users logged in on the same machine or server cannot see or change them
+- when I log out of the web app while some of my flashcards have not been saved to the server yet:
+  - [ ] I am told how many would be lost, and can stay logged in to save them or log out anyway
 - when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
-  - [x] the account settings tell me that the app keeps my work on this device, so I do not need an account
+  - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
   - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
 - when I am an administrator and open the Account section:
   - [x] I see the server's accounts with their roles
