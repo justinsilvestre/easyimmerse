@@ -104,9 +104,9 @@ describe("updatePairing", () => {
       ]);
     });
 
-    it("says why the sign-in form opened", () => {
+    it("returns to idle, since the sign-in form takes over", () => {
       const [form] = pairingAfter(web, ...submitted, checked(true));
-      expect(form.status).toEqual({ kind: "serverHasAccounts" });
+      expect(form.status).toEqual({ kind: "idle" });
     });
   });
 
@@ -166,9 +166,18 @@ describe("updatePairing", () => {
       const [form] = pairingAfter(
         web,
         actions.pairingScanRequested(),
-        actions.pairingScanCancelled(),
+        actions.pairingScanCancelled("closed"),
       );
       expect(form.status).toEqual({ kind: "idle" });
+    });
+
+    it("says when the camera could not be used", () => {
+      const [form] = pairingAfter(
+        mobile,
+        actions.pairingScanRequested(),
+        actions.pairingScanCancelled("cameraUnavailable"),
+      );
+      expect(form.status).toEqual({ kind: "cameraUnavailable" });
     });
   });
 
@@ -200,15 +209,6 @@ describe("updatePairing", () => {
         actions.pairingCodeScanned("hello there"),
       );
       expect(form.status).toEqual({ kind: "unrecognizedQrCode" });
-    });
-
-    it("returns to idle when the scan ends without one", () => {
-      const [form] = pairingAfter(
-        mobile,
-        actions.pairingScanRequested(),
-        actions.pairingCodeScanned(null),
-      );
-      expect(form.status).toEqual({ kind: "idle" });
     });
   });
 });

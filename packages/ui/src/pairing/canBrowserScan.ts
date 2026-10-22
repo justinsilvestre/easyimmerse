@@ -9,7 +9,7 @@ export type BrowserScanSupport = {
  * Whether the browser can read a QR code through its camera: it has `BarcodeDetector` and a camera,
  * which browsers grant only to pages served over HTTPS or from the device itself.
  */
-export function browserCanScan(scope: BrowserScanSupport): boolean {
+export function canBrowserScan(scope: BrowserScanSupport): boolean {
   return (
     scope.BarcodeDetector !== undefined &&
     scope.isSecureContext === true &&

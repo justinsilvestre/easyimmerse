@@ -20,7 +20,7 @@ type Reads = Pick<ReadableState, "server" | "route">;
 /**
  * Keeps what the desktop app knows of the server it runs, and sends its requests to the server controls.
  * On the desktop app, it follows the server's status from the start and reads its settings,
- * and reads the settings and the log again whenever Settings open.
+ * and reads the settings and the log again whenever Settings open, with the status when it could not be read before.
  * A start for the local network first saves a bind address on every interface at the same port, when the current one is loopback only.
  */
 export function updateDesktopServer(
@@ -45,6 +45,7 @@ export function updateDesktopServer(
             { ...state, edits: {} },
             { type: "readDesktopServerSettings" },
             { type: "readDesktopServerLogs" },
+            ...statusRetries(state),
           )
         : updated(state);
     case "desktopServerStatusReceived":
@@ -121,6 +122,13 @@ function opensSettings(app: Reads, action: AppAction): boolean {
     app.route.screen !== "settings" &&
     nextRoute(app.route, action).screen === "settings"
   );
+}
+
+/** Reads the status again when it could not be read before, since no status event may follow. */
+function statusRetries(state: DesktopServerState): DesktopServerEffect[] {
+  return state.failures.readStatus === undefined
+    ? []
+    : [{ type: "readDesktopServerStatus" }];
 }
 
 function withoutFailure(

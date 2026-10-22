@@ -17,6 +17,7 @@ export {
   useGetReviewSummaryQuery,
   useGetServerAuthInfoQuery,
   useGetSubtitleCuesQuery,
+  useIssuedPairingCodeState,
   useIssuePairingCodeQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
@@ -63,10 +64,10 @@ export { isSamePickedFile, type PickedFile } from "./readPickedFile.ts";
 export {
   resolveServedServer,
   type ServedServerOutcome,
-  servedServerActions,
 } from "./resolveServedServer.ts";
 export {
   type NativePlatform,
   resolveServerConfig,
 } from "./resolveServerConfig.ts";
+export { servedServerActions } from "./servedServerActions.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";

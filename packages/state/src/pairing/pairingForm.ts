@@ -4,8 +4,9 @@ import { parsePairingUrl } from "./pairingUrl.ts";
 /**
  * How far a pairing has gone: not started, reading a QR code, asking the server whether it has accounts,
  * exchanging the code for the server's token, keeping the connection, or stopped.
- * It stops when the server has accounts, so that the person signs in instead; when the server has no accounts and no code was given;
- * when a scanned QR code holds no address; or when a request failed.
+ * It stops when the server has no accounts and no code was given, when the camera could not be used,
+ * when a scanned QR code holds no address, or when a request failed.
+ * A server with accounts ends the pairing at once, since the person signs in instead.
  */
 export type PairingStatus =
   | { kind: "idle" }
@@ -13,8 +14,8 @@ export type PairingStatus =
   | { kind: "checkingServer" }
   | { kind: "claiming" }
   | { kind: "connecting" }
-  | { kind: "serverHasAccounts" }
   | { kind: "codeMissing" }
+  | { kind: "cameraUnavailable" }
   | { kind: "unrecognizedQrCode" }
   | { kind: "failed"; failure: RequestFailure };
 

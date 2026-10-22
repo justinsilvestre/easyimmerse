@@ -47,8 +47,10 @@ describe("createPairingEffects", () => {
     });
   });
 
-  it("scans nothing, since a browser has no scanner of its own", async () => {
+  it("reports no camera, since a browser has no scanner of its own", async () => {
     const { fetchFn } = answering({});
-    expect(await createPairingEffects(fetchFn).scanPairingCode()).toBeNull();
+    expect(await createPairingEffects(fetchFn).scanPairingCode()).toEqual({
+      kind: "cameraUnavailable",
+    });
   });
 });

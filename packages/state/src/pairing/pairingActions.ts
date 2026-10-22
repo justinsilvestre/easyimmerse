@@ -1,6 +1,7 @@
 import type { PairingGrant, ServerAuthInfo } from "@easyimmerse/types";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import type { PairingFields } from "./pairingForm.ts";
+import type { PairingScanStop } from "./pairingScan.ts";
 
 /** The action creators of pairing with a desktop app on the local network. */
 export const pairingActions = {
@@ -11,10 +12,11 @@ export const pairingActions = {
   pairingSubmitted: () => ({ type: "pairingSubmitted" }) as const,
   /** The person asked to scan a QR code. */
   pairingScanRequested: () => ({ type: "pairingScanRequested" }) as const,
-  /** The person closed the camera without scanning a QR code. */
-  pairingScanCancelled: () => ({ type: "pairingScanCancelled" }) as const,
-  /** A QR code was read, or the scan ended without one when the text is null. */
-  pairingCodeScanned: (text: string | null) =>
+  /** The scan ended without a QR code, because the person closed the camera or it could not be used. */
+  pairingScanCancelled: (reason: PairingScanStop) =>
+    ({ type: "pairingScanCancelled", reason }) as const,
+  /** A QR code was read. */
+  pairingCodeScanned: (text: string) =>
     ({ type: "pairingCodeScanned", text }) as const,
   /** The server to pair with said whether it has accounts. */
   pairingServerChecked: (serverUrl: string, info: ServerAuthInfo) =>

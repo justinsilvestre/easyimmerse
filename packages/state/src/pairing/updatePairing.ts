@@ -16,7 +16,8 @@ import { parsePairingUrl } from "./pairingUrl.ts";
 /**
  * Keeps the pairing form and leads a pairing through its steps: it asks the server whether it has accounts,
  * then exchanges the code for the server's token and connects the app to the server.
- * A server with accounts takes no code: the Account section's sign-in form opens with its address instead.
+ * A server with accounts takes no code: the Account section's sign-in form opens with its address instead,
+ * and the pairing form returns to idle, so that it shows no notice when the person comes back to it.
  * The mobile app reads QR codes through the platform's scanner; elsewhere the UI's camera view reports what it reads.
  */
 export function updatePairing(
@@ -29,7 +30,7 @@ export function updatePairing(
       if (isPairingBusy(form)) return updated(form);
       return updated({ ...form, ...action.changes, status: { kind: "idle" } });
     case "pairingSubmitted":
-      return submitted(form);
+      return submitForm(form);
     case "pairingScanRequested":
       if (isPairingBusy(form)) return updated(form);
       return server.config?.bundledIn === "mobile"
@@ -39,13 +40,14 @@ export function updatePairing(
           )
         : updated({ ...form, status: { kind: "scanning" } });
     case "pairingScanCancelled":
-      return form.status.kind === "scanning"
-        ? updated({ ...form, status: { kind: "idle" } })
-        : updated(form);
+      if (form.status.kind !== "scanning") return updated(form);
+      return action.reason === "cameraUnavailable"
+        ? updated({ ...form, status: { kind: "cameraUnavailable" } })
+        : updated({ ...form, status: { kind: "idle" } });
     case "pairingCodeScanned":
-      return scanned(form, action.text);
+      return pairWithScannedText(form, action.text);
     case "pairingServerChecked":
-      return serverChecked(form, action);
+      return continueWithCheckedServer(form, action);
     case "pairingCodeClaimed":
       if (form.status.kind !== "claiming") return updated(form);
       return updated(
@@ -65,7 +67,7 @@ export function updatePairing(
   }
 }
 
-function submitted(form: PairingForm) {
+function submitForm(form: PairingForm) {
   const serverUrl = pairingServerUrlOf(form);
   if (serverUrl === null || !canSubmitPairing(form)) return updated(form);
   return updated(
@@ -74,20 +76,19 @@ function submitted(form: PairingForm) {
   );
 }
 
-function scanned(form: PairingForm, text: string | null) {
+function pairWithScannedText(form: PairingForm, text: string) {
   if (form.status.kind !== "scanning") return updated(form);
-  if (text === null) return updated({ ...form, status: { kind: "idle" } });
   const target = parsePairingUrl(text);
   if (target === null)
     return updated({ ...form, status: { kind: "unrecognizedQrCode" } });
-  return submitted({
+  return submitForm({
     address: target.serverUrl,
     code: target.code ?? "",
     status: { kind: "idle" },
   });
 }
 
-function serverChecked(
+function continueWithCheckedServer(
   form: PairingForm,
   action: Extract<AppAction, { type: "pairingServerChecked" }>,
 ) {
@@ -97,7 +98,7 @@ function serverChecked(
   if (!isAwaited) return updated(form);
   if (action.info.accounts)
     return updated(
-      { ...form, status: { kind: "serverHasAccounts" } },
+      { ...form, status: { kind: "idle" } },
       dispatch(
         actions.signInFormChanged({
           serverChoice: "own",

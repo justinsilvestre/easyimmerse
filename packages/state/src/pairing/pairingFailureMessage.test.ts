@@ -34,7 +34,7 @@ describe("pairingFailureMessage", () => {
     expect(
       pairingFailureMessage({ status: "NETWORK", message: "" }, serverUrl),
     ).toBe(
-      "Couldn't reach easyImmerse at http://192.168.1.5:8787. Check the address, and that both devices are on the same network.",
+      "This device could not reach easyImmerse at http://192.168.1.5:8787. Check the address, and that both devices are on the same network.",
     );
   });
 

@@ -104,19 +104,23 @@ export const ServerUnreachable: Story = {
   ],
 };
 
-/** The server has accounts, so the Account section's sign-in form opened with its address; this is what the page says on return. */
-export const ServerHasAccounts: Story = {
-  decorators: [
-    withDispatchedActions(filledIn, actions.pairingSubmitted(), checked(true)),
-  ],
-};
-
 export const CodeMissing: Story = {
   decorators: [
     withDispatchedActions(
       actions.pairingFormChanged({ address: desktop }),
       actions.pairingSubmitted(),
       checked(false),
+    ),
+  ],
+};
+
+/** The browser refused the camera, or the mobile app's scanner may not use it. */
+export const CameraUnavailable: Story = {
+  parameters: mobileApp,
+  decorators: [
+    withDispatchedActions(
+      actions.pairingScanRequested(),
+      actions.pairingScanCancelled("cameraUnavailable"),
     ),
   ],
 };

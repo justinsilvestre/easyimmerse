@@ -1137,10 +1137,12 @@ export const backendApi = createApi({
     }),
     /**
      * Issues a new pairing code for another device on the local network, replacing any earlier one.
-     * It is a query rather than a mutation, so that polling it at the code's validity keeps a valid code on screen.
+     * It is a query rather than a mutation, so that polling it before the code expires keeps a valid code on screen.
+     * The code stays cached as long as the server keeps it valid, so that reopening the pairing page shows the same code.
      */
     issuePairingCode: build.query<PairingCode, void>({
       query: () => ({ method: "POST", path: "/pairing/code" }),
+      keepUnusedDataFor: 10 * 60,
     }),
   }),
 });
@@ -1181,6 +1183,10 @@ export const {
   useListReviewCountsQuery,
   useIssuePairingCodeQuery,
 } = backendApi;
+
+/** Reads the cached pairing code without asking for one. */
+export const useIssuedPairingCodeState =
+  backendApi.endpoints.issuePairingCode.useQueryState;
 
 type BackendState = Parameters<
   typeof backendApi.util.selectCachedArgsForQuery

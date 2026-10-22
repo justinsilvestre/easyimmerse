@@ -20,7 +20,7 @@ describe("PlayerFailure", () => {
       { server: desktop },
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Open media conversion settings" }),
+      screen.getByRole("button", { name: "Open Media conversion settings" }),
     );
     expect(selectRoute(store.getState())).toMatchObject({
       screen: "settings",
@@ -28,10 +28,21 @@ describe("PlayerFailure", () => {
     });
   });
 
+  it("tells the desktop app's person where to choose another ffmpeg build", () => {
+    renderWithAppStore(
+      <PlayerFailure cause="No encoder." needsVideoEncoder />,
+      undefined,
+      { server: desktop },
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "choose it in the Media conversion section of Settings.",
+    );
+  });
+
   it("offers no settings outside the desktop app", () => {
     renderWithAppStore(<PlayerFailure cause="No encoder." needsVideoEncoder />);
     expect(
-      screen.queryByRole("button", { name: "Open media conversion settings" }),
+      screen.queryByRole("button", { name: "Open Media conversion settings" }),
     ).toBeNull();
   });
 });

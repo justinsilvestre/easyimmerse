@@ -1,4 +1,5 @@
 import type { NativePlatform } from "@easyimmerse/backend";
+import type { PairingScan } from "@easyimmerse/state";
 import {
   checkPermissions,
   Format,
@@ -13,31 +14,33 @@ export type BarcodeScanner = {
   scanQrCode: () => Promise<string>;
 };
 
-const pluginScanner: BarcodeScanner = {
+const pluginScanner = {
   checkPermissions,
   requestPermissions,
   scanQrCode: async () =>
     (await scan({ formats: [Format.QRCode], windowed: false })).content,
-};
+} satisfies BarcodeScanner;
 
 /**
  * Builds the scan of a pairing QR code: the phone's camera through the barcode scanner plugin, after asking for the camera when needed.
- * A desktop has no scanner. A refused camera or a cancelled scan resolves with null.
+ * A desktop has no scanner and a refused camera cannot be used; a scan the person cancels counts as closed.
  */
 export function createScanPairingCode(
   platform: NativePlatform,
   scanner: BarcodeScanner = pluginScanner,
-): () => Promise<string | null> {
-  if (platform !== "mobile") return async () => null;
+): () => Promise<PairingScan> {
+  if (platform !== "mobile") return async () => cameraUnavailable;
   return async () => {
     try {
-      if (!(await hasCamera(scanner))) return null;
-      return await scanner.scanQrCode();
+      if (!(await hasCamera(scanner))) return cameraUnavailable;
+      return { kind: "read", text: await scanner.scanQrCode() };
     } catch {
-      return null;
+      return { kind: "closed" };
     }
   };
 }
+
+const cameraUnavailable = { kind: "cameraUnavailable" } satisfies PairingScan;
 
 async function hasCamera(scanner: BarcodeScanner): Promise<boolean> {
   if ((await scanner.checkPermissions()) === "granted") return true;

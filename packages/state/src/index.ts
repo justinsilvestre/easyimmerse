@@ -135,6 +135,7 @@ export type {
 } from "./notices/noticesState.ts";
 export { transientNotice } from "./notices/transientNotice.ts";
 export type { PairingFields } from "./pairing/pairingForm.ts";
+export type { PairingScan, PairingScanStop } from "./pairing/pairingScan.ts";
 export {
   type PairingFormView,
   selectIsPairingOpen,

@@ -12,6 +12,7 @@ import {
   type SignInOutcome,
 } from "../account/signInAttempt.ts";
 import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
+import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
@@ -126,7 +127,7 @@ export type RecordingEffects = Effects & {
   /** Settles the pending claimPairingCode promise. Throws when no claim is pending. */
   resolvePairingClaim(outcome: SignInOutcome<PairingGrant>): void;
   /** Settles the pending scanPairingCode promise. Throws when no scan is pending. */
-  resolvePairingScan(text: string | null): void;
+  resolvePairingScan(scan: PairingScan): void;
   /** Settles the pending pickExecutable promise. Throws when no pick is pending. */
   resolvePickExecutable(path: string | null): void;
   /** Settles the pending call of a desktop server control with its answer. Throws when none is pending. */
@@ -203,7 +204,7 @@ export function createRecordingEffects(
   const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
   const pairingClaim =
     createPendingPick<SignInOutcome<PairingGrant>>("pairing claim");
-  const pairingScan = createPendingPick<string | null>("pairing scan");
+  const pairingScan = createPendingPick<PairingScan>("pairing scan");
   const executablePick = createPendingPick<string | null>("executable pick");
   const desktopServerCalls = createDesktopServerCalls();
   const desktopServerListeners = new Set<
@@ -405,8 +406,8 @@ export function createRecordingEffects(
     resolvePairingClaim: (outcome) => {
       pairingClaim.take().resolve(outcome);
     },
-    resolvePairingScan: (text) => {
-      pairingScan.take().resolve(text);
+    resolvePairingScan: (scan) => {
+      pairingScan.take().resolve(scan);
     },
     resolvePickExecutable: (path) => {
       executablePick.take().resolve(path);

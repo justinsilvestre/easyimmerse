@@ -12,9 +12,9 @@ describe("describeUnsupportedReason", () => {
     );
   });
 
-  it("explains a missing video encoder in the spec's words", () => {
+  it("explains a missing video encoder wherever the server runs", () => {
     expect(describeUnsupportedReason("no_video_encoder")).toBe(
-      "This video needs converting, and this computer has no video encoder that ffmpeg can use. Install an ffmpeg build with a software H.264 encoder and choose it under Settings, Media conversion.",
+      "This video needs converting, and the server's ffmpeg build has no video encoder that it can use.",
     );
   });
 

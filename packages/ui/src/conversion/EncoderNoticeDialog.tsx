@@ -17,7 +17,7 @@ export function EncoderNoticeDialog({
         <>
           <Button onClick={onDismiss}>Not now</Button>
           <Button variant="primary" autoFocus onClick={onOpenSettings}>
-            Open media conversion settings
+            Open Media conversion settings
           </Button>
         </>
       }
@@ -28,8 +28,8 @@ export function EncoderNoticeDialog({
         can use.
       </p>
       <p className="text-sm text-fg-soft">
-        Video that plays directly is not affected. The media conversion settings
-        explain how to install a suitable build and choose it.
+        Video that plays directly is not affected. The Media conversion section
+        of Settings explains how to install a suitable build and choose it.
       </p>
     </ModalDialog>
   );

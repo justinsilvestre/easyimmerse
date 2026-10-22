@@ -7,7 +7,13 @@ export const pairingEffectRunners = {
   scanPairingCode: (_effect, { effects, dispatch }) => {
     effects
       .scanPairingCode()
-      .then((text) => dispatch(actions.pairingCodeScanned(text)));
+      .then((scan) =>
+        dispatch(
+          scan.kind === "read"
+            ? actions.pairingCodeScanned(scan.text)
+            : actions.pairingScanCancelled(scan.kind),
+        ),
+      );
   },
   checkPairingServer: ({ serverUrl }, { effects, dispatch }) => {
     effects

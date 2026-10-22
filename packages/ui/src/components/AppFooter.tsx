@@ -11,9 +11,9 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { FooterBar } from "./FooterBar.tsx";
 
 /**
- * The footer bar as every screen shows it, with whether the user's work is backed up, the activities under way elsewhere in the app,
+ * Shows the footer bar of every screen: whether the user's work is backed up, the activities under way elsewhere in the app,
  * and the screen's own buttons, passed as children, at its right edge.
- * While Settings is open, its control stands for the page already open and does nothing; so does the local network sync control on its own page.
+ * The Settings button does nothing while Settings is open, and the Local network sync button does nothing while its page is open.
  */
 export function AppFooter({ children }: { children?: ReactNode }) {
   const dispatch = useAppDispatch();

@@ -27,6 +27,21 @@ async function claimingStore() {
   return { effects, store };
 }
 
+/** A mobile app's store whose pairing form asked the platform's scanner for a QR code. */
+function scanningMobileStore() {
+  const effects = createRecordingEffects();
+  const store = createAppStore(
+    effects,
+    createFakeServerStoreParts({
+      serverUrl: "http://127.0.0.1:1",
+      token: "t",
+      bundledIn: "mobile",
+    }),
+  );
+  store.dispatch(actions.pairingScanRequested());
+  return { effects, store };
+}
+
 describe("pairingEffectRunners", () => {
   it("claims the code at the server", async () => {
     const { effects } = await claimingStore();
@@ -87,19 +102,23 @@ describe("pairingEffectRunners", () => {
   });
 
   it("reads what the mobile app's scanner scanned", async () => {
-    const effects = createRecordingEffects();
-    const store = createAppStore(
-      effects,
-      createFakeServerStoreParts({
-        serverUrl: "http://127.0.0.1:1",
-        token: "t",
-        bundledIn: "mobile",
-      }),
-    );
-    store.dispatch(actions.pairingScanRequested());
-    effects.resolvePairingScan(`${desktop}/#pair=654321`);
+    const { effects, store } = scanningMobileStore();
+    effects.resolvePairingScan({
+      kind: "read",
+      text: `${desktop}/#pair=654321`,
+    });
     await vi.waitFor(() =>
       expect(selectPairingForm(store.getState()).code).toBe("654321"),
+    );
+  });
+
+  it("says when the mobile app's camera could not be used", async () => {
+    const { effects, store } = scanningMobileStore();
+    effects.resolvePairingScan({ kind: "cameraUnavailable" });
+    await vi.waitFor(() =>
+      expect(selectPairingForm(store.getState()).status).toBe(
+        "cameraUnavailable",
+      ),
     );
   });
 });

@@ -19,6 +19,6 @@ export function createPairingEffects(fetchFn: typeof fetch): PairingEffects {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code }),
       }),
-    scanPairingCode: async () => null,
+    scanPairingCode: async () => ({ kind: "cameraUnavailable" }),
   };
 }

@@ -1,9 +1,10 @@
-import { actions } from "@easyimmerse/state";
+import type { SignInOutcome } from "@easyimmerse/state";
+import type { PairingGrant, ServerAuthInfo } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
   resolveServedServer,
   type ServedLocation,
-  servedServerActions,
+  type ServedServerEffects,
 } from "./resolveServedServer.ts";
 
 const origin = "http://192.168.1.5:8787";
@@ -35,26 +36,37 @@ function createMemoryStorage(): Storage {
   };
 }
 
-/** A fetch that answers every request with the JSON body and status. */
-function answering(body: unknown, status = 200): typeof fetch {
-  return async () => Response.json(body, { status });
+/** Effects whose server answers a claim and a question about signing in as given. */
+function answering(
+  claim: SignInOutcome<PairingGrant>,
+  authInfo: SignInOutcome<unknown> = claim,
+): ServedServerEffects {
+  return {
+    claimPairingCode: async () => claim,
+    fetchServerAuthInfo: async () => authInfo as SignInOutcome<ServerAuthInfo>,
+  };
 }
 
-const unreachable: typeof fetch = async () => {
-  throw new TypeError("Failed to fetch");
-};
+const granted = answering({ ok: true, data: { token: "launch-token" } });
+
+const unreachable = answering({
+  ok: false,
+  error: { status: "NETWORK", message: "Failed to fetch" },
+});
+
+function serverAnswering(info: unknown): ServedServerEffects {
+  return answering(
+    { ok: false, error: { status: 404, message: "" } },
+    { ok: true, data: info },
+  );
+}
 
 describe("resolveServedServer", () => {
   describe("with a pairing code in the fragment", () => {
     it("keeps the server and the token it gives", async () => {
       const storage = createMemoryStorage();
       const { location } = locationWith("#pair=123456");
-      await resolveServedServer(
-        location,
-        answering({ token: "launch-token" }),
-        storage,
-        false,
-      );
+      await resolveServedServer(location, granted, storage, false);
       expect(JSON.parse(storage.getItem("easyimmerse.server") ?? "")).toEqual({
         serverUrl: origin,
         token: "launch-token",
@@ -65,7 +77,7 @@ describe("resolveServedServer", () => {
       const { location, loaded } = locationWith("#pair=123456");
       await resolveServedServer(
         location,
-        answering({ token: "launch-token" }),
+        granted,
         createMemoryStorage(),
         false,
       );
@@ -73,34 +85,78 @@ describe("resolveServedServer", () => {
     });
 
     it("reports a code the server refused", async () => {
-      const { location } = locationWith("#pair=123456");
+      const failure = {
+        status: 404,
+        code: "pairing_code_invalid",
+        message: "wrong",
+      } as const;
       const outcome = await resolveServedServer(
-        location,
-        answering({ code: "pairing_code_invalid", message: "wrong" }, 404),
+        locationWith("#pair=123456").location,
+        answering({ ok: false, error: failure }),
         createMemoryStorage(),
-        true,
+        false,
       );
       expect(outcome).toEqual({
         kind: "pairingFailed",
         serverUrl: origin,
         code: "123456",
-        failure: {
-          status: 404,
-          code: "pairing_code_invalid",
-          message: "wrong",
-        },
+        failure,
       });
     });
 
-    it("reports a token it could not keep", async () => {
+    it("clears the fragment of a code the server refused", async () => {
       const { location } = locationWith("#pair=123456");
-      const outcome = await resolveServedServer(
+      await resolveServedServer(
         location,
-        answering({ token: "launch-token" }),
+        unreachable,
+        createMemoryStorage(),
+        false,
+      );
+      expect(location.hash).toBe("");
+    });
+
+    it("reports a token it could not keep", async () => {
+      const outcome = await resolveServedServer(
+        locationWith("#pair=123456").location,
+        granted,
         null,
         false,
       );
       expect(outcome.kind).toBe("pairingFailed");
+    });
+  });
+
+  describe("with a pairing code while the app has a server", () => {
+    it("offers the code instead of claiming it", async () => {
+      const outcome = await resolveServedServer(
+        locationWith("#pair=123456").location,
+        granted,
+        createMemoryStorage(),
+        true,
+      );
+      expect(outcome).toEqual({
+        kind: "pairingOffered",
+        serverUrl: origin,
+        code: "123456",
+      });
+    });
+
+    it("keeps the stored server", async () => {
+      const storage = createMemoryStorage();
+      storage.setItem("easyimmerse.server", "stored");
+      await resolveServedServer(
+        locationWith("#pair=123456").location,
+        granted,
+        storage,
+        true,
+      );
+      expect(storage.getItem("easyimmerse.server")).toBe("stored");
+    });
+
+    it("clears the fragment so that the page does not offer the code again", async () => {
+      const { location } = locationWith("#pair=123456");
+      await resolveServedServer(location, granted, createMemoryStorage(), true);
+      expect(location.hash).toBe("");
     });
   });
 
@@ -109,7 +165,7 @@ describe("resolveServedServer", () => {
       const info = { accounts: true, open_signup: false };
       const outcome = await resolveServedServer(
         locationWith("").location,
-        answering(info),
+        serverAnswering(info),
         createMemoryStorage(),
         false,
       );
@@ -119,7 +175,7 @@ describe("resolveServedServer", () => {
     it("finds nothing at an origin that is not an easyImmerse server", async () => {
       const outcome = await resolveServedServer(
         locationWith("").location,
-        answering("<!doctype html>"),
+        serverAnswering("<!doctype html>"),
         createMemoryStorage(),
         false,
       );
@@ -139,47 +195,11 @@ describe("resolveServedServer", () => {
     it("asks nothing when the app already has a server", async () => {
       const outcome = await resolveServedServer(
         locationWith("").location,
-        answering({ accounts: true, open_signup: true }),
+        serverAnswering({ accounts: true, open_signup: true }),
         createMemoryStorage(),
         true,
       );
       expect(outcome).toEqual({ kind: "none" });
     });
-  });
-});
-
-describe("servedServerActions", () => {
-  it("fills in the sign-in form for a server with accounts", () => {
-    expect(
-      servedServerActions({
-        kind: "serverFound",
-        serverUrl: origin,
-        info: { accounts: true, open_signup: false },
-      }),
-    ).toEqual([
-      actions.signInFormChanged({ serverChoice: "own", ownServerUrl: origin }),
-    ]);
-  });
-
-  it("fills in the pairing address for a server without accounts", () => {
-    expect(
-      servedServerActions({
-        kind: "serverFound",
-        serverUrl: origin,
-        info: { accounts: false, open_signup: false },
-      }),
-    ).toEqual([actions.pairingFormChanged({ address: origin })]);
-  });
-
-  it("opens the pairing page after a failed pairing", () => {
-    const failure = { status: "NETWORK", message: "" } as const;
-    expect(
-      servedServerActions({
-        kind: "pairingFailed",
-        serverUrl: origin,
-        code: "123456",
-        failure,
-      }).at(-1),
-    ).toEqual(actions.navigated({ type: "openPairing" }));
   });
 });

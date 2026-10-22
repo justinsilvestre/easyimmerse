@@ -17,6 +17,7 @@ import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
+import { readLocalStorage } from "./readLocalStorage.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
 import { unavailableDesktopServerEffects } from "./unavailableDesktopServerEffects.ts";
@@ -58,7 +59,7 @@ export function createWebEffects(options: {
     ),
     ...createAccountEffects(
       (input, init) => globalThis.fetch(input, init),
-      localStorage,
+      readLocalStorage(),
       () => location.reload(),
     ),
     ...createPairingEffects((input, init) => globalThis.fetch(input, init)),
@@ -83,3 +84,4 @@ function ignoreSettingsRequests(): () => void {
 
 export { createApplyAppearance } from "./applyAppearance.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
+export { readLocalStorage } from "./readLocalStorage.ts";

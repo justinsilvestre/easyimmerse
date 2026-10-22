@@ -1,7 +1,7 @@
 /** Where a pairing leads: the server's address, and the pairing code when the server has no accounts. */
 export type PairingTarget = { serverUrl: string; code: string | null };
 
-/** The key in a pairing URL's fragment that holds the pairing code, as in `http://192.168.1.5:8787/#pair=123456`. */
+/** The key in a pairing URL's fragment that holds the pairing code. */
 export const pairingFragmentKey = "pair";
 
 /**

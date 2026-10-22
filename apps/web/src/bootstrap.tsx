@@ -7,7 +7,7 @@ import {
   resolveServerConfig,
   servedServerActions,
 } from "@easyimmerse/backend";
-import { createWebEffects } from "@easyimmerse/effects-web";
+import { createWebEffects, readLocalStorage } from "@easyimmerse/effects-web";
 import type { EnhancerComposer, ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -30,14 +30,6 @@ import "@easyimmerse/ui/styles.css";
  */
 export async function bootstrap(): Promise<void> {
   const server = resolveServerConfig();
-  const served = await resolveServedServer(
-    location,
-    (input, init) => globalThis.fetch(input, init),
-    localStorage,
-    server !== null,
-  );
-  if (served.kind === "reloading") return;
-  const client = await createBackendClient(server);
   const playerRegistry = createPlayerRegistry();
   const browserFileRegistry = createBrowserFileRegistry<File>();
   const effects = createWebEffects({
@@ -45,6 +37,14 @@ export async function bootstrap(): Promise<void> {
     browserFileRegistry,
     writeDefinitionMarkdown: definitionMarkdown,
   });
+  const served = await resolveServedServer(
+    location,
+    effects,
+    readLocalStorage(),
+    server !== null,
+  );
+  if (served.kind === "reloading") return;
+  const client = await createBackendClient(server);
   const store = createAppStore(
     effects,
     createBackendStoreParts(client, server, {

@@ -22,23 +22,23 @@ function fakeScanner(
 describe("createScanPairingCode", () => {
   it("reads the QR code on a phone that may use the camera", async () => {
     const scan = createScanPairingCode("mobile", fakeScanner("granted"));
-    expect(await scan()).toBe(pairingUrl);
+    expect(await scan()).toEqual({ kind: "read", text: pairingUrl });
   });
 
   it("asks for the camera before the first scan", async () => {
     const scan = createScanPairingCode("mobile", fakeScanner("prompt"));
-    expect(await scan()).toBe(pairingUrl);
+    expect(await scan()).toEqual({ kind: "read", text: pairingUrl });
   });
 
-  it("reads nothing when the camera is refused", async () => {
+  it("reports a refused camera as unavailable", async () => {
     const scan = createScanPairingCode(
       "mobile",
       fakeScanner("prompt", "denied"),
     );
-    expect(await scan()).toBeNull();
+    expect(await scan()).toEqual({ kind: "cameraUnavailable" });
   });
 
-  it("reads nothing when the scan is cancelled", async () => {
+  it("reports a cancelled scan as closed", async () => {
     const cancelled = async () => {
       throw new Error("cancelled");
     };
@@ -46,11 +46,11 @@ describe("createScanPairingCode", () => {
       "mobile",
       fakeScanner("granted", "granted", cancelled),
     );
-    expect(await scan()).toBeNull();
+    expect(await scan()).toEqual({ kind: "closed" });
   });
 
-  it("reads nothing on a desktop", async () => {
+  it("reports no camera on a desktop", async () => {
     const scan = createScanPairingCode("desktop", fakeScanner("granted"));
-    expect(await scan()).toBeNull();
+    expect(await scan()).toEqual({ kind: "cameraUnavailable" });
   });
 });

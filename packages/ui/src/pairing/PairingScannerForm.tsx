@@ -10,6 +10,12 @@ const progressLabels: Partial<Record<PairingFormView["status"], string>> = {
   connecting: "Connecting…",
 };
 
+/** How a failure, which is announced at once, and a notice about the form look. */
+const messageTones = {
+  failure: { role: "alert", color: "text-danger-fg" },
+  notice: { role: "status", color: "text-warning-fg" },
+} as const;
+
 /**
  * The form through which the web and mobile apps pair with a desktop app on the local network, given its state as props:
  * a button that scans the desktop app's QR code where the device can, the camera while it scans in a browser,
@@ -32,6 +38,8 @@ export function PairingScannerForm({
   onScan: () => void;
 }) {
   const isScanning = form.status === "scanning";
+  const messageTone =
+    messageTones[form.status === "failed" ? "failure" : "notice"];
   return (
     <form
       className="flex max-w-sm flex-col gap-3"
@@ -75,14 +83,7 @@ export function PairingScannerForm({
         onChange={(event) => onChange({ code: event.target.value })}
       />
       {form.message && (
-        <p
-          role={form.status === "failed" ? "alert" : "status"}
-          className={
-            form.status === "failed"
-              ? "text-sm text-danger-fg"
-              : "text-sm text-warning-fg"
-          }
-        >
+        <p role={messageTone.role} className={`text-sm ${messageTone.color}`}>
           {form.message}
         </p>
       )}

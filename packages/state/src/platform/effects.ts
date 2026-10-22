@@ -10,6 +10,7 @@ import type {
   TextSource,
 } from "@easyimmerse/types";
 import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
+import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { ServerConfig } from "../server/serverState.ts";
@@ -129,9 +130,9 @@ export interface Effects {
   ): Promise<SignInOutcome<PairingGrant>>;
   /**
    * Reads a QR code with the platform's own scanner and resolves with the text it holds,
-   * or with null when the platform has no scanner or the person cancelled. Never rejects.
+   * or with why it read none: the person closed the scanner, or the platform has no camera it may use. Never rejects.
    */
-  scanPairingCode(): Promise<string | null>;
+  scanPairingCode(): Promise<PairingScan>;
   /**
    * Opens the platform's file dialog for a program and resolves with its path, or with null when the person cancelled
    * or the platform has no such dialog.

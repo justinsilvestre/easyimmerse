@@ -5,7 +5,7 @@ import {
 } from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { browserCanScan } from "./browserCanScan.ts";
+import { canBrowserScan } from "./canBrowserScan.ts";
 import { PairingScannerForm } from "./PairingScannerForm.tsx";
 import { QrCameraView } from "./QrCameraView.tsx";
 
@@ -20,12 +20,15 @@ export function PairingScannerPanel() {
   return (
     <PairingScannerForm
       form={form}
-      canScan={isMobileApp || browserCanScan(globalThis)}
+      canScan={isMobileApp || canBrowserScan(globalThis)}
       camera={
         isMobileApp ? undefined : (
           <QrCameraView
             onScanned={(text) => dispatch(actions.pairingCodeScanned(text))}
-            onCancel={() => dispatch(actions.pairingScanCancelled())}
+            onClose={() => dispatch(actions.pairingScanCancelled("closed"))}
+            onCameraUnavailable={() =>
+              dispatch(actions.pairingScanCancelled("cameraUnavailable"))
+            }
           />
         )
       }

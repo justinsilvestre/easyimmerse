@@ -1,4 +1,5 @@
 import type {
+  DesktopServerSettings,
   DesktopServerStatus,
   ServerLogEntry,
   ServerRunState,
@@ -15,8 +16,10 @@ import {
 /**
  * The desktop server as pairing sees it: not known yet when null; not running; starting; running where only this computer reaches it;
  * or running on the local network, with accounts or with the launch token. `url` is the address other devices use.
+ * It is unavailable when its status, or the settings of the running server, could not be read.
  */
 export type DesktopPairingServer =
+  | { kind: "unavailable"; message: string }
   | { kind: "stopped" }
   | { kind: "starting" }
   | { kind: "loopbackOnly" }
@@ -141,8 +144,8 @@ export const selectDoesDesktopServerUseAccounts = (state: AppRoot) =>
 /** Returns the server as pairing sees it, or null until its status and settings are known. */
 export const selectDesktopPairingServer = createSelector(
   [selectState],
-  ({ status, settings }): DesktopPairingServer | null => {
-    if (status === null) return null;
+  ({ status, settings, failures }): DesktopPairingServer | null => {
+    if (status === null) return unavailableOrUnknown(failures.readStatus);
     switch (status.state.kind) {
       case "stopped":
       case "failed":
@@ -150,7 +153,7 @@ export const selectDesktopPairingServer = createSelector(
       case "starting":
         return { kind: "starting" };
       case "running":
-        return runningPairingServer(status, settings?.auth ?? null);
+        return runningPairingServer(status, settings, failures.readSettings);
     }
   },
 );
@@ -167,13 +170,22 @@ export const selectFfmpegBuildChoice = createSelector(
 
 function runningPairingServer(
   status: DesktopServerStatus,
-  auth: string | null,
+  settings: DesktopServerSettings | null,
+  settingsFailure: string | undefined,
 ): DesktopPairingServer | null {
   const url = status.pairing_url ?? status.urls[0];
   if (!status.lan_reachable || url === undefined)
     return { kind: "loopbackOnly" };
-  if (auth === null) return null;
-  return { kind: "running", url, hasAccounts: auth === "accounts" };
+  if (settings === null) return unavailableOrUnknown(settingsFailure);
+  return { kind: "running", url, hasAccounts: settings.auth === "accounts" };
+}
+
+function unavailableOrUnknown(
+  failure: string | undefined,
+): DesktopPairingServer | null {
+  return failure === undefined
+    ? null
+    : { kind: "unavailable", message: failure };
 }
 
 function statusFailureOf(server: DesktopServerState): string | null {

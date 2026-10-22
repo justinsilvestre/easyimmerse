@@ -28,7 +28,11 @@ export function requestFirstPlaybackMethod(
     : updated(playback);
 }
 
-const videoQualities: readonly VideoQuality[] = ["compact", "balanced", "best"];
+const videoQualities = [
+  "compact",
+  "balanced",
+  "best",
+] as const satisfies readonly VideoQuality[];
 
 /**
  * Sends the playback method request for the selection once the browser is measured, with the audio target and video quality of the first request,

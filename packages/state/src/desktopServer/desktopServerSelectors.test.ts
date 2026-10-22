@@ -169,6 +169,31 @@ describe("selectDesktopPairingServer", () => {
     expect(selectDesktopPairingServer(state)).toEqual({ kind: "stopped" });
   });
 
+  it("says why the status could not be read", () => {
+    const state = {
+      app: stateAfter(
+        actions.desktopServerRequestFailed("readStatus", "no shell"),
+      ),
+    };
+    expect(selectDesktopPairingServer(state)).toEqual({
+      kind: "unavailable",
+      message: "no shell",
+    });
+  });
+
+  it("says why the settings of a running server could not be read", () => {
+    const state = {
+      app: stateAfter(
+        actions.desktopServerStatusReceived(runningOnLan),
+        actions.desktopServerRequestFailed("readSettings", "unreadable file"),
+      ),
+    };
+    expect(selectDesktopPairingServer(state)).toEqual({
+      kind: "unavailable",
+      message: "unreadable file",
+    });
+  });
+
   it("returns a server only this computer reaches as loopback only", () => {
     const state = {
       app: stateAfter(actions.desktopServerStatusReceived(loopbackRunning)),

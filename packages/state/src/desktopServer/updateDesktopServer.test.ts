@@ -89,6 +89,15 @@ describe("updateDesktopServer", () => {
       );
       expect(effects).toEqual([]);
     });
+
+    it("reads the status again when it could not be read before", () => {
+      const [, effects] = serverAfter(
+        desktop,
+        actions.desktopServerRequestFailed("readStatus", "no shell"),
+        actions.navigated({ type: "openPairing" }),
+      );
+      expect(effects).toContainEqual({ type: "readDesktopServerStatus" });
+    });
   });
 
   describe("when the form changes", () => {

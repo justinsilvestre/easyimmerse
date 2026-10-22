@@ -21,19 +21,20 @@ export type PairingFormView = {
   message: string | null;
 };
 
-const selectForm = (state: AppRoot) => state.app.pairing;
+const selectPairingFormState = (state: AppRoot) => state.app.pairing;
 
 /** Returns the pairing form as it shows, which keeps its reference until the form changes. */
 export const selectPairingForm = createSelector(
-  [selectForm],
-  (form): PairingFormView => ({
-    address: form.address,
-    code: form.code,
-    status: form.status.kind,
-    isBusy: isPairingBusy(form),
-    canSubmit: canSubmitPairing(form),
-    message: messageOf(form),
-  }),
+  [selectPairingFormState],
+  (form) =>
+    ({
+      address: form.address,
+      code: form.code,
+      status: form.status.kind,
+      isBusy: isPairingBusy(form),
+      canSubmit: canSubmitPairing(form),
+      message: messageOf(form),
+    }) satisfies PairingFormView,
 );
 
 /** Tells whether the pairing page is on top of Settings. */
@@ -49,10 +50,10 @@ function messageOf(form: PairingForm): string | null {
         form.status.failure,
         pairingServerUrlOf(form) ?? form.address,
       );
-    case "serverHasAccounts":
-      return "This server has accounts, so this device connects by logging in. The sign-in form in the Account section has its address filled in.";
     case "codeMissing":
       return "Enter the six-digit code that the desktop app shows beside its QR code.";
+    case "cameraUnavailable":
+      return "The camera could not be used. Enter the address and code instead.";
     case "unrecognizedQrCode":
       return "This QR code does not hold the address of an easyImmerse app. Scan the code that the desktop app shows under Local network sync.";
     default:

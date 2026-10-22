@@ -30,6 +30,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** The desktop app could not read the server's state from its shell. */
+export const ServerUnavailable: Story = {
+  args: {
+    server: {
+      kind: "unavailable",
+      message: "The server controls did not answer.",
+    },
+  },
+};
+
 export const ServerStopped: Story = { args: { server: { kind: "stopped" } } };
 
 export const ServerStarting: Story = { args: { server: { kind: "starting" } } };
