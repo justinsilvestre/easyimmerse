@@ -154,6 +154,10 @@ export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
 export type { Appearance } from "./preferences/appearance.ts";
 export {
+  isPersonBoundPreferenceKey,
+  personBoundPreferenceKeys,
+} from "./preferences/preferenceScope.ts";
+export {
   selectPlayerControls,
   selectPreference,
   selectPreferencesLoaded,
