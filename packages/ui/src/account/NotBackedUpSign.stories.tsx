@@ -178,12 +178,6 @@ export const LoggedOut: Story = {
   },
 };
 
-/** The sign before it is pressed, which shows only its icon on a narrow screen. */
-export const Closed: Story = {
-  args: { isInitiallyOpen: false },
-  parameters: DeviceOnlyDesktop.parameters,
-};
-
 export const Hidden: Story = {
   parameters: {
     appStore: { client: allBackedUp, server: builtInServer("desktop") },
