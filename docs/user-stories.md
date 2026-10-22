@@ -931,56 +931,110 @@ As a privileged user (a subscriber or a self-hosted server account holder):
 ### LAN sync
 
 As a desktop app user:
-- when I click the button for local network sync:
-  - [ ] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+- when I click the button for local network sync while the server is running on the local network:
+  - [x] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+- when I click the button for local network sync while the server is running on the local network with "Launch token only" authentication:
+  - [x] I also see a six-digit pairing code
+  - [x] I see the time until which the pairing code is valid
+  - [x] I am told that the pairing code works for one device
+  - [x] I can ask for a new pairing code
+- when the pairing code is about to expire:
+  - [x] a new pairing code replaces it
+- when I click the button for local network sync while the server is not running, or while only this computer can reach it:
+  - [x] I am told that other devices cannot reach the server
+  - [x] I can start the server on the local network from there
+- when I click the button for local network sync while this computer is not connected to a network:
+  - [x] I am told that no other device can reach the server
 
 As a web/mobile app user:
 - when I click the button for local network sync:
-  - [ ] I see a QR code scanner and an input field for entering an address to pair with another easyImmerse app on the same local network
+  - [x] I see fields for entering the address and the pairing code of another easyImmerse app on the same local network
+  - [x] I see a button for scanning its QR code instead, if my device can scan one
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
-  - [ ] the two devices are paired, and my projects, flashcards, and dictionaries are synchronized between them
-  - [ ] media files on the desktop can be played on the paired device without copying them
+  - [x] the two devices are paired, and this app connects to the desktop app's server
+  - [ ] my projects, flashcards, and dictionaries are synchronized between them
+  - [x] media files on the desktop can be played on the paired device without copying them
   - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
+- when I scan the QR code or enter the address of a desktop app whose server uses accounts for authentication:
+  - [x] the sign-in form opens with the server's address filled in
+  - [x] I log in with an account on that server instead of entering a pairing code
+- when I enter a pairing code that is wrong or has expired:
+  - [x] I am told so
+- when I enter a pairing code that another device has already used:
+  - [ ] I am told that the code has been used, and the desktop app shows a new one
+- when I have entered too many wrong pairing codes:
+  - [x] I am told how long to wait before trying again
+- when I open the address held in the desktop app's QR code in a browser on the same local network:
+  - [x] the web app served by the desktop app opens and pairs with it by itself
+- when I open that address in a browser that is already connected to a server:
+  - [x] the web app shows me the pairing first, so that I can confirm the change of server
 
 ---
 
 ### Desktop app, local server, and self-hosting
 
 As a desktop app user:
-- when I open the server settings:
-  - [ ] I can configure the server's address and port
-  - [ ] I can set up authentication for the server
-  - [ ] I can start and stop the server
-  - [ ] I can see the server's status, including whether it is running and whether it is reachable from other devices on the local network
-  - [ ] I can see the server's logs, including any errors or warnings
-  - [ ] I can configure whether to start the server automatically when the app starts
-  - [ ] I can choose whether the server serves the complete web app or only the API
+- when I open the Server section of Settings:
+  - [x] I see whether the server is stopped, starting, running, or has failed
+  - [x] I can start the server with a button
+  - [x] I can stop the server with a button
+  - [x] I can set the IP address and port the server listens on, such as 0.0.0.0:8787, in the "Address and port" field
+  - [x] I can set up authentication for the server, by switching "Authentication" between "Launch token only" and "Accounts"
+  - [x] I can choose whether the server serves the complete web app or only the API, by switching "What the server serves" between those two options
+  - [x] I can choose whether to start the server automatically when the app starts, with the "Start the server when the app starts" checkbox
+  - [x] I can save my changes to these settings with a button
+  - [x] I can see the server's log, including any errors or warnings
+  - [x] I can copy the server's log with a button
+- when I open the Server section of Settings while the server is running:
+  - [x] I see the addresses that other devices use to reach the server
+  - [x] I see whether other devices on the local network can reach the server, or only this computer
+- when I switch "Authentication" to "Accounts":
+  - [x] I can choose whether anyone who can reach the server may sign up for an account, with the "Let anyone who can reach the server sign up" checkbox
+- when the server has failed:
+  - [x] the Server section of Settings tells me why
+- when I change a server setting that takes effect only after a restart:
+  - [x] I am told that saving the change restarts the server
 - when I close the app with the server running:
-  - [ ] the server continues to run in the background, and I can see its status in the system tray or menu bar
-- when I use the CLI:
-  - [ ] I can manage the server
-  - [ ] I can configure my settings
-- when I visit the download page, install, or first open the desktop app on a computer without a hardware video encoder:
-  - [ ] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder, and I am guided through installing one and choosing it in the settings
+  - [x] the server continues to run in the background
+  - [x] I can see the server's status in the system tray or menu bar
+  - [x] I can open the app's window again from the system tray or menu bar
+  - [x] I can stop the server or quit the app from the system tray or menu bar
+- when I run the desktop app's program from a terminal:
+  - [x] I can run the app's server without a window, with `serve`
+  - [x] I can manage the server's user accounts, with `users`
+  - [x] I can show and change the settings in the app's server config file, with `config`
+- when I visit the download page or install the desktop app on a computer without a hardware video encoder:
+  - [ ] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder
+  - [ ] I am guided through installing one and choosing it in the settings
+- when I first open the desktop app on a computer without a hardware video encoder:
+  - [x] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder
+  - [x] I can open the media conversion settings from that notice
 - when a video cannot be converted because my computer has no usable video encoder:
-  - [ ] I am told how to install a suitable ffmpeg build and choose it in the settings
+  - [x] I am told how to install a suitable ffmpeg build and choose it in the settings
+  - [x] I can open the media conversion settings from the player
 - when I open the media conversion settings:
-  - [ ] I can choose my own ffmpeg build for media conversion
-  - [ ] I can choose the quality of converted video, trading picture quality against the disk space used by the conversion cache
+  - [x] I can see which ffmpeg build converts media, and its version
+  - [x] I can see which video encoder that build found
+  - [x] I can choose my own ffmpeg build for media conversion
+  - [x] I can go back to the bundled ffmpeg build
+  - [x] I can choose the quality of converted video (smaller files, balanced, or best picture), trading picture quality against the disk space used by the media cache
+- when I open the media conversion settings and the ffmpeg build in use has no usable video encoder:
+  - [x] I see how to install an ffmpeg build with a software H.264 encoder on macOS, Windows or Linux
 - when I am running an unauthenticated local server:
-  - [ ] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
+  - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [ ] I can create and manage user accounts, and assign them different roles:
+  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the Account section
+  - [x] in the Account section, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
     - administrator: can also manage the server, user accounts, my library, dictionaries available to users, and services like translation available to users
 
 As a standalone server user:
 - when I install the server without the desktop app:
-  - [ ] I can start and stop it from the command line, and configure it through a config file or command-line options
-  - [ ] the server offers the same user account management as the desktop app's server
+  - [x] I can start and stop it from the command line, and configure it through a config file or command-line options
+  - [x] the server offers the same user account management as the desktop app's server
 - when I start the server:
-  - [ ] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
+  - [x] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
 - when I start the server with `--accounts`:
   - [x] people can log in to it with an email address and password
   - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
