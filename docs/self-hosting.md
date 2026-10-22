@@ -6,7 +6,7 @@ This document describes how to run the standalone server with accounts, so that 
 - By default the server has **no accounts**. Every client presents the one launch token, given by `--token` or `EASYIMMERSE_TOKEN`, and the server makes a random one and prints it to standard error when neither is given.
 - **`--accounts`** turns on accounts, so that people can log in with an email address and a password. The server then needs no launch token, but still accepts one when `--token` is given.
 - **`--open-signup`** lets anyone who can reach the server sign up, and requires `--accounts`. A new account is a library user. Without it, only an administrator can add accounts.
-- These settings, and the server's other flags, can also be kept in a **config file**, named with `--config` or `EASYIMMERSE_CONFIG`. It is a TOML file whose keys are the flag names with underscores instead of hyphens: `bind`, `token`, `accounts`, `open_signup`, `db`, `allow_local_paths`, `cache_dir`, `plugins_dir`, `media_dir`, `ffmpeg_dir`, `expected_hosts`, `web_app_dir` and `api_only`.
+- These settings, like almost every other flag, can also go in a **config file**, named with `--config` or `EASYIMMERSE_CONFIG`. The file is TOML, and each key is a flag's name with underscores for hyphens: `--cache-dir` becomes `cache_dir`. `easyimmerse-server config show` lists them all. The SMTP password never goes in the file; it is read only from `EASYIMMERSE_SMTP_PASSWORD`.
 
   ```toml
   bind = "0.0.0.0:8787"
