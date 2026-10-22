@@ -94,7 +94,7 @@ fn rating_number(rating: ReviewRating) -> u32 {
 #[cfg(test)]
 mod tests {
     use easyimmerse_core::flashcard::FlashcardId;
-    use easyimmerse_core::review::ReviewPhase;
+    use easyimmerse_core::review::{ReviewAnswerId, ReviewPhase};
 
     use super::*;
 
@@ -104,6 +104,7 @@ mod tests {
 
     fn entry(card: &str, rating: ReviewRating, answered_at_ms: u64) -> ReviewLogEntry {
         ReviewLogEntry {
+            id: ReviewAnswerId(format!("{card}-{answered_at_ms}")),
             flashcard_id: FlashcardId(card.to_owned()),
             answered_at_ms,
             rating,

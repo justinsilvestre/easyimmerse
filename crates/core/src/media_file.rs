@@ -31,6 +31,8 @@ pub struct MediaFile {
     /// The document that translates this one, when this is a document paired with its
     /// translation before the two are aligned. Null otherwise.
     pub translation_media_file_id: Option<MediaFileId>,
+    /// Whether the user chose to keep a copy of the file's bytes on a server.
+    pub is_upload_chosen: bool,
 }
 
 /// Where the bytes of a media file come from.

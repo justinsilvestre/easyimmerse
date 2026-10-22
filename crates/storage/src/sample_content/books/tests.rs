@@ -33,7 +33,7 @@ fn text_at(document: &Document, span: &TextSpan) -> String {
 /// The spans of a book's alignment fixtures whose quotes differ from the parsed text they address.
 fn mismatched_quotes(name: &'static str) -> Vec<String> {
     let dir = fixtures_dir();
-    let book = read_book_fixtures(&dir, ("placeholder-1", name)).unwrap();
+    let book = read_book_fixtures(&dir, (0, name)).unwrap();
     let original = parse_fixture(&format!("{name}.epub"));
     let translation = parse_fixture(&format!("{name}.en.epub"));
     let mut spans: Vec<(&Document, &TextSpan)> = Vec::new();
@@ -103,7 +103,9 @@ fn quotes_the_japanese_book_as_the_parser_reads_it() {
 #[test]
 fn gives_a_database_seeded_before_the_books_existed_the_books() {
     let storage = placeholder_storage();
-    storage.set_preference(SEEDED_PREFERENCE, "true").unwrap();
+    storage
+        .set_preference(&crate::OwnerId::launch(), SEEDED_PREFERENCE, "true")
+        .unwrap();
     seed_sample_content(&storage, &fixtures_dir()).unwrap();
     assert_eq!(
         media_names(&storage, &spanish_project()),

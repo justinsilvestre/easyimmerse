@@ -16,7 +16,8 @@ use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::StorageError;
 use crate::flashcards::list_flashcards;
-use crate::projects::ensure_project_exists;
+use crate::owners::OwnerId;
+use crate::projects::{ensure_project_exists, project_owner};
 use crate::review_holds::list_review_holds;
 use crate::review_parameters::load_scheduler;
 use crate::review_rows::{list_log_entries, list_review_cards};
@@ -30,7 +31,7 @@ pub fn review_queue(
     moment: ReviewMoment,
 ) -> Result<ReviewQueue, StorageError> {
     let sections = queue_sections(conn, project_id, moment)?;
-    let scheduler = load_scheduler(conn)?;
+    let scheduler = load_scheduler(conn, &project_owner(conn, project_id)?)?;
     let cards = sections
         .into_ordered()
         .into_iter()
@@ -62,14 +63,16 @@ pub fn review_summary(
     })
 }
 
-/// What waits in each project's review on the moment's local day, counted as the queue counts it.
+/// What waits in the review of each of the owner's projects on the moment's local day, counted as the queue counts it.
 pub fn list_review_counts(
     conn: &Connection,
+    owner: &OwnerId,
     moment: ReviewMoment,
 ) -> Result<Vec<ReviewCounts>, StorageError> {
-    let mut statement = conn.prepare("SELECT id FROM projects ORDER BY rowid")?;
+    let mut statement =
+        conn.prepare("SELECT id FROM projects WHERE owner_id = ?1 ORDER BY rowid")?;
     let project_ids: Vec<String> = statement
-        .query_map([], |row| row.get(0))?
+        .query_map(params![owner.0], |row| row.get(0))?
         .collect::<Result<_, _>>()?;
     project_ids
         .into_iter()
@@ -406,11 +409,19 @@ mod tests {
 
     fn counts_at(storage: &crate::Storage, at_ms: u64) -> ReviewCounts {
         storage
-            .list_review_counts(at(at_ms))
+            .list_review_counts(&launch(), at(at_ms))
             .unwrap()
             .into_iter()
             .find(|counts| counts.project_id == project())
             .unwrap()
+    }
+
+    #[test]
+    fn the_counts_leave_out_the_projects_of_another_owner() {
+        let storage = seeded_storage();
+        let account = account_owner(&storage);
+        let counts = storage.list_review_counts(&account, at(NOON_MS)).unwrap();
+        assert_eq!(counts, vec![]);
     }
 
     #[test]

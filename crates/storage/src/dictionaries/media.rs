@@ -71,7 +71,10 @@ mod tests {
             mdict_fixture_file("sample.mdd"),
         ];
         let id = storage
-            .import_dictionary(&mut DictionarySource::new(files).unwrap())
+            .import_dictionary(
+                &crate::OwnerId::launch(),
+                &mut DictionarySource::new(files).unwrap(),
+            )
             .unwrap();
         (storage, id)
     }

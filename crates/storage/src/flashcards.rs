@@ -174,7 +174,7 @@ mod tests {
 
     fn seeded_storage() -> Storage {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         storage
     }
 

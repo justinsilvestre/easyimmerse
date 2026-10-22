@@ -3,19 +3,19 @@
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::review::{
-    ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewCardState,
+    ReviewAllowanceRequest, ReviewAnswerId, ReviewAnswerRequest, ReviewAnswerResponse,
+    ReviewAnswerUndone, ReviewCardState,
 };
-use easyimmerse_srs::{ReviewMoment, ReviewedCard, Scheduler};
+use easyimmerse_srs::{GivenAnswer, ReviewMoment, ReviewedCard, Scheduler};
 use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::error::StorageError;
 use crate::flashcards::get_flashcard;
-use crate::projects::ensure_project_exists;
+use crate::new_row::generate_id;
+use crate::projects::{ensure_project_exists, project_owner};
 use crate::review_holds::forget_ended_burials;
 use crate::review_parameters::load_scheduler;
 use crate::review_rows::{get_review_card, insert_log_row, latest_log_row, save_review_card};
-use crate::stored_integer::to_stored_integer;
 
 /// Answers a flashcard of the project in one transaction, adding the answer to the log and saving the card's new schedule.
 /// The answer is stamped at `now_ms`, or just after the project's latest answer when that is later,
@@ -38,8 +38,13 @@ pub fn answer_review(
         flashcard_id: &request.flashcard_id,
         state: previous.as_ref(),
     };
-    let scheduler = load_scheduler(&transaction)?;
-    let answered = scheduler.answer(card, request.rating, moment, request.duration_ms)?;
+    let scheduler = load_scheduler(&transaction, &project_owner(&transaction, project_id)?)?;
+    let answer = GivenAnswer {
+        id: &ReviewAnswerId(generate_id()),
+        rating: request.rating,
+        duration_ms: request.duration_ms,
+    };
+    let answered = scheduler.answer(card, answer, moment)?;
     insert_log_row(&transaction, project_id, &answered.entry, &answered.state)?;
     save_review_card(
         &transaction,
@@ -61,23 +66,20 @@ pub fn answer_review(
     })
 }
 
-/// Undoes the project's latest answer, which must have been given at `answered_at_ms`,
+/// Undoes the project's latest answer, which must be the answer with the id,
 /// and restores the card's schedule from its previous answer, or makes it new again when there was none.
 pub fn undo_review_answer(
     conn: &mut Connection,
     project_id: &ProjectId,
-    answered_at_ms: u64,
+    answer_id: &ReviewAnswerId,
     moment: ReviewMoment,
 ) -> Result<ReviewAnswerUndone, StorageError> {
     let transaction = conn.transaction()?;
-    let flashcard_id = latest_answer(&transaction, project_id, answered_at_ms)?;
-    transaction.execute(
-        "DELETE FROM review_log WHERE project_id = ?1 AND answered_at_ms = ?2",
-        params![project_id.0, to_stored_integer(answered_at_ms)],
-    )?;
+    let flashcard_id = latest_answer(&transaction, project_id, answer_id)?;
+    transaction.execute("DELETE FROM review_log WHERE id = ?1", params![answer_id.0])?;
     let restored = latest_log_row(&transaction, &flashcard_id)?.map(|(_, state)| state);
     restore_review_card(&transaction, project_id, &flashcard_id, restored.as_ref())?;
-    let scheduler = load_scheduler(&transaction)?;
+    let scheduler = load_scheduler(&transaction, &project_owner(&transaction, project_id)?)?;
     transaction.commit()?;
     let intervals = intervals_at(&scheduler, &flashcard_id, restored.as_ref(), moment)?;
     Ok(ReviewAnswerUndone {
@@ -138,48 +140,41 @@ fn after_latest_answer_ms(conn: &Connection, project_id: &ProjectId) -> Result<u
     Ok(latest.map_or(0, |latest| u64::try_from(latest).unwrap_or(0) + 1))
 }
 
-/// The flashcard of the project's latest answer, when that answer was given at `answered_at_ms`.
+/// The flashcard of the project's latest answer, when that answer has the id.
+/// The latest answer is the one with the greatest time, and of those the greatest id.
 fn latest_answer(
     conn: &Connection,
     project_id: &ProjectId,
-    answered_at_ms: u64,
+    answer_id: &ReviewAnswerId,
 ) -> Result<FlashcardId, StorageError> {
     ensure_project_exists(conn, project_id)?;
-    let latest: Option<(i64, String)> = conn
+    let latest: Option<(String, String)> = conn
         .query_row(
-            "SELECT answered_at_ms, flashcard_id FROM review_log WHERE project_id = ?1 \
-             ORDER BY answered_at_ms DESC LIMIT 1",
+            "SELECT id, flashcard_id FROM review_log WHERE project_id = ?1 \
+             ORDER BY answered_at_ms DESC, id DESC LIMIT 1",
             params![project_id.0],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .optional()?;
     match latest {
-        Some((at_ms, flashcard_id)) if at_ms == to_stored_integer(answered_at_ms) => {
-            Ok(FlashcardId(flashcard_id))
+        Some((id, flashcard_id)) if id == answer_id.0 => Ok(FlashcardId(flashcard_id)),
+        Some(_) if is_answer_of_project(conn, project_id, answer_id)? => {
+            Err(StorageError::ReviewAnswerNotLatest(answer_id.0.clone()))
         }
-        Some((at_ms, _)) if at_ms > to_stored_integer(answered_at_ms) => {
-            ensure_answer_exists(conn, project_id, answered_at_ms)?;
-            Err(StorageError::ReviewAnswerNotLatest(answered_at_ms))
-        }
-        _ => Err(StorageError::ReviewAnswerNotFound(answered_at_ms)),
+        _ => Err(StorageError::ReviewAnswerNotFound(answer_id.0.clone())),
     }
 }
 
-fn ensure_answer_exists(
+fn is_answer_of_project(
     conn: &Connection,
     project_id: &ProjectId,
-    answered_at_ms: u64,
-) -> Result<(), StorageError> {
-    let exists: bool = conn.query_row(
-        "SELECT EXISTS (SELECT 1 FROM review_log WHERE project_id = ?1 AND answered_at_ms = ?2)",
-        params![project_id.0, to_stored_integer(answered_at_ms)],
+    answer_id: &ReviewAnswerId,
+) -> Result<bool, StorageError> {
+    Ok(conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM review_log WHERE project_id = ?1 AND id = ?2)",
+        params![project_id.0, answer_id.0],
         |row| row.get(0),
-    )?;
-    if exists {
-        Ok(())
-    } else {
-        Err(StorageError::ReviewAnswerNotFound(answered_at_ms))
-    }
+    )?)
 }
 
 fn restore_review_card(
@@ -280,9 +275,9 @@ mod tests {
     fn undoing_the_only_answer_makes_the_card_new_again() {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 1);
-        rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
         storage
-            .undo_review_answer(&project(), NOON_MS, at(NOON_MS))
+            .undo_review_answer(&project(), &answered.entry.id, at(NOON_MS))
             .unwrap();
         assert_eq!(queued_state(&storage, NOON_MS), None);
     }
@@ -292,14 +287,14 @@ mod tests {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 1);
         let first = rate(&storage, &ids[0], ReviewRating::Again, NOON_MS);
-        rate(
+        let second = rate(
             &storage,
             &ids[0],
             ReviewRating::Again,
             NOON_MS + 10 * MINUTE_MS,
         );
         let undone = storage
-            .undo_review_answer(&project(), NOON_MS + 10 * MINUTE_MS, at(NOON_MS))
+            .undo_review_answer(&project(), &second.entry.id, at(NOON_MS))
             .unwrap();
         assert_eq!(undone.state, Some(first.state));
     }
@@ -309,14 +304,14 @@ mod tests {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 1);
         rate(&storage, &ids[0], ReviewRating::Again, NOON_MS);
-        rate(
+        let second = rate(
             &storage,
             &ids[0],
             ReviewRating::Good,
             NOON_MS + 10 * MINUTE_MS,
         );
         storage
-            .undo_review_answer(&project(), NOON_MS + 10 * MINUTE_MS, at(NOON_MS))
+            .undo_review_answer(&project(), &second.entry.id, at(NOON_MS))
             .unwrap();
         let state = queued_state(&storage, NOON_MS + 10 * MINUTE_MS);
         assert_eq!(state.map(|state| state.state), Some(ReviewPhase::Learning));
@@ -326,9 +321,9 @@ mod tests {
     fn undoing_the_first_answer_of_the_day_lets_the_card_count_as_new_again() {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 21);
-        rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
         storage
-            .undo_review_answer(&project(), NOON_MS, at(NOON_MS))
+            .undo_review_answer(&project(), &answered.entry.id, at(NOON_MS))
             .unwrap();
         let queue = storage.review_queue(&project(), at(NOON_MS)).unwrap();
         assert_eq!(queue.cards.len(), 20);
@@ -338,9 +333,9 @@ mod tests {
     fn refuses_to_undo_an_answer_that_is_not_the_latest() {
         let storage = seeded_storage();
         let ids = make_flashcards(&storage, 2);
-        rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let first = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
         rate(&storage, &ids[1], ReviewRating::Good, NOON_MS + 1_000);
-        let result = storage.undo_review_answer(&project(), NOON_MS, at(NOON_MS));
+        let result = storage.undo_review_answer(&project(), &first.entry.id, at(NOON_MS));
         assert!(matches!(
             result,
             Err(StorageError::ReviewAnswerNotLatest(_))
@@ -350,8 +345,41 @@ mod tests {
     #[test]
     fn refuses_to_undo_an_answer_never_given() {
         let storage = seeded_storage();
-        let result = storage.undo_review_answer(&project(), NOON_MS, at(NOON_MS));
+        let missing = ReviewAnswerId("missing".to_owned());
+        let result = storage.undo_review_answer(&project(), &missing, at(NOON_MS));
         assert!(matches!(result, Err(StorageError::ReviewAnswerNotFound(_))));
+    }
+
+    #[test]
+    fn refuses_to_undo_an_answer_of_another_project() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        let result = storage.undo_review_answer(&other_project(), &answered.entry.id, at(NOON_MS));
+        assert!(matches!(result, Err(StorageError::ReviewAnswerNotFound(_))));
+    }
+
+    #[test]
+    fn keeps_two_answers_of_a_project_given_in_the_same_millisecond() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        copy_answer(&storage, &answered.entry.id, "f".repeat(32).as_str());
+        let progress = storage.list_review_progress(&project(), NOON_MS).unwrap();
+        assert_eq!(progress[&ids[0]].log.len(), 2);
+    }
+
+    #[test]
+    fn takes_the_greater_id_as_the_latest_of_two_answers_in_the_same_millisecond() {
+        let storage = seeded_storage();
+        let ids = make_flashcards(&storage, 1);
+        let answered = rate(&storage, &ids[0], ReviewRating::Good, NOON_MS);
+        copy_answer(&storage, &answered.entry.id, "f".repeat(32).as_str());
+        let result = storage.undo_review_answer(&project(), &answered.entry.id, at(NOON_MS));
+        assert!(matches!(
+            result,
+            Err(StorageError::ReviewAnswerNotLatest(_))
+        ));
     }
 
     #[test]

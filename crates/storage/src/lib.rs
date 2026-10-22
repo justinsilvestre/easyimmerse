@@ -14,6 +14,7 @@ mod flashcards;
 mod media_files;
 mod migrations;
 mod new_row;
+mod owners;
 mod preferences;
 mod projects;
 mod referenced_paths;
@@ -34,6 +35,8 @@ pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use email_tokens::{EmailTokenPurpose, NewEmailToken};
 pub use error::StorageError;
+pub use owners::{LAUNCH_OWNER, OwnerId};
+pub use preferences::is_synced_preference;
 pub use sample_content::SampleContentError;
 pub use sessions::{LiveSession, NewSession, StoredSession};
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
@@ -54,8 +57,9 @@ use easyimmerse_core::lookup::{
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::review::{
-    ReviewAllowanceRequest, ReviewAnswerRequest, ReviewAnswerResponse, ReviewAnswerUndone,
-    ReviewCounts, ReviewHoldRequest, ReviewLogEntry, ReviewProgress, ReviewQueue, ReviewSummary,
+    ReviewAllowanceRequest, ReviewAnswerId, ReviewAnswerRequest, ReviewAnswerResponse,
+    ReviewAnswerUndone, ReviewCounts, ReviewHoldRequest, ReviewLogEntry, ReviewProgress,
+    ReviewQueue, ReviewSummary,
 };
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
@@ -97,17 +101,21 @@ impl Storage {
         self.connections.read(operation)
     }
 
-    /// Lists every project, most recently opened first.
-    pub fn list_projects(&self) -> Result<Vec<Project>, StorageError> {
-        self.read(projects::list_projects)
+    /// Lists the owner's projects, most recently opened first.
+    pub fn list_projects(&self, owner: &OwnerId) -> Result<Vec<Project>, StorageError> {
+        self.read(|conn| projects::list_projects(conn, owner))
     }
 
     pub fn get_project(&self, id: &ProjectId) -> Result<Project, StorageError> {
         self.read(|conn| projects::get_project(conn, id))
     }
 
-    pub fn create_project(&self, settings: &ProjectSettings) -> Result<Project, StorageError> {
-        self.write(|conn| projects::create_project(conn, settings))
+    pub fn create_project(
+        &self,
+        owner: &OwnerId,
+        settings: &ProjectSettings,
+    ) -> Result<Project, StorageError> {
+        self.write(|conn| projects::create_project(conn, owner, settings))
     }
 
     pub fn update_project(
@@ -132,12 +140,26 @@ impl Storage {
         self.write(|conn| projects::set_uses_anki_connect(conn, id, uses_anki_connect))
     }
 
-    pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
-        self.write(|conn| projects::seed_placeholder_projects(conn))
+    /// Gives the owner two example projects when it has none, so that a new installation has something to show.
+    pub fn seed_placeholder_projects(&self, owner: &OwnerId) -> Result<(), StorageError> {
+        let ids = [
+            ProjectId(new_row::generate_id()),
+            ProjectId(new_row::generate_id()),
+        ];
+        self.seed_placeholder_projects_with_ids(owner, &ids)
     }
 
-    /// Gives each placeholder project that has no media a video with subtitles,
-    /// and imports small Spanish and Japanese dictionaries, once per database.
+    /// Seeds the placeholder projects under the given ids, for tests that name them.
+    pub fn seed_placeholder_projects_with_ids(
+        &self,
+        owner: &OwnerId,
+        ids: &[ProjectId; 2],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| projects::seed_placeholder_projects(conn, owner, ids))
+    }
+
+    /// Gives each of the launch owner's placeholder projects that has no media a video with subtitles,
+    /// and imports small Spanish and Japanese dictionaries for it, once per database.
     /// The video and the English subtitles are read from `fixtures_dir`.
     pub fn seed_sample_content(&self, fixtures_dir: &Path) -> Result<(), SampleContentError> {
         sample_content::seed_sample_content(self, fixtures_dir)
@@ -319,12 +341,13 @@ impl Storage {
         self.read(|conn| review::review_summary(conn, project_id, moment))
     }
 
-    /// What waits in each project's review on the moment's local day, counted as the queue counts it.
+    /// What waits in the review of each of the owner's projects on the moment's local day, counted as the queue counts it.
     pub fn list_review_counts(
         &self,
+        owner: &OwnerId,
         moment: ReviewMoment,
     ) -> Result<Vec<ReviewCounts>, StorageError> {
-        self.read(|conn| review::list_review_counts(conn, moment))
+        self.read(|conn| review::list_review_counts(conn, owner, moment))
     }
 
     /// The cards of a review session at `moment`, in the order they are shown, each with the intervals its ratings would give.
@@ -347,16 +370,14 @@ impl Storage {
         self.write(|conn| review_answers::answer_review(conn, project_id, request, now_ms))
     }
 
-    /// Undoes the project's latest answer, which must have been given at `answered_at_ms`, and restores the card's previous schedule.
+    /// Undoes the project's latest answer, which must be the answer with the id, and restores the card's previous schedule.
     pub fn undo_review_answer(
         &self,
         project_id: &ProjectId,
-        answered_at_ms: u64,
+        answer_id: &ReviewAnswerId,
         moment: ReviewMoment,
     ) -> Result<ReviewAnswerUndone, StorageError> {
-        self.write(|conn| {
-            review_answers::undo_review_answer(conn, project_id, answered_at_ms, moment)
-        })
+        self.write(|conn| review_answers::undo_review_answer(conn, project_id, answer_id, moment))
     }
 
     /// Sets a flashcard of the project aside from the review: buries it until the local day of `now_ms` ends, or suspends it.
@@ -381,22 +402,26 @@ impl Storage {
         self.write(|conn| review_holds::lift_review_hold(conn, project_id, flashcard_id))
     }
 
-    /// Every answer of every project to fit the FSRS parameters to, when a fit is due at `moment` and there are enough answers for it.
+    /// Every answer of the owner's projects to fit the FSRS parameters to, when a fit is due at `moment` and there are enough answers for it.
     /// The fit runs outside the database, and `save_review_parameters` keeps its result.
     pub fn log_to_fit(
         &self,
+        owner: &OwnerId,
         moment: ReviewMoment,
     ) -> Result<Option<Vec<ReviewLogEntry>>, StorageError> {
-        self.read(|conn| review_parameters::log_to_fit(conn, moment))
+        self.read(|conn| review_parameters::log_to_fit(conn, owner, moment))
     }
 
-    /// Keeps the FSRS parameters of a fit begun at `fitted_at_ms`, which schedule every review from now on.
+    /// Keeps the FSRS parameters of a fit begun at `fitted_at_ms`, which schedule the owner's reviews from now on.
     pub fn save_review_parameters(
         &self,
+        owner: &OwnerId,
         weights: &[f32],
         fitted_at_ms: u64,
     ) -> Result<(), StorageError> {
-        self.write(|conn| review_parameters::save_review_parameters(conn, weights, fitted_at_ms))
+        self.write(|conn| {
+            review_parameters::save_review_parameters(conn, owner, weights, fitted_at_ms)
+        })
     }
 
     /// Raises the number of new cards and of reviews the project's review shows on the local day of `now_ms`.
@@ -472,15 +497,24 @@ impl Storage {
         self.write(|conn| subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection))
     }
 
-    pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {
-        self.read(|conn| preferences::get_preference(conn, key))
+    pub fn get_preference(
+        &self,
+        owner: &OwnerId,
+        key: &str,
+    ) -> Result<Option<String>, StorageError> {
+        self.read(|conn| preferences::get_preference(conn, owner, key))
     }
 
-    pub fn set_preference(&self, key: &str, value: &str) -> Result<(), StorageError> {
-        self.write(|conn| preferences::set_preference(conn, key, value))
+    pub fn set_preference(
+        &self,
+        owner: &OwnerId,
+        key: &str,
+        value: &str,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| preferences::set_preference(conn, owner, key, value))
     }
 
-    /// Creates an account, unless one already has the email address in any letter case.
+    /// Creates an account and the owner of its data, unless one already has the email address in any letter case.
     /// The password must already be hashed.
     pub fn create_user(
         &self,
@@ -514,7 +548,7 @@ impl Storage {
         self.write(|conn| users::set_password_hash(conn, id, password_hash))
     }
 
-    /// Deletes an account together with its sessions.
+    /// Deletes an account together with its sessions and all of its data.
     pub fn delete_user(&self, id: &str) -> Result<(), StorageError> {
         self.write(|conn| users::delete_user(conn, id))
     }
@@ -602,29 +636,34 @@ impl Storage {
         self.write(|conn| email_tokens::confirm_email_with_token(conn, token_hash, now_ms))
     }
 
-    /// Imports a dictionary from its files in one transaction and returns its new id.
+    /// Imports a dictionary of the owner from its files in one transaction and returns its new id.
     /// Other writes wait until the import finishes; reads do not.
     pub fn import_dictionary(
         &self,
+        owner: &OwnerId,
         source: &mut DictionarySource,
     ) -> Result<DictionaryId, StorageError> {
         let imported_at = new_row::now_ms();
-        self.write(|conn| dictionaries::import_dictionary(conn, source, imported_at))
+        self.write(|conn| dictionaries::import_dictionary(conn, owner, source, imported_at))
     }
 
-    /// Imports the dictionary that `read` passes to the sink, in one transaction, and returns its new id.
+    /// Imports the dictionary that `read` passes to the sink as the owner's, in one transaction, and returns its new id.
     /// The caller may wrap the sink, for example to count what it stores.
     pub fn import_dictionary_with(
         &self,
+        owner: &OwnerId,
         read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
     ) -> Result<DictionaryId, StorageError> {
         let imported_at = new_row::now_ms();
-        self.write(|conn| dictionaries::import_with(conn, imported_at, read))
+        self.write(|conn| dictionaries::import_with(conn, owner, imported_at, read))
     }
 
-    /// Lists every stored dictionary in the order they were imported.
-    pub fn list_dictionaries(&self) -> Result<Vec<StoredDictionary>, StorageError> {
-        self.read(dictionaries::list_dictionaries)
+    /// Lists the owner's dictionaries in the order they were imported.
+    pub fn list_dictionaries(
+        &self,
+        owner: &OwnerId,
+    ) -> Result<Vec<StoredDictionary>, StorageError> {
+        self.read(|conn| dictionaries::list_dictionaries(conn, owner))
     }
 
     pub fn get_dictionary(&self, id: &DictionaryId) -> Result<StoredDictionary, StorageError> {
@@ -636,36 +675,47 @@ impl Storage {
         self.write(|conn| dictionaries::delete_dictionary(conn, id))
     }
 
-    /// Finds the entries of every dictionary stored under any of the headwords, ignoring case.
+    /// Finds the entries of every dictionary of the owner stored under any of the headwords, ignoring case.
     pub fn find_dictionary_entries(
         &self,
+        owner: &OwnerId,
         headwords: &[String],
     ) -> Result<Vec<FoundEntry>, StorageError> {
-        self.read(|conn| dictionaries::find_entries(conn, headwords))
+        self.read(|conn| dictionaries::find_entries(conn, owner, headwords))
     }
 
-    /// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
-    pub fn find_term_meta(&self, terms: &[String]) -> Result<Vec<FoundTermMeta>, StorageError> {
-        self.read(|conn| dictionaries::find_term_meta(conn, terms))
+    /// Finds the frequencies and pronunciations that every dictionary of the owner stores for any of the terms.
+    pub fn find_term_meta(
+        &self,
+        owner: &OwnerId,
+        terms: &[String],
+    ) -> Result<Vec<FoundTermMeta>, StorageError> {
+        self.read(|conn| dictionaries::find_term_meta(conn, owner, terms))
     }
 
-    pub fn find_kanji(&self, characters: &[String]) -> Result<Vec<FoundKanji>, StorageError> {
-        self.read(|conn| dictionaries::find_kanji(conn, characters))
+    pub fn find_kanji(
+        &self,
+        owner: &OwnerId,
+        characters: &[String],
+    ) -> Result<Vec<FoundKanji>, StorageError> {
+        self.read(|conn| dictionaries::find_kanji(conn, owner, characters))
     }
 
     pub fn find_kanji_meta(
         &self,
+        owner: &OwnerId,
         characters: &[String],
     ) -> Result<Vec<FoundKanjiMeta>, StorageError> {
-        self.read(|conn| dictionaries::find_kanji_meta(conn, characters))
+        self.read(|conn| dictionaries::find_kanji_meta(conn, owner, characters))
     }
 
-    /// Returns the stylesheets of the given dictionaries in import order, leaving out dictionaries that have none.
+    /// Returns the stylesheets of the owner's given dictionaries in import order, leaving out dictionaries that have none.
     pub fn find_dictionary_stylesheets(
         &self,
+        owner: &OwnerId,
         dictionary_ids: &[String],
     ) -> Result<Vec<DictionaryStylesheet>, StorageError> {
-        self.read(|conn| dictionaries::find_stylesheets(conn, dictionary_ids))
+        self.read(|conn| dictionaries::find_stylesheets(conn, owner, dictionary_ids))
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.
@@ -707,9 +757,12 @@ mod tests {
         let path = dir.path().join("test.sqlite");
         Storage::open(&path)
             .unwrap()
-            .set_preference("k", "v")
+            .set_preference(&OwnerId::launch(), "k", "v")
             .unwrap();
         let reopened = Storage::open(&path).unwrap();
-        assert_eq!(reopened.get_preference("k").unwrap(), Some("v".to_string()));
+        assert_eq!(
+            reopened.get_preference(&OwnerId::launch(), "k").unwrap(),
+            Some("v".to_string())
+        );
     }
 }

@@ -46,12 +46,12 @@ pub enum StorageError {
     SessionNotFound(String),
     #[error("the account {0:?} is the last administrator, and the server must keep one")]
     LastAdministrator(String),
-    #[error("no review answer was given at {0} ms in the project")]
-    ReviewAnswerNotFound(u64),
+    #[error("the project has no review answer with the id {0:?}")]
+    ReviewAnswerNotFound(String),
     #[error(
-        "the review answer given at {0} ms is not the project's latest, and only the latest can be undone"
+        "the review answer {0:?} is not the project's latest, and only the latest can be undone"
     )]
-    ReviewAnswerNotLatest(u64),
+    ReviewAnswerNotLatest(String),
     #[error(transparent)]
     Scheduling(#[from] easyimmerse_srs::SrsError),
 }

@@ -5,7 +5,7 @@
 
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::review::{
-    ReviewCardState, ReviewIntervals, ReviewLogEntry, ReviewPhase, ReviewRating,
+    ReviewAnswerId, ReviewCardState, ReviewIntervals, ReviewLogEntry, ReviewPhase, ReviewRating,
 };
 use fsrs::{FSRS, MemoryState, NextStates};
 
@@ -22,6 +22,14 @@ pub struct ReviewedCard<'a> {
     pub flashcard_id: &'a FlashcardId,
     /// None for a new card.
     pub state: Option<&'a ReviewCardState>,
+}
+
+/// What the user answered: the button pressed and how long it took, under the id the caller gives the answer.
+#[derive(Debug, Clone, Copy)]
+pub struct GivenAnswer<'a> {
+    pub id: &'a ReviewAnswerId,
+    pub rating: ReviewRating,
+    pub duration_ms: u64,
 }
 
 /// A card after an answer, and the log entry recording the answer.
@@ -49,13 +57,12 @@ impl Scheduler {
     pub fn answer(
         &self,
         card: ReviewedCard,
-        rating: ReviewRating,
+        answer: GivenAnswer,
         moment: ReviewMoment,
-        duration_ms: u64,
     ) -> Result<Answered, SrsError> {
-        let outcome = outcome(card, rating, &self.next_states(card, moment)?);
-        let state = next_state(card, rating, moment, &outcome);
-        let entry = log_entry(card, rating, &state, duration_ms);
+        let outcome = outcome(card, answer.rating, &self.next_states(card, moment)?);
+        let state = next_state(card, answer.rating, moment, &outcome);
+        let entry = log_entry(card, answer, &state);
         Ok(Answered { state, entry })
     }
 
@@ -179,17 +186,13 @@ fn next_state(
     }
 }
 
-fn log_entry(
-    card: ReviewedCard,
-    rating: ReviewRating,
-    state: &ReviewCardState,
-    duration_ms: u64,
-) -> ReviewLogEntry {
+fn log_entry(card: ReviewedCard, answer: GivenAnswer, state: &ReviewCardState) -> ReviewLogEntry {
     let previous = card.state;
     ReviewLogEntry {
+        id: answer.id.clone(),
         flashcard_id: card.flashcard_id.clone(),
         answered_at_ms: state.last_reviewed_at_ms,
-        rating,
+        rating: answer.rating,
         kind: phase_of(card).unwrap_or(ReviewPhase::Learning),
         state: state.state,
         elapsed_ms: previous.map_or(0, |previous| {
@@ -197,7 +200,7 @@ fn log_entry(
                 .last_reviewed_at_ms
                 .saturating_sub(previous.last_reviewed_at_ms)
         }),
-        duration_ms: duration_ms.min(MAX_ANSWER_DURATION_MS),
+        duration_ms: answer.duration_ms.min(MAX_ANSWER_DURATION_MS),
         stability: state.stability,
         difficulty: state.difficulty,
         interval_ms_before: previous.map_or(0, |previous| previous.interval_ms),
@@ -252,7 +255,12 @@ mod tests {
         moment: ReviewMoment,
         duration_ms: u64,
     ) -> Result<Answered, SrsError> {
-        Scheduler::default().answer(card, rating, moment, duration_ms)
+        let answer = GivenAnswer {
+            id: &ReviewAnswerId("answer".to_owned()),
+            rating,
+            duration_ms,
+        };
+        Scheduler::default().answer(card, answer, moment)
     }
 
     /// Answers a new card at noon, then answers it again `later_ms` after.

@@ -4,11 +4,14 @@ use std::collections::HashMap;
 
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_core::review::{ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating};
+use easyimmerse_core::review::{
+    ReviewAnswerId, ReviewCardState, ReviewLogEntry, ReviewPhase, ReviewRating,
+};
 use easyimmerse_srs::is_leech;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
+use crate::owners::OwnerId;
 use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const CARD_COLUMNS: &str = "state, due_at_ms, stability, difficulty, interval_ms, reps, lapses, \
@@ -16,7 +19,7 @@ const CARD_COLUMNS: &str = "state, due_at_ms, stability, difficulty, interval_ms
 
 /// The log columns, in the order `read_log_row` reads them.
 /// The card's schedule after the answer follows the entry, with `answered_at_ms` as its last review.
-const LOG_COLUMNS: &str = "flashcard_id, answered_at_ms, rating, kind, state, elapsed_ms, duration_ms, \
+const LOG_COLUMNS: &str = "id, flashcard_id, answered_at_ms, rating, kind, state, elapsed_ms, duration_ms, \
      stability, difficulty, interval_ms_before, interval_ms_after, desired_retention, due_at_ms, reps, \
      lapses, learning_step";
 
@@ -88,11 +91,12 @@ pub fn insert_log_row(
 ) -> Result<(), StorageError> {
     conn.execute(
         &format!(
-            "INSERT INTO review_log (project_id, {LOG_COLUMNS}) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+            "INSERT INTO review_log (project_id, {LOG_COLUMNS}) VALUES \
+             (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)"
         ),
         params![
             project_id.0,
+            entry.id.0,
             entry.flashcard_id.0,
             to_stored_integer(entry.answered_at_ms),
             rating_text(entry.rating),
@@ -123,7 +127,7 @@ pub fn latest_log_row(
         .query_row(
             &format!(
                 "SELECT {LOG_COLUMNS} FROM review_log WHERE flashcard_id = ?1 \
-                 ORDER BY answered_at_ms DESC LIMIT 1"
+                 ORDER BY answered_at_ms DESC, id DESC LIMIT 1"
             ),
             params![flashcard_id.0],
             read_log_row,
@@ -132,13 +136,18 @@ pub fn latest_log_row(
     Ok(row)
 }
 
-/// Every answer given in any project, oldest first.
-pub fn list_all_log_entries(conn: &Connection) -> Result<Vec<ReviewLogEntry>, StorageError> {
+/// Every answer given in any project of the owner, oldest first.
+pub fn list_all_log_entries(
+    conn: &Connection,
+    owner: &OwnerId,
+) -> Result<Vec<ReviewLogEntry>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {LOG_COLUMNS} FROM review_log ORDER BY answered_at_ms"
+        "SELECT {LOG_COLUMNS} FROM review_log \
+         WHERE project_id IN (SELECT id FROM projects WHERE owner_id = ?1) \
+         ORDER BY answered_at_ms, id"
     ))?;
     let entries = statement
-        .query_map([], |row| Ok(read_log_row(row)?.0))?
+        .query_map(params![owner.0], |row| Ok(read_log_row(row)?.0))?
         .collect::<Result<_, _>>()?;
     Ok(entries)
 }
@@ -149,7 +158,7 @@ pub fn list_log_entries(
     project_id: &ProjectId,
 ) -> Result<Vec<ReviewLogEntry>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {LOG_COLUMNS} FROM review_log WHERE project_id = ?1 ORDER BY answered_at_ms"
+        "SELECT {LOG_COLUMNS} FROM review_log WHERE project_id = ?1 ORDER BY answered_at_ms, id"
     ))?;
     let entries = statement
         .query_map(params![project_id.0], |row| Ok(read_log_row(row)?.0))?
@@ -179,29 +188,30 @@ fn read_card_row_from(row: &Row, first: usize) -> rusqlite::Result<ReviewCardSta
 
 fn read_log_row(row: &Row) -> rusqlite::Result<(ReviewLogEntry, ReviewCardState)> {
     let entry = ReviewLogEntry {
-        flashcard_id: FlashcardId(row.get(0)?),
-        answered_at_ms: read_unsigned(row, 1)?,
-        rating: read_rating(row, 2)?,
-        kind: read_phase(row, 3)?,
-        state: read_phase(row, 4)?,
-        elapsed_ms: read_unsigned(row, 5)?,
-        duration_ms: read_unsigned(row, 6)?,
-        stability: row.get(7)?,
-        difficulty: row.get(8)?,
-        interval_ms_before: read_unsigned(row, 9)?,
-        interval_ms_after: read_unsigned(row, 10)?,
-        desired_retention: row.get(11)?,
+        id: ReviewAnswerId(row.get(0)?),
+        flashcard_id: FlashcardId(row.get(1)?),
+        answered_at_ms: read_unsigned(row, 2)?,
+        rating: read_rating(row, 3)?,
+        kind: read_phase(row, 4)?,
+        state: read_phase(row, 5)?,
+        elapsed_ms: read_unsigned(row, 6)?,
+        duration_ms: read_unsigned(row, 7)?,
+        stability: row.get(8)?,
+        difficulty: row.get(9)?,
+        interval_ms_before: read_unsigned(row, 10)?,
+        interval_ms_after: read_unsigned(row, 11)?,
+        desired_retention: row.get(12)?,
     };
-    let lapses = row.get(14)?;
+    let lapses = row.get(15)?;
     let state = ReviewCardState {
         state: entry.state,
-        due_at_ms: read_unsigned(row, 12)?,
+        due_at_ms: read_unsigned(row, 13)?,
         stability: entry.stability,
         difficulty: entry.difficulty,
         interval_ms: entry.interval_ms_after,
-        reps: row.get(13)?,
+        reps: row.get(14)?,
         lapses,
-        learning_step: row.get(15)?,
+        learning_step: row.get(16)?,
         last_reviewed_at_ms: entry.answered_at_ms,
         is_leech: is_leech(lapses),
     };

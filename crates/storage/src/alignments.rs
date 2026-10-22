@@ -130,7 +130,7 @@ mod tests {
     /// A storage holding a book and its audiobook in the same project.
     fn storage_with_book_and_audio() -> (Storage, MediaFileId, MediaFileId) {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         let book = add_media(&storage, &project(), "book.epub");
         let audio = add_media(&storage, &project(), "book.mp3");
         (storage, book, audio)

@@ -57,7 +57,7 @@ mod tests {
 
     fn storage_with_media(path: &str) -> (Storage, MediaFileId) {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         let source = MediaFileSource::Path {
             path: path.to_string(),
         };

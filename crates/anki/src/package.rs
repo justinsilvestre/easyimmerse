@@ -385,6 +385,7 @@ mod tests {
     fn log_entry(answered_at_ms: u64, rating: ReviewRating, state: ReviewPhase) -> ReviewLogEntry {
         let is_first = answered_at_ms == FIRST_ANSWER_MS;
         ReviewLogEntry {
+            id: easyimmerse_core::review::ReviewAnswerId(answered_at_ms.to_string()),
             flashcard_id: FlashcardId(FLASHCARD_ID.to_owned()),
             answered_at_ms,
             rating,

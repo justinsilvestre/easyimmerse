@@ -17,5 +17,5 @@ pub use fsrs::DEFAULT_PARAMETERS as DEFAULT_WEIGHTS;
 pub use parameter_fit::{MIN_FIT_ANSWERS, fit_parameters, has_enough_to_fit, is_fit_due};
 pub use queue_limits::{learn_ahead_cutoff_ms, new_cards_available, reviews_available};
 pub use review_moment::ReviewMoment;
-pub use schedule::{Answered, ReviewedCard, Scheduler, is_leech};
+pub use schedule::{Answered, GivenAnswer, ReviewedCard, Scheduler, is_leech};
 pub use settings::{DESIRED_RETENTION, MAX_ANSWER_DURATION_MS, NEW_CARDS_PER_DAY, REVIEWS_PER_DAY};

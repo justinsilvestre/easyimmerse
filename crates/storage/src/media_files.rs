@@ -10,7 +10,7 @@ use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
      browser_file_last_modified_ms, created_at_ms, track_selection_json, origin_plugin, \
-     origin_locator, translation_media_file_id";
+     origin_locator, translation_media_file_id, is_upload_chosen";
 
 /// Lists a project's media files, oldest first.
 pub fn list_media_files(
@@ -54,6 +54,7 @@ pub fn add_media_file(
         created_at_ms: now_ms(),
         track_selection_json: None,
         translation_media_file_id: None,
+        is_upload_chosen: false,
     };
     insert_media_file(conn, &media_file)?;
     Ok(media_file)
@@ -148,7 +149,7 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
     conn.execute(
         &format!(
             "INSERT INTO media_files ({MEDIA_FILE_COLUMNS}) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)"
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)"
         ),
         params![
             media_file.id.0,
@@ -166,6 +167,7 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
                 .translation_media_file_id
                 .as_ref()
                 .map(|id| &id.0),
+            media_file.is_upload_chosen,
         ],
     )?;
     Ok(())
@@ -198,6 +200,7 @@ fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
         created_at_ms: read_unsigned(row, 7)?,
         track_selection_json: row.get(8)?,
         translation_media_file_id: row.get::<_, Option<String>>(11)?.map(MediaFileId),
+        is_upload_chosen: row.get(12)?,
     })
 }
 
@@ -258,7 +261,7 @@ mod tests {
 
     fn seeded_storage() -> Storage {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         storage
     }
 

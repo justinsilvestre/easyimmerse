@@ -2,7 +2,7 @@
 -- `password_hash` is a PHC string, which only the API crate reads.
 -- `email_confirmed_at_ms` is null until the owner follows a link mailed to the address.
 CREATE TABLE users (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY REFERENCES owners(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE COLLATE NOCASE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL,

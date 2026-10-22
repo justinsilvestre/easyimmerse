@@ -16,15 +16,18 @@ pub const USER_COLUMNS: &str = "u.id, u.email, u.role, u.created_at_ms, u.email_
 /// How many columns `USER_COLUMNS` names, which is the index of the first column after them.
 pub const USER_COLUMN_COUNT: usize = 5;
 
-/// Creates an account, unless one already has the email address in any letter case.
+/// Creates an account, together with the owner of its data, in one transaction,
+/// unless one already has the email address in any letter case.
 pub fn create_user(
-    conn: &Connection,
+    conn: &mut Connection,
     email: &str,
     password_hash: &str,
     role: AccountRole,
 ) -> Result<AccountUser, StorageError> {
     let id = generate_id();
-    let inserted = conn.execute(
+    let transaction = conn.transaction()?;
+    transaction.execute("INSERT INTO owners (id) VALUES (?1)", params![id])?;
+    let inserted = transaction.execute(
         "INSERT INTO users (id, email, password_hash, role, created_at_ms) \
          VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT (email) DO NOTHING",
         params![
@@ -38,7 +41,9 @@ pub fn create_user(
     if inserted == 0 {
         return Err(StorageError::EmailTaken(email.to_string()));
     }
-    get_user(conn, &id)
+    let user = get_user(&transaction, &id)?;
+    transaction.commit()?;
+    Ok(user)
 }
 
 pub fn get_user(conn: &Connection, id: &str) -> Result<AccountUser, StorageError> {
@@ -135,11 +140,15 @@ pub fn confirm_email(conn: &Connection, id: &str, at_ms: u64) -> Result<(), Stor
     Ok(())
 }
 
-/// Deletes an account together with its sessions, unless it is the last administrator account.
+/// Deletes an account together with its sessions and all of its data, unless it is the last administrator account.
+/// Deleting the account's owner cascades to the account and to everything it owns.
 pub fn delete_user(conn: &mut Connection, id: &str) -> Result<(), StorageError> {
     let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     ensure_not_last_administrator(&transaction, id)?;
-    let deleted = transaction.execute("DELETE FROM users WHERE id = ?1", params![id])?;
+    let deleted = transaction.execute(
+        "DELETE FROM owners WHERE id = ?1 AND EXISTS (SELECT 1 FROM users WHERE id = ?1)",
+        params![id],
+    )?;
     if deleted == 0 {
         return Err(StorageError::UserNotFound(id.to_string()));
     }
@@ -433,6 +442,27 @@ mod tests {
             .unwrap();
         storage.delete_user(&user.id).unwrap();
         assert!(storage.list_users().unwrap().is_empty());
+    }
+
+    #[test]
+    fn deleting_a_user_deletes_its_projects() {
+        let storage = Storage::open_in_memory().unwrap();
+        let owner = crate::review_test_support::account_owner(&storage);
+        let settings = crate::review_test_support::project_settings("German");
+        let project = storage.create_project(&owner, &settings).unwrap();
+        storage.delete_user(&owner.0).unwrap();
+        let result = storage.get_project(&project.id);
+        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    }
+
+    #[test]
+    fn a_refused_account_leaves_no_owner_behind() {
+        let storage = storage_with_user("reader@example.com");
+        let _ = storage.create_user("READER@example.com", "hash", AccountRole::LibraryUser);
+        let owners: i64 = storage
+            .read(|conn| Ok(conn.query_row("SELECT COUNT(*) FROM owners", [], |row| row.get(0))?))
+            .unwrap();
+        assert_eq!(owners, 2);
     }
 
     #[test]

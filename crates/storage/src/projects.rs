@@ -4,6 +4,8 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
 use crate::new_row::{generate_id, now_ms};
+use crate::owners::OwnerId;
+use crate::preferences::set_preference;
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
 /// The project columns followed by the counts, as every project query selects them.
@@ -19,14 +21,17 @@ const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_la
       AND NOT EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = f.id \
       AND (h.until_ms IS NULL OR h.until_ms > CAST(unixepoch('subsec') * 1000 AS INTEGER))))";
 
-/// Lists every project, most recently opened first.
-pub fn list_projects(conn: &Connection) -> Result<Vec<Project>, StorageError> {
+/// The preference under which seeding records the ids it gave the placeholder projects, as a JSON array.
+pub const PLACEHOLDER_PROJECTS_PREFERENCE: &str = "placeholder_projects";
+
+/// Lists the owner's projects, most recently opened first.
+pub fn list_projects(conn: &Connection, owner: &OwnerId) -> Result<Vec<Project>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {PROJECT_COLUMNS} FROM projects p \
+        "SELECT {PROJECT_COLUMNS} FROM projects p WHERE p.owner_id = ?1 \
          ORDER BY p.last_opened_at_ms DESC, p.created_at_ms DESC, p.rowid DESC"
     ))?;
     let projects = statement
-        .query_map([], read_project)?
+        .query_map(params![owner.0], read_project)?
         .collect::<Result<_, _>>()?;
     Ok(projects)
 }
@@ -41,14 +46,26 @@ pub fn get_project(conn: &Connection, id: &ProjectId) -> Result<Project, Storage
     .ok_or_else(|| StorageError::ProjectNotFound(id.0.clone()))
 }
 
-/// Creates a project with the settings and returns it with its new id and times.
+/// Creates a project of the owner with the settings and returns it with its new id and times.
 pub fn create_project(
     conn: &Connection,
+    owner: &OwnerId,
     settings: &ProjectSettings,
 ) -> Result<Project, StorageError> {
     let id = ProjectId(generate_id());
-    insert_project(conn, &id, settings, now_ms())?;
+    insert_project(conn, owner, &id, settings, now_ms())?;
     get_project(conn, &id)
+}
+
+/// The owner of the project.
+pub fn project_owner(conn: &Connection, id: &ProjectId) -> Result<OwnerId, StorageError> {
+    conn.query_row(
+        "SELECT owner_id FROM projects WHERE id = ?1",
+        params![id.0],
+        |row| row.get(0).map(OwnerId),
+    )
+    .optional()?
+    .ok_or_else(|| StorageError::ProjectNotFound(id.0.clone()))
 }
 
 /// Replaces a project's settings and returns the project as it now stands.
@@ -120,28 +137,39 @@ pub fn ensure_project_exists(conn: &Connection, id: &ProjectId) -> Result<(), St
     }
 }
 
-/// Inserts two example projects when the table is empty, so that a new installation has something to show.
-/// Does nothing otherwise.
-pub fn seed_placeholder_projects(conn: &Connection) -> Result<(), StorageError> {
-    if count_projects(conn)? > 0 {
+/// Gives the owner two example projects under the ids, in one transaction, when it has no project,
+/// so that a new installation has something to show. Does nothing otherwise.
+/// The ids are recorded under `PLACEHOLDER_PROJECTS_PREFERENCE`, so that the sample content finds the projects.
+pub fn seed_placeholder_projects(
+    conn: &mut Connection,
+    owner: &OwnerId,
+    ids: &[ProjectId; 2],
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    if count_projects(&transaction, owner)? > 0 {
         return Ok(());
     }
-    for (id, settings, created_at_ms) in placeholder_projects() {
-        insert_project(conn, &ProjectId(id.to_string()), &settings, created_at_ms)?;
+    for (id, (settings, created_at_ms)) in ids.iter().zip(placeholder_projects()) {
+        insert_project(&transaction, owner, id, &settings, created_at_ms)?;
     }
-    Ok(())
+    let recorded = serde_json::to_string(&ids.each_ref().map(|id| &id.0))?;
+    set_preference(
+        &transaction,
+        owner,
+        PLACEHOLDER_PROJECTS_PREFERENCE,
+        &recorded,
+    )?;
+    Ok(transaction.commit()?)
 }
 
 /// The placeholder projects: "Spanish practice" created on 2026-01-01 and "Japanese drama" on 2026-01-02.
-fn placeholder_projects() -> [(&'static str, ProjectSettings, u64); 2] {
+fn placeholder_projects() -> [(ProjectSettings, u64); 2] {
     [
         (
-            "placeholder-1",
             placeholder_settings("Spanish practice", "es"),
             1_767_225_600_000,
         ),
         (
-            "placeholder-2",
             placeholder_settings("Japanese drama", "ja"),
             1_767_312_000_000,
         ),
@@ -175,17 +203,20 @@ fn placeholder_settings(name: &str, target_language: &str) -> ProjectSettings {
 
 fn insert_project(
     conn: &Connection,
+    owner: &OwnerId,
     id: &ProjectId,
     settings: &ProjectSettings,
     created_at_ms: u64,
 ) -> Result<(), StorageError> {
     let mut values = settings_params(id, settings)?;
     values.push(Box::new(to_stored_integer(created_at_ms)));
+    values.push(Box::new(owner.0.clone()));
     conn.execute(
         "INSERT INTO projects (id, name, target_language, translation_language, \
          flashcard_fields_json, default_tags_json, tags_media_name, fills_audio_with_tts, \
-         flashcard_front_fields_json, lists_anki_deletions, created_at_ms, last_opened_at_ms) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
+         flashcard_front_fields_json, lists_anki_deletions, created_at_ms, last_opened_at_ms, \
+         owner_id) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11, ?12)",
         rusqlite::params_from_iter(values),
     )?;
     Ok(())
@@ -210,8 +241,12 @@ fn settings_params(
     ])
 }
 
-fn count_projects(conn: &Connection) -> Result<i64, StorageError> {
-    Ok(conn.query_row("SELECT COUNT(*) FROM projects", [], |row| row.get(0))?)
+fn count_projects(conn: &Connection, owner: &OwnerId) -> Result<i64, StorageError> {
+    Ok(conn.query_row(
+        "SELECT COUNT(*) FROM projects WHERE owner_id = ?1",
+        params![owner.0],
+        |row| row.get(0),
+    )?)
 }
 
 fn read_project(row: &Row) -> rusqlite::Result<Project> {
@@ -246,7 +281,7 @@ mod tests {
 
     fn seeded_storage() -> Storage {
         let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
         storage
     }
 
@@ -257,52 +292,119 @@ mod tests {
     #[test]
     fn lists_nothing_from_an_empty_database() {
         let storage = Storage::open_in_memory().unwrap();
-        assert_eq!(storage.list_projects().unwrap(), vec![]);
+        assert_eq!(
+            storage.list_projects(&crate::OwnerId::launch()).unwrap(),
+            vec![]
+        );
     }
 
     #[test]
     fn seeds_two_placeholder_projects() {
-        assert_eq!(seeded_storage().list_projects().unwrap().len(), 2);
+        assert_eq!(
+            seeded_storage()
+                .list_projects(&crate::OwnerId::launch())
+                .unwrap()
+                .len(),
+            2
+        );
     }
 
     #[test]
     fn lists_the_most_recently_opened_project_first() {
-        let projects = seeded_storage().list_projects().unwrap();
+        let projects = seeded_storage()
+            .list_projects(&crate::OwnerId::launch())
+            .unwrap();
         assert_eq!(projects[0].settings.name, "Japanese drama");
     }
 
     #[test]
     fn seeds_only_once() {
         let storage = seeded_storage();
-        storage.seed_placeholder_projects().unwrap();
-        assert_eq!(storage.list_projects().unwrap().len(), 2);
+        crate::review_test_support::seed_known_placeholder_projects(&storage);
+        assert_eq!(
+            storage
+                .list_projects(&crate::OwnerId::launch())
+                .unwrap()
+                .len(),
+            2
+        );
+    }
+
+    #[test]
+    fn lists_only_the_projects_of_the_owner() {
+        let storage = Storage::open_in_memory().unwrap();
+        let account = crate::review_test_support::account_owner(&storage);
+        storage
+            .create_project(&account, &settings("German"))
+            .unwrap();
+        assert_eq!(storage.list_projects(&OwnerId::launch()).unwrap(), vec![]);
+    }
+
+    #[test]
+    fn seeds_the_placeholder_projects_of_an_owner_that_has_none() {
+        let storage = seeded_storage();
+        let account = crate::review_test_support::account_owner(&storage);
+        storage.seed_placeholder_projects(&account).unwrap();
+        assert_eq!(storage.list_projects(&account).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn gives_placeholder_projects_new_ids() {
+        let storage = Storage::open_in_memory().unwrap();
+        storage
+            .seed_placeholder_projects(&OwnerId::launch())
+            .unwrap();
+        let projects = storage.list_projects(&OwnerId::launch()).unwrap();
+        assert!(projects.iter().all(|project| project.id.0.len() == 32));
+    }
+
+    #[test]
+    fn records_the_ids_of_the_placeholder_projects() {
+        let recorded = seeded_storage()
+            .get_preference(&OwnerId::launch(), PLACEHOLDER_PROJECTS_PREFERENCE)
+            .unwrap();
+        assert_eq!(
+            recorded.as_deref(),
+            Some(r#"["placeholder-1","placeholder-2"]"#)
+        );
     }
 
     #[test]
     fn a_created_project_keeps_its_settings() {
         let storage = Storage::open_in_memory().unwrap();
-        let created = storage.create_project(&settings("German")).unwrap();
+        let created = storage
+            .create_project(&crate::OwnerId::launch(), &settings("German"))
+            .unwrap();
         assert_eq!(created.settings, settings("German"));
     }
 
     #[test]
     fn a_created_project_is_listed() {
         let storage = Storage::open_in_memory().unwrap();
-        let created = storage.create_project(&settings("German")).unwrap();
-        assert_eq!(storage.list_projects().unwrap(), vec![created]);
+        let created = storage
+            .create_project(&crate::OwnerId::launch(), &settings("German"))
+            .unwrap();
+        assert_eq!(
+            storage.list_projects(&crate::OwnerId::launch()).unwrap(),
+            vec![created]
+        );
     }
 
     #[test]
     fn a_new_project_counts_as_opened_when_created() {
         let storage = Storage::open_in_memory().unwrap();
-        let created = storage.create_project(&settings("German")).unwrap();
+        let created = storage
+            .create_project(&crate::OwnerId::launch(), &settings("German"))
+            .unwrap();
         assert_eq!(created.last_opened_at_ms, created.created_at_ms);
     }
 
     #[test]
     fn updating_replaces_the_settings() {
         let storage = Storage::open_in_memory().unwrap();
-        let created = storage.create_project(&settings("German")).unwrap();
+        let created = storage
+            .create_project(&crate::OwnerId::launch(), &settings("German"))
+            .unwrap();
         let updated = storage
             .update_project(&created.id, &settings("Deutsch"))
             .unwrap();
@@ -323,7 +425,7 @@ mod tests {
         storage
             .mark_project_opened(&ProjectId("placeholder-1".to_string()))
             .unwrap();
-        let projects = storage.list_projects().unwrap();
+        let projects = storage.list_projects(&crate::OwnerId::launch()).unwrap();
         assert_eq!(projects[0].settings.name, "Spanish practice");
     }
 
@@ -372,7 +474,9 @@ mod tests {
     #[test]
     fn a_created_project_does_not_use_anki_connect() {
         let storage = Storage::open_in_memory().unwrap();
-        let created = storage.create_project(&settings("German")).unwrap();
+        let created = storage
+            .create_project(&crate::OwnerId::launch(), &settings("German"))
+            .unwrap();
         assert!(!created.uses_anki_connect);
     }
 
@@ -426,7 +530,7 @@ mod tests {
             let storage = seeded_storage();
             let ids = make_flashcards(&storage, 3);
             rate(&storage, &ids[0], ReviewRating::Good, now_ms());
-            let listed = storage.list_projects().unwrap();
+            let listed = storage.list_projects(&crate::OwnerId::launch()).unwrap();
             let project = listed.iter().find(|listed| listed.id == project()).unwrap();
             assert_eq!(project.unreviewed_count, 2);
         }
