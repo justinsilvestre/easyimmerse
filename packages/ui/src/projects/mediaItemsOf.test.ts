@@ -49,6 +49,19 @@ describe("mediaItemsOf", () => {
     expect(items.map((item) => item.kind)).toEqual(["ebook", "ebook"]);
   });
 
+  it("tells where each file's bytes are kept", () => {
+    const items = mediaItemsOf(
+      fixtureMediaFiles.media_files,
+      [],
+      null,
+      new Map(),
+    );
+    expect(items.map((item) => item.copy?.browserFile)).toEqual([
+      null,
+      "gone",
+    ]);
+  });
+
   it("counts the flashcards made from each file", () => {
     const items = mediaItemsOf(
       fixtureMediaFiles.media_files,
