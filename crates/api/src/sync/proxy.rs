@@ -26,7 +26,6 @@ const PROXIED_ROUTES: &[(Method, &str)] = &[
     (Method::GET, "/auth/sessions"),
     (Method::DELETE, "/auth/sessions/{id}"),
     (Method::POST, "/auth/confirmation-email"),
-    (Method::PUT, "/auth/password"),
     (Method::GET, "/users"),
     (Method::POST, "/users"),
     (Method::PUT, "/users/{id}/role"),
