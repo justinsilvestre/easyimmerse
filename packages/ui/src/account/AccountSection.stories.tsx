@@ -1,6 +1,6 @@
 import type { NativePlatform } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
-import type { CurrentPrincipal } from "@easyimmerse/types";
+import type { CurrentPrincipal, SessionList } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
@@ -36,19 +36,96 @@ const answered = (accounts: boolean, openSignup: boolean) =>
     sends_email: false,
   });
 
-/** A connected server that answers who the app's token belongs to as given, and never answers a log-out. */
-const connectedAs = (principal: FakeResponse, bundledIn?: NativePlatform) => ({
+const firefoxOnLinux =
+  "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0";
+
+const safariOnIPhone =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+/** The devices the account is logged in on: this one, a laptop used yesterday, and a phone used last week. */
+const devices: SessionList = {
+  sessions: [
+    {
+      id: "s1",
+      created_at_ms: Date.now() - 3 * dayMs,
+      last_used_at_ms: Date.now(),
+      user_agent: "",
+      is_current: true,
+    },
+    {
+      id: "s2",
+      created_at_ms: Date.now() - 40 * dayMs,
+      last_used_at_ms: Date.now() - dayMs,
+      user_agent: firefoxOnLinux,
+      is_current: false,
+    },
+    {
+      id: "s3",
+      created_at_ms: Date.now() - 60 * dayMs,
+      last_used_at_ms: Date.now() - 7 * dayMs,
+      user_agent: safariOnIPhone,
+      is_current: false,
+    },
+  ],
+};
+
+/** What a server that sends email offers. */
+const mailingServer = { accounts: true, open_signup: true, sends_email: true };
+
+const never = () => new Promise(() => undefined);
+
+/**
+ * A connected server that answers who the app's token belongs to as given, lists the account's devices,
+ * and never answers a log-out, along with the other answers given.
+ */
+const connectedAs = (
+  principal: FakeResponse,
+  bundledIn?: NativePlatform,
+  answers: Record<string, FakeResponse> = {},
+) => ({
   appStore: {
     server: { serverUrl: ownServer, token: "session-token", bundledIn },
     client: createFakeBackendClient({
       ...fixtureResponses,
       "GET /auth/me": principal,
-      "POST /auth/logout": () => new Promise(() => undefined),
+      "GET /auth/sessions": devices,
+      "POST /auth/logout": never,
+      ...answers,
     }),
   },
 });
 
-const someone: CurrentPrincipal = {
+const cloudUrl = "https://cloud.example.com";
+
+const resetLinkOpened = actions.mailedLinkOpened({
+  kind: "resetPassword",
+  token: "t1",
+});
+
+const confirmationLinkOpened = actions.mailedLinkOpened({
+  kind: "confirmEmail",
+  token: "t1",
+});
+
+const invalidLink = {
+  ok: false,
+  error: { status: 400, code: "invalid_link", message: "The link is invalid." },
+} as const;
+
+/** The login form for the own server, which the person said they forgot the password of, on a server that does or does not send email. */
+const forgotPasswordOn = (sendsEmail: boolean) => [
+  filledIn,
+  actions.serverAuthInfoReceived(ownServer, {
+    accounts: true,
+    open_signup: true,
+    sends_email: sendsEmail,
+  }),
+  actions.passwordResetAsked(),
+];
+
+const someone: CurrentPrincipal & { kind: "account" } = {
   kind: "account",
   user: {
     id: "u1",
@@ -57,6 +134,11 @@ const someone: CurrentPrincipal = {
     created_at_ms: 0,
     email_confirmed_at_ms: null,
   },
+};
+
+const confirmed: CurrentPrincipal = {
+  kind: "account",
+  user: { ...someone.user, email_confirmed_at_ms: Date.now() - dayMs },
 };
 
 const meta = {
@@ -169,7 +251,7 @@ export const ServerUnreachable: Story = {
 };
 
 export const CheckingAccount: Story = {
-  parameters: connectedAs(() => new Promise(() => undefined)),
+  parameters: connectedAs(never),
 };
 
 export const LoggedIn: Story = {
@@ -202,4 +284,107 @@ export const DesktopApp: Story = {
 
 export const MobileApp: Story = {
   parameters: connectedAs({ kind: "launch" }, "mobile"),
+};
+
+export const LoggedInWithDevices: Story = {
+  parameters: connectedAs(someone),
+};
+
+export const LoggingOutAnotherDevice: Story = {
+  parameters: connectedAs(someone, undefined, {
+    "DELETE /auth/sessions/s2": never,
+  }),
+  decorators: [
+    withDispatchedActions(actions.deviceLogOutRequested("s2", false)),
+  ],
+};
+
+export const EmailNotConfirmed: Story = {
+  parameters: connectedAs(someone, undefined, {
+    "GET /auth/server": mailingServer,
+  }),
+};
+
+export const EmailConfirmed: Story = {
+  parameters: connectedAs(confirmed, undefined, {
+    "GET /auth/server": mailingServer,
+  }),
+};
+
+export const ResendTooSoon: Story = {
+  parameters: connectedAs(someone, undefined, {
+    "GET /auth/server": mailingServer,
+    "POST /auth/confirmation-email": fakeFailure({
+      status: 429,
+      code: "too_many_attempts",
+      message: "Too many attempts.",
+      retryAfterSeconds: 42,
+    }),
+  }),
+  decorators: [withDispatchedActions(actions.confirmationEmailRequested())],
+};
+
+export const ForgotPasswordOnMailServer: Story = {
+  decorators: [withDispatchedActions(...forgotPasswordOn(true))],
+};
+
+export const ForgotPasswordOnServerWithoutMail: Story = {
+  decorators: [withDispatchedActions(...forgotPasswordOn(false))],
+};
+
+export const ResetLinkSent: Story = {
+  decorators: [
+    withDispatchedActions(
+      ...forgotPasswordOn(true),
+      actions.passwordResetSubmitted(),
+      actions.passwordResetAnswered({ ok: true, data: null }),
+    ),
+  ],
+};
+
+export const NewPasswordForm: Story = {
+  parameters: { appStore: { cloudUrl } },
+  decorators: [
+    withDispatchedActions(
+      resetLinkOpened,
+      actions.mailedLinkFormChanged({ password: "correct horse battery" }),
+    ),
+  ],
+};
+
+/** A reset link opened in a browser that knows of no server, which asks for the address of the one that sent it. */
+export const NewPasswordFormWithoutServer: Story = {
+  decorators: [withDispatchedActions(resetLinkOpened)],
+};
+
+export const NewPasswordLinkInvalid: Story = {
+  parameters: { appStore: { cloudUrl } },
+  decorators: [
+    withDispatchedActions(
+      resetLinkOpened,
+      actions.mailedLinkFormChanged({ password: "correct horse battery" }),
+      actions.mailedLinkSubmitted(),
+      actions.newPasswordAnswered(cloudUrl, invalidLink),
+    ),
+  ],
+};
+
+export const EmailConfirmedByLink: Story = {
+  parameters: { appStore: { cloudUrl } },
+  decorators: [
+    withDispatchedActions(
+      confirmationLinkOpened,
+      actions.emailConfirmationAnswered({ ok: true, data: null }),
+    ),
+  ],
+};
+
+export const ConfirmationLinkInvalid: Story = {
+  parameters: { appStore: { cloudUrl } },
+  decorators: [
+    withDispatchedActions(
+      confirmationLinkOpened,
+      actions.emailConfirmationAnswered(invalidLink),
+    ),
+  ],
 };
