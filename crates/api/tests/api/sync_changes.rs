@@ -278,7 +278,8 @@ mod pushing {
     async fn applies_a_change_made_since_the_servers_version() {
         let (server, token) = server_with_account().await;
         let project = create_project(&server, &token).await;
-        let (row, server_time) = renamed_project(&server, &token, &project, now_ms()).await;
+        let (mut row, server_time) = renamed_project(&server, &token, &project, 0).await;
+        row["updated_at_ms"] = json!(server_time + 1);
         let outcome = push_one(&server, &token, row, Some(server_time)).await;
         assert_eq!(outcome["kind"], "applied");
     }
