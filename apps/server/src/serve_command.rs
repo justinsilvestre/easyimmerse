@@ -1,42 +1,96 @@
+//! The `serve` command, and the functions the desktop app uses to run the same server.
+
 use std::net::SocketAddr;
 use std::path::Path;
 
 use anyhow::Context;
-use easyimmerse_api::{AccountsConfig, ApiConfig, ServeOptions, serve};
+use easyimmerse_api::{AccountsConfig, ApiConfig, ServeOptions, ServerHandle, serve};
 use easyimmerse_storage::Storage;
 use tokio::net::TcpListener;
 
 use crate::cli::ServeArgs;
+use crate::config_file::ServerFileConfig;
+use crate::serve_settings::{ServeSettings, resolve_serve_settings};
+
+/// A server that has started, with what the person starting it needs to know.
+pub struct StartedServer {
+    pub handle: ServerHandle,
+    /// The random launch token made because none was configured, which the person needs to
+    /// connect a client.
+    pub generated_token: Option<String>,
+}
 
 pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
-    refuse_unreachable_accounts(&args)?;
-    let listener = TcpListener::bind(args.bind)
-        .await
-        .with_context(|| format!("could not bind {}", args.bind))?;
-    let addr = listener.local_addr()?;
-    let config = build_config(&args, addr);
-    let storage = open_storage(&args)?;
-    let options = ServeOptions {
-        cache_dir: args.cache_dir.clone(),
-        plugins_dir: args.plugins_dir.clone(),
-        media_dir: args.media_dir.clone(),
-    };
-    let handle = serve(listener, config, storage, options).await?;
-    println!("listening on http://{addr}");
+    let file = load_file_config(&args)?;
+    let settings = resolve_serve_settings(&args, &file);
+    let started = start_server(&settings).await?;
+    if let Some(token) = &started.generated_token {
+        eprintln!("token: {token}");
+    }
+    println!("listening on http://{}", started.handle.addr);
     tokio::signal::ctrl_c()
         .await
         .context("could not listen for Ctrl-C")?;
     tracing::info!("shutting down");
-    handle.shutdown().await?;
+    started.handle.shutdown().await?;
     Ok(())
+}
+
+/// Reads the config file that `--config` or `EASYIMMERSE_CONFIG` names, or returns an empty
+/// config when neither does.
+pub fn load_file_config(args: &ServeArgs) -> anyhow::Result<ServerFileConfig> {
+    match &args.config {
+        Some(path) => Ok(ServerFileConfig::load(path)?),
+        None => Ok(ServerFileConfig::default()),
+    }
+}
+
+/// Binds the configured address and starts a server on it.
+pub async fn start_server(settings: &ServeSettings) -> anyhow::Result<StartedServer> {
+    refuse_unauthenticated_settings(settings)?;
+    let listener = TcpListener::bind(settings.bind)
+        .await
+        .with_context(|| format!("could not bind {}", settings.bind))?;
+    start_server_on(listener, settings).await
+}
+
+/// Starts a server on a listener the caller bound, such as one on a random loopback port.
+/// The settings' bind address is ignored.
+pub async fn start_server_on(
+    listener: TcpListener,
+    settings: &ServeSettings,
+) -> anyhow::Result<StartedServer> {
+    refuse_unauthenticated_settings(settings)?;
+    let addr = listener.local_addr()?;
+    let (config, generated_token) = build_config(settings, addr);
+    let storage = open_storage(settings)?;
+    let options = ServeOptions {
+        cache_dir: settings.cache_dir.clone(),
+        plugins_dir: settings.plugins_dir.clone(),
+        media_dir: settings.media_dir.clone(),
+        ffmpeg_dir: settings.ffmpeg_dir.clone(),
+        web_app_dir: settings.web_app_dir_to_serve(),
+    };
+    let handle = serve(listener, config, storage, options).await?;
+    Ok(StartedServer {
+        handle,
+        generated_token,
+    })
+}
+
+fn refuse_unauthenticated_settings(settings: &ServeSettings) -> anyhow::Result<()> {
+    if settings.open_signup && !settings.accounts {
+        anyhow::bail!("open signup needs accounts: pass --accounts, or set accounts = true");
+    }
+    refuse_unreachable_accounts(settings)
 }
 
 /// Refuses accounts on an in-memory database when nobody could ever authenticate:
 /// the `users` command needs a database file, and without `--open-signup` or `--token`
 /// the API cannot create the first account.
-fn refuse_unreachable_accounts(args: &ServeArgs) -> anyhow::Result<()> {
-    let is_in_memory = args.db == ":memory:";
-    if args.accounts && is_in_memory && !args.open_signup && args.token.is_none() {
+fn refuse_unreachable_accounts(settings: &ServeSettings) -> anyhow::Result<()> {
+    let is_in_memory = settings.db.is_none();
+    if settings.accounts && is_in_memory && !settings.open_signup && settings.token.is_none() {
         anyhow::bail!(
             "with --accounts and an in-memory database, nobody could log in: pass --db with a \
              file and create an administrator with `easyimmerse-server users create`, \
@@ -46,29 +100,28 @@ fn refuse_unreachable_accounts(args: &ServeArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Accepts the loopback hosts, the bound address itself, and every `--expected-host`.
-/// A random launch token is made only when there is neither `--token` nor `--accounts`.
+/// Accepts the loopback hosts, the bound address itself, and every expected host.
+/// A random launch token is made only when there is neither a token nor accounts, and is
+/// returned beside the config.
 /// A server bound to an unspecified address such as `0.0.0.0`
 /// is reached through interface addresses it cannot know,
 /// so those must be passed with `--expected-host`.
-fn build_config(args: &ServeArgs, addr: SocketAddr) -> ApiConfig {
-    let mut config = ApiConfig::for_loopback_hosts(addr.port(), args.allow_local_paths);
-    config.launch_token = args
-        .token
-        .clone()
-        .or_else(|| (!args.accounts).then(generate_and_print_token));
-    config.accounts = args.accounts.then_some(AccountsConfig {
-        open_signup: args.open_signup,
+fn build_config(settings: &ServeSettings, addr: SocketAddr) -> (ApiConfig, Option<String>) {
+    let mut config = ApiConfig::for_loopback_hosts(addr.port(), settings.allow_local_paths);
+    let generated_token = (settings.token.is_none() && !settings.accounts).then(generate_token);
+    config.launch_token = settings.token.clone().or_else(|| generated_token.clone());
+    config.accounts = settings.accounts.then_some(AccountsConfig {
+        open_signup: settings.open_signup,
     });
     if addr.ip().is_unspecified() {
-        warn_when_no_host_is_expected(args, addr);
+        warn_when_no_host_is_expected(settings, addr);
     } else {
         push_host(&mut config, addr.to_string());
     }
-    for host in &args.expected_hosts {
+    for host in &settings.expected_hosts {
         push_host(&mut config, host.clone());
     }
-    config
+    (config, generated_token)
 }
 
 fn push_host(config: &mut ApiConfig, host: String) {
@@ -77,8 +130,8 @@ fn push_host(config: &mut ApiConfig, host: String) {
     }
 }
 
-fn warn_when_no_host_is_expected(args: &ServeArgs, addr: SocketAddr) {
-    if args.expected_hosts.is_empty() {
+fn warn_when_no_host_is_expected(settings: &ServeSettings, addr: SocketAddr) {
+    if settings.expected_hosts.is_empty() {
         tracing::warn!(
             "bound to {addr} without --expected-host, so only requests addressed to the \
              loopback hosts are accepted"
@@ -86,21 +139,21 @@ fn warn_when_no_host_is_expected(args: &ServeArgs, addr: SocketAddr) {
     }
 }
 
-fn generate_and_print_token() -> String {
-    let token = hex::encode(rand::random::<[u8; 32]>());
-    eprintln!("token: {token}");
-    token
+fn generate_token() -> String {
+    hex::encode(rand::random::<[u8; 32]>())
 }
 
-fn open_storage(args: &ServeArgs) -> anyhow::Result<Storage> {
-    let storage = match args.db.as_str() {
-        ":memory:" => Storage::open_in_memory()?,
-        path => Storage::open(Path::new(path)).with_context(|| format!("could not open {path}"))?,
+fn open_storage(settings: &ServeSettings) -> anyhow::Result<Storage> {
+    let storage = match &settings.db {
+        None => Storage::open_in_memory()?,
+        Some(path) => {
+            Storage::open(path).with_context(|| format!("could not open {}", path.display()))?
+        }
     };
-    if args.seed_placeholders {
+    if settings.seed_placeholders {
         storage.seed_placeholder_projects()?;
     }
-    if args.seed_sample_content {
+    if settings.seed_sample_content {
         let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
         storage
             .seed_sample_content(&fixtures_dir)
@@ -111,96 +164,123 @@ fn open_storage(args: &ServeArgs) -> anyhow::Result<Storage> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::path::PathBuf;
 
-    fn args(bind: &str, expected_hosts: &[&str]) -> ServeArgs {
-        ServeArgs {
+    use super::*;
+    use crate::serve_settings::DEFAULT_BIND;
+
+    fn settings(bind: &str, expected_hosts: &[&str]) -> ServeSettings {
+        ServeSettings {
             bind: bind.parse().unwrap(),
             token: Some("t".to_string()),
             accounts: false,
             open_signup: false,
-            db: ":memory:".to_string(),
+            db: None,
             allow_local_paths: false,
             seed_placeholders: false,
             seed_sample_content: false,
             cache_dir: None,
             plugins_dir: None,
             media_dir: None,
+            ffmpeg_dir: None,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
+            web_app_dir: None,
+            api_only: false,
         }
     }
 
     fn hosts_for(bind: &str, expected_hosts: &[&str]) -> Vec<String> {
-        let args = args(bind, expected_hosts);
-        build_config(&args, args.bind).expected_hosts
+        let settings = settings(bind, expected_hosts);
+        build_config(&settings, settings.bind).0.expected_hosts
     }
 
-    fn config_for(args: &ServeArgs) -> ApiConfig {
-        build_config(args, args.bind)
+    fn config_for(settings: &ServeSettings) -> ApiConfig {
+        build_config(settings, settings.bind).0
     }
 
-    fn unreachable_accounts_args() -> ServeArgs {
-        let mut args = args("127.0.0.1:8787", &[]);
-        args.token = None;
-        args.accounts = true;
-        args
+    fn unreachable_accounts_settings() -> ServeSettings {
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.token = None;
+        settings.accounts = true;
+        settings
     }
 
     #[test]
     fn refuses_accounts_on_an_in_memory_database_without_signup_or_a_token() {
-        assert!(refuse_unreachable_accounts(&unreachable_accounts_args()).is_err());
+        assert!(refuse_unauthenticated_settings(&unreachable_accounts_settings()).is_err());
     }
 
     #[test]
     fn allows_accounts_on_a_database_file() {
-        let mut args = unreachable_accounts_args();
-        args.db = "accounts.db".to_string();
-        assert!(refuse_unreachable_accounts(&args).is_ok());
+        let mut settings = unreachable_accounts_settings();
+        settings.db = Some(PathBuf::from("accounts.db"));
+        assert!(refuse_unauthenticated_settings(&settings).is_ok());
     }
 
     #[test]
     fn allows_accounts_on_an_in_memory_database_with_open_signup() {
-        let mut args = unreachable_accounts_args();
-        args.open_signup = true;
-        assert!(refuse_unreachable_accounts(&args).is_ok());
+        let mut settings = unreachable_accounts_settings();
+        settings.open_signup = true;
+        assert!(refuse_unauthenticated_settings(&settings).is_ok());
     }
 
     #[test]
     fn allows_accounts_on_an_in_memory_database_with_a_token() {
-        let mut args = unreachable_accounts_args();
-        args.token = Some("t".to_string());
-        assert!(refuse_unreachable_accounts(&args).is_ok());
+        let mut settings = unreachable_accounts_settings();
+        settings.token = Some("t".to_string());
+        assert!(refuse_unauthenticated_settings(&settings).is_ok());
     }
 
     #[test]
     fn allows_an_in_memory_database_without_accounts() {
-        let mut args = unreachable_accounts_args();
-        args.accounts = false;
-        assert!(refuse_unreachable_accounts(&args).is_ok());
+        let mut settings = unreachable_accounts_settings();
+        settings.accounts = false;
+        assert!(refuse_unauthenticated_settings(&settings).is_ok());
+    }
+
+    #[test]
+    fn refuses_open_signup_without_accounts() {
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.open_signup = true;
+        assert!(refuse_unauthenticated_settings(&settings).is_err());
     }
 
     #[test]
     fn makes_no_launch_token_for_accounts_without_a_token() {
-        let mut args = args("127.0.0.1:8787", &[]);
-        args.token = None;
-        args.accounts = true;
-        assert_eq!(config_for(&args).launch_token, None);
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.token = None;
+        settings.accounts = true;
+        assert_eq!(config_for(&settings).launch_token, None);
     }
 
     #[test]
     fn makes_a_launch_token_without_accounts_or_a_token() {
-        let mut args = args("127.0.0.1:8787", &[]);
-        args.token = None;
-        assert!(config_for(&args).launch_token.is_some());
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.token = None;
+        assert!(config_for(&settings).launch_token.is_some());
+    }
+
+    #[test]
+    fn returns_the_launch_token_it_made() {
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.token = None;
+        let (config, generated_token) = build_config(&settings, settings.bind);
+        assert_eq!(config.launch_token, generated_token);
+    }
+
+    #[test]
+    fn returns_no_generated_token_when_one_is_configured() {
+        let settings = settings("127.0.0.1:8787", &[]);
+        assert_eq!(build_config(&settings, settings.bind).1, None);
     }
 
     #[test]
     fn passes_open_signup_to_the_accounts() {
-        let mut args = args("127.0.0.1:8787", &[]);
-        args.accounts = true;
-        args.open_signup = true;
+        let mut settings = settings("127.0.0.1:8787", &[]);
+        settings.accounts = true;
+        settings.open_signup = true;
         assert_eq!(
-            config_for(&args).accounts,
+            config_for(&settings).accounts,
             Some(AccountsConfig { open_signup: true })
         );
     }
@@ -216,7 +296,7 @@ mod tests {
     }
 
     #[test]
-    fn expects_every_host_passed_on_the_command_line() {
+    fn expects_every_configured_host() {
         let hosts = hosts_for("0.0.0.0:8787", &["media.local:8787"]);
         assert!(hosts.contains(&"media.local:8787".to_string()));
     }
@@ -228,7 +308,7 @@ mod tests {
 
     #[test]
     fn does_not_repeat_the_default_loopback_host() {
-        let hosts = hosts_for("127.0.0.1:8787", &[]);
+        let hosts = hosts_for(&DEFAULT_BIND.to_string(), &[]);
         assert_eq!(
             hosts
                 .iter()

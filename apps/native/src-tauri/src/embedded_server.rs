@@ -113,6 +113,7 @@ async fn serve_on_loopback(
         cache_dir: Some(cache_dir),
         plugins_dir: database_path.parent().map(|dir| dir.join(PLUGINS_DIR_NAME)),
         media_dir: database_path.parent().map(|dir| dir.join(MEDIA_DIR_NAME)),
+        ..ServeOptions::default()
     };
     let handle = serve(listener, config, storage, options).await?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");

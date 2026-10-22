@@ -20,6 +20,7 @@ pub mod local_table_file;
 pub mod lookup;
 pub mod media_source_jobs;
 mod now_ms;
+pub mod pairing_codes;
 mod plugin_compile_cache;
 pub mod plugins;
 pub mod router;
@@ -30,11 +31,12 @@ mod source_update;
 pub mod state;
 #[cfg(test)]
 mod typescript_constants;
+pub mod web_app;
 
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::principal::Principal;
 pub use config::{AccountsConfig, ApiConfig};
 pub use plugins::PluginRegistry;
 pub use router::{build_router, openapi_document};
-pub use serve::{ServeError, ServeOptions, ServerHandle, serve};
+pub use serve::{ListenerHandle, ServeError, ServeOptions, ServerHandle, serve};
 pub use state::AppState;

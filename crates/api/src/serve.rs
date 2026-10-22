@@ -1,12 +1,15 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::pin::pin;
 
+use axum::Router;
 use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
+use futures_util::future::select;
 use thiserror::Error;
 use tokio::net::TcpListener;
-use tokio::sync::oneshot;
+use tokio::sync::{oneshot, watch};
 use tokio::task::JoinHandle;
 
 use crate::config::ApiConfig;
@@ -31,19 +34,65 @@ pub enum ServeError {
 /// shuts down; call `shutdown` to stop it gracefully.
 pub struct ServerHandle {
     pub addr: SocketAddr,
-    shutdown: oneshot::Sender<()>,
+    router: Router,
+    /// Tells every listener of the server to stop. Each listener's task holds a receiver
+    /// until it has finished, so the sender's `closed` waits for all of them.
+    stop: watch::Sender<bool>,
     task: JoinHandle<std::io::Result<()>>,
     conversion: Option<ConversionService>,
 }
 
 impl ServerHandle {
-    /// Stops the conversions, stops accepting connections, waits for in-flight requests,
-    /// and returns.
+    /// Serves the same API, with the same storage and settings, on another listener as well.
+    /// The listener stops when its handle's `shutdown` is called or when the whole server stops.
+    pub fn serve_also(&self, listener: TcpListener) -> std::io::Result<ListenerHandle> {
+        let addr = listener.local_addr()?;
+        let (shutdown, shutdown_requested) = oneshot::channel();
+        let mut server_stopping = self.stop.subscribe();
+        let stop_signal = async move {
+            let server_stops = pin!(server_stopping.wait_for(|stop| *stop));
+            let _ = select(shutdown_requested, server_stops).await;
+        };
+        let task = spawn_listener(
+            listener,
+            self.router.clone(),
+            self.stop.subscribe(),
+            stop_signal,
+        );
+        Ok(ListenerHandle {
+            addr,
+            shutdown,
+            task,
+        })
+    }
+
+    /// Stops the conversions, stops accepting connections on every listener, waits for
+    /// in-flight requests, and returns.
     pub async fn shutdown(self) -> Result<(), ServeError> {
         if let Some(conversion) = &self.conversion {
             conversion.shutdown().await;
         }
-        // The receiver is gone only if the server already stopped, which is fine.
+        // Sending fails only when every listener already stopped, which is fine.
+        let _ = self.stop.send(true);
+        self.stop.closed().await;
+        self.task.await??;
+        Ok(())
+    }
+}
+
+/// A listener added with [`ServerHandle::serve_also`]. Dropping the handle stops the listener
+/// as `shutdown` does, without waiting for it.
+pub struct ListenerHandle {
+    pub addr: SocketAddr,
+    shutdown: oneshot::Sender<()>,
+    task: JoinHandle<std::io::Result<()>>,
+}
+
+impl ListenerHandle {
+    /// Stops accepting connections on this listener only, waits for its in-flight requests,
+    /// and returns. The server's other listeners keep running.
+    pub async fn shutdown(self) -> Result<(), ServeError> {
+        // The receiver is gone only if the listener already stopped, which is fine.
         let _ = self.shutdown.send(());
         self.task.await??;
         Ok(())
@@ -59,6 +108,11 @@ pub struct ServeOptions {
     pub plugins_dir: Option<PathBuf>,
     /// Where media-source plugins put what they fetch. None keeps them from adding media.
     pub media_dir: Option<PathBuf>,
+    /// The directory holding ffmpeg and ffprobe. None searches for them in the usual places.
+    pub ffmpeg_dir: Option<PathBuf>,
+    /// The directory holding the built web app, served at every path the API does not use.
+    /// None serves only the API, as does a directory that does not exist.
+    pub web_app_dir: Option<PathBuf>,
 }
 
 /// Serves the API on an already bound listener, so that the caller knows the port.
@@ -72,7 +126,14 @@ pub async fn serve(
         return Err(ServeError::NoAuthentication);
     }
     let addr = listener.local_addr()?;
-    let conversion = options.cache_dir.and_then(open_conversion_service);
+    let ffmpeg_paths = options
+        .ffmpeg_dir
+        .as_deref()
+        .map(FfmpegPaths::in_dir)
+        .unwrap_or_default();
+    let conversion = options
+        .cache_dir
+        .and_then(|cache_dir| open_conversion_service(cache_dir, ffmpeg_paths.clone()));
     if let Some(conversion) = &conversion {
         start_background_work(conversion, &storage);
     }
@@ -90,21 +151,57 @@ pub async fn serve(
         .as_deref()
         .map(PluginRegistry::scan)
         .unwrap_or_default();
-    let state = AppState::new(storage, config, open_probe_cache(), conversion.clone())
-        .with_plugins(plugins, media_dir);
+    let probes = open_probe_cache(ffmpeg_paths.clone());
+    let state = AppState::new(storage, config, probes, conversion.clone())
+        .with_plugins(plugins, media_dir)
+        .with_ffmpeg_paths(ffmpeg_paths)
+        .with_web_app_dir(existing_web_app_dir(options.web_app_dir));
     let (router, _) = build_router(state);
-    let (shutdown, shutdown_requested) = oneshot::channel();
-    let service = router.into_make_service_with_connect_info::<SocketAddr>();
-    let server = axum::serve(listener, service).with_graceful_shutdown(async {
-        let _ = shutdown_requested.await;
-    });
-    let task = tokio::spawn(server.into_future());
+    let (stop, stop_requested) = watch::channel(false);
+    let stop_signal = {
+        let mut stop_requested = stop_requested.clone();
+        async move {
+            let _ = stop_requested.wait_for(|stop| *stop).await;
+        }
+    };
+    let task = spawn_listener(listener, router.clone(), stop_requested, stop_signal);
     Ok(ServerHandle {
         addr,
-        shutdown,
+        router,
+        stop,
         task,
         conversion,
     })
+}
+
+/// Serves `router` on `listener` until `stop_signal` completes. The task keeps `guard` until
+/// the in-flight requests have finished, so that the server knows when every listener is done.
+fn spawn_listener(
+    listener: TcpListener,
+    router: Router,
+    guard: watch::Receiver<bool>,
+    stop_signal: impl Future<Output = ()> + Send + 'static,
+) -> JoinHandle<std::io::Result<()>> {
+    let service = router.into_make_service_with_connect_info::<SocketAddr>();
+    let server = axum::serve(listener, service).with_graceful_shutdown(stop_signal);
+    tokio::spawn(async move {
+        let _guard = guard;
+        server.await
+    })
+}
+
+fn existing_web_app_dir(web_app_dir: Option<PathBuf>) -> Option<PathBuf> {
+    let dir = web_app_dir?;
+    if dir.is_dir() {
+        tracing::info!("serving the web app from {}", dir.display());
+        Some(dir)
+    } else {
+        tracing::warn!(
+            "serving only the API, since the web app directory {} does not exist",
+            dir.display()
+        );
+        None
+    }
 }
 
 /// Creates the directory if needed and returns its absolute path, so that plugin grants
@@ -115,10 +212,9 @@ fn create_absolute_dir(dir: &Path) -> std::io::Result<PathBuf> {
     dunce::canonicalize(dir)
 }
 
-/// The binaries are looked up through `EASYIMMERSE_FFMPEG_DIR`, next to the executable, and
-/// on `PATH`.
-fn open_probe_cache() -> Option<ProbeCache> {
-    let paths = FfmpegPaths::default();
+/// Binaries that `paths` does not name are looked up through `EASYIMMERSE_FFMPEG_DIR`,
+/// next to the executable, and on `PATH`.
+fn open_probe_cache(paths: FfmpegPaths) -> Option<ProbeCache> {
     match locate_binary(BinaryName::Ffprobe, &paths) {
         Ok(_) => Some(ProbeCache::new(paths)),
         Err(error) => {
@@ -128,8 +224,8 @@ fn open_probe_cache() -> Option<ProbeCache> {
     }
 }
 
-fn open_conversion_service(cache_dir: PathBuf) -> Option<ConversionService> {
-    match ConversionService::open(cache_dir, FfmpegPaths::default()) {
+fn open_conversion_service(cache_dir: PathBuf, paths: FfmpegPaths) -> Option<ConversionService> {
+    match ConversionService::open(cache_dir, paths) {
         Ok(service) => Some(service),
         Err(error) => {
             tracing::warn!("media conversion is unavailable: {error}");

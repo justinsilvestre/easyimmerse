@@ -15,13 +15,15 @@ use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
     alignments, anki, anki_exported, anki_package, anki_pending_deletions, auth_server,
-    conversion_cache, conversions, current_principal, dictionaries, dictionary_batch_lookup,
-    dictionary_imports, dictionary_lookup, dictionary_media, documents, flashcards, health,
-    local_dictionaries, media, media_availability, media_clip, media_frame, media_import,
-    media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
-    preferences, projects, review, sessions, source_form, subtitles, timed_text, users,
+    conversion_cache, conversion_capabilities, conversions, current_principal, dictionaries,
+    dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media, documents,
+    flashcards, health, local_dictionaries, media, media_availability, media_clip, media_frame,
+    media_import, media_playback_method, media_stream, media_tracks, media_waveform, openapi,
+    pairing, plugins, preferences, projects, review, sessions, source_form, subtitles, timed_text,
+    users,
 };
 use crate::state::AppState;
+use crate::web_app::web_app_router;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
@@ -31,7 +33,8 @@ const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 /// Builds the complete application router together with its OpenAPI document.
 ///
 /// Every route checks the `Host` header. Every route except `/health`, `/auth/server`,
-/// `/auth/signup` and `/auth/login` requires a bearer token.
+/// `/auth/signup`, `/auth/login` and `/pairing/claim` requires a bearer token.
+/// When the state names a web app directory, every other path serves its files, without a token.
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
     let (protected, _) = protected_routes().split_for_parts();
@@ -40,8 +43,12 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
         .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
     let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));
-    let router = protected
-        .merge(public)
+    let mut router = protected.merge(public);
+    // The web app's files need no token, so their fallback comes after the token layer.
+    if let Some(dir) = &state.web_app_dir {
+        router = router.fallback_service(web_app_router(dir));
+    }
+    let router = router
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
@@ -150,6 +157,9 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(conversion_cache::clear_conversion_cache))
         .routes(routes!(conversion_cache::set_conversion_cache_budget))
         .routes(routes!(
+            conversion_capabilities::get_conversion_capabilities
+        ))
+        .routes(routes!(
             preferences::get_preference,
             preferences::set_preference
         ))
@@ -173,6 +183,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(users::list_users, users::create_user))
         .routes(routes!(users::set_user_role))
         .routes(routes!(users::delete_user))
+        .routes(routes!(pairing::issue_pairing_code))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {
@@ -181,6 +192,7 @@ fn public_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(auth_server::get_server_auth_info))
         .routes(routes!(sessions::sign_up))
         .routes(routes!(sessions::log_in))
+        .routes(routes!(pairing::claim_pairing_code))
 }
 
 #[derive(utoipa::OpenApi)]

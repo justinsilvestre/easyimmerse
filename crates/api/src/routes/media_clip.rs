@@ -107,7 +107,7 @@ pub async fn render_clip(
         start_micros: micros(start_ms),
         duration_micros: micros(duration_ms),
     });
-    run_ffmpeg_to_stdout(&locate_ffmpeg()?, args)
+    run_ffmpeg_to_stdout(&locate_ffmpeg(state)?, args)
         .await
         .map_err(clip_failed)
 }

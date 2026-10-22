@@ -18,13 +18,25 @@ pub enum Command {
     /// Manages the accounts in a database, without a running server.
     #[command(subcommand)]
     Users(UsersCommand),
+    /// Shows or changes the settings in a config file.
+    #[command(subcommand)]
+    Config(ConfigCommand),
 }
 
-#[derive(Debug, Args)]
+/// Each setting may come from a flag, an environment variable, or the config file, which
+/// count in that order. A flag that turns something on cannot turn off what the config file
+/// turns on.
+#[derive(Debug, Clone, Default, Args)]
 pub struct ServeArgs {
-    /// The address to listen on.
-    #[arg(long, default_value = "127.0.0.1:8787")]
-    pub bind: SocketAddr,
+    /// A TOML file with the settings below, under the names the flags have, with underscores
+    /// for dashes, such as `cache_dir = "cache"`. Relative paths in it are relative to the
+    /// file's directory.
+    #[arg(long, env = "EASYIMMERSE_CONFIG")]
+    pub config: Option<PathBuf>,
+    /// The address to listen on. Defaults to 127.0.0.1:8787, which only this machine can reach;
+    /// 0.0.0.0:8787 lets other devices on the network reach the server.
+    #[arg(long)]
+    pub bind: Option<SocketAddr>,
     /// The launch token, whose holder may do anything. Without it and without `--accounts`,
     /// a random one is generated and printed to standard error.
     #[arg(long, env = "EASYIMMERSE_TOKEN")]
@@ -33,12 +45,12 @@ pub struct ServeArgs {
     #[arg(long)]
     pub accounts: bool,
     /// Lets anyone create an account through the API. Needs `--accounts`.
-    #[arg(long, requires = "accounts")]
+    #[arg(long)]
     pub open_signup: bool,
     /// The SQLite database file, or `:memory:` for a database that lives only while the
-    /// server runs.
-    #[arg(long, default_value = ":memory:")]
-    pub db: String,
+    /// server runs, which is the default.
+    #[arg(long)]
+    pub db: Option<PathBuf>,
     /// Lets requests name files on this machine.
     #[arg(long)]
     pub allow_local_paths: bool,
@@ -60,10 +72,48 @@ pub struct ServeArgs {
     /// added through a plugin.
     #[arg(long, env = "EASYIMMERSE_MEDIA_DIR")]
     pub media_dir: Option<PathBuf>,
+    /// The directory holding the `ffmpeg` and `ffprobe` that the server uses to read and
+    /// convert media. Without it, they are looked for next to the server's executable and
+    /// then on `PATH`.
+    #[arg(long, env = "EASYIMMERSE_FFMPEG_DIR")]
+    pub ffmpeg_dir: Option<PathBuf>,
     /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
     pub expected_hosts: Vec<String>,
+    /// The directory holding the built web app, which the server then serves at every address
+    /// the API does not use. Without it, the server serves the directory named `web` next to
+    /// its executable, when there is one.
+    #[arg(long)]
+    pub web_app_dir: Option<PathBuf>,
+    /// Serves only the API, even when there is a web app directory.
+    #[arg(long)]
+    pub api_only: bool,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigCommand {
+    /// Prints the config file's path and the settings that `serve` would use without flags.
+    Show(ConfigFileArgs),
+    /// Writes one setting into the config file, creating the file when it is missing.
+    Set(ConfigSetArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigFileArgs {
+    /// The config file.
+    #[arg(long, env = "EASYIMMERSE_CONFIG")]
+    pub config: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigSetArgs {
+    /// A setting's name as the config file spells it, such as `bind` or `desktop.autostart`.
+    pub key: String,
+    /// The new value. `expected_hosts` takes a comma-separated list.
+    pub value: String,
+    #[command(flatten)]
+    pub file: ConfigFileArgs,
 }
 
 #[derive(Debug, Subcommand)]

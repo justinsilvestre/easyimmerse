@@ -20,6 +20,7 @@ easyimmerse-storage = { path = "crates/storage" }
 easyimmerse-plugin-api = { path = "crates/plugin-api" }
 easyimmerse-plugins = { path = "crates/plugins" }
 easyimmerse-api = { path = "crates/api" }
+easyimmerse-server = { path = "apps/server" }
 easyimmerse-anki = { path = "crates/anki" }
 easyimmerse-srs = { path = "crates/srs" }
 tauri-plugin-save-copy = { path = "apps/native/tauri-plugin-save-copy" }
@@ -62,6 +63,7 @@ tar = { version = "0.4", default-features = false }
 tauri = "2.12"
 tauri-build = "2.7"
 tauri-plugin = "2.7"
+tauri-plugin-barcode-scanner = "2.5"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-notification = "2.5"
 tauri-plugin-opener = "2.7"
@@ -72,6 +74,7 @@ thiserror = "2.0"
 tiny_http = "0.12"
 tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "net", "fs", "signal", "sync"] }
 toml = "1.1"
+toml_edit = "0.25"
 tower = "0.5"
 tower-http = { version = "0.7", features = ["cors", "trace"] }
 tracing = "0.1"
