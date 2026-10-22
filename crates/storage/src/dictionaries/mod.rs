@@ -21,7 +21,7 @@ mod term_lookup;
 #[cfg(test)]
 mod tests;
 
-pub use dump::{DictionaryDump, continue_dump, dump_dictionary, start_dump};
+pub use dump::{DictionaryDump, continue_dump, start_dump};
 pub(crate) use importer::import_into;
 pub use importer::{import_dictionary, import_with};
 pub use kanji_lookup::{find_kanji, find_kanji_meta};

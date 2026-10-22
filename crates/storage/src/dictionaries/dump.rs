@@ -56,6 +56,8 @@ impl Section {
 }
 
 /// Passes a dictionary of the owner to the sink in import order: its metadata first, then its content.
+/// Servers dump page by page instead, through `start_dump` and `continue_dump`, to release the database between pages.
+#[cfg(test)]
 pub fn dump_dictionary(
     conn: &Connection,
     owner: &OwnerId,
