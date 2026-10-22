@@ -107,7 +107,7 @@ mise exec -- pnpm --filter @easyimmerse/extension build:firefox    # Firefox, in
 
 Set `VITE_EASYIMMERSE_SERVER_URL` and `VITE_EASYIMMERSE_TOKEN` before building to point the extension at a server. Without them it runs offline through the WebAssembly module.
 
-Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app or the extension to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
+Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
 
 ### Running a server of your own
 
@@ -122,7 +122,7 @@ target/release/easyimmerse-server serve --db server.sqlite
 - The server **listens at `127.0.0.1:8787`** by default. To reach it from other machines, bind it to every interface with `--bind 0.0.0.0:8787`, and name each address that clients use with `--expected-host`, for example `--expected-host 192.168.1.5:8787`. The server refuses a request whose Host header names any other address.
 - The server's **directories and ffmpeg** are set as described under `web-dev` above. `easyimmerse-server serve --help` lists every flag.
 - The server is meant to serve the web app at its own address, but **does not serve it yet**. Until it does, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and serve `apps/web/dist` with any static file server.
-- By default every client presents the server's launch token. To let several people log in with their own accounts, see [docs/self-hosting.md](docs/self-hosting.md).
+- By default every client presents the server's launch token. To let several people log in with their own accounts, and to send them email for address confirmation and password resets, see [docs/self-hosting.md](docs/self-hosting.md).
 
 ### Generated code
 

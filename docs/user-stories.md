@@ -846,7 +846,7 @@ As a web app user:
 
 As a web/mobile app user connected to my own server (self-hosted or on the local network):
 - when I add a media file from the browser:
-  - [ ] I can upload it to the server to make it available on other devices
+  - [x] I can upload it to the server to make it available on other devices
   - [ ] I can choose to delete the local copy of the file after it is uploaded, to save space on my device
 - when I add a media file from the browser, but it is in a format not widely supported:
   - [ ] I am notified that the server will convert it to a widely supported format, and that the original file will not be kept if I choose to delete it after upload
@@ -870,12 +870,12 @@ As a user:
   - [x] I can log in to a self-hosted easyImmerse server by entering its address, instead of using the easyImmerse cloud
   - [x] I can keep using all offline features of the app without an account
 - while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
-  - [ ] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
-  - [ ] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
+  - [x] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+  - [x] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
 - when all my work is backed up:
-  - [ ] the sign is gone
+  - [x] the sign is gone
 - a project counts as backed up when any of these is true:
-  - [ ] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
+  - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
   - [ ] I have exported it to a project file since I last changed it (in any app)
   - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
 - when I enter the address of a server that does not have accounts:
@@ -883,9 +883,9 @@ As a user:
 - when I try to sign up on a server whose sign-up is closed:
   - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
 - when I choose a password while signing up:
-  - [ ] I see how strong it is as I type, and how to make it stronger
+  - [x] I see how strong it is as I type, and how to make it stronger
 - when I sign up on a server that can send email:
-  - [ ] I confirm my email address by following a link sent to it
+  - [x] I confirm my email address by following a link sent to it
 - when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
   - [x] I am told which of the two is wrong
 - when I try to log in with a wrong password:
@@ -893,17 +893,18 @@ As a user:
 - when I fail to log in too many times in a row:
   - [x] I am told how many minutes to wait before trying again
 - when I have forgotten my password, on a server that can send email:
-  - [ ] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
+  - [x] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
 - when I am logged in:
   - [x] I see my email address and my role, and a button to log out
   - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
-  - [ ] I see the devices I am logged in on, and can log out any of them from here
-  - [ ] my projects, flashcards and dictionaries are my own: other accounts on the same server cannot see or change them
+  - [x] I see the devices I am logged in on, and can log out any of them from here
+  - [x] I see my own projects, flashcards and dictionaries
 - when I log out:
   - [x] the web app returns to offline mode, using only the data stored on this device
+  - [x] other users logged in on the same machine or server cannot see or change them
 - when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
   - [x] the account settings tell me that the app keeps my work on this device, so I do not need an account
-  - [ ] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
+  - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
 - when I am an administrator and open the Account section:
   - [x] I see the server's accounts with their roles
   - [x] I can create an account by giving an email address, a password and a role
@@ -917,14 +918,14 @@ As a user:
 
 As a privileged user (a subscriber or a self-hosted server account holder):
 - when I am logged in on a device:
-  - [ ] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
-  - [ ] changes I make on one device appear on my other devices
-  - [ ] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
-  - [ ] I can choose which media files are uploaded to the cloud
+  - [x] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
+  - [x] changes I make on one device appear on my other devices
+  - [x] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
+  - [x] I can choose which media files are uploaded to the cloud
 - when I open the cloud storage settings:
-  - [ ] I see how much of my storage quota is used, and can delete files from the cloud
+  - [x] I see how much of my storage quota is used, and can delete files from the cloud
 - when a change conflicts with one made on another device:
-  - [ ] the more recent change is kept, and I am notified
+  - [x] the more recent change is kept, and I am notified
 
 ---
 
