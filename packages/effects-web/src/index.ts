@@ -85,6 +85,7 @@ function ignoreSettingsRequests(): () => void {
   return () => undefined;
 }
 
+export { requestJson } from "./accountEffects.ts";
 export { createApplyAppearance } from "./applyAppearance.ts";
 export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";

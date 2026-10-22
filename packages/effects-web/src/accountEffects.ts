@@ -117,8 +117,8 @@ async function send(
   return { ok: true, data: response };
 }
 
-/** Sends a request and reads its JSON answer, or the reason there is none. */
-async function requestJson<T>(
+/** Sends a request and reads its JSON answer, or the reason there is none: the server's API error, an unreachable server, or an unreadable answer. */
+export async function requestJson<T>(
   fetchFn: typeof fetch,
   url: URL,
   init?: RequestInit,
