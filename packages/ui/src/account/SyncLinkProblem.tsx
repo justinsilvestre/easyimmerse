@@ -47,6 +47,7 @@ export function SyncLinkProblem({
         <Problem
           text={`Your work is kept on ${device} until it can be copied to ${host}.`}
         >
+          <p className="text-xs text-fg-muted">Details: {link.state.message}</p>
           <TryAgain />
         </Problem>
       );

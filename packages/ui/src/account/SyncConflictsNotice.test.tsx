@@ -34,18 +34,14 @@ describe("SyncConflictsNotice", () => {
   it("tells when the change made on another device was kept", () => {
     renderNotice([conflict("other_device")]);
     expect(
-      screen.getByText(
-        "A flashcard in Spanish practice: the change made on another device was kept.",
-      ),
+      screen.getByText("Kept the change made on another device."),
     ).toBeDefined();
   });
 
   it("tells when the change made on this device was kept", () => {
     renderNotice([conflict("this_device")]);
     expect(
-      screen.getByText(
-        "A flashcard in Spanish practice: the change made on this device was kept.",
-      ),
+      screen.getByText("Kept the change made on this device."),
     ).toBeDefined();
   });
 
@@ -53,9 +49,14 @@ describe("SyncConflictsNotice", () => {
     renderNotice([conflict("deletion")]);
     expect(
       screen.getByText(
-        "A flashcard in Spanish practice: it was deleted on another device, so the change made here was dropped.",
+        "Deleted on another device, so the change made here was dropped.",
       ),
     ).toBeDefined();
+  });
+
+  it("names the item each conflict changed", () => {
+    renderNotice([conflict("this_device")]);
+    expect(screen.getByText("A flashcard in Spanish practice")).toBeDefined();
   });
 
   it("counts the conflicts it does not list", () => {

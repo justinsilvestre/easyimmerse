@@ -4,6 +4,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  hostOf,
   isOwnTokenRefused,
   selectIsSigningOut,
 } from "@easyimmerse/state";
@@ -19,7 +20,8 @@ import { UserManagement } from "./users/UserManagement.tsx";
 /** Tells who the app's server knows it as: an account, which may log out, or the server's owner, who needs none. */
 export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
   const principal = useGetCurrentPrincipalQuery("self");
-  if (principal.isError) return <PrincipalFailure error={principal.error} />;
+  if (principal.isError)
+    return <PrincipalFailure error={principal.error} serverUrl={serverUrl} />;
   if (principal.data === undefined)
     return (
       <p className="text-sm text-fg-muted">
@@ -53,7 +55,7 @@ function AccountDetails({
   serverUrl: string;
 }) {
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <dl className="grid max-w-lg grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-fg-muted">Email</dt>
         <dd className="break-all">
@@ -65,28 +67,34 @@ function AccountDetails({
         <dt className="text-fg-muted">Server</dt>
         <dd className="break-all">{serverUrl}</dd>
       </dl>
-      <LogOut />
+      <LogOut serverUrl={serverUrl} />
       <DeviceList />
       {user.role === "administrator" && <UserManagement />}
-    </>
+    </div>
   );
 }
 
 /** Why the query of the current principal failed: the backend's failure, or one RTK Query describes. */
 type PrincipalError = ReturnType<typeof useGetCurrentPrincipalQuery>["error"];
 
-function PrincipalFailure({ error }: { error: PrincipalError }) {
+function PrincipalFailure({
+  error,
+  serverUrl,
+}: {
+  error: PrincipalError;
+  serverUrl: string;
+}) {
   return (
     <>
       <p role="alert" className="text-sm text-danger-fg">
         {principalFailureMessage(error)}
       </p>
-      <LogOut />
+      <LogOut serverUrl={serverUrl} />
     </>
   );
 }
 
-function LogOut() {
+function LogOut({ serverUrl }: { serverUrl: string }) {
   const dispatch = useAppDispatch();
   const isSigningOut = useAppSelector(selectIsSigningOut);
   return (
@@ -98,7 +106,8 @@ function LogOut() {
         {isSigningOut ? "Logging out…" : "Log out"}
       </Button>
       <p className="text-xs text-fg-muted">
-        Logging out disconnects this app from the server.
+        Your projects stay on {hostOf(serverUrl)}. Log in again to open them
+        here.
       </p>
     </div>
   );

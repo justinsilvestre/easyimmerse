@@ -32,8 +32,10 @@ describe("SyncStateLine", () => {
     expect(screen.getByRole("status").textContent).toBe("Logged out");
   });
 
-  it("gives the server's reason for refusing", () => {
+  it("names the server it couldn't copy the work to", () => {
     renderIn({ kind: "failed", code: "forbidden", message: "Not allowed." });
-    expect(screen.getByRole("status").textContent).toBe("Not allowed.");
+    expect(screen.getByRole("status").textContent).toBe(
+      "Couldn't copy your work to cloud.example.org",
+    );
   });
 });

@@ -25,6 +25,6 @@ function syncStateText({ state, server_url, last_synced_at_ms }: SyncLink) {
     case "logged_out":
       return "Logged out";
     case "failed":
-      return state.message;
+      return `Couldn't copy your work to ${hostOf(server_url)}`;
   }
 }

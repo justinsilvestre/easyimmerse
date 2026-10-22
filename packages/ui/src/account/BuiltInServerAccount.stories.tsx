@@ -80,13 +80,14 @@ const meta = {
   title: "Account/BuiltInServerAccount",
   component: BuiltInServerAccount,
   decorators: [withAppStore],
-  parameters: builtInServer(null),
 } satisfies Meta<typeof BuiltInServerAccount>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NotLinked: Story = {};
+export const NotLinked: Story = {
+  parameters: builtInServer(null),
+};
 
 export const NotLinkedOnMobile: Story = {
   parameters: builtInServer(null, {}, "mobile"),
@@ -100,12 +101,14 @@ export const NotLinkedWithoutCloud: Story = {
 };
 
 export const Linking: Story = {
+  parameters: builtInServer(null),
   decorators: [
     withDispatchedActions(filledIn, actions.signInSubmitted(), cloudAnswered),
   ],
 };
 
 export const LinkingFailed: Story = {
+  parameters: builtInServer(null),
   decorators: [
     withDispatchedActions(
       filledIn,
@@ -195,13 +198,15 @@ export const LoggingInAgain: Story = {
   ],
 };
 
+/** A round the server answered in a way this app does not understand, as a server of another version might. */
 export const Failed: Story = {
   parameters: builtInServer({
     ...linked,
     state: {
       kind: "failed",
-      code: "forbidden",
-      message: "This account may not keep a copy of its work on this server.",
+      code: "remote_protocol",
+      message:
+        "the remote answered /sync/pull with missing field `changes` at line 1 column 52",
     },
   }),
 };

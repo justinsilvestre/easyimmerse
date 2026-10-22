@@ -78,9 +78,10 @@ function linkFailingExplanation(
   sign: Extract<BackupSign, { kind: "linkFailing" }>,
   now: number,
 ): string {
-  const kept = `Your latest work is kept only on ${deviceNames[sign.platform]}, because ${hostOf(sign.serverUrl)}`;
-  // A remote that refused to sync will not take the work by itself once it answers, so the copy says where to see why.
+  const kept = `Your latest work is kept only on ${deviceNames[sign.platform]}, because`;
+  const host = hostOf(sign.serverUrl);
+  // A round that failed for another reason than an unreachable remote may fail again, so the copy says where to see why.
   if (sign.sinceMs === null)
-    return `${kept} refused to synchronize. Open the account settings to see why.`;
-  return `${kept} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}. It will be copied there when the server can be reached.`;
+    return `${kept} it couldn't be copied to ${host}. Open the account settings to see why.`;
+  return `${kept} ${host} couldn't be reached since ${formatSinceTime(sign.sinceMs, now)}. It will be copied there when the server can be reached.`;
 }

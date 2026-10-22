@@ -63,7 +63,7 @@ export function NewPasswordForm() {
           ? "Saving…"
           : link.status === "done"
             ? "Logging in…"
-            : "Set the new password"}
+            : "Save new password"}
       </Button>
     </form>
   );

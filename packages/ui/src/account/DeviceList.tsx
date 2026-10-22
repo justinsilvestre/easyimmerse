@@ -31,7 +31,7 @@ export function DeviceList() {
       )}
       {sessions.isError ? (
         <p className="text-sm text-danger-fg">
-          The devices this account is logged in on could not be listed.
+          Couldn't list the devices this account is logged in on.
         </p>
       ) : sessions.data === undefined ? (
         <p className="text-sm text-fg-muted">Listing the devices…</p>

@@ -70,20 +70,20 @@ async function submitToCloud() {
 
 describe("BuiltInServerAccount", () => {
   describe("while no server keeps a copy of the work", () => {
-    it("tells that the desktop app keeps the work on this computer", async () => {
+    it("tells that the work is saved only on this computer", async () => {
       renderBuiltIn(null);
       expect(
         await screen.findByText(
-          "The desktop app keeps your work on this computer. Log in to the easyImmerse cloud or to your own server to keep a copy of your work there as well.",
+          "Your work is saved only on this computer. Log in to the easyImmerse cloud or to your own server to back it up and use it on your other devices.",
         ),
       ).toBeDefined();
     });
 
-    it("tells that the mobile app keeps the work on this device", async () => {
+    it("tells that the work is saved only on this device", async () => {
       renderBuiltIn(null, { platform: "mobile" });
       expect(
         await screen.findByText(
-          "The mobile app keeps your work on this device. Log in to the easyImmerse cloud or to your own server to keep a copy of your work there as well.",
+          "Your work is saved only on this device. Log in to the easyImmerse cloud or to your own server to back it up and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -92,7 +92,7 @@ describe("BuiltInServerAccount", () => {
       renderBuiltIn(null, { hasCloud: false });
       expect(
         await screen.findByText(
-          "The desktop app keeps your work on this computer. Log in to your own easyImmerse server to keep a copy of your work there as well.",
+          "Your work is saved only on this computer. Log in to your own easyImmerse server to back it up and use it on your other devices.",
         ),
       ).toBeDefined();
     });
@@ -178,10 +178,12 @@ describe("BuiltInServerAccount", () => {
       ).toBeDefined();
     });
 
-    it("tells that logging out keeps the work on this computer", async () => {
+    it("tells that logging out keeps the work on this computer but stops copying it", async () => {
       renderBuiltIn(linked);
       expect(
-        await screen.findByText("Your work stays on this computer."),
+        await screen.findByText(
+          "Your work stays on this computer, but new changes won't be copied to cloud.example.org.",
+        ),
       ).toBeDefined();
     });
 
@@ -253,6 +255,6 @@ describe("BuiltInServerAccount", () => {
     renderBuiltIn(
       linkIn({ kind: "failed", code: "forbidden", message: "Not allowed." }),
     );
-    expect(await screen.findByText("Not allowed.")).toBeDefined();
+    expect(await screen.findByText("Details: Not allowed.")).toBeDefined();
   });
 });

@@ -6,10 +6,9 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 
 const keptTexts = {
-  other_device: "the change made on another device was kept.",
-  this_device: "the change made on this device was kept.",
-  deletion:
-    "it was deleted on another device, so the change made here was dropped.",
+  other_device: "Kept the change made on another device.",
+  this_device: "Kept the change made on this device.",
+  deletion: "Deleted on another device, so the change made here was dropped.",
 } satisfies Record<ConflictKept, string>;
 
 /**
@@ -29,16 +28,24 @@ export function SyncConflictsNotice({
   const introId = useId();
   const unlisted = count - conflicts.length;
   return (
-    <div className="flex max-w-lg flex-col items-start gap-2 rounded-md border border-line bg-surface p-3 text-sm">
+    <div className="flex max-w-lg flex-col items-start gap-3 rounded-md border border-line bg-surface p-3 text-sm">
       <p id={introId}>
-        While this device and another were changed at the same time, the more
-        recent change was kept.
+        Some items were changed on this device and another at about the same
+        time, so only one change to each was kept.
       </p>
-      <ul aria-labelledby={introId} className="flex flex-col gap-1">
-        {conflicts.map((conflict) => (
-          <li key={conflict.id}>{conflictText(conflict)}</li>
+      <ul
+        aria-labelledby={introId}
+        className="flex flex-col gap-2 self-stretch"
+      >
+        {conflicts.map(({ id, description, kept }) => (
+          <li key={id} className="flex flex-col">
+            <span className="font-medium">{capitalized(description)}</span>
+            <span className="text-fg-muted">{keptTexts[kept]}</span>
+          </li>
         ))}
-        {unlisted > 0 && <li>And {unlisted} more.</li>}
+        {unlisted > 0 && (
+          <li className="text-fg-muted">And {unlisted} more.</li>
+        )}
       </ul>
       <Button
         size="sm"
@@ -53,7 +60,6 @@ export function SyncConflictsNotice({
   );
 }
 
-function conflictText({ description, kept }: SyncConflict): string {
-  const named = description.charAt(0).toUpperCase() + description.slice(1);
-  return `${named}: ${keptTexts[kept]}`;
+function capitalized(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

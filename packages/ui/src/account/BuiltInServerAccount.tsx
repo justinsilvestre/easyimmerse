@@ -5,16 +5,12 @@ import {
   selectBundledServerPlatform,
 } from "@easyimmerse/state";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { deviceNames } from "./deviceNames.ts";
 import { RemoteAccountDetails } from "./RemoteAccountDetails.tsx";
 import { SignInForm } from "./SignInForm.tsx";
 
 /** How often the section asks the built-in server how copying the work to its remote fares. */
 const syncStatusPollMs = 5000;
-
-const keptTexts = {
-  desktop: "The desktop app keeps your work on this computer.",
-  mobile: "The mobile app keeps your work on this device.",
-} satisfies Record<NativePlatform, string>;
 
 /**
  * The account of the native app, whose built-in server keeps the work on the device:
@@ -44,11 +40,11 @@ export function BuiltInServerAccount() {
 function NotLinked({ platform }: { platform: NativePlatform }) {
   const { hasOfficialServer } = useAppSelector(selectAccountServerOptions);
   const where = hasOfficialServer
-    ? "Log in to the easyImmerse cloud or to your own server"
-    : "Log in to your own easyImmerse server";
+    ? "the easyImmerse cloud or to your own server"
+    : "your own easyImmerse server";
   return (
     <SignInForm
-      intro={`${keptTexts[platform]} ${where} to keep a copy of your work there as well.`}
+      intro={`Your work is saved only on ${deviceNames[platform]}. Log in to ${where} to back it up and use it on your other devices.`}
     />
   );
 }

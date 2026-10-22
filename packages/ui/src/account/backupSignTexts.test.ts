@@ -104,11 +104,11 @@ describe("backupSignTexts", () => {
     });
   });
 
-  it("explains that the remote refused to synchronize", () => {
+  it("explains that the work couldn't be copied to the remote", () => {
     expect(
       backupSignTexts(linkFailing("desktop", null), now)?.explanation,
     ).toBe(
-      "Your latest work is kept only on this computer, because cloud.example.org refused to synchronize. Open the account settings to see why.",
+      "Your latest work is kept only on this computer, because it couldn't be copied to cloud.example.org. Open the account settings to see why.",
     );
   });
 

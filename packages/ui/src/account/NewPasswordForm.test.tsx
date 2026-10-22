@@ -35,7 +35,7 @@ function chooseNewPassword(hasOfficialServer = true) {
     );
   });
   type("New password", "correct horse battery");
-  fireEvent.click(screen.getByRole("button", { name: "Set the new password" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
   return rendered;
 }
 

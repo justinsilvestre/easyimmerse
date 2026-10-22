@@ -237,14 +237,14 @@ describe("NotBackedUpSign", () => {
       ).toBeNull();
     });
 
-    it("explains that the remote refused to synchronize", async () => {
+    it("explains that the work couldn't be copied to the remote", async () => {
       renderBundled(
         linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
       await openSign();
       expect(
         screen.getByText(
-          "Your latest work is kept only on this computer, because cloud.example.org refused to synchronize. Open the account settings to see why.",
+          "Your latest work is kept only on this computer, because it couldn't be copied to cloud.example.org. Open the account settings to see why.",
         ),
       ).toBeDefined();
     });

@@ -25,7 +25,7 @@ export type BackupSign =
     }
   /**
    * Some project is not yet copied to the remote the built-in server is linked to, because syncing with it fails:
-   * the remote could not be reached since `sinceMs`, or it refused to sync, when `sinceMs` is null.
+   * the remote could not be reached since `sinceMs`, or a round failed for another reason, when `sinceMs` is null.
    */
   | {
       kind: "linkFailing";

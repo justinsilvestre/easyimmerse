@@ -237,10 +237,12 @@ describe("AccountSection", () => {
         server: builtInServerOn("desktop"),
       });
 
-    it("offers to log in to a server that keeps a copy of the work", async () => {
+    it("offers to log in to a server that backs up the work", async () => {
       renderBuiltIn(null);
       expect(
-        await screen.findByText(/to keep a copy of your work there as well/),
+        await screen.findByText(
+          /to back it up and use it on your other devices/,
+        ),
       ).toBeDefined();
     });
 

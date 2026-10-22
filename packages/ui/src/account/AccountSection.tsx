@@ -41,4 +41,4 @@ export function AccountSection() {
 }
 
 const offlineIntro =
-  "This app is not connected to a server. Log in to an easyImmerse server to keep your projects, media and flashcards there.";
+  "You're not logged in to a server. Log in to an easyImmerse server to save your projects, media and flashcards there and use them on your other devices.";
