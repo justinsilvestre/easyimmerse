@@ -2,6 +2,7 @@ import type {
   AnkiPendingDeletions,
   Document,
   ListDictionariesResponse,
+  ListProjectsResponse,
   MediaFile,
   PlaybackMethodRequest,
   ReviewSummary,
@@ -49,6 +50,7 @@ export type CachedQueries = {
   listFlashcards: string;
   listAnkiPendingDeletions: string;
   listDictionaries: undefined;
+  listProjects: undefined;
   checkAnkiConnection: undefined;
   getReviewSummary: string;
 };
@@ -58,6 +60,7 @@ export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
   openBook: Document;
   listDictionaries: ListDictionariesResponse;
+  listProjects: ListProjectsResponse;
   getSubtitleCues: TimedTextTrack;
   getReviewSummary: ReviewSummary;
 };

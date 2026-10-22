@@ -87,6 +87,10 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export {
+  type BackupSign,
+  selectBackupSign,
+} from "./backup/selectBackupSign.ts";
 export { selectDictionaryImport } from "./dictionaryImport/selectDictionaryImport.ts";
 export { addTags } from "./flashcards/addTags.ts";
 export { createFlashcardId } from "./flashcards/createFlashcardId.ts";
@@ -178,7 +182,6 @@ export {
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
-export { selectIsWorkNotBackedUp } from "./recovery/selectIsWorkNotBackedUp.ts";
 export type {
   ReviewEnd,
   ReviewSessionProgress,
