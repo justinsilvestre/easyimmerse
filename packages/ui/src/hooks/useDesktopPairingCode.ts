@@ -1,29 +1,25 @@
 import {
-  useIssuedPairingCodeState,
-  useIssuePairingCodeQuery,
+  useCurrentPairingCodeQuery,
+  useIssuePairingCodeMutation,
 } from "@easyimmerse/backend";
 import type { DesktopPairingCode } from "../pairing/PairingCodeLine.tsx";
-import { pairingCodeRenewalDelayMs } from "../pairing/pairingCodeRenewalDelay.ts";
 
-/**
- * Reads the desktop server's pairing code while one is needed, and asks for a new one shortly before it expires.
- * A code that is still valid is kept when the pairing page opens again.
- */
+/** How often the desktop asks for the current pairing code, so that a code another device has used is soon replaced on screen. */
+const pollingIntervalMs = 2_000;
+
+/** Reads the desktop server's current pairing code while one is needed, and lets the person ask for a new one. */
 export function useDesktopPairingCode(isNeeded: boolean) {
-  const cached = useIssuedPairingCodeState(undefined).data;
-  const issued = useIssuePairingCodeQuery(undefined, {
+  const current = useCurrentPairingCodeQuery(undefined, {
     skip: !isNeeded,
-    pollingInterval:
-      cached === undefined
-        ? 0
-        : pairingCodeRenewalDelayMs(cached.expires_at, Date.now()),
+    pollingInterval: pollingIntervalMs,
   });
+  const [issue] = useIssuePairingCodeMutation();
   return {
-    code: (issued.isError
+    code: (current.isError
       ? { kind: "failed" }
-      : issued.data
-        ? { kind: "issued", code: issued.data }
+      : current.data
+        ? { kind: "issued", code: current.data }
         : { kind: "loading" }) satisfies DesktopPairingCode,
-    renew: () => void issued.refetch(),
+    renew: () => void issue(),
   };
 }

@@ -80,6 +80,19 @@ export const WrongOrExpiredCode: Story = {
   ],
 };
 
+export const UsedCode: Story = {
+  decorators: [
+    withDispatchedActions(
+      ...claiming,
+      actions.pairingFailed({
+        status: 409,
+        code: "pairing_code_used",
+        message: "the pairing code has been used",
+      }),
+    ),
+  ],
+};
+
 export const TooManyWrongCodes: Story = {
   decorators: [
     withDispatchedActions(
