@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 489,
+  "storyCount": 490,
   "changes": [
     {
       "id": "account-notbackedupsign--not-backed-up",
@@ -3045,6 +3045,32 @@
       "id": "pairing-pairingscannerpanel--wrong-or-expired-code",
       "title": "Pairing/PairingScannerPanel",
       "name": "Wrong Or Expired Code",
+      "importPath": "./src/pairing/PairingScannerPanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 606
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 574
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 606
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 574
+        }
+      }
+    },
+    {
+      "id": "pairing-pairingscannerpanel--used-code",
+      "title": "Pairing/PairingScannerPanel",
+      "name": "Used Code",
       "importPath": "./src/pairing/PairingScannerPanel.stories.tsx",
       "kind": "added",
       "changedVariants": {},
