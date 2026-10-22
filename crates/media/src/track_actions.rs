@@ -48,7 +48,8 @@ fn can_copy_audio(track: &TrackInfo, environment: &PlaybackEnvironment) -> bool 
 }
 
 /// Copies video the client decodes from fragmented MP4, and otherwise transcodes it to H.264
-/// when the server has an encoder and the client plays the result.
+/// when the server has an encoder and the client plays the result. Without an encoder the
+/// reason is `NoVideoEncoder`; when the client cannot play H.264 it is `VideoCodecUnsupported`.
 pub(crate) fn choose_video_action(
     track: &TrackInfo,
     container: &ContainerInfo,
@@ -61,8 +62,10 @@ pub(crate) fn choose_video_action(
     let target = settings
         .video_target
         .as_ref()
-        .filter(|_| environment.accepts_in_mse(VideoTarget::CODEC_STRING))
-        .ok_or(UnsupportedReason::VideoCodecUnsupported)?;
+        .ok_or(UnsupportedReason::NoVideoEncoder)?;
+    if !environment.accepts_in_mse(VideoTarget::CODEC_STRING) {
+        return Err(UnsupportedReason::VideoCodecUnsupported);
+    }
     let source_size = picture_size(track);
     let scale_to = source_size
         .map(fit_picture)
@@ -77,6 +80,7 @@ pub(crate) fn choose_video_action(
             scale_to.or(source_size),
             track.frame_rate,
             track.bit_rate.or(container.bit_rate),
+            settings.video_quality,
         ),
         deinterlace: track.interlaced,
     })
@@ -103,6 +107,7 @@ fn picture_size(track: &TrackInfo) -> Option<PictureSize> {
 mod tests {
     use super::*;
     use crate::container::{ContainerFormat, TrackKind};
+    use crate::conversion_settings::VideoQuality;
     use crate::rational::Rational;
 
     fn environment(engine: PlaybackEngine, codec_strings: &[&str]) -> PlaybackEnvironment {
@@ -119,6 +124,7 @@ mod tests {
             video_target: encoder.map(|encoder| VideoTarget {
                 encoder: encoder.to_owned(),
             }),
+            video_quality: VideoQuality::Balanced,
         }
     }
 
@@ -304,14 +310,49 @@ mod tests {
     }
 
     #[test]
-    fn refuses_video_without_an_encoder() {
+    fn names_the_missing_encoder_when_video_needs_converting() {
         let action = choose_video_action(
             &video_track(None),
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &["avc1.640033"]),
             &settings(AudioTarget::Aac, None),
         );
+        assert_eq!(action, Err(UnsupportedReason::NoVideoEncoder));
+    }
+
+    #[test]
+    fn refuses_video_the_client_cannot_play_even_as_h264() {
+        let action = choose_video_action(
+            &video_track(None),
+            &empty_container(),
+            &environment(PlaybackEngine::Chromium, &[]),
+            &settings(AudioTarget::Aac, Some("h264_videotoolbox")),
+        );
         assert_eq!(action, Err(UnsupportedReason::VideoCodecUnsupported));
+    }
+
+    #[test]
+    fn transcodes_at_the_chosen_quality() {
+        let chosen = ConversionSettings {
+            video_quality: VideoQuality::Best,
+            ..settings(AudioTarget::Aac, Some("h264_videotoolbox"))
+        };
+        let action = choose_video_action(
+            &video_track(None),
+            &empty_container(),
+            &environment(PlaybackEngine::Chromium, &["avc1.640033"]),
+            &chosen,
+        );
+        assert!(
+            matches!(
+                action,
+                Ok(VideoAction::Transcode {
+                    bit_rate: 10_368_000,
+                    ..
+                })
+            ),
+            "{action:?}"
+        );
     }
 
     #[test]

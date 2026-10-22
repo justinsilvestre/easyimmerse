@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
+use crate::conversion_settings::VideoQuality;
 use crate::rational::Rational;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
@@ -21,7 +22,6 @@ const MAX_WIDTH: u32 = 4096;
 /// The hardware encoder's tallest picture.
 const MAX_HEIGHT: u32 = 4080;
 
-const BITS_PER_PIXEL_PER_SECOND: u64 = 3;
 const HIGH_FRAME_RATE_THRESHOLD: Rational = Rational::new(30, 1);
 const MIN_BIT_RATE: u64 = 1_000_000;
 
@@ -54,16 +54,31 @@ fn scale_to_width(source: PictureSize, width: u32) -> PictureSize {
     }
 }
 
-/// The bit rate for transcoded video: 3 bits per pixel per second (about 6.2 Mbps at 1080p and
-/// 2.8 Mbps at 720p), one and a half times that above 30 frames per second, at least 1 Mbps,
-/// and never above the source's own bit rate. Without a picture size only the floor applies.
+/// Bits per second for each pixel of the picture, by quality.
+///
+/// Balanced gives about 6.2 Mbps at 1080p, the rate that was evaluated with the hardware
+/// encoder. Compact uses two thirds of that, about 4.1 Mbps at 1080p, and so two thirds of the
+/// cache space. Best uses five thirds of it, about 10.4 Mbps at 1080p, which leaves room for
+/// detailed or grainy sources, where an encoder held to a fixed bit rate loses detail first.
+fn bits_per_pixel_per_second(quality: VideoQuality) -> u64 {
+    match quality {
+        VideoQuality::Compact => 2,
+        VideoQuality::Balanced => 3,
+        VideoQuality::Best => 5,
+    }
+}
+
+/// The bit rate for transcoded video: the quality's bits per pixel per second, one and a half
+/// times that above 30 frames per second, at least 1 Mbps, and never above the source's own
+/// bit rate. Without a picture size only the floor applies.
 pub fn transcode_bit_rate(
     picture: Option<PictureSize>,
     frame_rate: Option<Rational>,
     source_bit_rate: Option<u64>,
+    quality: VideoQuality,
 ) -> u64 {
     let pixels = picture.map_or(0, |size| u64::from(size.width) * u64::from(size.height));
-    let mut bit_rate = pixels * BITS_PER_PIXEL_PER_SECOND;
+    let mut bit_rate = pixels * bits_per_pixel_per_second(quality);
     if frame_rate.is_some_and(|rate| rate.is_greater_than(HIGH_FRAME_RATE_THRESHOLD)) {
         bit_rate = bit_rate * 3 / 2;
     }
@@ -107,7 +122,7 @@ mod tests {
     #[test]
     fn gives_1080p_about_6_megabits() {
         assert_eq!(
-            transcode_bit_rate(Some(size(1920, 1080)), None, None),
+            transcode_bit_rate(Some(size(1920, 1080)), None, None, VideoQuality::Balanced),
             6_220_800
         );
     }
@@ -115,7 +130,7 @@ mod tests {
     #[test]
     fn gives_720p_about_3_megabits() {
         assert_eq!(
-            transcode_bit_rate(Some(size(1280, 720)), None, None),
+            transcode_bit_rate(Some(size(1280, 720)), None, None, VideoQuality::Balanced),
             2_764_800
         );
     }
@@ -123,7 +138,12 @@ mod tests {
     #[test]
     fn raises_the_rate_by_half_above_30_frames_per_second() {
         assert_eq!(
-            transcode_bit_rate(Some(size(1280, 720)), Some(Rational::new(60, 1)), None),
+            transcode_bit_rate(
+                Some(size(1280, 720)),
+                Some(Rational::new(60, 1)),
+                None,
+                VideoQuality::Balanced
+            ),
             4_147_200
         );
     }
@@ -131,7 +151,12 @@ mod tests {
     #[test]
     fn keeps_the_rate_at_exactly_30_frames_per_second() {
         assert_eq!(
-            transcode_bit_rate(Some(size(1280, 720)), Some(Rational::new(30, 1)), None),
+            transcode_bit_rate(
+                Some(size(1280, 720)),
+                Some(Rational::new(30, 1)),
+                None,
+                VideoQuality::Balanced
+            ),
             2_764_800
         );
     }
@@ -139,7 +164,7 @@ mod tests {
     #[test]
     fn floors_small_pictures_at_1_megabit() {
         assert_eq!(
-            transcode_bit_rate(Some(size(640, 360)), None, None),
+            transcode_bit_rate(Some(size(640, 360)), None, None, VideoQuality::Balanced),
             1_000_000
         );
     }
@@ -147,13 +172,50 @@ mod tests {
     #[test]
     fn never_exceeds_the_source_bit_rate() {
         assert_eq!(
-            transcode_bit_rate(Some(size(1920, 1080)), None, Some(2_500_000)),
+            transcode_bit_rate(
+                Some(size(1920, 1080)),
+                None,
+                Some(2_500_000),
+                VideoQuality::Balanced
+            ),
             2_500_000
         );
     }
 
     #[test]
+    fn gives_1080p_about_4_megabits_when_compact() {
+        assert_eq!(
+            transcode_bit_rate(Some(size(1920, 1080)), None, None, VideoQuality::Compact),
+            4_147_200
+        );
+    }
+
+    #[test]
+    fn gives_1080p_about_10_megabits_at_best_quality() {
+        assert_eq!(
+            transcode_bit_rate(Some(size(1920, 1080)), None, None, VideoQuality::Best),
+            10_368_000
+        );
+    }
+
+    #[test]
+    fn caps_the_best_quality_at_the_source_bit_rate() {
+        assert_eq!(
+            transcode_bit_rate(
+                Some(size(1920, 1080)),
+                None,
+                Some(8_000_000),
+                VideoQuality::Best
+            ),
+            8_000_000
+        );
+    }
+
+    #[test]
     fn uses_the_floor_without_a_picture_size() {
-        assert_eq!(transcode_bit_rate(None, None, None), 1_000_000);
+        assert_eq!(
+            transcode_bit_rate(None, None, None, VideoQuality::Balanced),
+            1_000_000
+        );
     }
 }

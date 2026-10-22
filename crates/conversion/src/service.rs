@@ -8,12 +8,14 @@ use std::time::{Duration, Instant};
 
 use easyimmerse_media::{
     AudioAction, AudioTarget, ContainerInfo, ConversionPlan, ConversionSettings, TrackInfo,
-    TrackSelection, VideoAction, WaveformResponse, plan_segments,
+    TrackSelection, VideoAction, VideoQuality, WaveformResponse, plan_segments,
 };
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, list_keyframes, locate_binary};
+use easyimmerse_media_ffmpeg::{
+    BinaryName, FfmpegPaths, list_keyframes, locate_binary, read_ffmpeg_version,
+};
 
 use crate::cache_layout::CacheLayout;
-use crate::encoder_discovery::EncoderDiscovery;
+use crate::encoder_discovery::{EncoderDiscovery, EncoderDiscoveryStatus};
 use crate::entry::ConversionEntry;
 use crate::error::ConversionError;
 use crate::key::{CONVERTER_VERSION, ConversionKey, conversion_key};
@@ -32,6 +34,7 @@ pub struct ConversionService {
 
 pub(crate) struct ServiceInner {
     pub ffmpeg: PathBuf,
+    pub ffmpeg_version: String,
     pub paths: FfmpegPaths,
     pub layout: CacheLayout,
     pub entries: tokio::sync::Mutex<HashMap<ConversionKey, Arc<ConversionEntry>>>,
@@ -43,12 +46,14 @@ pub(crate) struct ServiceInner {
 }
 
 impl ConversionService {
-    /// Prepares the cache directory. Fails when ffmpeg or ffprobe cannot be found, in which
-    /// case the server runs without a conversion service. Call `start_encoder_discovery` and
+    /// Prepares the cache directory and reads the ffmpeg version. Fails when ffmpeg or ffprobe
+    /// cannot be found or ffmpeg does not run, in which case the server runs without a
+    /// conversion service. Call `start_encoder_discovery` and
     /// `start_cache_cleanup` afterwards from within the async runtime.
     pub fn open(cache_dir: PathBuf, paths: FfmpegPaths) -> Result<Self, ConversionError> {
         let ffmpeg = locate_binary(BinaryName::Ffmpeg, &paths)?;
         locate_binary(BinaryName::Ffprobe, &paths)?;
+        let ffmpeg_version = read_ffmpeg_version(&paths)?;
         let layout = CacheLayout::new(cache_dir);
         layout.create()?;
         Ok(Self {
@@ -56,6 +61,7 @@ impl ConversionService {
                 waveform: WaveformDecoder::new(ffmpeg.clone()),
                 encoders: EncoderDiscovery::pending(),
                 ffmpeg,
+                ffmpeg_version,
                 paths,
                 layout,
                 entries: tokio::sync::Mutex::new(HashMap::new()),
@@ -83,20 +89,37 @@ impl ConversionService {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
+    /// The ffmpeg executable the service runs.
+    pub fn ffmpeg_path(&self) -> &Path {
+        &self.inner.ffmpeg
+    }
+
+    /// The version token that `ffmpeg -version` printed when the service opened.
+    pub fn ffmpeg_version(&self) -> &str {
+        &self.inner.ffmpeg_version
+    }
+
     /// Runs the one-frame test encodes in the background.
     pub fn start_encoder_discovery(&self) {
         self.inner.encoders.start(self.inner.paths.clone());
     }
 
-    /// The settings the playback method choice uses: the preferred audio target, else AAC, and the
-    /// discovered video encoder when there is one.
+    /// Whether encoder discovery has finished, and the encoder it found.
+    pub fn encoder_discovery(&self) -> EncoderDiscoveryStatus {
+        self.inner.encoders.status()
+    }
+
+    /// The settings the playback method choice uses: the preferred audio target, else AAC, the
+    /// discovered video encoder when there is one, and the video quality, else balanced.
     pub async fn settings(
         &self,
         preferred_audio_target: Option<AudioTarget>,
+        video_quality: Option<VideoQuality>,
     ) -> ConversionSettings {
         ConversionSettings {
             audio_target: preferred_audio_target.unwrap_or(AudioTarget::Aac),
             video_target: self.inner.encoders.video_target(ENCODER_PATIENCE).await,
+            video_quality: video_quality.unwrap_or_default(),
         }
     }
 

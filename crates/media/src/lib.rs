@@ -43,7 +43,7 @@ pub use container::{
     ContainerFormat, ContainerInfo, TrackInfo, TrackKind, parse_language_tag, probe_container,
 };
 pub use container_signature::detect_container_format;
-pub use conversion_settings::{AudioTarget, ConversionSettings, VideoTarget};
+pub use conversion_settings::{AudioTarget, ConversionSettings, VideoQuality, VideoTarget};
 pub use direct_playback::direct_mime_type;
 pub use error::MediaError;
 pub use fmp4::{FragmentDecodeTime, TrackTimescale, read_first_decode_times, read_init_timescales};

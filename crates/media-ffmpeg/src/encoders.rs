@@ -1,5 +1,5 @@
-//! Discovery of a working hardware H.264 encoder: the names ffmpeg lists, and a one-frame test
-//! encode per candidate, since a listed encoder still fails on machines without the hardware.
+//! Discovery of a working H.264 encoder: the names ffmpeg lists, and a one-frame test encode
+//! per candidate, since a listed hardware encoder still fails on machines without the hardware.
 
 use std::ffi::OsString;
 use std::process::Output;
@@ -20,6 +20,10 @@ pub const H264_HARDWARE_ENCODERS: [&str; 6] = [
     "h264_vaapi",
 ];
 
+/// Software H.264 encoders, tried after every hardware encoder. The bundled ffmpeg builds have
+/// neither, but a build the person chooses may.
+pub const H264_SOFTWARE_ENCODERS: [&str; 2] = ["libx264", "libopenh264"];
+
 /// A one-frame encode takes well under a second. A driver that hangs would otherwise stall
 /// discovery and leave the process running after the app quits.
 const TEST_ENCODE_LIMIT: Duration = Duration::from_secs(10);
@@ -27,11 +31,22 @@ const TEST_ENCODE_LIMIT: Duration = Duration::from_secs(10);
 /// Returns the first candidate encoder that ffmpeg lists and that encodes a test frame.
 pub fn find_working_h264_encoder(paths: &FfmpegPaths) -> Result<Option<String>, FfmpegError> {
     let listed = list_encoders(paths)?;
-    let working = H264_HARDWARE_ENCODERS
-        .into_iter()
+    let working = h264_encoder_candidates()
         .filter(|candidate| listed.iter().any(|name| name == candidate))
         .find(|candidate| test_encode(candidate, paths).is_ok());
     Ok(working.map(str::to_owned))
+}
+
+/// Every H.264 encoder discovery tries, in order of preference: hardware first, then software.
+pub fn h264_encoder_candidates() -> impl Iterator<Item = &'static str> {
+    H264_HARDWARE_ENCODERS
+        .into_iter()
+        .chain(H264_SOFTWARE_ENCODERS)
+}
+
+/// Whether the encoder runs on the processor rather than on video hardware.
+pub fn is_software_encoder(encoder: &str) -> bool {
+    H264_SOFTWARE_ENCODERS.contains(&encoder)
 }
 
 /// The names of every encoder in the ffmpeg build.
@@ -52,7 +67,8 @@ pub fn test_encode(encoder: &str, paths: &FfmpegPaths) -> Result<(), FfmpegError
     successful_stdout(output).map(|_| ())
 }
 
-/// The frame is 640x480 because the VideoToolbox encoder rejects smaller pictures.
+/// The frame is 640x480 because the VideoToolbox encoder rejects smaller pictures. The software
+/// encoders accept every one of these options.
 pub fn test_encode_args(encoder: &str) -> Vec<OsString> {
     [
         "-hide_banner",
@@ -94,7 +110,7 @@ pub(crate) fn parse_encoder_names(output: &str) -> Vec<String> {
         .collect()
 }
 
-fn run_ffmpeg<S: AsRef<std::ffi::OsStr>>(
+pub(crate) fn run_ffmpeg<S: AsRef<std::ffi::OsStr>>(
     args: &[S],
     paths: &FfmpegPaths,
 ) -> Result<String, FfmpegError> {
@@ -139,6 +155,42 @@ mod tests {
             parse_encoder_names(LISTING),
             ["h264_videotoolbox", "aac", "aac_at"]
         );
+    }
+
+    const SOFTWARE_LISTING: &str = "Encoders:\n ------\n \
+         V....D libx264              libx264 H.264 / AVC / MPEG-4 AVC (codec h264)\n \
+         V....D libopenh264          OpenH264 H.264 / AVC / MPEG-4 AVC (codec h264)\n";
+
+    #[test]
+    fn reads_software_encoder_names() {
+        assert_eq!(
+            parse_encoder_names(SOFTWARE_LISTING),
+            ["libx264", "libopenh264"]
+        );
+    }
+
+    #[test]
+    fn tries_the_software_encoders_after_every_hardware_encoder() {
+        let candidates: Vec<&str> = h264_encoder_candidates().collect();
+        assert_eq!(
+            candidates[H264_HARDWARE_ENCODERS.len()..],
+            ["libx264", "libopenh264"]
+        );
+    }
+
+    #[test]
+    fn tries_videotoolbox_first() {
+        assert_eq!(h264_encoder_candidates().next(), Some("h264_videotoolbox"));
+    }
+
+    #[test]
+    fn counts_libx264_as_a_software_encoder() {
+        assert!(is_software_encoder("libx264"));
+    }
+
+    #[test]
+    fn counts_nvenc_as_a_hardware_encoder() {
+        assert!(!is_software_encoder("h264_nvenc"));
     }
 
     #[test]

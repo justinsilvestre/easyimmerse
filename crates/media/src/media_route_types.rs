@@ -5,7 +5,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::container::ContainerInfo;
-use crate::conversion_settings::AudioTarget;
+use crate::conversion_settings::{AudioTarget, VideoQuality};
 use crate::playback_environment::PlaybackEnvironment;
 use crate::playback_method::PlaybackMethod;
 use crate::track_selection::TrackSelection;
@@ -28,6 +28,8 @@ pub struct PlaybackMethodRequest {
     pub selection: Option<TrackSelection>,
     /// The user's preferred converted audio codec; the server's default when absent.
     pub preferred_audio_target: Option<AudioTarget>,
+    /// The quality of transcoded video; balanced when absent.
+    pub video_quality: Option<VideoQuality>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]

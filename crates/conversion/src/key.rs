@@ -113,6 +113,28 @@ mod tests {
         );
     }
 
+    fn transcoding_plan(bit_rate: u64) -> ConversionPlan {
+        ConversionPlan {
+            video: Some(VideoAction::Transcode {
+                index: 0,
+                encoder: "libx264".to_owned(),
+                scale_to: None,
+                bit_rate,
+                deinterlace: false,
+            }),
+            ..plan(AudioTarget::Aac)
+        }
+    }
+
+    #[test]
+    fn changes_with_the_video_bit_rate() {
+        let selection = TrackSelection::default();
+        assert_ne!(
+            conversion_key(&source(), &selection, &transcoding_plan(4_147_200)),
+            conversion_key(&source(), &selection, &transcoding_plan(6_220_800))
+        );
+    }
+
     #[test]
     fn changes_with_the_source_modification_time() {
         let touched = SourceIdentity {

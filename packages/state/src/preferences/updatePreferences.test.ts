@@ -65,6 +65,7 @@ describe("updatePreferences", () => {
           "showTranslations",
           "textScale",
           "losslessAudio",
+          "videoQuality",
           "showReviewIntervals",
           "conversionNoticeDismissed",
           "readerPreferences",

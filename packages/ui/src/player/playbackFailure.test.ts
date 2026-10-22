@@ -12,6 +12,12 @@ describe("describeUnsupportedReason", () => {
     );
   });
 
+  it("explains a missing video encoder in the spec's words", () => {
+    expect(describeUnsupportedReason("no_video_encoder")).toBe(
+      "This video needs converting, and this computer has no video encoder that ffmpeg can use. Install an ffmpeg build with a software H.264 encoder and choose it under Settings, Media conversion.",
+    );
+  });
+
   it("explains missing conversion", () => {
     expect(describeUnsupportedReason("conversion_unavailable")).toContain(
       "conversion is unavailable",

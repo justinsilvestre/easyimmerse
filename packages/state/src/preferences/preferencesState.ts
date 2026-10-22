@@ -4,6 +4,8 @@ export type PreferenceKey =
   | "showTranslations"
   | "textScale"
   | "losslessAudio"
+  /** The quality of converted video: "compact", "balanced", or "best". Balanced when unset. */
+  | "videoQuality"
   /** Whether the review's answer buttons say when each answer would bring the card back. */
   | "showReviewIntervals"
   | "conversionNoticeDismissed"
@@ -19,6 +21,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
   "textScale",
   "losslessAudio",
+  "videoQuality",
   "showReviewIntervals",
   "conversionNoticeDismissed",
   "readerPreferences",

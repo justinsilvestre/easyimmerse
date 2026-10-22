@@ -1,10 +1,26 @@
-//! Finds a working hardware H.264 encoder once, in the background, at startup.
+//! Finds a working H.264 encoder once, in the background, at startup.
 
 use std::time::Duration;
 
 use easyimmerse_media::VideoTarget;
-use easyimmerse_media_ffmpeg::{FfmpegPaths, find_working_h264_encoder};
+use easyimmerse_media_ffmpeg::{FfmpegPaths, find_working_h264_encoder, is_software_encoder};
 use tokio::sync::watch;
+
+/// How far encoder discovery has come, and what it found.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EncoderDiscoveryStatus {
+    pub finished: bool,
+    /// The encoder conversion uses. None while discovery runs or when no encoder works.
+    pub encoder: Option<H264Encoder>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct H264Encoder {
+    /// The ffmpeg encoder name, such as `h264_videotoolbox`.
+    pub name: String,
+    /// Whether the encoder runs on the processor rather than on video hardware.
+    pub software: bool,
+}
 
 /// The video target, once discovery has finished.
 pub struct EncoderDiscovery {
@@ -32,9 +48,7 @@ impl EncoderDiscovery {
             };
             match &target {
                 Some(target) => tracing::info!("transcoding video with {}", target.encoder),
-                None => {
-                    tracing::info!("no working hardware H.264 encoder; video is not transcoded")
-                }
+                None => tracing::info!("no working H.264 encoder; video is not transcoded"),
             }
             let _ = sender.send(Some(target));
         });
@@ -45,6 +59,18 @@ impl EncoderDiscovery {
     pub fn settled(target: Option<VideoTarget>) -> Self {
         let (sender, result) = watch::channel(Some(target));
         Self { sender, result }
+    }
+
+    /// What discovery has found so far, without waiting.
+    pub fn status(&self) -> EncoderDiscoveryStatus {
+        let current = self.result.borrow().clone();
+        EncoderDiscoveryStatus {
+            finished: current.is_some(),
+            encoder: current.flatten().map(|target| H264Encoder {
+                software: is_software_encoder(&target.encoder),
+                name: target.encoder,
+            }),
+        }
     }
 
     /// Waits up to `patience` for discovery to finish. Until then there is no video target.
@@ -71,6 +97,36 @@ mod tests {
                 encoder: "h264_videotoolbox".to_owned()
             })
         );
+    }
+
+    #[test]
+    fn reports_a_pending_discovery_as_unfinished() {
+        assert_eq!(
+            EncoderDiscovery::pending().status(),
+            EncoderDiscoveryStatus {
+                finished: false,
+                encoder: None
+            }
+        );
+    }
+
+    #[test]
+    fn reports_a_software_encoder_as_software() {
+        let discovery = EncoderDiscovery::settled(Some(VideoTarget {
+            encoder: "libx264".to_owned(),
+        }));
+        assert_eq!(
+            discovery.status().encoder,
+            Some(H264Encoder {
+                name: "libx264".to_owned(),
+                software: true
+            })
+        );
+    }
+
+    #[test]
+    fn reports_a_discovery_that_found_nothing_as_finished() {
+        assert!(EncoderDiscovery::settled(None).status().finished);
     }
 
     #[tokio::test]

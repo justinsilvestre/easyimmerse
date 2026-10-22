@@ -13,6 +13,8 @@ const unsupportedReasonSentences: Record<UnsupportedReason, string> = {
   conversion_unavailable:
     "This file needs to be converted, and conversion is unavailable here.",
   picture_too_tall: "This video's picture is too tall to convert.",
+  no_video_encoder:
+    "This video needs converting, and this computer has no video encoder that ffmpeg can use. Install an ffmpeg build with a software H.264 encoder and choose it under Settings, Media conversion.",
 };
 
 /** A plain sentence for a file the server cannot play. */

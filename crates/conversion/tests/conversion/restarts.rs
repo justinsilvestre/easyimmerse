@@ -45,6 +45,7 @@ impl StandIn {
 }
 
 /// A service whose ffmpeg logs each start and exits successfully, with one registered entry.
+/// The version query at open is not logged.
 fn stand_in() -> StandIn {
     let dir = TempDir::new().expect("temp dir");
     let script = write_stand_in_ffmpeg(dir.path());
@@ -64,7 +65,7 @@ fn write_stand_in_ffmpeg(dir: &Path) -> PathBuf {
     let script = dir.join("ffmpeg");
     let log = dir.join("starts.log");
     let body = format!(
-        "#!/bin/sh\necho start >> '{}'\necho '{STDERR_TEXT}' >&2\nexit 0\n",
+        "#!/bin/sh\n[ \"$2\" = -version ] && exit 0\necho start >> '{}'\necho '{STDERR_TEXT}' >&2\nexit 0\n",
         log.display()
     );
     std::fs::write(&script, body).expect("script");
