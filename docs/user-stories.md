@@ -878,11 +878,17 @@ As a user:
   - [x] the cloud button in the footer shows a plain cloud, without the sign that my work is not backed up
 - when I click the cloud button in the footer:
   - [x] I can open the "Local network sync" page with the "Local network sync" item
-  - [x] I can open the account settings with the "Account settings" item
-- a project counts as backed up when any of these is true:
-  - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
-  - [ ] I have exported it to a project file since I last changed it (in any app)
-  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
+  - [x] I can open the account settings screen with the "Account settings" item
+- when I click "Log in or sign up" in the cloud button's menu, or any other button that asks me to log in:
+  - [ ] I'm taken to the log-in/signup screen
+- when I open Settings:
+  - [ ] I see whether I am logged in, and can open the account settings screen from there
+- when a project is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
+  - [x] the project is counted as backed up, and this is reflected in the footer
+- when I have exported a project to a project file since I last changed it (in any app)
+  - [ ] the project is counted as backed up, and this is reflected in the footer
+- when I have synchronized a project over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
+  - [ ] the project is counted as backed up, and this is reflected in the footer
 - when I enter the address of a server that does not have accounts:
   - [x] I am told that the server has no accounts, and I stay in offline mode
 - when I try to sign up on a server whose sign-up is closed:
@@ -914,18 +920,11 @@ As a user:
 - when I log out in the desktop app or the mobile app:
   - [x] my work stays on this device, and my new changes are no longer backed up
 - when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
-  - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
+  - [x] the account settings screen tells me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
   - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
-- when I am an administrator and open the Account section:
-  - [x] I see the server's accounts with their roles
-  - [x] I can create an account by giving an email address, a password and a role
-  - [x] I can change an account's role
-  - [x] I can delete an account after confirming, which logs out anyone using it
-- when I try to demote or delete the server's only administrator:
-  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
 - when I subscribe:
   - [ ] I can choose the amount I pay on a sliding scale
-  - [ ] I can manage or cancel my subscription from the account settings
+  - [ ] I can manage or cancel my subscription from the account settings screen
 
 As a privileged user (a subscriber or a self-hosted server account holder):
 - when I am logged in on a device:
@@ -937,9 +936,18 @@ As a privileged user (a subscriber or a self-hosted server account holder):
   - [x] I see how much of my storage quota is used, and can delete files from the cloud
 - when a change conflicts with one made on another device:
   - [x] the more recent change is kept, and I am notified
-  - [x] the account settings list the conflicting changes by project, and within a project by media file
-- when there are more conflicting changes than the account settings list at first:
+  - [x] the account settings screen lists the conflicting changes by project, and within a project by media file
+- when there are more conflicting changes than the account settings screen lists at first:
   - [x] I can list all of them with a "Show all" button
+
+As an administrator of a server with accounts:
+- when I've opened up the account settings screen:
+  - [x] I see the server's accounts with their roles
+  - [x] I can create an account by giving an email address, a password and a role
+  - [x] I can change an account's role
+  - [x] I can delete an account after confirming, which logs out anyone using it
+- when I try to demote or delete the server's only administrator:
+  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
 
 ---
 
@@ -1040,8 +1048,8 @@ As a desktop app user:
 - when I am running an unauthenticated local server:
   - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the Account section
-  - [x] in the Account section, I can create and manage user accounts, and assign them different roles:
+  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the account settings screen
+  - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
     - administrator: can also manage the server, user accounts, my library, dictionaries available to users, and services like translation available to users
@@ -1089,7 +1097,7 @@ As a user:
 
 As a subscriber:
 - when I translate text:
-  - [ ] translations count against a monthly? quota, whose remaining balance I can see in my account settings
+  - [ ] translations count against a monthly? quota, whose remaining balance I can see on the account settings screen
 
 ---
 
