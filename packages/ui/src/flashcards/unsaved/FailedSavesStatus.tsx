@@ -12,7 +12,7 @@ import { useAppSelector } from "../../hooks/useAppSelector.ts";
 
 /**
  * One lasting line that counts the flashcards that could not be saved, and expands into a list of them,
- * each with Retry, Open and Discard. The count is a live region, announced when it first appears and when it changes.
+ * each with Retry, Open and Discard, and offers Retry all while more than one can be retried. The count is a live region, announced when it first appears and when it changes.
  * A card whose own notice is showing, as a refused save's is, is left to that notice, so that one failure shows once.
  */
 export function FailedSavesStatus() {
@@ -21,7 +21,8 @@ export function FailedSavesStatus() {
   const [isExpanded, setExpanded] = useState(false);
   const listId = useId();
   const hasCards = saves.length > 0;
-  const canRetry = saves.some((save) => !save.isRefused);
+  // A single flashcard has its own Retry, which a Retry all beside it would only repeat.
+  const canRetryAll = saves.filter((save) => !save.isRefused).length > 1;
   return (
     <div
       className={
@@ -39,7 +40,7 @@ export function FailedSavesStatus() {
         >
           {countText(saves.length)}
         </p>
-        {hasCards && canRetry && (
+        {canRetryAll && (
           <Button
             size="sm"
             onClick={() => dispatch(actions.allFailedSavesRetried())}
