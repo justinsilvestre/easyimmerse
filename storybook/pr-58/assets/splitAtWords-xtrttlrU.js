@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e,t){let n=[],r=0,i=(t,r,i)=>{r>t&&n.push({text:e.slice(t,r),isWord:i,isUnspaced:!1,start:t})};for(let e of t)i(r,e.start,!1),i(e.start,e.end,!0),r=e.end;return i(r,e.length,!1),n}function n(){return(n=e((()=>{})))()}export{t as n,n as t};

@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{$ as t,_n as n,t as r}from"./src-Bz8JRe5h.js";function i(e){let r=n(e);if(r===null)return`loggedOut`;if(r.bundledIn===void 0)return`loggedIn`;let i=t(e);return i===null?`unknown`:i.link===null?`loggedOut`:`loggedIn`}function a(){return(a=e((()=>{r()})))()}export{i as n,a as t};

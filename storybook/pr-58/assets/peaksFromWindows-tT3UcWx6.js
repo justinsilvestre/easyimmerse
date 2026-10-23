@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{t}from"./src-Bz8JRe5h.js";function n(e,t){let n=1e3/r,i=Array(Math.ceil(t/n)).fill(0);for(let[t,r]of e)r.forEach((e,r)=>{let a=Math.floor((t+r*10)/n);a<i.length&&(i[a]=Math.max(i[a]??0,e/255))});return i}var r;function i(){return(i=e((()=>{t(),r=20})))()}export{n,i as t};
