@@ -20,6 +20,7 @@ describe("SettingsScreen", () => {
         onBack={() => {
           backCount += 1;
         }}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -32,6 +33,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => {
           openCount += 1;
         }}
@@ -41,10 +43,37 @@ describe("SettingsScreen", () => {
     expect(openCount).toBe(1);
   });
 
+  it("opens the account page from its button", () => {
+    let openCount = 0;
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => {
+          openCount += 1;
+        }}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Account/ }));
+    expect(openCount).toBe(1);
+  });
+
+  it("tells on the account button that the app is logged in to no account", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/You are not logged in/)).toBeDefined();
+  });
+
   it("marks the footer's Settings control as the page already open", () => {
     const { store } = renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -62,6 +91,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -77,6 +107,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -91,6 +122,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -105,6 +137,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
       undefined,
@@ -123,6 +156,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );

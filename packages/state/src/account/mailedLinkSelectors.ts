@@ -10,7 +10,7 @@ import {
 } from "./mailedLinkFlow.ts";
 import { assessPasswordStrength } from "./passwordStrength.ts";
 
-/** The mailed link the app was opened with, as the Account section shows it. */
+/** The mailed link the app was opened with, as the Account page shows it. */
 export type MailedLinkView = {
   kind: MailedLinkFlow["kind"];
   status: MailedLinkStatus["kind"];

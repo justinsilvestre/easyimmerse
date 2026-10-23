@@ -10,7 +10,7 @@ const meta = {
   component: SettingsScreen,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onBack: fn(), onOpenDictionaries: fn() },
+  args: { onBack: fn(), onOpenAccount: fn(), onOpenDictionaries: fn() },
 } satisfies Meta<typeof SettingsScreen>;
 
 export default meta;
@@ -74,7 +74,7 @@ export const LowDiskSpace: Story = {
   },
 };
 
-/** The desktop app adds its server's settings after the Account section, and its ffmpeg build to the Media conversion section. */
+/** The desktop app adds its server's settings after the Account button, and its ffmpeg build to the Media conversion section. */
 export const OnDesktop: Story = {
   parameters: {
     appStore: {

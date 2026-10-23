@@ -1,5 +1,6 @@
-/** The id of the element around the Account section of Settings, which links scroll to. */
-export const accountSectionId = "settings-account";
+import { actions } from "@easyimmerse/state";
+import { LinkButton } from "../components/LinkButton.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 
 const roles = [
   {
@@ -20,23 +21,25 @@ const roles = [
 ] as const;
 
 /**
- * Explains the roles an account can have on a server with accounts, and points to the Account section, where accounts are created and managed.
+ * Explains the roles an account can have on a server with accounts, and points to the Account page, where accounts are created and managed.
  * Before the change to accounts is saved, it says that the accounts come after saving.
  */
 export function ServerAccountsInfo({ isSaved }: { isSaved: boolean }) {
+  const dispatch = useAppDispatch();
   return (
     <div className="flex flex-col gap-2 text-sm">
       <p>
         {isSaved
           ? "People log in to this server with an account. "
           : "Once you save, people log in to this server with an account. "}
-        Accounts are created and managed in the{" "}
-        <a
-          href={`#${accountSectionId}`}
-          className="rounded-sm text-accent-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+        Accounts are created and managed on the{" "}
+        <LinkButton
+          onClick={() =>
+            dispatch(actions.navigated({ type: "openAccountSettings" }))
+          }
         >
-          Account section
-        </a>
+          Account page
+        </LinkButton>
         , where each account gets one of these roles:
       </p>
       <ul className="flex list-disc flex-col gap-1 pl-5">

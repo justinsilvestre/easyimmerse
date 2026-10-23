@@ -65,7 +65,7 @@ function createAccount() {
 }
 
 describe("UserManagement", () => {
-  describe("in the Account section", () => {
+  describe("on the Account page", () => {
     it("shows for an administrator", async () => {
       renderWith({});
       expect(

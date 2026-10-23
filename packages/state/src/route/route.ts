@@ -14,7 +14,7 @@ export type MainRoute =
 export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
 /** A page of the settings, which open over a main screen. */
-export type SettingsPage = "general" | "dictionaries" | "pairing";
+export type SettingsPage = "general" | "account" | "dictionaries" | "pairing";
 
 /** A section of the general settings page that the page scrolls to when it opens. */
 export type SettingsSection = "mediaConversion";
@@ -43,7 +43,7 @@ export type NavigationStep =
   | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
-  /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
+  /** Opens the Account page, where the app logs in to an account or shows the one it is logged in to. */
   | { type: "openAccountSettings" }
   /** Opens the general settings page at its Media conversion section, over the main screen, leaving any page above it. */
   | { type: "openMediaConversionSettings" }
@@ -83,15 +83,7 @@ function stepTarget(current: Route, step: NavigationStep): Route {
         ? current
         : { screen: "settings", beneath: current, pages: ["general"] };
     case "openAccountSettings":
-      return current.screen === "settings" &&
-        current.pages.length === 1 &&
-        current.pages[0] === "general"
-        ? current
-        : {
-            screen: "settings",
-            beneath: mainScreenOf(current),
-            pages: ["general"],
-          };
+      return openSettingsPage(current, "account");
     case "openMediaConversionSettings":
       return current.screen === "settings" &&
         current.pages.length === 1 &&

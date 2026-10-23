@@ -153,7 +153,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings from its menu", async () => {
+    it("opens the account page from its menu", async () => {
       const { store } = renderWithOpenCard();
       await openSign();
       fireEvent.click(
@@ -161,7 +161,7 @@ describe("CloudMenu", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
   });
@@ -230,7 +230,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings from its menu", async () => {
+    it("opens the account page from its menu", async () => {
       const { store } = renderBundled();
       await openSign();
       fireEvent.click(
@@ -238,7 +238,7 @@ describe("CloudMenu", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
 
@@ -268,7 +268,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings after a round failed", async () => {
+    it("opens the account page after a round failed", async () => {
       const { store } = renderBundled(
         linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
@@ -278,7 +278,7 @@ describe("CloudMenu", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
 
@@ -324,7 +324,7 @@ describe("CloudMenu", () => {
       });
     });
 
-    it("opens the account settings", () => {
+    it("opens the account page", () => {
       const { store } = renderWithOpenCard(accountServer);
       openPlainCloud();
       fireEvent.click(
@@ -332,7 +332,7 @@ describe("CloudMenu", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
 

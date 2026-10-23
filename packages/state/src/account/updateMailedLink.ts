@@ -83,7 +83,7 @@ function confirmationAnswered(
       status: { kind: "failed", failure: outcome.error },
     });
   const done = { ...flow, status: { kind: "done" } } as const;
-  // The Account section of a connected app shows whether the address is confirmed.
+  // The Account page of a connected app shows whether the address is confirmed.
   return server.config === null
     ? updated(done)
     : updated(done, principalRefresh(accountViaOf(server.config)));

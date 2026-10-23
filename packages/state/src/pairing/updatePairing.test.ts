@@ -91,7 +91,7 @@ describe("updatePairing", () => {
   });
 
   describe("when the server has accounts", () => {
-    it("fills in the sign-in form and opens the Account section", () => {
+    it("fills in the sign-in form and opens the Account page", () => {
       const [, effects] = pairingAfter(web, ...submitted, checked(true));
       expect(effects).toEqual([
         {

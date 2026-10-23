@@ -16,7 +16,7 @@ import { parsePairingUrl } from "./pairingUrl.ts";
 /**
  * Keeps the pairing form and leads a pairing through its steps: it asks the server whether it has accounts,
  * then exchanges the code for the server's token and connects the app to the server.
- * A server with accounts takes no code: the Account section's sign-in form opens with its address instead,
+ * A server with accounts takes no code: the Account page's sign-in form opens with its address instead,
  * and the pairing form returns to idle, so that it shows no notice when the person comes back to it.
  * The mobile app reads QR codes through the platform's scanner; elsewhere the UI's camera view reports what it reads.
  */

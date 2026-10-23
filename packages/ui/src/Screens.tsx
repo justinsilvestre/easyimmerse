@@ -17,6 +17,7 @@ import { useConversionCacheControls } from "./hooks/useConversionCacheControls.t
 import { useFfmpegBuildControls } from "./hooks/useFfmpegBuildControls.ts";
 import { useNavigate } from "./hooks/useNavigate.ts";
 import { PairingScreen } from "./pairing/PairingScreen.tsx";
+import { AccountScreen } from "./screens/AccountScreen.tsx";
 import { ConnectedReviewScreen } from "./screens/ConnectedReviewScreen.tsx";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -99,9 +100,12 @@ function SettingsPage({ page }: { page: SettingsPageName }) {
       return (
         <ConnectedSettingsScreen
           onBack={onBack}
+          onOpenAccount={() => go({ type: "openAccountSettings" })}
           onOpenDictionaries={() => go({ type: "openDictionaries" })}
         />
       );
+    case "account":
+      return <AccountScreen onBack={onBack} />;
     case "dictionaries":
       return <DictionariesScreen onBack={onBack} />;
     case "pairing":
@@ -126,14 +130,17 @@ function ConnectedPairingScreen({ onBack }: { onBack: () => void }) {
 /** The Settings screen with the converted-videos status and the desktop app's ffmpeg build from the server, and the bundled license notices. */
 function ConnectedSettingsScreen({
   onBack,
+  onOpenAccount,
   onOpenDictionaries,
 }: {
   onBack: () => void;
+  onOpenAccount: () => void;
   onOpenDictionaries: () => void;
 }) {
   return (
     <SettingsScreen
       onBack={onBack}
+      onOpenAccount={onOpenAccount}
       onOpenDictionaries={onOpenDictionaries}
       conversionCache={useConversionCacheControls()}
       ffmpegBuild={useFfmpegBuildControls()}
