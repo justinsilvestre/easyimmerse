@@ -3,11 +3,21 @@ import type {
   MainRoute,
   SettingsPage as SettingsPageName,
 } from "@easyimmerse/state";
-import { mainScreenOf, selectRoute, settingsPageOf } from "@easyimmerse/state";
+import {
+  actions,
+  mainScreenOf,
+  selectDesktopPairingServer,
+  selectRoute,
+  settingsPageOf,
+} from "@easyimmerse/state";
 import { licenseNoticesStateOf } from "./components/licenseNoticesStateOf.ts";
+import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
+import { useFfmpegBuildControls } from "./hooks/useFfmpegBuildControls.ts";
 import { useNavigate } from "./hooks/useNavigate.ts";
+import { PairingScreen } from "./pairing/PairingScreen.tsx";
+import { AccountScreen } from "./screens/AccountScreen.tsx";
 import { ConnectedReviewScreen } from "./screens/ConnectedReviewScreen.tsx";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -90,27 +100,50 @@ function SettingsPage({ page }: { page: SettingsPageName }) {
       return (
         <ConnectedSettingsScreen
           onBack={onBack}
+          onOpenAccount={() => go({ type: "openAccountSettings" })}
           onOpenDictionaries={() => go({ type: "openDictionaries" })}
         />
       );
+    case "account":
+      return <AccountScreen onBack={onBack} />;
     case "dictionaries":
       return <DictionariesScreen onBack={onBack} />;
+    case "pairing":
+      return <ConnectedPairingScreen onBack={onBack} />;
   }
 }
 
-/** The Settings screen with the converted-videos status from the server and the bundled license notices. */
+/** The pairing page with the desktop app's server, which its button starts where the local network reaches it. */
+function ConnectedPairingScreen({ onBack }: { onBack: () => void }) {
+  const dispatch = useAppDispatch();
+  return (
+    <PairingScreen
+      onBack={onBack}
+      desktopServer={useAppSelector(selectDesktopPairingServer)}
+      onStartDesktopServer={() =>
+        dispatch(actions.desktopServerLanStartRequested())
+      }
+    />
+  );
+}
+
+/** The Settings screen with the converted-videos status and the desktop app's ffmpeg build from the server, and the bundled license notices. */
 function ConnectedSettingsScreen({
   onBack,
+  onOpenAccount,
   onOpenDictionaries,
 }: {
   onBack: () => void;
+  onOpenAccount: () => void;
   onOpenDictionaries: () => void;
 }) {
   return (
     <SettingsScreen
       onBack={onBack}
+      onOpenAccount={onOpenAccount}
       onOpenDictionaries={onOpenDictionaries}
       conversionCache={useConversionCacheControls()}
+      ffmpegBuild={useFfmpegBuildControls()}
       licenseNotices={licenseNoticesStateOf(useLicenseNoticesQuery())}
     />
   );

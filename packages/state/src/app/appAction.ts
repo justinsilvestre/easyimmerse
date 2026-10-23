@@ -3,12 +3,16 @@ import type { AccountAction } from "../account/accountActions.ts";
 import { accountActions } from "../account/accountActions.ts";
 import type { AnkiAction } from "../anki/ankiActions.ts";
 import { ankiActions } from "../anki/ankiActions.ts";
+import type { DesktopServerAction } from "../desktopServer/desktopServerActions.ts";
+import { desktopServerActions } from "../desktopServer/desktopServerActions.ts";
 import type { FlashcardAction } from "../flashcards/flashcardActions.ts";
 import { flashcardActions } from "../flashcards/flashcardActions.ts";
 import type { NoticesAction } from "../notices/noticesActions.ts";
 import { noticesActions } from "../notices/noticesActions.ts";
 import type { OperationsAction } from "../operations/operationsActions.ts";
 import { operationsActions } from "../operations/operationsActions.ts";
+import type { PairingAction } from "../pairing/pairingActions.ts";
+import { pairingActions } from "../pairing/pairingActions.ts";
 import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
@@ -54,6 +58,8 @@ const featureActionCreators = [
   ankiActions,
   accountActions,
   reviewActions,
+  pairingActions,
+  desktopServerActions,
   syncActions,
 ] as const;
 
@@ -92,6 +98,8 @@ export type AppAction =
   | AnkiAction
   | AccountAction
   | ReviewAction
+  | PairingAction
+  | DesktopServerAction
   | SyncAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */

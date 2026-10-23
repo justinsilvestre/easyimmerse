@@ -149,7 +149,8 @@ mod uploads {
     async fn a_server_without_uploads_keeps_no_copies() {
         let server = spawn_test_server(false).await;
         let (project, media) = browser_media(&server, TOKEN).await;
-        let response = put_copy(&server, TOKEN, &project, &media, BYTES).await;
+        // The server refuses before reading the body, and on Windows closing a socket with unread bytes resets the connection.
+        let response = put_copy(&server, TOKEN, &project, &media, b"").await;
         assert_eq!(response.json()["code"], "uploads_unavailable");
     }
 

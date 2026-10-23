@@ -5,6 +5,7 @@ import {
   selectCurrentMediaFileId,
   selectIsSettingsOpen,
   selectRoute,
+  selectSettingsScrollTarget,
 } from "./routeSelectors.ts";
 
 const project = {
@@ -46,5 +47,19 @@ describe("routeSelectors", () => {
 
   it("selectCurrentMediaFileId returns null while no media file is open", () => {
     expect(selectCurrentMediaFileId(project)).toBeNull();
+  });
+
+  it("selectSettingsScrollTarget returns the section Settings were opened for", () => {
+    const settings = {
+      app: stateAfter(
+        actions.navigated({ type: "openMediaConversionSettings" }),
+      ),
+    };
+    expect(selectSettingsScrollTarget(settings)).toBe("mediaConversion");
+  });
+
+  it("selectSettingsScrollTarget returns null for Settings opened plainly", () => {
+    const settings = { app: stateAfter(actions.settingsRequested()) };
+    expect(selectSettingsScrollTarget(settings)).toBeNull();
   });
 });

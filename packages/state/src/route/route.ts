@@ -14,7 +14,10 @@ export type MainRoute =
 export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
 /** A page of the settings, which open over a main screen. */
-export type SettingsPage = "general" | "dictionaries";
+export type SettingsPage = "general" | "account" | "dictionaries" | "pairing";
+
+/** A section of the general settings page that the page scrolls to when it opens. */
+export type SettingsSection = "mediaConversion";
 
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it so that going back restores it, player state included.
@@ -27,6 +30,8 @@ export type Route =
       screen: "settings";
       beneath: MainRoute;
       pages: readonly [SettingsPage, ...SettingsPage[]];
+      /** The section of the general settings to bring into view, when they were opened for it. */
+      scrollTarget?: SettingsSection;
     };
 
 /** A move from one place in the app to another. */
@@ -38,9 +43,13 @@ export type NavigationStep =
   | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
-  /** Opens the general settings page, where the Account section is, over the main screen, leaving any page above it. */
+  /** Opens the account settings screen, where the app logs in to an account or shows the one it is logged in to. */
   | { type: "openAccountSettings" }
+  /** Opens the general settings page at its Media conversion section, over the main screen, leaving any page above it. */
+  | { type: "openMediaConversionSettings" }
   | { type: "openDictionaries" }
+  /** Opens the page for pairing with another easyImmerse app on the local network. */
+  | { type: "openPairing" }
   | { type: "closeSettings" };
 
 export const initialRoute: Route = { screen: "home" };
@@ -74,17 +83,22 @@ function stepTarget(current: Route, step: NavigationStep): Route {
         ? current
         : { screen: "settings", beneath: current, pages: ["general"] };
     case "openAccountSettings":
+      return openSettingsPage(current, "account");
+    case "openMediaConversionSettings":
       return current.screen === "settings" &&
         current.pages.length === 1 &&
-        current.pages[0] === "general"
+        current.scrollTarget === "mediaConversion"
         ? current
         : {
             screen: "settings",
             beneath: mainScreenOf(current),
             pages: ["general"],
+            scrollTarget: "mediaConversion",
           };
     case "openDictionaries":
       return openSettingsPage(current, "dictionaries");
+    case "openPairing":
+      return openSettingsPage(current, "pairing");
     case "closeSettings":
       return closeSettingsPage(current);
   }

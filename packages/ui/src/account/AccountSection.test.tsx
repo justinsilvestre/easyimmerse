@@ -115,6 +115,14 @@ describe("AccountSection", () => {
       expect(screen.getByRole("heading", { name: "Log in" })).toBeDefined();
     });
 
+    it("is headed Sign up while set to sign up", () => {
+      renderWithAppStore(<AccountSection />);
+      fireEvent.click(screen.getByLabelText("Sign up"));
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+        "Sign up",
+      );
+    });
+
     it("asks the server what it offers when the form is sent", () => {
       const { effects } = submitOwnServerForm();
       expect(effects.calls).toContainEqual({
@@ -279,7 +287,7 @@ describe("AccountSection", () => {
 
     it("offers to log in to a server that backs up the work", async () => {
       renderBuiltIn(null);
-      expect(await screen.findByText(/Log in to back it up to/)).toBeDefined();
+      expect(await screen.findByText(/you can back it up there/)).toBeDefined();
     });
 
     it("shows the account on the server that keeps a copy of the work", async () => {

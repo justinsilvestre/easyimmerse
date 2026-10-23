@@ -79,7 +79,11 @@ async fn conversion_settings(
     request: &PlaybackMethodRequest,
 ) -> Option<ConversionSettings> {
     match &state.conversion {
-        Some(service) => Some(service.settings(request.preferred_audio_target).await),
+        Some(service) => Some(
+            service
+                .settings(request.preferred_audio_target, request.video_quality)
+                .await,
+        ),
         None => None,
     }
 }

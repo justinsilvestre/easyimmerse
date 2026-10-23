@@ -47,13 +47,32 @@ export function createBackendStoreParts(
 }
 
 /**
- * Chains the thunk middleware in front of the RTK Query middleware. The app store is built
+ * Chains the thunk middleware in front of the RTK Query middleware, and marks the conversion capabilities as stale
+ * once the desktop app saves its server settings, since a save can restart the server with another ffmpeg build. The app store is built
  * by hand without Redux Toolkit's defaults, and RTK Query's hooks dispatch thunks.
  * The thunk middleware's extra argument carries the client, the browser file registry, the frame capturer, the store's failed prefetch passages,
  * the server's plain fetch and the AnkiConnect client to the base query, the query functions and the backend's thunks.
  */
 function createMiddleware(extra: BackendThunkExtra): Middleware {
   const thunkWithClient = withExtraArgument(extra);
-  return (api) => (next) =>
-    thunkWithClient(api)(backendApi.middleware(api)(next));
+  return (api) => (next) => {
+    const chain = thunkWithClient(api)(backendApi.middleware(api)(next));
+    return (action) => {
+      const result = chain(action);
+      if (isSettingsSave(action))
+        api.dispatch(
+          backendApi.util.invalidateTags(["ConversionCapabilities"]),
+        );
+      return result;
+    };
+  };
+}
+
+function isSettingsSave(action: unknown): boolean {
+  return (
+    typeof action === "object" &&
+    action !== null &&
+    "type" in action &&
+    action.type === "desktopServerSettingsSaved"
+  );
 }

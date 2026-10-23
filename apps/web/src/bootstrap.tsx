@@ -3,9 +3,15 @@ import {
   createBackendStoreParts,
   createHttpBackendClient,
   createWasmBackendClient,
+  resolveServedServer,
   resolveServerConfig,
+  servedServerActions,
 } from "@easyimmerse/backend";
-import { createWebEffects, openMailedLink } from "@easyimmerse/effects-web";
+import {
+  createWebEffects,
+  openMailedLink,
+  readLocalStorage,
+} from "@easyimmerse/effects-web";
 import type { EnhancerComposer, ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -22,10 +28,12 @@ import wasmUrl from "@easyimmerse/wasm/pkg/easyimmerse_wasm_bg.wasm?url";
 import { createRoot } from "react-dom/client";
 import "@easyimmerse/ui/styles.css";
 
-/** Wires the backend, effects, and store together and mounts the app. */
+/**
+ * Wires the backend, effects, and store together and mounts the app.
+ * A served web app first claims a pairing code in its address, or asks the server that serves it what it offers.
+ */
 export async function bootstrap(): Promise<void> {
   const server = resolveServerConfig();
-  const client = await createBackendClient(server);
   const playerRegistry = createPlayerRegistry();
   const browserFileRegistry = createBrowserFileRegistry<File>();
   const effects = createWebEffects({
@@ -34,6 +42,14 @@ export async function bootstrap(): Promise<void> {
     writeDefinitionMarkdown: definitionMarkdown,
     server,
   });
+  const served = await resolveServedServer(
+    location,
+    effects,
+    readLocalStorage(),
+    server !== null,
+  );
+  if (served.kind === "reloading") return;
+  const client = await createBackendClient(server);
   const store = createAppStore(
     effects,
     createBackendStoreParts(client, server, {
@@ -43,6 +59,7 @@ export async function bootstrap(): Promise<void> {
     import.meta.env.VITE_EASYIMMERSE_CLOUD_URL || null,
     findDevToolsComposer(),
   );
+  for (const action of servedServerActions(served)) store.dispatch(action);
   openMailedLink(store, window);
   createRoot(findRootElement()).render(
     <AppRoot

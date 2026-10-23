@@ -20,6 +20,7 @@ const linkFailed = {
   platform: "desktop",
   serverUrl: "https://cloud.example.org",
   serverName: "cloud.example.org",
+  isCloudServer: false,
   code: "internal",
 } as const;
 
@@ -112,11 +113,8 @@ describe("backupSignTexts", () => {
       );
     });
 
-    it("offers to try again or open the account settings", () => {
-      expect(backupSignTexts(linkFailed)?.options).toEqual([
-        tryAgain,
-        { label: "Open account settings", actions: [openAccountSettings] },
-      ]);
+    it("offers to try again", () => {
+      expect(backupSignTexts(linkFailed)?.options).toEqual([tryAgain]);
     });
   });
 

@@ -44,6 +44,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = { args: { activities: [] } };
 
+/** In Settings, whose button stands for the page already open. */
+export const InSettings: Story = {
+  args: { activities: [], isSettingsOpen: true },
+};
+
 export const OneActivity: Story = {};
 
 /** Two activities side by side, as the footer has room for on a desktop window. */

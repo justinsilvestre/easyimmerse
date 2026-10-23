@@ -91,8 +91,12 @@ pub enum ConversionReason {
 pub enum UnsupportedReason {
     NoTracks,
     TrackNotFound,
+    /// The client cannot play the video track, even converted to H.264.
     VideoCodecUnsupported,
     AudioCodecUnsupported,
+    /// The server has no conversion service, so nothing can be converted.
     ConversionUnavailable,
     PictureTooTall,
+    /// The video needs converting, and the server has no working H.264 encoder.
+    NoVideoEncoder,
 }

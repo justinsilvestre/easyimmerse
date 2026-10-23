@@ -24,7 +24,6 @@ import {
 } from "../flashcards/exampleFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
-import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
@@ -426,14 +425,6 @@ export const SearchingForAWord: Story = {
 
 export const EditingAFlashcard: Story = {
   args: {
-    headerContent: (
-      <UnsavedWorkBanner
-        hasUnsavedChanges
-        isBackedUp={false}
-        onSave={fn()}
-        onLogIn={fn()}
-      />
-    ),
     sidePanel: (
       <FlashcardEditor
         state={{

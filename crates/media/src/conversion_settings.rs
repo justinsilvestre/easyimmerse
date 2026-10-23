@@ -35,10 +35,25 @@ impl VideoTarget {
     pub const CODEC_STRING: &'static str = "avc1.640033";
 }
 
+/// How much of the bit rate transcoded video may use. Higher quality takes more space in the
+/// conversion cache.
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema,
+)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum VideoQuality {
+    Compact,
+    #[default]
+    Balanced,
+    Best,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ConversionSettings {
     pub audio_target: AudioTarget,
     /// `None` when no working H.264 encoder was found, so video cannot be transcoded.
     pub video_target: Option<VideoTarget>,
+    pub video_quality: VideoQuality,
 }

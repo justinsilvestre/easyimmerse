@@ -91,7 +91,7 @@ pub async fn render_frame(
         at_micros: micros(at_ms),
         max_width: FRAME_MAX_WIDTH,
     });
-    let jpeg = run_ffmpeg_to_stdout(&locate_ffmpeg()?, args)
+    let jpeg = run_ffmpeg_to_stdout(&locate_ffmpeg(state)?, args)
         .await
         .map_err(frame_failed)?;
     if jpeg.is_empty() {

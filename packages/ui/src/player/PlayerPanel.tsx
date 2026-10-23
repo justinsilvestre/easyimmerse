@@ -49,7 +49,10 @@ function PlayerBody({
     case "error":
       return (
         <div className="p-6">
-          <PlayerFailure cause={playback.cause} />
+          <PlayerFailure
+            cause={playback.cause}
+            needsVideoEncoder={playback.needsVideoEncoder ?? false}
+          />
         </div>
       );
     case "ready":

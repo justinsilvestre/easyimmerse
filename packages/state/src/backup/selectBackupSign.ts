@@ -3,7 +3,7 @@ import type { RootState } from "../app/createAppStore.ts";
 import { selectFailedSaves } from "../flashcards/failedSave.ts";
 import { selectRecoverableWork } from "../recovery/recoverableWork.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
-import { serverNameOf } from "../server/serverNameOf.ts";
+import { isCloudServer, serverNameOf } from "../server/serverNameOf.ts";
 import {
   selectBundledServerPlatform,
   selectWorkHome,
@@ -40,6 +40,7 @@ export type BackupSign =
       serverUrl: string;
       /** How the copy names the server: the easyImmerse cloud by that name, any other by its host. */
       serverName: string;
+      isCloudServer: boolean;
       code: string;
     }
   /** Some project is not yet backed up to the remote the built-in server is linked to, because the remote logged out the account with this email address. */
@@ -117,6 +118,7 @@ function linkSign(
         platform,
         serverUrl,
         serverName,
+        isCloudServer: isCloudServer(serverUrl, cloudUrl),
         code: state.code,
       };
     case "idle":

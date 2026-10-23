@@ -21,7 +21,6 @@ import { fn } from "storybook/test";
 import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
-import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
@@ -389,20 +388,6 @@ export const Appearance: Story = {
 export const WordLookedUp: Story = {
   decorators: openedWith(),
   args: { lookup: popupFor("fressen", fn()) },
-};
-
-export const UnsavedWork: Story = {
-  decorators: openedWith(),
-  args: {
-    headerContent: (
-      <UnsavedWorkBanner
-        hasUnsavedChanges
-        isBackedUp={false}
-        onSave={fn()}
-        onLogIn={fn()}
-      />
-    ),
-  },
 };
 
 export const FlashcardStarted: Story = {

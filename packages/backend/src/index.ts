@@ -7,8 +7,10 @@ export {
   useCaptureFrameQuery,
   useChoosePlaybackMethodQuery,
   useCreateFlashcardMutation,
+  useCurrentPairingCodeQuery,
   useDeleteFlashcardMutation,
   useGetConversionCacheStatusQuery,
+  useGetConversionCapabilitiesQuery,
   useGetCurrentPrincipalQuery,
   useGetMediaAvailabilityQuery,
   useGetMediaTracksQuery,
@@ -18,6 +20,7 @@ export {
   useGetStorageStatusQuery,
   useGetSubtitleCuesQuery,
   useGetSyncStatusQuery,
+  useIssuePairingCodeMutation,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
   useListAlignmentsQuery,
@@ -63,7 +66,12 @@ export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export { isSamePickedFile, type PickedFile } from "./readPickedFile.ts";
 export {
+  resolveServedServer,
+  type ServedServerOutcome,
+} from "./resolveServedServer.ts";
+export {
   type NativePlatform,
   resolveServerConfig,
 } from "./resolveServerConfig.ts";
+export { servedServerActions } from "./servedServerActions.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";

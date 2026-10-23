@@ -112,6 +112,37 @@ describe("updateMediaScreen", () => {
       expect(effects).toEqual([methodRequestSent(null, "flac")]);
     });
 
+    it("asks for the preferred video quality", () => {
+      const [, effects] = apply(
+        environmentMeasured,
+        actions.preferencesLoaded({ videoQuality: "best" }),
+        ...measuredWith(),
+      );
+      expect(effects).toEqual([methodRequestSent(null, null, "best")]);
+    });
+
+    it("leaves the video quality to the server for an unknown preference value", () => {
+      const [, effects] = apply(
+        environmentMeasured,
+        actions.preferencesLoaded({ videoQuality: "huge" }),
+        ...measuredWith(),
+      );
+      expect(effects).toEqual([methodRequestSent(null)]);
+    });
+
+    it("keeps the first request's video quality when the tracks change", () => {
+      const [, effects] = apply(
+        actions.tracksChosen({ video: 0, audio: 1 }),
+        actions.preferencesLoaded({ videoQuality: "compact" }),
+        ...measuredWith(),
+        environmentMeasured,
+        actions.preferenceSet("videoQuality", "best"),
+      );
+      expect(effects).toContainEqual(
+        methodRequestSent({ video: 0, audio: 1 }, null, "compact"),
+      );
+    });
+
     it("waits for the preferences before asking for the playback method", () => {
       const [, effects] = apply(environmentMeasured, ...measuredWith());
       expect(effects).toEqual([]);

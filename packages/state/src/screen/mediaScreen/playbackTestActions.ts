@@ -36,10 +36,11 @@ export const environmentMeasured = actions.playbackEnvironmentMeasured(
   exampleEnvironment,
 );
 
-/** The playback method request for m1 with the given selection and audio target. */
+/** The playback method request for m1 with the given selection, audio target, and video quality. */
 export const methodRequestFor = (
   selection: PlaybackMethodRequest["selection"],
   preferredAudioTarget: PlaybackMethodRequest["preferred_audio_target"] = null,
+  videoQuality: PlaybackMethodRequest["video_quality"] = null,
 ) =>
   ({
     kind: "choosePlaybackMethod",
@@ -49,6 +50,7 @@ export const methodRequestFor = (
       environment: exampleEnvironment,
       selection,
       preferred_audio_target: preferredAudioTarget,
+      video_quality: videoQuality,
     },
   }) as const;
 

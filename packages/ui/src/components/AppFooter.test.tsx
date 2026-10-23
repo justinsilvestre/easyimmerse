@@ -40,6 +40,13 @@ describe("AppFooter", () => {
     expect(selectRoute(store.getState()).screen).toBe("settings");
   });
 
+  it("shows the cloud button", () => {
+    renderFooter();
+    expect(
+      screen.getByRole("button", { name: "Backup and sync" }),
+    ).toBeDefined();
+  });
+
   it("shows the theme menu", () => {
     renderFooter();
     expect(screen.getByRole("button", { name: /^Theme:/ })).toBeDefined();

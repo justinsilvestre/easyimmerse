@@ -13,3 +13,9 @@ export const selectCurrentMediaFileId = (state: AppRoot) => {
   const main = mainScreenOf(state.app.route);
   return main.screen === "media" ? main.mediaFileId : null;
 };
+
+/** Returns the section of the general settings to bring into view, or null when Settings were not opened for one. */
+export const selectSettingsScrollTarget = (state: AppRoot) =>
+  state.app.route.screen === "settings"
+    ? (state.app.route.scrollTarget ?? null)
+    : null;

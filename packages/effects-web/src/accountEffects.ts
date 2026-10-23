@@ -29,11 +29,11 @@ export type AccountEffects = Pick<
 /**
  * Builds the account effects over the given fetch, the storage the app reads its server from when it starts, and a function that reloads the page.
  * Connecting keeps the server and token in the storage, and disconnecting removes them; either then reloads the page, which starts the app anew.
- * A connection the storage refuses, as a full or private one may, resolves as a failure and reloads nothing.
+ * A connection the storage refuses, as a full, private or blocked one may, resolves as a failure and reloads nothing.
  */
 export function createAccountEffects(
   fetchFn: typeof fetch,
-  storage: Storage,
+  storage: Storage | null,
   reload: () => void,
 ): AccountEffects {
   return {
@@ -65,6 +65,7 @@ export function createAccountEffects(
       ),
     connectToServer: async (server: ServerConfig) => {
       try {
+        if (storage === null) throw new Error("This browser keeps no storage.");
         storage.setItem(serverConfigStorageKey, JSON.stringify(server));
       } catch (cause) {
         return { ok: false, error: connectionNotKept(cause) };
@@ -73,7 +74,7 @@ export function createAccountEffects(
       return { ok: true, data: null };
     },
     disconnectFromServer: () => {
-      storage.removeItem(serverConfigStorageKey);
+      storage?.removeItem(serverConfigStorageKey);
       reload();
     },
   };

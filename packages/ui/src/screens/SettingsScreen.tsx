@@ -1,15 +1,23 @@
-import { BookOpen, ChevronRight } from "lucide-react";
-import { AccountSection } from "../account/AccountSection.tsx";
+import {
+  selectBundledServerPlatform,
+  selectSettingsScrollTarget,
+} from "@easyimmerse/state";
+import { BookOpen, UserRound } from "lucide-react";
 import { CloudStorageSection } from "../account/CloudStorageSection.tsx";
+import { selectLoginState } from "../account/selectLoginState.ts";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import {
   type LicenseNoticesState,
   LicensesPage,
 } from "../components/LicensesPage.tsx";
-import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { SettingsPageButton } from "../components/SettingsPageButton.tsx";
+import type { FfmpegBuildControls } from "../conversion/FfmpegBuildBlock.tsx";
+import { MediaConversionSection } from "../conversion/MediaConversionSection.tsx";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { SubtitleAppearanceSection } from "../media/SubtitleAppearanceSection.tsx";
+import { ServerSection } from "../server/ServerSection.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
@@ -18,51 +26,55 @@ const unavailableConversionCache: ConversionCacheControls = {
   onBudgetChange: () => undefined,
 };
 
+const accountDescriptions = {
+  loggedIn: "The account you are logged in to, and the devices it is used on.",
+  loggedOut:
+    "You are not logged in. Log in or sign up to back up your work and use it on your other devices.",
+  unknown: "Log in to an account, or see the one you are logged in to.",
+};
+
 export function SettingsScreen({
   onBack,
+  onOpenAccount,
   onOpenDictionaries,
   conversionCache = unavailableConversionCache,
+  ffmpegBuild = null,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
   /** Closes Settings to the screen beneath, whichever it is, so its button says only Back. */
   onBack: () => void;
+  onOpenAccount: () => void;
   onOpenDictionaries: () => void;
   conversionCache?: ConversionCacheControls;
+  /** The desktop app's ffmpeg build, or null where the app has none to choose. */
+  ffmpegBuild?: FfmpegBuildControls | null;
   licenseNotices?: LicenseNoticesState;
 }) {
+  const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
+  const scrollTarget = useAppSelector(selectSettingsScrollTarget);
+  const loginState = useAppSelector(selectLoginState);
   return (
     <ScreenLayout onBack={onBack}>
       <h1 className="text-xl font-semibold">Settings</h1>
-      <AccountSection />
+      <SettingsPageButton
+        icon={<UserRound className="size-4 text-fg-muted" aria-hidden />}
+        label="Account"
+        description={accountDescriptions[loginState]}
+        onClick={onOpenAccount}
+      />
       <CloudStorageSection />
-      <button
-        type="button"
+      {isDesktop && <ServerSection />}
+      <SettingsPageButton
+        icon={<BookOpen className="size-4 text-fg-muted" aria-hidden />}
+        label="Dictionaries"
+        description="Add and remove the dictionaries words are looked up in."
         onClick={onOpenDictionaries}
-        className="flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
-      >
-        <BookOpen className="size-4 text-fg-muted" aria-hidden />
-        <span className="flex flex-1 flex-col">
-          <span className="font-medium">Dictionaries</span>
-          <span className="text-sm text-fg-muted">
-            Add and remove the dictionaries words are looked up in.
-          </span>
-        </span>
-        <ChevronRight className="size-4 text-fg-muted" aria-hidden />
-      </button>
+      />
       <SubtitleAppearanceSection />
-      <section
-        aria-labelledby="settings-conversion"
-        className="flex flex-col gap-3"
-      >
-        <h2 id="settings-conversion" className="text-base font-semibold">
-          Conversion
-        </h2>
-        <PreferenceToggle
-          preferenceKey="losslessAudio"
-          label="Keep audio lossless when converting"
-          hint="Converted audio keeps its full quality but takes more disk space."
-        />
-      </section>
+      <MediaConversionSection
+        ffmpegBuild={ffmpegBuild}
+        isScrollTarget={scrollTarget === "mediaConversion"}
+      />
       <ConversionCacheSection {...conversionCache} />
       <LicensesPage notices={licenseNotices} />
     </ScreenLayout>

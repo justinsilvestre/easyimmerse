@@ -47,6 +47,13 @@ describe("PasswordResetForm", () => {
     expect(screen.getByRole("form", { name: "Reset password" })).toBeDefined();
   });
 
+  it("heads the page Account rather than Log in", async () => {
+    await forgetPasswordOn(true);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Account",
+    );
+  });
+
   it("tells that a server without email cannot send a link", async () => {
     await forgetPasswordOn(false);
     expect(screen.getByRole("status").textContent).toBe(

@@ -1,5 +1,6 @@
 import type { RootState, ServerCacheSlice } from "@easyimmerse/state";
 import {
+  actions,
   cacheEntry,
   createAppStore,
   createBrowserFileRegistry,
@@ -7,7 +8,7 @@ import {
 } from "@easyimmerse/state";
 import type { UnknownAction } from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
 import { createBackendStoreParts } from "./backendStoreParts.ts";
@@ -111,5 +112,46 @@ describe("createBackendStoreParts", () => {
 
   it("carries the server configuration", () => {
     expect(createBackendStoreParts(client, server).serverConfig).toBe(server);
+  });
+
+  it("asks for the conversion capabilities again once the desktop server settings are saved", async () => {
+    const paths: string[] = [];
+    const recordingClient: BackendClient = {
+      send: async <T>(request: BackendRequest) => {
+        paths.push(request.path);
+        return { data: {} as T };
+      },
+    };
+    const store = createAppStore(
+      createRecordingEffects(),
+      createBackendStoreParts(recordingClient, null),
+    );
+    const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
+    await dispatch(backendApi.endpoints.getConversionCapabilities.initiate());
+    store.dispatch(
+      actions.desktopServerSettingsSaved(
+        {
+          bind: "0.0.0.0:8787",
+          auth: "launch_token",
+          open_signup: false,
+          api_only: false,
+          autostart: false,
+          ffmpeg_dir: "/usr/bin",
+          expected_hosts: [],
+        },
+        {
+          state: { kind: "running" },
+          urls: [],
+          lan_reachable: false,
+          serves_web_app: false,
+          pairing_url: null,
+        },
+      ),
+    );
+    await vi.waitFor(() =>
+      expect(
+        paths.filter((path) => path === "/conversion/capabilities"),
+      ).toHaveLength(2),
+    );
   });
 });
