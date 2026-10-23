@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::DefaultBodyLimit;
-use axum::middleware::from_fn_with_state;
+use axum::middleware::{from_fn, from_fn_with_state};
 use axum::routing::any;
 use axum::{Extension, Router};
 use tower_http::cors::{AllowHeaders, CorsLayer};
@@ -27,6 +27,7 @@ use crate::routes::{
 };
 use crate::state::AppState;
 use crate::sync::proxy::forward_to_remote;
+use crate::unread_body::drain_unread_body;
 use crate::web_app::web_app_router;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
@@ -61,6 +62,7 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
         .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
+        .layer(from_fn(drain_unread_body))
         .layer(TraceLayer::new_for_http().make_span_with(request_span))
         .with_state(state);
     (router, document)
