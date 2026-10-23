@@ -70,7 +70,11 @@ export function DesktopPairingPanel({
       );
     case "running":
       return server.hasAccounts ? (
-        <PairingAddress url={server.url} code={null}>
+        <PairingAddress
+          url={server.url}
+          code={null}
+          deviceName={server.deviceName}
+        >
           <p className="text-sm text-fg-muted">
             The other device logs in with an account on this server.
           </p>
@@ -78,6 +82,7 @@ export function DesktopPairingPanel({
       ) : (
         <LaunchTokenPairing
           url={server.url}
+          deviceName={server.deviceName}
           code={code}
           onNewCode={onNewCode}
         />

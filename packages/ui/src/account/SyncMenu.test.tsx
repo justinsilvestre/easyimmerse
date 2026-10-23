@@ -41,7 +41,11 @@ const pairedDesktop = (accounts: boolean) =>
   createFakeBackendClient({
     ...fixtureResponses,
     "GET /auth/me": { kind: "launch" },
-    "GET /auth/server": { accounts, open_signup: false, sends_email: false },
+    "GET /auth/server": {
+      accounts,
+      open_signup: false,
+      sends_email: false,
+    },
   });
 
 /** A built-in server whose projects are not backed up, because its link to the remote is in the given state. */

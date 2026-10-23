@@ -10,6 +10,7 @@ const paired = (usesAccounts: boolean) =>
     kind: "pairedDesktop",
     serverUrl: "http://192.168.1.20:4000",
     host: "192.168.1.20:4000",
+    deviceName: null,
     usesAccounts,
   }) as const;
 

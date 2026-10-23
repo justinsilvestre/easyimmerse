@@ -26,6 +26,7 @@ import { OfflineScreen } from "./screens/OfflineScreen.tsx";
 import { ProjectScreen } from "./screens/ProjectScreen.tsx";
 import { ProjectSettingsScreen } from "./screens/ProjectSettingsScreen.tsx";
 import { SettingsScreen } from "./screens/SettingsScreen.tsx";
+import { ServerScreen } from "./server/ServerScreen.tsx";
 
 /** The main screen, with Settings over it while they are open. */
 export function Screens() {
@@ -110,6 +111,8 @@ function SettingsPage({ page }: { page: SettingsPageName }) {
       return <DictionariesScreen onBack={onBack} />;
     case "pairing":
       return <ConnectedPairingScreen onBack={onBack} />;
+    case "server":
+      return <ServerScreen onBack={onBack} />;
   }
 }
 

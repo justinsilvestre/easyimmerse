@@ -9,7 +9,7 @@ import { TextField } from "../components/TextField.tsx";
 
 type LoadedForm = Extract<DesktopServerSettingsFormView, { status: "loaded" }>;
 
-/** The server's settings: where it listens, how clients authenticate, what it serves, whether it starts with the app, and its extra host names. */
+/** The server's settings: the computer's name for paired devices, where it listens, how clients authenticate, what it serves, whether it starts with the app, and its extra host names. */
 export function ServerSettingsForm({
   form,
   onChange,
@@ -51,6 +51,13 @@ function LoadedSettings({
         if (form.canSave) onSave();
       }}
     >
+      <TextField
+        label="Device name"
+        className="max-w-xs"
+        value={fields.device_name}
+        hint="Paired phones and other devices show this computer by this name."
+        onChange={(event) => onChange({ device_name: event.target.value })}
+      />
       <div className="flex flex-col gap-1">
         <TextField
           label="Address and port"

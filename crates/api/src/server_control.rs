@@ -21,6 +21,15 @@ pub struct DesktopServerSettings {
     pub ffmpeg_dir: Option<String>,
     /// Host names that other devices use to reach the server, beyond its own addresses.
     pub expected_hosts: Vec<String>,
+    /// The name paired devices show for this computer, such as `Justin's MacBook Pro`.
+    pub device_name: String,
+}
+
+/// Turns a machine's host name, such as `Justins-MacBook-Pro.local`, into a name for people, such as `Justins MacBook Pro`.
+pub fn device_name_from_host_name(host_name: &str) -> String {
+    let name = host_name.trim();
+    let name = name.strip_suffix(".local").unwrap_or(name);
+    name.replace(['-', '_'], " ").trim().to_string()
 }
 
 /// How clients prove they may use the server.
@@ -83,4 +92,35 @@ pub enum LogLevel {
     Info,
     Debug,
     Trace,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn drops_the_local_domain() {
+        assert_eq!(device_name_from_host_name("studio.local"), "studio");
+    }
+
+    #[test]
+    fn turns_hyphens_into_spaces() {
+        assert_eq!(
+            device_name_from_host_name("Justins-MacBook-Pro.local"),
+            "Justins MacBook Pro"
+        );
+    }
+
+    #[test]
+    fn turns_underscores_into_spaces() {
+        assert_eq!(device_name_from_host_name("home_desktop"), "home desktop");
+    }
+
+    #[test]
+    fn keeps_other_domains() {
+        assert_eq!(
+            device_name_from_host_name("studio.example.org"),
+            "studio.example.org"
+        );
+    }
 }

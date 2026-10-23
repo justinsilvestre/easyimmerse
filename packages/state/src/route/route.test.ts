@@ -71,6 +71,15 @@ describe("navigate", () => {
     });
   });
 
+  it("opens the server page on top of the general settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openServerSettings" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general", "server"],
+    });
+  });
+
   it("opens the account settings screen by itself over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",

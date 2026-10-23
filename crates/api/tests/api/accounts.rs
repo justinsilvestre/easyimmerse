@@ -10,8 +10,8 @@ use serde_json::json;
 use tokio::net::TcpListener;
 
 use crate::support::{
-    TestResponse, TestServer, fixture_path, spawn_test_server, spawn_test_server_with_accounts,
-    spawn_test_server_with_accounts_on,
+    TOKEN, TestResponse, TestServer, fixture_path, seeded_storage, spawn_configured_test_server,
+    spawn_test_server, spawn_test_server_with_accounts, spawn_test_server_with_accounts_on,
 };
 
 const PASSWORD: &str = "correct horse";
@@ -78,6 +78,23 @@ mod server_info {
             response.json(),
             json!({ "accounts": true, "open_signup": true, "sends_email": false })
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn reports_the_desktop_device_name() {
+        let configure = |port| ApiConfig {
+            device_name: Some("Studio iMac".to_string()),
+            ..ApiConfig::for_loopback(port, TOKEN.to_string(), false)
+        };
+        let server =
+            spawn_configured_test_server(configure, seeded_storage(), ServeOptions::default())
+                .await;
+        let response = server
+            .request("GET", "/auth/server")
+            .without_token()
+            .send()
+            .await;
+        assert_eq!(response.json()["device_name"], "Studio iMac");
     }
 }
 

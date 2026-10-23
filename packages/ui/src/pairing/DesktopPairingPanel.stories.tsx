@@ -3,6 +3,7 @@ import { fn } from "storybook/test";
 import { DesktopPairingPanel } from "./DesktopPairingPanel.tsx";
 
 const url = "http://192.168.1.5:8787";
+const deviceName = "Justin's MacBook Pro";
 
 const issued = {
   kind: "issued",
@@ -20,7 +21,7 @@ const meta = {
     ),
   ],
   args: {
-    server: { kind: "running", url, hasAccounts: false },
+    server: { kind: "running", url, hasAccounts: false, deviceName },
     code: issued,
     onStartServer: fn(),
     onNewCode: fn(),
@@ -56,7 +57,14 @@ export const NoNetwork: Story = {
 
 /** A server with accounts shows no code: the other device logs in instead. */
 export const WithAccounts: Story = {
-  args: { server: { kind: "running", url, hasAccounts: true } },
+  args: { server: { kind: "running", url, hasAccounts: true, deviceName } },
+};
+
+/** A computer whose name was cleared in the server settings, so the panel names none. */
+export const WithoutDeviceName: Story = {
+  args: {
+    server: { kind: "running", url, hasAccounts: false, deviceName: "" },
+  },
 };
 
 /** A server with the launch token, with its pairing code and the warning that anyone on the network can use it. */

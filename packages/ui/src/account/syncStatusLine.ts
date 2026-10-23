@@ -28,7 +28,9 @@ export function syncStatusLine(
         : `${backedUp} ${formatTimeAgo(place.lastBackedUpMs, now)}`;
     }
     case "pairedDesktop":
-      return `Paired with the desktop app at ${place.host}`;
+      return place.deviceName === null
+        ? `Paired with the desktop app at ${place.host}`
+        : `Paired with ${place.deviceName}`;
   }
 }
 

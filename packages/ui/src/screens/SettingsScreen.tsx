@@ -3,7 +3,7 @@ import {
   selectBundledServerPlatform,
   selectSettingsScrollTarget,
 } from "@easyimmerse/state";
-import { BookOpen, UserRound, Wifi } from "lucide-react";
+import { BookOpen, Server, UserRound, Wifi } from "lucide-react";
 import { CloudStorageSection } from "../account/CloudStorageSection.tsx";
 import { selectLoginState } from "../account/selectLoginState.ts";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
@@ -23,7 +23,6 @@ import { MediaConversionSection } from "../conversion/MediaConversionSection.tsx
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { SubtitleAppearanceSection } from "../media/SubtitleAppearanceSection.tsx";
-import { ServerSection } from "../server/ServerSection.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
@@ -84,7 +83,16 @@ export function SettingsScreen({
           }
           onClick={() => dispatch(actions.navigated({ type: "openPairing" }))}
         />
-        {isDesktop && <ServerSection />}
+        {isDesktop && (
+          <SettingsPageButton
+            icon={<Server className="size-4 text-fg-muted" aria-hidden />}
+            label="Server"
+            description="Start and stop the server other devices reach, name this computer, and choose who may sign in."
+            onClick={() =>
+              dispatch(actions.navigated({ type: "openServerSettings" }))
+            }
+          />
+        )}
         <CloudStorageSection />
       </SettingsGroup>
       <SettingsGroup title="This device">

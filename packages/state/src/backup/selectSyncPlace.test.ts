@@ -50,7 +50,7 @@ const statusOf = (syncLink: SyncLink | null) =>
     local_change_seq: 0,
   });
 
-const asLaunchHolder = (accounts: boolean) =>
+const asLaunchHolder = (accounts: boolean, deviceName?: string) =>
   serverCacheWith(
     "getCurrentPrincipal",
     "self",
@@ -59,6 +59,7 @@ const asLaunchHolder = (accounts: boolean) =>
       accounts,
       open_signup: false,
       sends_email: false,
+      device_name: deviceName,
     }),
   );
 
@@ -107,7 +108,20 @@ describe("selectSyncPlace", () => {
       kind: "pairedDesktop",
       serverUrl: "http://192.168.1.20:4000",
       host: "192.168.1.20:4000",
+      deviceName: null,
       usesAccounts: false,
+    });
+  });
+
+  it("names the paired desktop app's computer when its server gives a name", () => {
+    expect(
+      placeOf(lanServer, asLaunchHolder(false, "Studio iMac")),
+    ).toMatchObject({ deviceName: "Studio iMac" });
+  });
+
+  it("names no computer when the paired desktop app's server gives a blank name", () => {
+    expect(placeOf(lanServer, asLaunchHolder(false, " "))).toMatchObject({
+      deviceName: null,
     });
   });
 
