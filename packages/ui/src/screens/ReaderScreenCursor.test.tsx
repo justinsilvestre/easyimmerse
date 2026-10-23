@@ -5,9 +5,10 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -89,31 +90,31 @@ describe("ReaderScreen lookup cursor", () => {
   it("looks up the first word of the page with L once the text has focus", async () => {
     await renderReader();
     focusTextAndPress("l");
-    await vi.waitFor(async () => expect(await popupWord()).toBe("The"));
+    await waitFor(async () => expect(await popupWord()).toBe("The"));
   });
 
   it("moves the cursor to the next word on Right, which L looks up", async () => {
     await renderReader();
     focusTextAndPress("ArrowRight", "l");
-    await vi.waitFor(async () => expect(await popupWord()).toBe("cat"));
+    await waitFor(async () => expect(await popupWord()).toBe("cat"));
   });
 
   it("moves the cursor back to the previous word on Left", async () => {
     await renderReader();
     focusTextAndPress("ArrowRight", "ArrowRight", "ArrowLeft", "l");
-    await vi.waitFor(async () => expect(await popupWord()).toBe("cat"));
+    await waitFor(async () => expect(await popupWord()).toBe("cat"));
   });
 
   it("moves the cursor to the next sentence on Down", async () => {
     await renderReader();
     focusTextAndPress("ArrowDown", "ArrowRight", "l");
-    await vi.waitFor(async () => expect(await popupWord()).toBe("dog"));
+    await waitFor(async () => expect(await popupWord()).toBe("dog"));
   });
 
   it("opens the pop-up on the cursor's word with Enter", async () => {
     await renderReader();
     focusTextAndPress("ArrowRight", "Enter");
-    await vi.waitFor(async () => expect(await popupWord()).toBe("cat"));
+    await waitFor(async () => expect(await popupWord()).toBe("cat"));
   });
 
   it("saves a flashcard from the cursor's word on C", async () => {
@@ -125,13 +126,13 @@ describe("ReaderScreen lookup cursor", () => {
   it("opens the search field with L once Escape has taken the cursor away", async () => {
     await renderReader();
     focusTextAndPress("Escape", "l");
-    await vi.waitFor(async () => expect(await popupWord()).toBe(""));
+    await waitFor(async () => expect(await popupWord()).toBe(""));
   });
 
   it("moves on through the book with Right once Escape has taken the cursor away", async () => {
     await renderReader();
     focusTextAndPress("Escape", "ArrowRight");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
         "Chapter Two",
       ),
@@ -143,6 +144,6 @@ describe("ReaderScreen lookup cursor", () => {
     focusTextAndPress("ArrowRight");
     act(() => screen.getByRole("button", { name: /^Back to/ }).focus());
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "l" });
-    await vi.waitFor(async () => expect(await popupWord()).toBe(""));
+    await waitFor(async () => expect(await popupWord()).toBe(""));
   });
 });

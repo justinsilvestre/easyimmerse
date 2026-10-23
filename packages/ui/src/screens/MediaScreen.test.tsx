@@ -18,6 +18,7 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -135,7 +136,7 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const list = await findSubtitles();
   await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
-  await vi.waitFor(() =>
+  await waitFor(() =>
     expect(
       hasProbedPictures(rendered.store.getState(), rendered.pickedVideo),
     ).toBe(true),
@@ -209,7 +210,7 @@ function dragOnStrip(fromX: number, toX: number, clientY = 36) {
 }
 
 async function openSavedFlashcardFromStrip() {
-  await vi.waitFor(() =>
+  await waitFor(() =>
     fireEvent.doubleClick(findStrip(), { clientX: 140, clientY: 36 }),
   );
   await screen.findByRole("form", { name: "Flashcard" });
@@ -277,7 +278,7 @@ describe("MediaScreen", () => {
         },
       }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         bodyOf(
           requestsTo(
@@ -335,7 +336,7 @@ describe("MediaScreen", () => {
     doubleClick(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(await screen.findByRole("button", { name: "Show" }));
     fireEvent.click(screen.getByRole("button", { name: "Retry “fressen”" }));
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(screen.queryByText("1 flashcard not saved")).toBeNull(),
     );
   });
@@ -507,7 +508,7 @@ describe("MediaScreen", () => {
     };
     renderMediaScreen({ flashcards: [card] });
     const list = await findSubtitles();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(list.querySelector("[data-flashcard-word]")?.textContent).toBe(
         "cat",
       ),
@@ -533,7 +534,7 @@ describe("MediaScreen", () => {
     const { effects } = renderMediaScreen();
     const list = await findSubtitles();
     await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         effects.calls.filter((call) => call.type === "seekPlayer").at(-1),
       ).toEqual({
@@ -656,7 +657,7 @@ describe("MediaScreen", () => {
   describe("when a flashcard's segment is dragged on the waveform", () => {
     it("leaves the clip of a closed flashcard as it is", async () => {
       const { client } = await renderWithWaveform();
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(findStrip().getAttribute("aria-valuemax")).toBe("10"),
       );
       dragOnStrip(105, 90);
@@ -669,7 +670,7 @@ describe("MediaScreen", () => {
     it("seeks to the clip's start once a flashcard is opened by a double-click", async () => {
       const { store } = await renderWithWaveform();
       await openSavedFlashcardFromStrip();
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(selectCurrentTime(store.getState())).toBe(1.75),
       );
     });
@@ -734,7 +735,7 @@ describe("MediaScreen", () => {
       );
       dragOnStrip(30, 15);
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(
           createdDraftOf(
             requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
@@ -812,7 +813,7 @@ describe("MediaScreen", () => {
     it("sends the applied form's input to the plugin", async () => {
       const { client } = renderImported();
       await applyEnglish();
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(
           bodyOf(
             requestsTo(
@@ -831,7 +832,7 @@ describe("MediaScreen", () => {
     it("closes the plugin's dialog once its changes are applied", async () => {
       renderImported();
       await applyEnglish();
-      await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     });
   });
 
@@ -864,7 +865,7 @@ describe("MediaScreen", () => {
         browserVideo(),
         createFakeFrameCapturer(false),
       );
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(hasProbedPictures(store.getState(), pickedVideo)).toBe(true),
       );
       expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();

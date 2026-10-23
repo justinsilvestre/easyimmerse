@@ -135,6 +135,7 @@ function ctrlClick() {
   const text = screen.getByRole("main");
   const point = { clientX: 10, clientY: 10 };
   fireEvent.pointerDown(text, { ...point, pointerType: "mouse" });
+  fireEvent.pointerUp(text, { ...point, pointerType: "mouse" });
   fireEvent.click(text, { ...point, detail: 1, ctrlKey: true });
 }
 
@@ -243,6 +244,7 @@ describe("ReaderScreen with a book aligned with audio", () => {
     const text = screen.getByRole("main");
     const point = { clientX: 10, clientY: 10 };
     fireEvent.pointerDown(text, { ...point, pointerType: "mouse" });
+    fireEvent.pointerUp(text, { ...point, pointerType: "mouse" });
     fireEvent.click(text, { ...point, detail: 1 });
     const popup = await screen.findByRole("dialog", { name: "Dictionary" });
     fireEvent.click(

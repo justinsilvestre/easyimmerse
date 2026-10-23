@@ -3,10 +3,11 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
@@ -169,7 +170,7 @@ describe("DictionaryPopup", () => {
     );
     const word = screen.getByRole("button", { name: "devour" });
     fireEvent.pointerDown(word, { pointerType: "touch" });
-    await vi.waitFor(() => expect(flashcards).toEqual(["devour"]));
+    await waitFor(() => expect(flashcards).toEqual(["devour"]));
   });
 });
 
@@ -371,7 +372,7 @@ describe("DictionaryPopup states", () => {
       </div>,
     );
     screen.getByTestId("screen").setAttribute("inert", "");
-    await vi.waitFor(() => expect(closeCount).toBe(1));
+    await waitFor(() => expect(closeCount).toBe(1));
   });
 
   it("offers to add a dictionary when none is set up", () => {

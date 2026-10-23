@@ -1,7 +1,13 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { actions, selectRoute } from "@easyimmerse/state";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
   fixtureProject,
@@ -44,7 +50,7 @@ describe("NewProjectScreen", () => {
       target: { value: "Korean" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create project" }));
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         bodyOf(client.requests.find((request) => request.method === "POST")),
       ).toMatchObject({ name: "Korean", target_language: "ja" }),
@@ -57,7 +63,7 @@ describe("NewProjectScreen", () => {
       target: { value: "Korean" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create project" }));
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(selectRoute(store.getState())).toEqual({
         screen: "project",
         projectId: "p3",

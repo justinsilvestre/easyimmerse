@@ -1,5 +1,11 @@
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   findSubtitles,
   renderMediaScreen,
@@ -32,6 +38,6 @@ describe("MediaScreen with a lookup that answers after the flashcard has opened"
   it("fills the flashcard from it", async () => {
     const rendered = await openBeforeAnswer();
     await rendered.client.answerLookup(catLookup);
-    await vi.waitFor(() => expect(fieldValue("Word (de)")).toBe("fressen"));
+    await waitFor(() => expect(fieldValue("Word (de)")).toBe("fressen"));
   });
 });

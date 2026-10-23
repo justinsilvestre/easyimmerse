@@ -9,9 +9,10 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import {
   createFakeBackendClient,
@@ -226,7 +227,7 @@ describe("ReaderScreen", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Back to the project" }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(selectCurrentMediaFileId(store.getState())).toBeNull(),
     );
   });

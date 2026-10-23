@@ -4,8 +4,14 @@ import {
   dictionaryFileExtensions,
   selectNotices,
 } from "@easyimmerse/state";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { exampleDictionaries } from "../dictionaries/exampleDictionaries.ts";
 import {
   createFakeBackendClient,
@@ -128,14 +134,14 @@ describe("DictionariesScreen", () => {
 
   it("removes a dictionary once its removal is confirmed", async () => {
     const { client } = await confirmRemoval();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(1),
     );
   });
 
   it("moves focus to the heading once the removed dictionary is gone", async () => {
     await confirmRemoval();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(document.activeElement).toBe(
         screen.getByRole("heading", { name: "Dictionaries" }),
       ),
@@ -152,7 +158,7 @@ describe("DictionariesScreen", () => {
         }),
       );
     });
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         requestsTo(client, "POST", "/dictionaries/import-local")[0]?.body,
       ).toEqual({ kind: "json", value: { path: "/dictionaries/jmdict.zip" } }),
@@ -162,7 +168,7 @@ describe("DictionariesScreen", () => {
   it("sends a file the browser picked as bytes", async () => {
     const { client, chooseBrowserFile } = renderScreen();
     chooseBrowserFile("jmdict.zip");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(requestsTo(client, "POST", "/dictionaries")[0]?.query).toEqual({
         fileName: "jmdict.zip",
       }),
@@ -173,7 +179,7 @@ describe("DictionariesScreen", () => {
     const { client, chooseBrowserFile } = renderScreen();
     chooseBrowserFile("animals.csv");
     fireEvent.click(await screen.findByRole("button", { name: "Import" }));
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(requestsTo(client, "POST", "/dictionaries")[0]?.query).toEqual({
         fileName: "animals.csv",
         columns: "term,definition",
@@ -208,7 +214,7 @@ describe("DictionariesScreen", () => {
     it("names the added dictionary", async () => {
       const { chooseBrowserFile, notices } = renderScreen();
       chooseBrowserFile("jmdict.zip");
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(notices()).toEqual(["Added German-English Wiktionary"]),
       );
     });
@@ -217,7 +223,7 @@ describe("DictionariesScreen", () => {
       const { client, chooseBrowserFile } = renderScreen();
       await screen.findByText("DWDS Kernwortschatz");
       chooseBrowserFile("jmdict.zip");
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(requestsTo(client, "GET", "/dictionaries")).toHaveLength(2),
       );
     });

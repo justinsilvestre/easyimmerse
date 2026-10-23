@@ -16,9 +16,10 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import {
@@ -164,7 +165,7 @@ describe("ProjectScreen", () => {
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Remove from project" }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(pathsOf(client.requests, "DELETE")).toContain(
         "/projects/p1/media/m2",
       ),
@@ -181,7 +182,7 @@ describe("ProjectScreen", () => {
         source: { kind: "path", path: "/videos/pilot.mkv" },
       }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
     );
   });
@@ -299,7 +300,7 @@ describe("ProjectScreen", () => {
       ...finished,
     });
     await startImport();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(selectCurrentMediaFileId(rendered.store.getState())).toBe("m1"),
     );
     return rendered;
@@ -327,7 +328,7 @@ describe("ProjectScreen", () => {
   it("shows the fetch's progress while it runs", async () => {
     renderImport();
     await startImport();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         within(screen.getByRole("dialog")).getByRole("status").textContent,
       ).toContain("downloading the video and subtitles"),
@@ -338,7 +339,7 @@ describe("ProjectScreen", () => {
   async function leaveRunningImport() {
     const rendered = renderImport();
     await startImport();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         within(screen.getByRole("dialog")).getByRole("status").textContent,
       ).toContain("downloading the video and subtitles"),
@@ -375,7 +376,7 @@ describe("ProjectScreen", () => {
       "GET /projects/p1/media/from-source/j1": () => new Promise(() => {}),
     });
     await startImport();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(pathsOf(client.requests, "GET")).toContain(
         "/projects/p1/media/from-source/j1",
       ),

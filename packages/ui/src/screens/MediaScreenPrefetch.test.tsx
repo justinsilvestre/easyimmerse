@@ -1,5 +1,11 @@
 import type { BatchLookupRequest } from "@easyimmerse/types";
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
@@ -28,7 +34,7 @@ const panelWord = (word: string) =>
 /** Rests the mouse on a word of the subtitles panel until the word is highlighted, which its hover lookup's answer does. */
 async function restMouseOn(word: string) {
   fireEvent.pointerEnter(panelWord(word), { pointerType: "mouse" });
-  await vi.waitFor(() =>
+  await waitFor(() =>
     expect(panelWord(word).classList.contains("bg-accent-soft")).toBe(true),
   );
 }

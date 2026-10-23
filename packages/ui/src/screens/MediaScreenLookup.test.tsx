@@ -4,9 +4,10 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import {
@@ -42,7 +43,7 @@ const shownWord = (popup: HTMLElement) =>
 /** Waits for the pop-up to show the word in its field. */
 const findPopupShowing = async (word: string) => {
   const popup = await screen.findByRole("dialog", { name: "Dictionary" });
-  await vi.waitFor(() => expect(shownWord(popup)).toBe(word));
+  await waitFor(() => expect(shownWord(popup)).toBe(word));
   return popup;
 };
 
@@ -70,7 +71,7 @@ describe("MediaScreen lookup", () => {
   it("looks a clicked word up with its cue as context", async () => {
     const { client } = renderMediaScreen();
     await lookUpInPanel("cat");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         requestsTo(client.requests, "GET", "/dictionaries/lookup")[0]?.query,
       ).toEqual({
@@ -135,9 +136,7 @@ describe("MediaScreen lookup", () => {
     const devour = await within(popup).findByRole("button", { name: "devour" });
     // The hold is the gesture's own half-second timer, which runs in real time.
     fireEvent.pointerDown(devour, { pointerType: "touch" });
-    const draft = await vi.waitFor(() => findCreatedDraft(client), {
-      timeout: 2000,
-    });
+    const draft = await findCreatedDraft(client);
     expect(draft.content.word).toBe("fressen");
   });
 
@@ -198,11 +197,7 @@ describe("MediaScreen lookup", () => {
       await findSubtitles();
       // The hold is the gesture's own half-second timer, which runs in real time.
       fireEvent.pointerDown(panelWord(word), { pointerType, button: 0 });
-      const popup = await screen.findByRole(
-        "dialog",
-        { name: "Dictionary" },
-        { timeout: 2000 },
-      );
+      const popup = await screen.findByRole("dialog", { name: "Dictionary" });
       return { ...rendered, popup };
     }
 
@@ -279,7 +274,7 @@ describe("MediaScreen lookup", () => {
     it("offers no translation in the sentence row while the translation subtitles are on screen", async () => {
       renderWithTranslation();
       const popup = await lookUpInPanel("cat");
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(
           within(popup).getByRole("button", { name: /cue/ }),
         ).toBeDefined(),
@@ -298,11 +293,7 @@ describe("MediaScreen lookup", () => {
       fireEvent.pointerDown(screen.getByRole("button", { name: "cat" }), {
         pointerType: "touch",
       });
-      const popup = await screen.findByRole(
-        "dialog",
-        { name: "Dictionary" },
-        { timeout: 2000 },
-      );
+      const popup = await screen.findByRole("dialog", { name: "Dictionary" });
       expect(
         await within(popup).findByText("Die Katze schläft."),
       ).toBeDefined();
