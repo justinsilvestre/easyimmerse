@@ -43,7 +43,7 @@ export type NavigationStep =
   | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
-  /** Opens the Account page, where the app logs in to an account or shows the one it is logged in to. */
+  /** Opens the account settings screen, where the app logs in to an account or shows the one it is logged in to. */
   | { type: "openAccountSettings" }
   /** Opens the general settings page at its Media conversion section, over the main screen, leaving any page above it. */
   | { type: "openMediaConversionSettings" }

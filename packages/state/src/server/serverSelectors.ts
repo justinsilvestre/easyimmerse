@@ -28,7 +28,7 @@ export function selectWorkHome(state: AppRoot): WorkHome {
   return config.bundledIn === undefined ? "accountServer" : "builtInServer";
 }
 
-/** Returns which server the Account page's requests reach. */
+/** Returns which server the account settings screen's requests reach. */
 export function selectAccountVia(state: AppRoot): AccountVia {
   return accountViaOf(state.app.server.config);
 }

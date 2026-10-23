@@ -14,7 +14,7 @@ import { SignInForm } from "./SignInForm.tsx";
 import { selectLoginState } from "./selectLoginState.ts";
 
 /**
- * The content of the Account page, headed "Log in" or "Sign up" while it shows the form for doing so, and "Account" otherwise:
+ * The content of the account settings screen, headed "Log in" or "Sign up" while it shows the form for doing so, and "Account" otherwise:
  * the form that logs in to a server while the app runs offline,
  * the server the native app's built-in server keeps a copy of the work on,
  * and otherwise who the app's server knows it as.

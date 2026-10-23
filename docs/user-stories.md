@@ -864,82 +864,119 @@ As a web/mobile app user who is not logged in:
 
 ---
 
-### Account and cloud sync
+### Cloud button
 
 As a user:
-- when I choose to sign up or log in:
-  - [x] I can create an account with my email address
-  - [x] I can log in to a self-hosted easyImmerse server, instead of using the easyImmerse cloud, by entering its address (in a field revealed by clicking "More options")
-  - [x] I can keep using all offline features of the app without an account
-- while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
+- while some of my work, such as flashcards, is kept only on this device and not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
   - [x] the cloud button in the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
-  - [x] clicking the cloud button tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
-- when all my work is backed up:
-  - [x] the cloud button in the footer shows a plain cloud, without the sign that my work is not backed up
+- while all my work is backed up:
+  - [x] the cloud button in the footer shows a plain cloud
+- when I click the cloud button in the footer while some of my work is not backed up:
+  - [x] its menu tells me where my work is kept and how it could be lost
+  - [x] its menu offers the ways of backing up my work that this app has, such as a "Log in or sign up" button
 - when I click the cloud button in the footer:
   - [x] I can open the "Local network sync" page with the "Local network sync" item
-  - [x] I can open the account settings with the "Account settings" item
-- a project counts as backed up when any of these is true:
-  - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
-  - [ ] I have exported it to a project file since I last changed it (in any app)
-  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
-- when I enter the address of a server that does not have accounts:
-  - [x] I am told that the server has no accounts, and I stay in offline mode
-- when I try to sign up on a server whose sign-up is closed:
-  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
-- when I choose a password while signing up:
+  - [x] I can open the account settings screen with the "Account settings" item
+- when I click "Log in or sign up" in the cloud button's menu, or any other button that asks me to log in:
+  - [x] I'm taken to the log-in/signup screen
+
+---
+
+### Log-in/signup screen
+
+As a user:
+- when I open the log-in/signup screen:
+  - [x] I can switch the form between "Log in" and "Sign up"
+  - [x] I can log in to the easyImmerse cloud with my email address and password
+  - [x] I can log in to my own easyImmerse server instead, by entering its address under "More options"
+- when I open the log-in/signup screen in the desktop app or the mobile app:
+  - [x] I am told that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
+- when I switch the form to "Sign up":
+  - [x] I can create an account with my email address and a password
+- when I type a password while signing up:
   - [x] I see how strong it is as I type, and how to make it stronger
 - when I sign up on a server that can send email:
   - [x] I confirm my email address by following a link sent to it
 - when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
   - [x] I am told which of the two is wrong
+- when I try to sign up on a server whose sign-up is closed:
+  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I enter the address of a server that does not have accounts:
+  - [x] I am told that the server has no accounts, and I stay in offline mode
 - when I try to log in with a wrong password:
   - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
 - when I fail to log in too many times in a row:
   - [x] I am told how many minutes to wait before trying again
-- when I have forgotten my password, on a server that can send email:
-  - [x] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
-- when I am logged in:
-  - [x] I see my email address and my role, and a button to log out
-  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
-  - [x] I see the devices I am logged in on, and can log out any of them from here
-  - [x] I see my own projects, flashcards and dictionaries
-- when I am logged into a server besides the easyImmerse cloud:
-  - [x] I see the server's address, and can log out of it
-- when I log out:
-  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
-  - [x] other users logged in on the same machine or server cannot see or change them
-- when I log out of the web app while some of my flashcards have not been saved to the server yet:
+- when I click "Forgot your password?" on a server that can send email:
+  - [x] I can have a link sent to my email address with the "Send a reset link" button
+- when I follow the link to reset my password:
+  - [x] I can choose a new password, which logs me out on every other device
+
+---
+
+### Account settings screen
+
+As a user:
+- when I open the account settings screen while logged in:
+  - [x] I see my email address and my role
+  - [x] I can log out with the "Log out" button
+  - [x] I see the devices I am logged in on, and can log out any of them
+- when I open the account settings screen while logged in to a server besides the easyImmerse cloud:
+  - [x] I see the server's address
+- when I click "Log out" in the web app while some of my flashcards have not been saved to the server yet:
   - [x] I am told how many would be lost, and can stay logged in to save them or log out anyway
-- when I log out in the desktop app or the mobile app:
-  - [x] my work stays on this device, and my new changes are no longer backed up
-- when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
-  - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
-  - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
-- when I am an administrator and open the Account section:
+- when I subscribe:
+  - [ ] I can choose the amount I pay on a sliding scale
+  - [ ] I can manage or cancel my subscription from the account settings screen
+
+As a privileged user (a subscriber or a self-hosted server account holder):
+- when I open the account settings screen after some of my changes conflicted with changes made on another device:
+  - [x] I see the conflicting changes listed by project, and within a project by media file
+- when there are more conflicting changes than the account settings screen lists at first:
+  - [x] I can list all of them with the "Show all" button
+
+As an administrator of a server with accounts:
+- when I open the account settings screen:
   - [x] I see the server's accounts with their roles
   - [x] I can create an account by giving an email address, a password and a role
   - [x] I can change an account's role
   - [x] I can delete an account after confirming, which logs out anyone using it
 - when I try to demote or delete the server's only administrator:
   - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
-- when I subscribe:
-  - [ ] I can choose the amount I pay on a sliding scale
-  - [ ] I can manage or cancel my subscription from the account settings
+
+---
+
+### Account and cloud sync
+
+As a user:
+- while I am not logged in:
+  - [x] I can use all offline features of the app
+- while I am logged in:
+  - [x] I see my own projects, flashcards and dictionaries
+  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+- when I log out of the web app:
+  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
+- when I log out:
+  - [x] other users logged in on the same machine or server cannot see or change my projects, flashcards or settings
+- when I log out in the desktop app or the mobile app:
+  - [x] my work stays on this device, and my new changes are no longer backed up
+- when I log in from the desktop app or the mobile app, which keep my work on this device with their own built-in server:
+  - [x] the easyImmerse cloud or my own server keeps a copy of my work, while the app goes on keeping it on this device
+- when a project is kept on a server I am logged in to (in the web app, the browser extension or the mobile app):
+  - [x] the project counts as backed up, and the cloud button in the footer reflects it
+- when I have exported a project to a project file since I last changed it (in any app):
+  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
+- when I have synchronized a project over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it:
+  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
 
 As a privileged user (a subscriber or a self-hosted server account holder):
-- when I am logged in on a device:
+- while I am logged in on a device:
   - [x] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
   - [x] changes I make on one device appear on my other devices
   - [x] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
-  - [x] I can choose which media files are uploaded to the cloud
-- when I open the cloud storage settings:
-  - [x] I see how much of my storage quota is used, and can delete files from the cloud
-- when a change conflicts with one made on another device:
+  - [x] I can choose which media files are uploaded to the cloud, from a project's list of media files
+- when a change I make conflicts with one made on another device:
   - [x] the more recent change is kept, and I am notified
-  - [x] the account settings list the conflicting changes by project, and within a project by media file
-- when there are more conflicting changes than the account settings list at first:
-  - [x] I can list all of them with a "Show all" button
 
 ---
 
@@ -973,7 +1010,7 @@ As a web/mobile app user:
   - [x] media files on the desktop can be played on the paired device without copying them
   - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
 - when I scan the QR code or enter the address of a desktop app whose server uses accounts for authentication:
-  - [x] the sign-in form opens with the server's address filled in
+  - [x] the log-in/signup screen opens with the server's address filled in
   - [x] I log in with an account on that server instead of entering a pairing code
 - when I enter a pairing code that is wrong or has expired:
   - [x] I am told so
@@ -1040,8 +1077,8 @@ As a desktop app user:
 - when I am running an unauthenticated local server:
   - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the Account section
-  - [x] in the Account section, I can create and manage user accounts, and assign them different roles:
+  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the account settings screen
+  - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
     - administrator: can also manage the server, user accounts, my library, dictionaries available to users, and services like translation available to users
@@ -1089,7 +1126,7 @@ As a user:
 
 As a subscriber:
 - when I translate text:
-  - [ ] translations count against a monthly? quota, whose remaining balance I can see in my account settings
+  - [ ] translations count against a monthly? quota, whose remaining balance I can see on the account settings screen
 
 ---
 
@@ -1154,6 +1191,7 @@ As a user:
 
 As a user:
 - when I am on the settings screen:
+  - [x] I see whether I am logged in, and can open the account settings screen with the "Account" button
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
   - [x] I can open the subtitles appearance dialog
   - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
@@ -1173,6 +1211,10 @@ As a user:
   - [ ] the "Clear media cache" button is absent
 - when I use the keyboard shortcut (e.g. Cmd + ,):
   - [ ] the settings screen opens
+
+As a privileged user (a subscriber or a self-hosted server account holder):
+- when I am on the settings screen:
+  - [x] I see how much of my storage quota is used, and can delete files from the cloud
 
 ---
 

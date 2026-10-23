@@ -89,7 +89,7 @@ mise run devtools       # Redux DevTools server for the desktop and mobile apps;
 
 #### Local easyImmerse cloud (`dev:cloud`)
 
-- The development builds of the web app, the desktop app and the extension **offer `http://127.0.0.1:8791` as the easyImmerse cloud** in the Account section of Settings, as a release build offers the real one. The address is set in each app's `.env.development`.
+- The development builds of the web app, the desktop app and the extension **offer `http://127.0.0.1:8791` as the easyImmerse cloud** on the account settings screen, as a release build offers the real one. The address is set in each app's `.env.development`.
 - **No other task starts this server**, so logging in to the cloud fails until `mise run dev:cloud` is running. A server of your own can still be named under More options.
 - The server has **accounts with open sign-up**, keeps its data in `.dev/cloud.sqlite` and its media copies in `.dev/cloud-uploads/`, and **prints its mail to the terminal**, with links that open the `web-dev` app.
 
@@ -123,7 +123,7 @@ mise exec -- pnpm --filter @easyimmerse/extension build:firefox    # Firefox, in
 
 Set `VITE_EASYIMMERSE_SERVER_URL` and `VITE_EASYIMMERSE_TOKEN` before building to point the extension at a server. Without them it runs offline through the WebAssembly module.
 
-Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
+Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server on the account settings screen. Without it, the screen offers only a server whose address the person types in.
 
 ### Running a server of your own
 

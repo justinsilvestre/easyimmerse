@@ -21,7 +21,7 @@ const roles = [
 ] as const;
 
 /**
- * Explains the roles an account can have on a server with accounts, and points to the Account page, where accounts are created and managed.
+ * Explains the roles an account can have on a server with accounts, and points to the account settings screen, where accounts are created and managed.
  * Before the change to accounts is saved, it says that the accounts come after saving.
  */
 export function ServerAccountsInfo({ isSaved }: { isSaved: boolean }) {
@@ -32,13 +32,13 @@ export function ServerAccountsInfo({ isSaved }: { isSaved: boolean }) {
         {isSaved
           ? "People log in to this server with an account. "
           : "Once you save, people log in to this server with an account. "}
-        Accounts are created and managed on the{" "}
+        Accounts are created and managed in the{" "}
         <LinkButton
           onClick={() =>
             dispatch(actions.navigated({ type: "openAccountSettings" }))
           }
         >
-          Account page
+          account settings
         </LinkButton>
         , where each account gets one of these roles:
       </p>
