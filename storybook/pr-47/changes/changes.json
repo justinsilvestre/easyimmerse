@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 562,
+  "storyCount": 563,
   "changes": [
     {
       "id": "account-accountsection--offline-own-server-only",
@@ -512,8 +512,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21521,
-        "light-desktop.png": 40409,
+        "light-phone.png": 21518,
+        "light-desktop.png": 40408,
         "dark-phone.png": 22499,
         "dark-desktop.png": 41834
       },
@@ -559,8 +559,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21607,
-        "light-desktop.png": 40608,
+        "light-phone.png": 21610,
+        "light-desktop.png": 40610,
         "dark-phone.png": 22539,
         "dark-desktop.png": 41992
       },
@@ -606,7 +606,7 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23317,
+        "light-phone.png": 23320,
         "light-desktop.png": 42609,
         "dark-phone.png": 24530,
         "dark-desktop.png": 44346
@@ -794,10 +794,10 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 20552,
-        "light-desktop.png": 23012,
-        "dark-phone.png": 26352,
-        "dark-desktop.png": 30320
+        "light-phone.png": 20618,
+        "light-desktop.png": 23078,
+        "dark-phone.png": 28392,
+        "dark-desktop.png": 32360
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1311,9 +1311,9 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 10883,
-        "light-desktop.png": 12734,
-        "dark-phone.png": 11295,
+        "light-phone.png": 10882,
+        "light-desktop.png": 12735,
+        "dark-phone.png": 11293,
         "dark-desktop.png": 13159
       },
       "imageSizes": {
@@ -1406,9 +1406,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 13059,
-        "light-desktop.png": 14905,
+        "light-desktop.png": 14906,
         "dark-phone.png": 13397,
-        "dark-desktop.png": 15253
+        "dark-desktop.png": 15254
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1455,7 +1455,7 @@
         "light-phone.png": 11732,
         "light-desktop.png": 13824,
         "dark-phone.png": 11984,
-        "dark-desktop.png": 14076
+        "dark-desktop.png": 14075
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1548,7 +1548,7 @@
       "changedVariants": {
         "light-phone.png": 13749,
         "light-desktop.png": 15840,
-        "dark-phone.png": 14207,
+        "dark-phone.png": 14208,
         "dark-desktop.png": 16280
       },
       "imageSizes": {
@@ -1876,7 +1876,7 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 2649,
-        "light-desktop.png": 2701,
+        "light-desktop.png": 2700,
         "dark-phone.png": 2737,
         "dark-desktop.png": 2800
       },
@@ -2539,7 +2539,7 @@
       "changedVariants": {
         "light-phone.png": 19723,
         "light-desktop.png": 21688,
-        "dark-phone.png": 21334,
+        "dark-phone.png": 21336,
         "dark-desktop.png": 23438
       },
       "imageSizes": {
@@ -3753,6 +3753,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 800
+        }
+      }
+    },
+    {
+      "id": "flashcards-failedsavesstatus--one-not-saved",
+      "title": "Flashcards/FailedSavesStatus",
+      "name": "One Not Saved",
+      "importPath": "./src/flashcards/unsaved/FailedSavesStatus.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 450
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 428
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 450
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 428
         }
       }
     },
