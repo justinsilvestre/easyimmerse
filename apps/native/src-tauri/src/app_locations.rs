@@ -1,4 +1,5 @@
 //! Finds the directories the app keeps its config, data and cache in, and its built web app.
+//! A desktop debug build keeps them in the repository instead, so that it never touches an installed release's data.
 //! A debug build opens the database named by `EASYIMMERSE_DATABASE` instead, when it is set,
 //! and keeps the plugins and fetched media beside it.
 
@@ -13,6 +14,8 @@ const DATABASE_OVERRIDE_VARIABLE: &str = "EASYIMMERSE_DATABASE";
 const WEB_APP_RESOURCE: &str = "web";
 /// Where a debug build finds the web app, relative to the repository root.
 const WEB_APP_BUILD_DIR: &str = "apps/web/dist";
+/// Where a desktop debug build keeps its config, data and cache, relative to the repository root.
+const DESKTOP_DEBUG_DIR: &str = ".dev/desktop";
 
 /// The locations Tauri gives the running app.
 /// Only the server config file lives in the config directory, and the app starts without it,
@@ -54,6 +57,12 @@ fn locations(
     cache_dir: PathBuf,
     resource_dir: Option<PathBuf>,
 ) -> AppLocations {
+    let (config_dir, data_dir, cache_dir) = if is_desktop_debug_build() {
+        let dir = repository_root().join(DESKTOP_DEBUG_DIR);
+        (dir.join("config"), dir.join("data"), dir.join("cache"))
+    } else {
+        (config_dir, data_dir, cache_dir)
+    };
     let database_override = read_database_override();
     let data_dir = database_override
         .as_deref()
@@ -66,6 +75,11 @@ fn locations(
         web_app_dir: web_app_dir(resource_dir).filter(|dir| dir.is_dir()),
         database_override,
     }
+}
+
+/// A phone cannot reach the repository, so a mobile debug build keeps the app's usual directories.
+fn is_desktop_debug_build() -> bool {
+    cfg!(all(desktop, debug_assertions))
 }
 
 /// A release build serves the web app bundled as a resource,
