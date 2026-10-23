@@ -34,9 +34,9 @@ export function ServerSection() {
     form.status === "loaded" && form.fields.auth === "accounts";
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <h2 id={headingId} className="text-base font-semibold">
+      <h3 id={headingId} className="text-base font-semibold">
         Server
-      </h2>
+      </h3>
       <p className="text-sm text-fg-muted">
         The server lets phones, browsers and other computers on your local
         network use this app's projects, flashcards and dictionaries.

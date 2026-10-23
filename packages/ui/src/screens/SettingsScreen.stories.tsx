@@ -74,7 +74,7 @@ export const LowDiskSpace: Story = {
   },
 };
 
-/** The desktop app adds its server's settings after the Account button, and its ffmpeg build to the Media conversion section. */
+/** The desktop app adds its server's settings to the Sync group, and its ffmpeg build to the Media conversion section. */
 export const OnDesktop: Story = {
   parameters: {
     appStore: {
