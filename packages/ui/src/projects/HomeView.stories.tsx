@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { withAppStore } from "../storybook/withAppStore.tsx";
+import { BackupNudgeCard } from "./BackupNudgeCard.tsx";
 import { exampleProjects, exampleReviewCounts } from "./exampleProjects.ts";
 import { HomeView } from "./HomeView.tsx";
 
@@ -17,7 +18,6 @@ const meta = {
     onReviewProject: fn(),
     onCreateProject: fn(),
     onContinueOffline: fn(),
-    onOpenDictionaries: fn(),
   },
 } satisfies Meta<typeof HomeView>;
 
@@ -33,3 +33,19 @@ export const Loading: Story = { args: { status: "loading", projects: [] } };
 export const CouldNotLoad: Story = { args: { status: "failed", projects: [] } };
 
 export const Offline: Story = { args: { status: "offline", projects: [] } };
+
+export const WithBackupSuggestion: Story = {
+  args: {
+    suggestion: (
+      <BackupNudgeCard
+        place={{ kind: "thisDevice", device: "computer" }}
+        sign={{
+          kind: "deviceOnly",
+          platform: "desktop",
+          hasOfficialServer: true,
+        }}
+        onDismiss={fn()}
+      />
+    ),
+  },
+};

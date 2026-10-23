@@ -8,6 +8,7 @@ import {
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { selectSettingsPageBackLabel } from "./selectSettingsPageBackLabel.ts";
 
 /** The dictionaries settings, backed by the dictionaries the server keeps. */
 export function DictionariesScreen({ onBack }: { onBack: () => void }) {
@@ -32,6 +33,7 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       importFailure={imports.importFailure}
       pendingTable={imports.pendingTable}
       onBack={onBack}
+      backLabel={useAppSelector(selectSettingsPageBackLabel)}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
       onRemove={(dictionaryId) =>
         dispatch(actions.dictionaryRemovalRequested(dictionaryId))

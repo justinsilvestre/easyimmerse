@@ -3,12 +3,14 @@ import {
   useListMediaFilesQuery,
 } from "@easyimmerse/backend";
 import {
+  actions,
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
@@ -31,13 +33,13 @@ export function ProjectScreen({
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   if (error)
     return (
-      <ScreenLayout>
+      <ScreenLayout onBack={onBack} backLabel="Projects">
         <p role="alert">Could not load the project.</p>
       </ScreenLayout>
     );
   if (project === undefined)
     return (
-      <ScreenLayout>
+      <ScreenLayout onBack={onBack} backLabel="Projects">
         <LoadingStatus
           label="Loading the project"
           className="flex flex-col gap-6"
@@ -75,13 +77,17 @@ function OpenFileScreen({
   project: Project;
   mediaFileId: string;
 }) {
+  const dispatch = useAppDispatch();
   const { data, isFetching } = useListMediaFilesQuery(project.id);
   const mediaFile = data?.media_files.find((file) => file.id === mediaFileId);
   if (mediaFile && isDocumentFileName(mediaFile.name))
     return <ReaderScreen project={project} mediaFileId={mediaFileId} />;
   if (!mediaFile && isFetching)
     return (
-      <ScreenLayout>
+      <ScreenLayout
+        onBack={() => dispatch(actions.closeMedia())}
+        backLabel={project.settings.name}
+      >
         <p role="status" className="text-sm text-fg-muted">
           Opening the file…
         </p>

@@ -4,6 +4,7 @@ import {
 } from "@easyimmerse/state";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { selectSettingsPageBackLabel } from "../screens/selectSettingsPageBackLabel.ts";
 import { ConnectedDesktopPairingPanel } from "./ConnectedDesktopPairingPanel.tsx";
 import { PairingScannerPanel } from "./PairingScannerPanel.tsx";
 
@@ -23,7 +24,10 @@ export function PairingScreen({
 }) {
   const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
   return (
-    <ScreenLayout onBack={onBack}>
+    <ScreenLayout
+      onBack={onBack}
+      backLabel={useAppSelector(selectSettingsPageBackLabel)}
+    >
       <h1 className="text-xl font-semibold">Local network sync</h1>
       {isDesktop ? (
         <ConnectedDesktopPairingPanel

@@ -1,8 +1,8 @@
 import type { Project, ReviewCounts } from "@easyimmerse/types";
-import { BookOpen, FolderOpen, Plus } from "lucide-react";
+import { FolderOpen, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
-import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus } from "../components/Skeleton.tsx";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
@@ -10,7 +10,7 @@ import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 
-/** The home screen: the recent projects, most recently opened first, and the way to a new one. */
+/** The home screen: a suggestion above all else, if there is one, then the recent projects, most recently opened first, and the way to a new one. */
 export function HomeView({
   status,
   projects,
@@ -19,7 +19,7 @@ export function HomeView({
   onReviewProject,
   onCreateProject,
   onContinueOffline,
-  onOpenDictionaries,
+  suggestion,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
@@ -30,24 +30,12 @@ export function HomeView({
   onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
-  onOpenDictionaries: () => void;
+  /** A card suggesting another easyImmerse component, such as a way to back up the work. */
+  suggestion?: ReactNode;
 }) {
   return (
-    <ScreenLayout
-      headerActions={
-        <>
-          <Button
-            variant="subtle"
-            aria-label="Dictionaries"
-            onClick={onOpenDictionaries}
-          >
-            <BookOpen className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Dictionaries</span>
-          </Button>
-          <HelpLink />
-        </>
-      }
-    >
+    <ScreenLayout>
+      {suggestion}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Projects</h1>
         {projects.length > 0 && (
