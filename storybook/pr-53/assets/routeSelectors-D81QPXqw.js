@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{on as t,sn as n}from"./src-C0EFRplo.js";var r,i,a;function o(){return(o=e((()=>{t(),r=e=>e.app.route.screen===`settings`,i=e=>{let t=n(e.app.route);return t.screen===`media`?t.mediaFileId:null},a=e=>e.app.route.screen===`settings`?e.app.route.scrollTarget??null:null})))()}export{a as i,i as n,r,o as t};
