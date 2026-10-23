@@ -219,17 +219,24 @@ depends = ["web-dev:server", "web-dev:vite"]
 [tasks."web-dev:build"]
 run = "cargo build -p easyimmerse-server"
 
+# The server accepts requests from any web page and may read files on this machine, so its token must stay secret.
+# The token is made once per checkout, so that a server restart leaves open tabs signed in.
+[tasks."web-dev:token"]
+run = '''
+mkdir -p .dev
+[ -s .dev/web-dev-token ] || (umask 077 && openssl rand -hex 32 > .dev/web-dev-token)
+'''
+
 # The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
 # It gives them sample media and dictionaries once per database, so an older database receives them too.
+# The sample content is stored as paths into fixtures/, so the server may read files on this machine.
 # Plugins placed under .dev/plugins are installed, and what they fetch lands in .dev/media.
 # Port 8788 leaves 8787 to the desktop app's embedded server.
 [tasks."web-dev:server"]
-depends = ["web-dev:build"]
-env = { EASYIMMERSE_TOKEN = "dev" }
+depends = ["web-dev:build", "web-dev:token"]
 run = '''
-mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
-exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --plugins-dir .dev/plugins --media-dir .dev/media
+EASYIMMERSE_TOKEN=$(cat .dev/web-dev-token) exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --allow-local-paths --plugins-dir .dev/plugins --media-dir .dev/media
 '''
 
 # The development builds offer this server as the easyImmerse cloud, through the .env.development file of each app.
@@ -245,9 +252,9 @@ exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8791 --db
 
 # Waits for the server build so that a compile error stops the task before Vite starts.
 [tasks."web-dev:vite"]
-depends = ["web-dev:build"]
-env = { VITE_EASYIMMERSE_SERVER_URL = "http://127.0.0.1:8788", VITE_EASYIMMERSE_TOKEN = "dev" }
-run = "pnpm --filter @easyimmerse/web dev"
+depends = ["web-dev:build", "web-dev:token"]
+env = { VITE_EASYIMMERSE_SERVER_URL = "http://127.0.0.1:8788" }
+run = "VITE_EASYIMMERSE_TOKEN=$(cat .dev/web-dev-token) exec pnpm --filter @easyimmerse/web dev"
 
 # A debug build of the desktop app writes its server's address, a new random token, and its database and cache paths to .dev/desktop-server.env each time it starts.
 # When that server is not running, the task starts a standalone server on the same database and cache at http://127.0.0.1:8789 instead.
