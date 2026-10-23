@@ -17,7 +17,7 @@ import {
   fixtureSyncLink,
   fixtureSyncStatus,
 } from "../testSupport/fixtureResponses.ts";
-import { CloudMenu } from "./CloudMenu.tsx";
+import { SyncMenu } from "./SyncMenu.tsx";
 
 /** A backend that saves no flashcard, as one that runs offline cannot. */
 const offlineSaves = createFakeBackendClient({
@@ -38,12 +38,6 @@ const failingSaves = createFakeBackendClient({
   }),
 });
 
-/** A built-in server whose projects have all been copied to a linked server. */
-const allBackedUp = createFakeBackendClient({
-  ...fixtureResponses,
-  "GET /projects": { projects: [{ ...fixtureProject, is_backed_up: true }] },
-});
-
 /** A built-in server whose fixture projects are not backed up. */
 const notBackedUp = createFakeBackendClient(fixtureResponses);
 
@@ -53,6 +47,29 @@ const linkedIn = (state: SyncLinkState) =>
     ...fixtureResponses,
     "GET /sync/status": fixtureSyncStatus({ ...fixtureSyncLink, state }),
   });
+
+/** A built-in server whose link to the easyImmerse cloud last backed everything up two minutes ago. */
+const backedUpToCloud = createFakeBackendClient({
+  ...fixtureResponses,
+  "GET /projects": { projects: [{ ...fixtureProject, is_backed_up: true }] },
+  "GET /sync/status": fixtureSyncStatus({
+    ...fixtureSyncLink,
+    last_synced_at_ms: Date.now() - 120_000,
+  }),
+});
+
+/** A desktop app's server reached over the local network with its launch token, with or without accounts. */
+const pairedDesktop = (accounts: boolean) =>
+  createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /auth/me": { kind: "launch" },
+    "GET /auth/server": { accounts, open_signup: false, sends_email: false },
+  });
+
+const lanServer: ServerConfig = {
+  serverUrl: "http://192.168.1.20:4000",
+  token: "launch",
+};
 
 const accountServer: ServerConfig = {
   serverUrl: "https://books.example.org",
@@ -84,26 +101,20 @@ const savingWord = withDispatchedActions(
   savedWord,
 );
 
-/** Draws the cloud button in the footer bar, with room above it for the menu it opens. */
+/** Draws the Sync button in the footer bar, with room above it for the popover it opens. */
 const inFooter: Decorator = (Story) => (
   <div className="flex min-h-96 flex-col justify-end">
-    <FooterBar
-      isSettingsOpen={false}
-      onOpenSettings={fn()}
-      cloudMenu={<Story />}
-      activities={[]}
-      onOpenActivity={fn()}
-    />
+    <FooterBar syncMenu={<Story />} activities={[]} onOpenActivity={fn()} />
   </div>
 );
 
 const meta = {
-  title: "Account/CloudMenu",
-  component: CloudMenu,
+  title: "Account/SyncMenu",
+  component: SyncMenu,
   decorators: [inFooter, withAppStore],
   args: { isInitiallyOpen: true },
   parameters: { layout: "fullscreen" },
-} satisfies Meta<typeof CloudMenu>;
+} satisfies Meta<typeof SyncMenu>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -144,7 +155,7 @@ export const DeviceOnlyWithoutOfficialServer: Story = {
   },
 };
 
-/** At phone width, the sign shows only its icon, and its menu is placed against the footer. */
+/** At phone width, the popover is placed against the footer. */
 export const DeviceOnlyOnAPhone: Story = {
   parameters: {
     viewport: { options: INITIAL_VIEWPORTS },
@@ -192,18 +203,39 @@ export const LoggedOut: Story = {
   },
 };
 
-/** With every project backed up, the button is a plain cloud, and its menu holds only the ways to other devices. */
-export const BackedUp: Story = {
+/** Backed up to the easyImmerse cloud through the built-in server's link, with nothing more to do. */
+export const BackedUpToCloud: Story = {
   parameters: {
-    appStore: { client: allBackedUp, server: builtInServer("desktop") },
+    appStore: {
+      client: backedUpToCloud,
+      server: builtInServer("desktop"),
+      cloudUrl: "https://cloud.example.org",
+    },
   },
 };
 
-/** At phone width, the plain cloud's menu is placed against the footer. */
-export const BackedUpOnAPhone: Story = {
-  parameters: {
-    viewport: { options: INITIAL_VIEWPORTS },
-    appStore: { client: allBackedUp, server: builtInServer("mobile") },
-  },
-  globals: { viewport: { value: "iphonex", isRotated: false } },
+/** Logged in to a server directly, as the web app is, with no failed save. */
+export const LoggedInToServer: Story = {
+  parameters: { appStore: { server: accountServer } },
+};
+
+export const PairedWithDesktop: Story = {
+  parameters: { appStore: { client: pairedDesktop(false), server: lanServer } },
+};
+
+/** Paired with a desktop app whose server has accounts, which the popover offers to log in to. */
+export const PairedWithDesktopWithAccounts: Story = {
+  parameters: { appStore: { client: pairedDesktop(true), server: lanServer } },
+};
+
+/** The closed button while the remote cannot be reached: the cloud in the warning colour. */
+export const ClosedWithFault: Story = {
+  args: { isInitiallyOpen: false },
+  parameters: LinkUnreachable.parameters,
+};
+
+/** The closed button while the work is kept only on this computer: a plain monitor. */
+export const ClosedOnThisComputer: Story = {
+  args: { isInitiallyOpen: false },
+  parameters: DeviceOnlyDesktop.parameters,
 };

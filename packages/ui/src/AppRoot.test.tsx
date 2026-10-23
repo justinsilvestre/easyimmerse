@@ -52,10 +52,11 @@ async function openMediaFile() {
   await screen.findByRole("region", { name: "Player" });
 }
 
-/** The app's Settings button: the footer's, or the media screen's header button. */
-function openSettingsFromFooter() {
-  const buttons = screen.getAllByRole("button", { name: "Settings" });
-  fireEvent.click(buttons.at(-1) as HTMLElement);
+/** Opens Settings from the Profile menu of the screen in front. */
+function openSettingsFromProfileMenu() {
+  const profileButtons = screen.getAllByRole("button", { name: "Profile" });
+  fireEvent.click(profileButtons.at(-1) as HTMLElement);
+  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
 }
 
 const findPlayer = () => screen.getByRole("region", { name: "Player" });
@@ -83,7 +84,8 @@ describe("AppRoot", () => {
   it("returns to the home screen when Projects is clicked", async () => {
     renderAppRoot();
     await openProject();
-    fireEvent.click(await screen.findByRole("button", { name: "Projects" }));
+    await screen.findByRole("heading", { name: "Alpha" });
+    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     expect(
       await screen.findByRole("heading", { name: "Projects" }),
     ).toBeDefined();
@@ -103,24 +105,24 @@ describe("AppRoot", () => {
     ).toBeDefined();
   });
 
-  describe("when Settings opens from the footer", () => {
+  describe("when Settings opens from the Profile menu", () => {
     it("shows the settings screen", () => {
       renderAppRoot();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       expect(screen.getByRole("heading", { name: "Settings" })).toBeDefined();
     });
 
     it("keeps the media screen mounted beneath", async () => {
       renderAppRoot();
       await openMediaFile();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       expect(findPlayer()).toBeDefined();
     });
 
     it("makes the media screen inert", async () => {
       renderAppRoot();
       await openMediaFile();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       expect(findPlayer().closest("[inert]")).not.toBeNull();
     });
 
@@ -128,7 +130,7 @@ describe("AppRoot", () => {
       const { store } = renderAppRoot();
       await openMediaFile();
       act(() => store.dispatch(actions.playerTimeChanged(6.5)));
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       clickUsableBack();
       expect(
         (screen.getByRole("slider", { name: "Position" }) as HTMLInputElement)
@@ -138,13 +140,13 @@ describe("AppRoot", () => {
 
     it("lists the groups of license notices once they load", async () => {
       renderAppRoot();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       expect(await screen.findByText("Rust crates")).toBeDefined();
     });
 
     it("reports conversion as unavailable when the server cannot convert", async () => {
       renderAppRoot();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       expect(
         await screen.findByText(
           "Media conversion is unavailable, so there is no cache.",
@@ -155,7 +157,7 @@ describe("AppRoot", () => {
     it("lets the media screen be used again after Back is clicked", async () => {
       renderAppRoot();
       await openMediaFile();
-      openSettingsFromFooter();
+      openSettingsFromProfileMenu();
       clickUsableBack();
       expect(findPlayer().closest("[inert]")).toBeNull();
     });

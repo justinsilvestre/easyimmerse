@@ -10,7 +10,9 @@ describe("ThemeChoiceControl", () => {
   it("offers the system, light and dark choices", () => {
     renderWithAppStore(<ThemeChoiceControl />);
     expect(
-      screen.getAllByRole("radio").map((radio) => radio.parentElement?.textContent),
+      screen
+        .getAllByRole("radio")
+        .map((radio) => radio.parentElement?.textContent),
     ).toEqual(["System", "Light", "Dark"]);
   });
 
