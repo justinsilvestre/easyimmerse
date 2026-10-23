@@ -12,6 +12,7 @@ export const lanSettings: DesktopServerSettings = {
   autostart: false,
   ffmpeg_dir: null,
   expected_hosts: [],
+  device_name: "Studio iMac",
 };
 
 /** The status of a server that other devices on the local network reach. */

@@ -24,7 +24,8 @@ export type DesktopPairingServer =
   | { kind: "starting" }
   | { kind: "loopbackOnly" }
   | { kind: "noNetwork" }
-  | { kind: "running"; url: string; hasAccounts: boolean };
+  /** The server runs on the local network at `url`, and paired devices call this computer `deviceName`, which may be empty. */
+  | { kind: "running"; url: string; hasAccounts: boolean; deviceName: string };
 
 /** The server's status as the server settings show it. */
 export type DesktopServerStatusView = {
@@ -178,7 +179,12 @@ function runningPairingServer(
   if (url === undefined) return { kind: "noNetwork" };
   if (!status.lan_reachable) return { kind: "loopbackOnly" };
   if (settings === null) return unavailableOrUnknown(settingsFailure);
-  return { kind: "running", url, hasAccounts: settings.auth === "accounts" };
+  return {
+    kind: "running",
+    url,
+    hasAccounts: settings.auth === "accounts",
+    deviceName: settings.device_name,
+  };
 }
 
 function unavailableOrUnknown(

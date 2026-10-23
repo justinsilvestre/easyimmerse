@@ -12,6 +12,14 @@ const cloud: SyncPlace = {
   lastBackedUpMs: null,
 };
 
+const paired: SyncPlace = {
+  kind: "pairedDesktop",
+  serverUrl: "http://192.168.1.20:4000",
+  host: "192.168.1.20:4000",
+  deviceName: null,
+  usesAccounts: false,
+};
+
 describe("syncStatusLine", () => {
   it("tells of work saved only on this computer", () => {
     expect(
@@ -37,18 +45,16 @@ describe("syncStatusLine", () => {
     );
   });
 
-  it("names the paired desktop app by its address", () => {
+  it("names the paired desktop app by its computer's name", () => {
     expect(
-      syncStatusLine(
-        {
-          kind: "pairedDesktop",
-          serverUrl: "http://192.168.1.20:4000",
-          host: "192.168.1.20:4000",
-          usesAccounts: false,
-        },
-        hidden,
-      ),
-    ).toBe("Paired with the desktop app at 192.168.1.20:4000");
+      syncStatusLine({ ...paired, deviceName: "Studio iMac" }, hidden),
+    ).toBe("Paired with Studio iMac");
+  });
+
+  it("names the paired desktop app by its address when its computer has no name", () => {
+    expect(syncStatusLine(paired, hidden)).toBe(
+      "Paired with the desktop app at 192.168.1.20:4000",
+    );
   });
 
   it("tells of a server that cannot be reached in place of the place", () => {

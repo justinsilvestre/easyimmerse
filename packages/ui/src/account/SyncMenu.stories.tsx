@@ -58,12 +58,17 @@ const backedUpToCloud = createFakeBackendClient({
   }),
 });
 
-/** A desktop app's server reached over the local network with its launch token, with or without accounts. */
-const pairedDesktop = (accounts: boolean) =>
+/** A desktop app's server reached over the local network with its launch token, with or without accounts, and with or without its computer's name. */
+const pairedDesktop = (accounts: boolean, deviceName?: string) =>
   createFakeBackendClient({
     ...fixtureResponses,
     "GET /auth/me": { kind: "launch" },
-    "GET /auth/server": { accounts, open_signup: false, sends_email: false },
+    "GET /auth/server": {
+      accounts,
+      open_signup: false,
+      sends_email: false,
+      device_name: deviceName,
+    },
   });
 
 const lanServer: ServerConfig = {
@@ -219,7 +224,18 @@ export const LoggedInToServer: Story = {
   parameters: { appStore: { server: accountServer } },
 };
 
+/** Paired with a desktop app whose server gives its computer's name. */
 export const PairedWithDesktop: Story = {
+  parameters: {
+    appStore: {
+      client: pairedDesktop(false, "X's MacBook Pro"),
+      server: lanServer,
+    },
+  },
+};
+
+/** Paired with a desktop app whose server gives no name, so the status line names its address. */
+export const PairedWithUnnamedDesktop: Story = {
   parameters: { appStore: { client: pairedDesktop(false), server: lanServer } },
 };
 

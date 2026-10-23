@@ -28,4 +28,8 @@ ffmpeg_dir: string | null,
 /**
  * Host names that other devices use to reach the server, beyond its own addresses.
  */
-expected_hosts: Array<string>, };
+expected_hosts: Array<string>, 
+/**
+ * The name paired devices show for this computer, such as `X's MacBook Pro`.
+ */
+device_name: string, };

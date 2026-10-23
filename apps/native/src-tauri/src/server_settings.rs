@@ -10,6 +10,8 @@ use easyimmerse_server::config_file::{DesktopFileConfig, ServerFileConfig};
 use easyimmerse_server::serve_settings::{ServeSettings, resolve_serve_settings};
 use thiserror::Error;
 
+use crate::server_addresses::default_device_name;
+
 pub const CONFIG_FILE_NAME: &str = "server.toml";
 /// Every network interface, so that other devices can reach the server once it is started.
 pub const DEFAULT_PUBLIC_BIND: SocketAddr =
@@ -59,6 +61,7 @@ impl AppLocations {
             api_only: Some(false),
             desktop: Some(DesktopFileConfig {
                 autostart: Some(false),
+                device_name: default_device_name(),
             }),
             ..ServerFileConfig::default()
         }
@@ -81,6 +84,11 @@ impl AppLocations {
 pub fn serve_settings(completed: &ServerFileConfig, token: &str) -> ServeSettings {
     ServeSettings {
         token: Some(token.to_string()),
+        device_name: completed
+            .device_name()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+            .map(str::to_string),
         seed_placeholders: cfg!(debug_assertions),
         seed_sample_content: cfg!(debug_assertions),
         ..resolve_serve_settings(&ServeArgs::default(), completed)
@@ -114,6 +122,7 @@ pub fn desktop_settings(
             .as_deref()
             .map(|dir| dir.to_string_lossy().into_owned()),
         expected_hosts: settings.expected_hosts.clone(),
+        device_name: completed.device_name().unwrap_or_default().to_string(),
     }
 }
 
@@ -144,6 +153,10 @@ pub fn file_text_with(
         ("api_only", settings.api_only.to_string()),
         ("expected_hosts", settings.expected_hosts.join(",")),
         ("desktop.autostart", settings.autostart.to_string()),
+        (
+            "desktop.device_name",
+            settings.device_name.trim().to_string(),
+        ),
     ];
     let mut updated = text.to_string();
     for (key, value) in values {
@@ -271,6 +284,7 @@ mod tests {
             autostart: true,
             ffmpeg_dir: Some("/opt/homebrew/bin".to_string()),
             expected_hosts: vec!["books.example.org".to_string()],
+            device_name: "Studio iMac".to_string(),
         };
         assert_eq!(saved(&settings), settings);
     }
@@ -306,6 +320,21 @@ mod tests {
             ..default_settings()
         };
         assert!(file_text_with("", &settings).is_err());
+    }
+
+    #[test]
+    fn gives_the_server_the_device_name() {
+        let completed = locations().complete(parse("[desktop]\ndevice_name = \"Studio iMac\""));
+        assert_eq!(
+            serve_settings(&completed, "token").device_name,
+            Some("Studio iMac".to_string())
+        );
+    }
+
+    #[test]
+    fn gives_the_server_no_blank_device_name() {
+        let completed = locations().complete(parse("[desktop]\ndevice_name = \" \""));
+        assert_eq!(serve_settings(&completed, "token").device_name, None);
     }
 
     #[test]

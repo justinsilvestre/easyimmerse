@@ -24,6 +24,8 @@ pub struct ApiConfig {
     /// Where the server keeps copies of media bytes, and how many bytes each account may keep there.
     /// None when it keeps none.
     pub uploads: Option<UploadsConfig>,
+    /// The name of the desktop app's computer, which paired devices show. None for every other server.
+    pub device_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,6 +119,7 @@ impl ApiConfig {
             expected_hosts: vec![format!("127.0.0.1:{port}"), format!("localhost:{port}")],
             server_dirs: Vec::new(),
             uploads: None,
+            device_name: None,
         }
     }
 

@@ -887,6 +887,8 @@ As a user:
   - [ ] a notice tells me what happened
 - when I click the Sync button:
   - [ ] I see where my work is saved and whether it is backed up, e.g. "Saved only on this computer" or "Backed up to the easyImmerse cloud 2 minutes ago"
+- when I click the Sync button while paired with a desktop app:
+  - [x] I see the name of the desktop app's computer, e.g. "Paired with X's MacBook Pro"
 - when I click the Sync button while my work can't be backed up:
   - [ ] I see what went wrong
   - [ ] I see a button to fix it, e.g. "Try again" or "Log in again"
@@ -1031,6 +1033,7 @@ As a privileged user (a subscriber or a self-hosted server account holder):
 As a desktop app user:
 - when I open the "Local network sync" page while the server is running on the local network:
   - [x] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+  - [x] I see the name that paired devices show for this computer, which is its device name from the Server page of Settings
 - when I open the "Local network sync" page while the server is running on the local network with "Launch token only" authentication:
   - [x] I also see a six-digit pairing code
   - [x] I see the time until which the pairing code is valid
@@ -1074,10 +1077,13 @@ As a web/mobile app user:
 ### Desktop app, local server, and self-hosting
 
 As a desktop app user:
-- when I open the Server section of Settings:
+- when I am on the settings screen:
+  - [x] I can open the Server page from the "Sync" group
+- when I open the Server page of Settings:
   - [x] I see whether the server is stopped, starting, running, or has failed
   - [x] I can start the server with a button
   - [x] I can stop the server with a button
+  - [x] I can set the name that paired devices show for this computer in the "Device name" field, which starts as the computer's own name, e.g. "Xs MacBook Pro"
   - [x] I can set the IP address and port the server listens on, such as 0.0.0.0:8787, in the "Address and port" field
   - [x] I can set up authentication for the server, by switching "Authentication" between "Launch token only" and "Accounts"
   - [x] I can choose whether the server serves the complete web app or only the API, by switching "What the server serves" between those two options
@@ -1085,13 +1091,13 @@ As a desktop app user:
   - [x] I can save my changes to these settings with a button
   - [x] I can see the server's log, including any errors or warnings
   - [x] I can copy the server's log with a button
-- when I open the Server section of Settings while the server is running:
+- when I open the Server page of Settings while the server is running:
   - [x] I see the addresses that other devices use to reach the server
   - [x] I see whether other devices on the local network can reach the server, or only this computer
 - when I switch "Authentication" to "Accounts":
   - [x] I can choose whether anyone who can reach the server may sign up for an account, with the "Let anyone who can reach the server sign up" checkbox
 - when the server has failed:
-  - [x] the Server section of Settings tells me why
+  - [x] the Server page of Settings tells me why
 - when I change a server setting that takes effect only after a restart:
   - [x] I am told that saving the change restarts the server
 - when I close the app with the server running:
@@ -1123,7 +1129,7 @@ As a desktop app user:
 - when I am running an unauthenticated local server:
   - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the account settings screen
+  - [x] the Server page of Settings describes the roles I can give user accounts, and links to the account settings screen
   - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation

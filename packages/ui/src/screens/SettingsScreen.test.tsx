@@ -154,7 +154,7 @@ describe("SettingsScreen", () => {
     ).toBeDefined();
   });
 
-  it("shows the server settings on the desktop app", () => {
+  it("shows the Server row on the desktop app", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -170,10 +170,10 @@ describe("SettingsScreen", () => {
         },
       },
     );
-    expect(screen.getByRole("region", { name: "Server" })).toBeDefined();
+    expect(screen.getByRole("button", { name: /^Server/ })).toBeDefined();
   });
 
-  it("shows no server settings elsewhere", () => {
+  it("shows no Server row elsewhere", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -181,7 +181,7 @@ describe("SettingsScreen", () => {
         onOpenDictionaries={() => undefined}
       />,
     );
-    expect(screen.queryByRole("region", { name: "Server" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Server/ })).toBeNull();
   });
 
   it.each(["Sync", "This device", "About"])(
@@ -212,7 +212,7 @@ describe("SettingsScreen", () => {
     expect(getGroup(group).getByRole("region", { name })).toBeDefined();
   });
 
-  it("puts the desktop app's server settings in the Sync group", () => {
+  it("puts the desktop app's Server row in the Sync group", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -229,7 +229,7 @@ describe("SettingsScreen", () => {
       },
     );
     expect(
-      getGroup("Sync").getByRole("region", { name: "Server" }),
+      getGroup("Sync").getByRole("button", { name: /^Server/ }),
     ).toBeDefined();
   });
 
@@ -243,6 +243,31 @@ describe("SettingsScreen", () => {
     );
     expect(selectRoute(store.getState())).toMatchObject({
       pages: ["general", "pairing"],
+    });
+  });
+
+  it("opens the Server page from its row on the desktop app", () => {
+    const { store } = renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+      undefined,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:5000",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    act(() => {
+      store.dispatch(actions.navigated({ type: "openSettings" }));
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Server/ }));
+    expect(selectRoute(store.getState())).toMatchObject({
+      pages: ["general", "server"],
     });
   });
 

@@ -3,6 +3,8 @@
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
+use easyimmerse_api::server_control::device_name_from_host_name;
+
 /// The machine's IPv4 addresses that other devices on a network can reach,
 /// with private network addresses such as `192.168.1.5` first, so that the first one suits a QR code.
 pub fn lan_ipv4_addresses() -> Vec<Ipv4Addr> {
@@ -20,6 +22,13 @@ pub fn lan_ipv4_addresses() -> Vec<Ipv4Addr> {
 pub fn host_name() -> Option<String> {
     let name = gethostname::gethostname().into_string().ok()?;
     (!name.is_empty()).then(|| name.to_lowercase())
+}
+
+/// The machine's host name made readable, as paired devices show it by default, such as `Xs MacBook Pro`.
+pub fn default_device_name() -> Option<String> {
+    let name = gethostname::gethostname().into_string().ok()?;
+    let name = device_name_from_host_name(&name);
+    (!name.is_empty()).then_some(name)
 }
 
 fn lan_ipv4_addresses_among(addresses: Vec<IpAddr>) -> Vec<Ipv4Addr> {

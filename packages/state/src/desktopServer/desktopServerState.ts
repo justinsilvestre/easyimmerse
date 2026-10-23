@@ -7,7 +7,7 @@ import type {
 /** The fields of the server settings form as a person edits them. The extra expected hosts are one comma-separated text. */
 export type DesktopServerSettingsFields = Pick<
   DesktopServerSettings,
-  "bind" | "auth" | "open_signup" | "api_only" | "autostart"
+  "bind" | "auth" | "open_signup" | "api_only" | "autostart" | "device_name"
 > & { expected_hosts: string };
 
 /** A request that changes the desktop app's server, during which the controls send no other. */
@@ -60,6 +60,7 @@ export function fieldsOf(
     open_signup: settings.open_signup,
     api_only: settings.api_only,
     autostart: settings.autostart,
+    device_name: settings.device_name,
     expected_hosts: settings.expected_hosts.join(", "),
   };
 }
@@ -73,6 +74,7 @@ export function settingsWith(
     ...settings,
     ...fields,
     bind: fields.bind.trim(),
+    device_name: fields.device_name.trim(),
     expected_hosts: fields.expected_hosts
       .split(",")
       .map((host) => host.trim())

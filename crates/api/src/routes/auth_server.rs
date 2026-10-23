@@ -17,9 +17,13 @@ pub struct ServerAuthInfo {
     pub open_signup: bool,
     /// Whether the server sends email, so that accounts can confirm their address and reset a forgotten password.
     pub sends_email: bool,
+    /// The name of the desktop app's computer, which paired devices show. Absent for every other server.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub device_name: Option<String>,
 }
 
-/// Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token.
+/// Tells whether the server has accounts, whether sign-up is open, whether it sends email, and the desktop app's device name. Needs no token.
 #[utoipa::path(
     get,
     path = "/auth/server",
@@ -36,5 +40,6 @@ pub async fn get_server_auth_info(State(state): State<AppState>) -> Json<ServerA
         accounts: accounts.is_some(),
         open_signup: accounts.is_some_and(|accounts| accounts.open_signup),
         sends_email: state.mail.is_some(),
+        device_name: state.config.device_name.clone(),
     })
 }

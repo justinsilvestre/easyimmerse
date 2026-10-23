@@ -11,11 +11,12 @@ export type SyncPlace =
   | { kind: "thisDevice"; device: "browser" | "computer" | "mobile" }
   /** On a server the app is logged in to, itself or through its built-in server, which last backed the work up at `lastBackedUpMs` if it says. */
   | { kind: "server"; serverName: string; lastBackedUpMs: number | null }
-  /** On a desktop app this app is paired with over the local network, whose server is at `serverUrl`, or `host` as the copy names it. */
+  /** On a desktop app this app is paired with over the local network, whose server is at `serverUrl`, or `host` as the copy names it, on the computer named `deviceName` if the server says. */
   | {
       kind: "pairedDesktop";
       serverUrl: string;
       host: string;
+      deviceName: string | null;
       usesAccounts: boolean;
     };
 
@@ -34,6 +35,7 @@ export function selectSyncPlace(root: RootState): SyncPlace {
       kind: "pairedDesktop",
       serverUrl: config.serverUrl,
       host: hostOf(config.serverUrl),
+      deviceName: pairedDeviceName(root),
       usesAccounts: usesAccounts(root),
     };
   return {
@@ -63,7 +65,14 @@ function isLaunchHolder({ backend }: RootState): boolean {
 }
 
 function usesAccounts({ backend }: RootState): boolean {
-  return (
-    cacheEntry(backend, "getServerAuthInfo", "self")?.data?.accounts ?? false
-  );
+  return serverAuthInfo(backend)?.accounts ?? false;
+}
+
+function pairedDeviceName({ backend }: RootState): string | null {
+  const name = serverAuthInfo(backend)?.device_name?.trim();
+  return name ? name : null;
+}
+
+function serverAuthInfo(backend: RootState["backend"]) {
+  return cacheEntry(backend, "getServerAuthInfo", "self")?.data;
 }
