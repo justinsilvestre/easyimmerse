@@ -9,7 +9,7 @@ import type { DictionarySummary } from "@easyimmerse/types";
 import { useCallback } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "./definition/definitionContext.ts";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 
@@ -27,7 +27,7 @@ export function useLookupDisplay(popup: LookupPopup | null, language: string) {
   const query = (isCovered && chosen?.word.query) || null;
   const lookup = useLookupTextQuery(query ?? skipToken);
   const server = useAppSelector(selectServerConfig);
-  const resolveMediaUrl = useCallback<ResolveMediaUrl>(
+  const resolveMedia = useCallback<ResolveDictionaryMedia>(
     (dictionaryId, path) =>
       server && buildDictionaryMediaUrl(server, dictionaryId, path),
     [server],
@@ -43,7 +43,7 @@ export function useLookupDisplay(popup: LookupPopup | null, language: string) {
     /** The results for the word shown, never those of the word before while it is looked up. */
     results: lookup.currentData?.results ?? [],
     state,
-    resolveMediaUrl,
+    resolveMedia,
   };
 }
 

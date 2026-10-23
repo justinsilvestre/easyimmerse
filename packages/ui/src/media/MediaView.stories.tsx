@@ -193,7 +193,7 @@ function lookupPopup(
       <DictionaryPopup
         state={state}
         mode={mode}
-        resolveMediaUrl={resolveExampleMediaUrl}
+        resolveMedia={resolveExampleMediaUrl}
         onSearch={fn()}
         onCreateFlashcard={fn()}
         onClose={fn()}
@@ -535,7 +535,7 @@ function LookupInSubtitlesPanel({
               state={{ kind: "found", term: "Hund", results: exampleResults }}
               mode="word"
               size={size}
-              resolveMediaUrl={resolveExampleMediaUrl}
+              resolveMedia={resolveExampleMediaUrl}
               onSearch={fn()}
               onCreateFlashcard={fn()}
               onToggleSize={() =>

@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./pageLookup": "./src/pageLookup/mountPageLookup.tsx",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bytesToBase64 } from "./base64.ts";
+import { base64ToBytes, bytesToBase64 } from "./base64.ts";
 
 describe("bytesToBase64", () => {
   it("encodes bytes", () => {
@@ -9,5 +9,11 @@ describe("bytesToBase64", () => {
   it("encodes more bytes than one chunk holds", () => {
     const bytes = new Uint8Array(100_000).fill(65);
     expect(atob(bytesToBase64(bytes))).toBe("A".repeat(100_000));
+  });
+});
+
+describe("base64ToBytes", () => {
+  it("decodes what bytesToBase64 encoded", () => {
+    expect([...base64ToBytes("AP9oaQ==")]).toEqual([0, 255, 104, 105]);
   });
 });

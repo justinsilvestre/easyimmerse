@@ -8,7 +8,7 @@ import type { LookupDisplayState } from "./lookupDisplayState.ts";
 /** What the pop-up shows, as `useLookupDisplay` reads it. */
 type Display = {
   state: LookupDisplayState | null;
-  resolveMediaUrl: ComponentProps<typeof DictionaryPopup>["resolveMediaUrl"];
+  resolveMedia: ComponentProps<typeof DictionaryPopup>["resolveMedia"];
 };
 
 /** The pop-up's handlers, each dispatching to the lookup. */
@@ -42,7 +42,7 @@ export function lookupPopupProps(
       mode: popup.mode,
       size: lookup.size,
       onToggleSize,
-      resolveMediaUrl: display.resolveMediaUrl,
+      resolveMedia: display.resolveMedia,
       pendingFlashcard: pending?.chosen.word.term ?? null,
       ...handlers,
     } satisfies Omit<

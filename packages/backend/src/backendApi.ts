@@ -113,6 +113,7 @@ import {
 import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
+import { lookupTextRequest } from "./lookupTextRequest.ts";
 import { type BookArgs, parseBook } from "./parseBook.ts";
 import {
   type ImportPickedDictionaryArgs,
@@ -219,15 +220,6 @@ type AnkiExportedArgs = {
   marksExported: boolean;
   readAtMs: number;
 };
-
-/** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
-const lookupContextQuery = (
-  context: string | undefined,
-  offset: number | undefined,
-): Record<string, string> =>
-  context === undefined || offset === undefined
-    ? {}
-    : { context, offset: String(offset) };
 
 /**
  * How long, in seconds, a lookup stays cached once nothing shows it.
@@ -1184,15 +1176,7 @@ export const backendApi = createApi({
       // A lookup whose context a batch is fetching waits for that batch rather than asking the server a second time.
       queryFn: async (lookup, api, _extraOptions, baseQuery) =>
         (await answerFromRunningBatch(api, lookup)) ??
-        (baseQuery({
-          method: "GET",
-          path: "/dictionaries/lookup",
-          query: {
-            text: lookup.text,
-            language: lookup.language,
-            ...lookupContextQuery(lookup.context, lookup.offset),
-          },
-        }) as Promise<
+        (baseQuery(lookupTextRequest(lookup)) as Promise<
           QueryReturnValue<LookupResponse, BackendError, undefined>
         >),
       providesTags: ["Dictionaries"],

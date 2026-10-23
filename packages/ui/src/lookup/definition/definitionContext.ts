@@ -1,17 +1,23 @@
 import { createContext, useContext } from "react";
 
 /**
- * Returns a URL for a file stored with a dictionary, such as an image, or null when the file is not available.
+ * A file stored with a dictionary, as an image element shows it: a URL to load it from,
+ * or the picture already decoded, for a web page whose Content Security Policy forbids loading it from a URL.
+ */
+export type DictionaryMediaSource = string | ImageBitmap;
+
+/**
+ * Returns where to find a file stored with a dictionary, such as an image, or null when the file is not available.
  * `path` is written as the dictionary writes it, relative to the dictionary's root, without a leading slash.
  */
-export type ResolveMediaUrl = (
+export type ResolveDictionaryMedia = (
   dictionaryId: string,
   path: string,
-) => string | null;
+) => DictionaryMediaSource | null;
 
 type DefinitionContextValue = {
   dictionaryId: string;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
   /** Looks up a word of the definition that was double-clicked. */
   onWordLookup: (word: string) => void;
   /** Makes a flashcard of a word of the definition held on a touch screen; absent where words have no such action. */

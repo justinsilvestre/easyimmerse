@@ -28,7 +28,7 @@ const meta = {
   ],
   args: {
     result: exampleInflectedResult,
-    resolveMediaUrl: resolveExampleMediaUrl,
+    resolveMedia: resolveExampleMediaUrl,
     onWordLookup: fn(),
     onLookup: fn(),
     onCreateFlashcard: fn(),

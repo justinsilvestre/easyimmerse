@@ -1,3 +1,4 @@
+import { remToPxPlugin } from "@easyimmerse/config/rem-to-px";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "wxt";
 
@@ -7,7 +8,14 @@ export default defineConfig({
   // default regex parser mistakes function parameters such as `storage` for WXT globals and
   // injects `wxt` imports those packages cannot resolve; a real parser scopes them correctly.
   imports: { parser: "oxc" },
-  vite: () => ({ plugins: [tailwindcss()] }),
+  vite: () => ({
+    plugins: [
+      tailwindcss(),
+      // A content script's stylesheet would otherwise size everything by the root font size of the page it shows on.
+      // A rem is fixed at the browser's default text size, which the pop-up's own measurements assume too.
+      remToPxPlugin({ fileNames: /^content-scripts\/.*\.css$/, remPx: 16 }),
+    ],
+  }),
   manifest: ({ browser }) => ({
     name: "easyImmerse",
     description:

@@ -29,3 +29,13 @@ export function createExtensionEffects(options: {
   };
 }
 export { openMailedLink } from "@easyimmerse/effects-web";
+export { createBackgroundLookUp } from "./backgroundLookUp.ts";
+export { createBackgroundMediaFetch } from "./backgroundMediaFetch.ts";
+export { createDictionaryMediaListener } from "./dictionaryMediaListener.ts";
+export { createI18nDetectLanguage } from "./i18nLanguageDetection.ts";
+export { createLookUpTextListener } from "./lookUpTextListener.ts";
+export { rasterizeSvg } from "./rasterizeSvg.ts";
+export {
+  mirrorServerConfig,
+  readMirroredServerConfig,
+} from "./serverConfigMirror.ts";

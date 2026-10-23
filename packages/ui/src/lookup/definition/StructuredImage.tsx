@@ -5,16 +5,16 @@ import { useDefinitionContext } from "./definitionContext.ts";
 import { YomitanImage } from "./YomitanImage.tsx";
 
 /**
- * Renders an image from a dictionary's structured content, found through the caller's `resolveMediaUrl`.
+ * Renders an image from a dictionary's structured content, found through the caller's `resolveMedia`.
  * A `monochrome` image is painted in the current text color, and a collapsible or collapsed image sits behind a toggle.
  */
 export function StructuredImage({ image }: { image: ImageElement }) {
-  const { dictionaryId, resolveMediaUrl } = useDefinitionContext();
-  const url = resolveMediaUrl(dictionaryId, image.path);
+  const { dictionaryId, resolveMedia } = useDefinitionContext();
+  const source = resolveMedia(dictionaryId, image.path);
   const label = image.alt ?? image.title ?? image.description ?? "";
-  if (!url)
+  if (!source)
     return label ? <span className="text-fg-faint">[{label}]</span> : null;
-  const picture = <YomitanImage image={image} url={url} label={label} />;
+  const picture = <YomitanImage image={image} source={source} label={label} />;
   if (!image.collapsible && !image.collapsed) return picture;
   return (
     <CollapsibleImage label={label} initiallyOpen={!image.collapsed}>

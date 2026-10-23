@@ -40,7 +40,7 @@ function renderStyledPopup() {
         stylesheets: fixtureStylesheets(),
       }}
       mode="word"
-      resolveMediaUrl={() => null}
+      resolveMedia={() => null}
       onSearch={() => undefined}
       onCreateFlashcard={() => undefined}
       onClose={() => undefined}
@@ -69,7 +69,7 @@ describe("DictionaryStylesheets", () => {
     const { container } = render(
       <DictionaryStylesheets
         stylesheets={[...fixtureStylesheets(), ...fixtureStylesheets()]}
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
       />,
     );
     expect(container.querySelectorAll("style")).toHaveLength(2);
@@ -117,7 +117,7 @@ describe("DictionaryStylesheets", () => {
   it("styles an image through Yomitan's image container", () => {
     const { container } = renderDefinition(
       { kind: "structured", content: { tag: "img", path: "a.png" } },
-      { resolveMediaUrl: resolveFakeMediaUrl },
+      { resolveMedia: resolveFakeMediaUrl },
     );
     const selector = scopedSelector(
       '.gloss-image-link[data-has-aspect-ratio="false"] .gloss-image-container { border: 0 }',

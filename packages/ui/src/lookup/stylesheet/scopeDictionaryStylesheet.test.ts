@@ -213,7 +213,7 @@ describe("scopeDictionaryStylesheet", () => {
       );
     });
 
-    it("resolves a url() to a dictionary file through resolveMediaUrl", () => {
+    it("resolves a url() to a dictionary file through resolveMedia", () => {
       expect(scoped("b { background-image: url('img/a.png') }")).toBe(
         `${scope} b { background-image: url(media://d/img/a.png); }`,
       );
@@ -304,5 +304,34 @@ describe("scopeDictionaryStylesheet", () => {
         `${scope} b { color: inherit; }`,
       );
     });
+  });
+
+  describe("with a fixed size of a rem", () => {
+    const scopedAt16 = (css: string) =>
+      scopeDictionaryStylesheet(css, "d", resolveFakeMediaUrl, 16);
+
+    it("writes lengths in rem in pixels", () => {
+      expect(scopedAt16("b { margin: 0.25rem 0.5REM }")).toBe(
+        `${scope} b { margin: 4px 8px; }`,
+      );
+    });
+
+    it("writes lengths in rem inside a function in pixels", () => {
+      expect(scopedAt16("b { width: calc(100% - 0.8rem) }")).toBe(
+        `${scope} b { width: calc(100% - 12.8px); }`,
+      );
+    });
+
+    it("leaves lengths in other units alone", () => {
+      expect(scopedAt16("b { margin: 1em 2px }")).toBe(
+        `${scope} b { margin: 1em 2px; }`,
+      );
+    });
+  });
+
+  it("leaves lengths in rem alone without a fixed size of a rem", () => {
+    expect(scoped("b { margin: 0.25rem }")).toBe(
+      `${scope} b { margin: 0.25rem; }`,
+    );
   });
 });

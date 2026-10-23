@@ -1,7 +1,7 @@
 import type { DictionaryDefinitions } from "@easyimmerse/types";
 import clsx from "clsx";
 import { DefinitionView } from "./definition/DefinitionView.tsx";
-import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "./definition/definitionContext.ts";
 import { yomitanClassName } from "./definition/yomitanClassName.ts";
 import { resolveTags } from "./resolveTags.ts";
 import { DictionaryScope } from "./stylesheet/DictionaryScope.tsx";
@@ -13,13 +13,13 @@ import { TagList } from "./TagList.tsx";
  */
 export function DictionaryDefinitionsSection({
   dictionaryDefinitions: { dictionaryId, dictionaryTitle, entry, tags },
-  resolveMediaUrl,
+  resolveMedia,
   onWordLookup,
   onWordHold,
   onLookup,
 }: {
   dictionaryDefinitions: DictionaryDefinitions;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
   onWordLookup: (word: string) => void;
   onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
@@ -54,7 +54,7 @@ export function DictionaryDefinitionsSection({
                   <DefinitionView
                     definition={definition}
                     dictionaryId={dictionaryId}
-                    resolveMediaUrl={resolveMediaUrl}
+                    resolveMedia={resolveMedia}
                     onWordLookup={onWordLookup}
                     onWordHold={onWordHold}
                     onLookup={onLookup}

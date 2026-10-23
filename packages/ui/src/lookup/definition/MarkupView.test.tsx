@@ -197,9 +197,9 @@ describe("MarkupView", () => {
       ).toBe(true);
     });
 
-    it("resolves a relative image through resolveMediaUrl", () => {
+    it("resolves a relative image through resolveMedia", () => {
       renderDefinition(html('<img src="res/flower.png" alt="flower">'), {
-        resolveMediaUrl: resolveFakeMediaUrl,
+        resolveMedia: resolveFakeMediaUrl,
       });
       expect(
         screen.getByRole("img", { name: "flower" }).getAttribute("src"),
@@ -210,7 +210,7 @@ describe("MarkupView", () => {
       const { container } = renderDefinition(
         html('<img src="https://example.com/a.gif">'),
         {
-          resolveMediaUrl: resolveFakeMediaUrl,
+          resolveMedia: resolveFakeMediaUrl,
         },
       );
       expect(container.querySelector("img")).toBeNull();
@@ -284,11 +284,11 @@ describe("MarkupView", () => {
       expect(container.textContent).toBe("n");
     });
 
-    it("resolves an image resource through resolveMediaUrl", () => {
+    it("resolves an image resource through resolveMedia", () => {
       const { container } = renderDefinition(
         xdxf('<rref type="image">pic.png</rref>'),
         {
-          resolveMediaUrl: resolveFakeMediaUrl,
+          resolveMedia: resolveFakeMediaUrl,
         },
       );
       expect(container.querySelector("img")?.getAttribute("src")).toBe(

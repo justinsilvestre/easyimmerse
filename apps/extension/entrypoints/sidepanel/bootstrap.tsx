@@ -7,6 +7,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   createExtensionEffects,
+  mirrorServerConfig,
   openMailedLink,
 } from "@easyimmerse/effects-extension";
 import type { ServerConfig } from "@easyimmerse/state";
@@ -23,11 +24,14 @@ import {
 import { loadOfflineWasm } from "@easyimmerse/wasm";
 import wasmUrl from "@easyimmerse/wasm/pkg/easyimmerse_wasm_bg.wasm?url";
 import { createRoot } from "react-dom/client";
+import { browser } from "wxt/browser";
 import "@easyimmerse/ui/styles.css";
 
 /** Wires the backend, effects, and store together and mounts the app in the side panel. */
 export async function bootstrap(): Promise<void> {
   const server = resolveServerConfig();
+  // The background script looks words up on web pages, and has no local storage to read the server from.
+  mirrorServerConfig(browser.storage.local, server).catch(() => {});
   const client = await createBackendClient(server);
   const playerRegistry = createPlayerRegistry();
   const browserFileRegistry = createBrowserFileRegistry<File>();

@@ -2,7 +2,7 @@ import type { LookupResult, TagDefinition } from "@easyimmerse/types";
 import { IconButton } from "../components/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { DictionaryDefinitionsSection } from "./DictionaryDefinitionsSection.tsx";
-import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "./definition/definitionContext.ts";
 import { FrequencyList } from "./FrequencyList.tsx";
 import { formatInflectionChains } from "./formatInflectionChains.ts";
 import { PronunciationList } from "./PronunciationList.tsx";
@@ -14,21 +14,22 @@ import { TagList } from "./TagList.tsx";
  * One result in the dictionary pop-up: the term and its reading, each equally good chain of inflections that leads to the looked-up text,
  * its tags, frequencies and pronunciations, and then each dictionary's definitions.
  * Double-clicked words go to `onWordLookup`, held words to `onWordHold`; links to other headwords go to `onLookup`.
+ * Its button for a flashcard from the entry shows only with `onCreateFlashcard`.
  */
 export function LookupResultCard({
   result,
-  resolveMediaUrl,
+  resolveMedia,
   onWordLookup,
   onWordHold,
   onLookup,
   onCreateFlashcard,
 }: {
   result: LookupResult;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
   onWordLookup: (word: string) => void;
   onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
-  onCreateFlashcard: () => void;
+  onCreateFlashcard?: () => void;
 }) {
   const inflectionLines = formatInflectionChains(result.inflectionChains);
   return (
@@ -41,13 +42,15 @@ export function LookupResultCard({
           </span>
         )}
         <TagList tags={termTags(result)} />
-        <IconButton
-          label="Flashcard from this entry"
-          className="ml-auto size-6"
-          onClick={onCreateFlashcard}
-        >
-          <NewFlashcardIcon className="size-4" />
-        </IconButton>
+        {onCreateFlashcard && (
+          <IconButton
+            label="Flashcard from this entry"
+            className="ml-auto size-6"
+            onClick={onCreateFlashcard}
+          >
+            <NewFlashcardIcon className="size-4" />
+          </IconButton>
+        )}
       </header>
       {inflectionLines.length > 0 && (
         <div className="text-xs text-fg-muted">
@@ -67,7 +70,7 @@ export function LookupResultCard({
           // biome-ignore lint/suspicious/noArrayIndexKey: see above
           key={index}
           dictionaryDefinitions={dictionaryDefinitions}
-          resolveMediaUrl={resolveMediaUrl}
+          resolveMedia={resolveMedia}
           onWordLookup={onWordLookup}
           onWordHold={onWordHold}
           onLookup={onLookup}

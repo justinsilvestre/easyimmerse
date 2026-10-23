@@ -16,21 +16,25 @@ import { useIsGliding } from "./useIsGliding.ts";
  * Without a word, as when it opens on its search field, it sits above the player's controls.
  * The wrapper lets the pointer through beside the pop-up, so that only the pop-up itself counts as inside.
  * `onPointerInsideChange` reports the pointer entering and leaving the pop-up.
+ * `remPx` is the size of a rem the pop-up is drawn at, when its stylesheet fixes it rather than following the page's text size.
  */
 export function AnchoredPopup({
   anchor,
   size = "compact",
+  remPx,
   onPointerInsideChange,
   children,
 }: {
   anchor: LookupAnchor | null;
   size?: PopupSize;
+  remPx?: number;
   onPointerInsideChange?: (isInside: boolean) => void;
   children: ReactNode;
 }) {
   const rect = useAnchorRect(anchor);
   const viewport = useViewportSize();
-  const place = rect && placeAtAnchor(rect, popupWidthPx(size), viewport, size);
+  const place =
+    rect && placeAtAnchor(rect, popupWidthPx(size, remPx), viewport, size);
   const isGliding = useIsGliding(place);
   const { side, ...style } = place ?? {};
   return (
