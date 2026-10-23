@@ -10,9 +10,12 @@ import {
 } from "react";
 import { focusInitialMenuItem, moveMenuFocusForKey } from "./menuFocus.ts";
 
+/** Which kind of pop-up the button opens: a menu of items, or a dialog of plain controls and text. */
+type PopupKind = "menu" | "dialog";
+
 /** What the button that opens the menu takes: its ARIA attributes and its click. */
 type MenuTriggerProps = {
-  "aria-haspopup": "menu";
+  "aria-haspopup": PopupKind;
   "aria-expanded": boolean;
   "aria-controls": string | undefined;
   onClick: () => void;
@@ -28,21 +31,25 @@ type MenuPopupProps = {
 };
 
 /**
- * The behaviour shared by the app's menu buttons, around a button and a menu that its caller draws.
- * Opening the menu focuses its selected item, or its first, and the up and down arrows, Home, and End move between the items.
- * The menu closes on Escape, on a choice, when focus moves to an element outside it,
+ * The behaviour shared by the app's pop-up buttons, around a button and a pop-up that its caller draws.
+ * A pop-up is a menu unless `popup` says it is a dialog, one holding plain controls and text, such as the Sync or the Profile menu.
+ * Opening a menu focuses its selected item, or its first, and the up and down arrows, Home, and End move between the items;
+ * opening a dialog focuses its first control, and the arrow keys are left to the controls.
+ * The pop-up closes on Escape, on a choice, when focus moves to an element outside it,
  * or when the pointer presses anywhere outside it, which matters on browsers that give a clicked button no focus.
- * While `isUnavailable`, the menu stays closed. With `isInitiallyOpen`, it starts open.
+ * While `isUnavailable`, the pop-up stays closed. With `isInitiallyOpen`, it starts open.
  */
 export function MenuShell({
   trigger,
   menu,
+  popup = "menu",
   isUnavailable = false,
   isInitiallyOpen = false,
   className,
 }: {
   trigger: (props: MenuTriggerProps) => ReactNode;
   menu: (props: MenuPopupProps) => ReactNode;
+  popup?: PopupKind;
   isUnavailable?: boolean;
   isInitiallyOpen?: boolean;
   className?: string;
@@ -56,8 +63,10 @@ export function MenuShell({
     ref.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
   };
   useEffect(() => {
-    if (isOpen && menuRef.current) focusInitialMenuItem(menuRef.current);
-  }, [isOpen]);
+    if (!isOpen || !menuRef.current) return;
+    if (popup === "menu") focusInitialMenuItem(menuRef.current);
+    else focusFirstControl(menuRef.current);
+  }, [isOpen, popup]);
   useEffect(() => {
     if (!isOpen) return;
     const closeOnOutsidePress = (event: PointerEvent) => {
@@ -82,6 +91,7 @@ export function MenuShell({
       onKeyDown={(event) => {
         if (event.key === "Escape") closeAndFocusButton();
         else if (
+          popup === "menu" &&
           menuRef.current &&
           moveMenuFocusForKey(menuRef.current, event.key)
         )
@@ -89,7 +99,7 @@ export function MenuShell({
       }}
     >
       {trigger({
-        "aria-haspopup": "menu",
+        "aria-haspopup": popup,
         "aria-expanded": isOpen,
         "aria-controls": isOpen ? menuId : undefined,
         onClick: () => {
@@ -107,4 +117,12 @@ export function MenuShell({
         })}
     </div>
   );
+}
+
+function focusFirstControl(dialog: HTMLElement): void {
+  dialog
+    .querySelector<HTMLElement>(
+      "button, input, select, textarea, a[href], [tabindex]:not([tabindex='-1'])",
+    )
+    ?.focus();
 }
