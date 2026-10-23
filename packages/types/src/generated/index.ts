@@ -26,6 +26,7 @@ export type * from "./AnkiPendingDeletions";
 export type * from "./AnkiSentRequest";
 export type * from "./AnkiTemplate";
 export type * from "./ApiError";
+export type * from "./ApplyLibraryEntry";
 export type * from "./AudioAction";
 export type * from "./AudioClip";
 export type * from "./AudioTarget";

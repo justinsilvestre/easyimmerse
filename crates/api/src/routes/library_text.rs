@@ -3,8 +3,8 @@
 use axum::extract::{Path, State};
 use axum::{Extension, Json};
 use easyimmerse_core::library::{
-    LibraryItemId, LibraryItemKind, LibrarySegment, LibrarySubtitles, LibraryText, LibraryWord,
-    validate_words,
+    ApplyLibraryEntry, LibraryItemId, LibraryItemKind, LibrarySegment, LibrarySubtitles,
+    LibraryText, LibraryWord, validate_words,
 };
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
@@ -155,4 +155,37 @@ pub async fn put_library_words(
         .with_storage(move |storage| storage.set_segment_words(&item_id, segment_index, &words))
         .await?;
     Ok(Json(segment))
+}
+
+/// Gives the entry to every word of the item whose text in its segment is `word_text`, and returns the item's text.
+#[utoipa::path(
+    post,
+    path = "/library/items/{item_id}/apply-entry",
+    tag = "library",
+    operation_id = "applyLibraryEntry",
+    security(("bearer_token" = [])),
+    params(("item_id" = String, Path, description = "The library item id")),
+    request_body = ApplyLibraryEntry,
+    responses(
+        (status = 200, description = "The item's text with the entry applied", body = LibraryText),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
+        (status = 404, description = "No such item", body = ApiError),
+        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn apply_library_entry(
+    _: LibraryManager,
+    State(state): State<AppState>,
+    Path(item_id): Path<LibraryItemId>,
+    Json(request): Json<ApplyLibraryEntry>,
+) -> Result<Json<LibraryText>, ApiFailure> {
+    load_editable_item(&state, &item_id).await?;
+    let text = state
+        .with_storage(move |storage| {
+            storage.apply_library_entry(&item_id, &request.word_text, &request.entry)
+        })
+        .await?;
+    Ok(Json(text))
 }

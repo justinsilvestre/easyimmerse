@@ -556,7 +556,7 @@ export interface paths {
         };
         get: operations["getLibraryItem"];
         /**
-         * Changes an item's metadata in any status, except its kind once it is published.
+         * Changes an item's metadata in any status, except its kind and languages once it is published or being published.
          *     Changing the cover time of a published video item renders its cover again.
          */
         put: operations["updateLibraryItem"];
@@ -582,6 +582,23 @@ export interface paths {
          *     named after its language. A project that already has the item keeps its media file, which is returned.
          */
         post: operations["addLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/apply-entry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Gives the entry to every word of the item whose text in its segment is `word_text`, and returns the item's text. */
+        post: operations["applyLibraryEntry"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2232,6 +2249,12 @@ export interface components {
             /** @description A stable, machine-readable identifier such as `unauthorized`. */
             code: string;
             message: string;
+        };
+        /** @description What a manager sends to give one entry to every word of an item that has the given text. */
+        ApplyLibraryEntry: {
+            entry: components["schemas"]["LibraryEntry"];
+            /** @description The text of the words, exactly as it stands in their segments. */
+            word_text: string;
         };
         AudioAction: {
             /** @enum {string} */
@@ -6006,7 +6029,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published */
+            /** @description `item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change, nor the cover time of an item being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6145,6 +6168,78 @@ export interface operations {
                 };
             };
             /** @description `item_not_published`: the item is not published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    applyLibraryEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyLibraryEntry"];
+            };
+        };
+        responses: {
+            /** @description The item's text with the entry applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryText"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is published or being published */
             409: {
                 headers: {
                     [name: string]: unknown;

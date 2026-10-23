@@ -187,6 +187,13 @@ async fn manager_route_statuses(server: &TestServer, token: &str, item_id: &str)
         ),
         ("POST", format!("{item}/proposed-words"), None),
         ("PUT", format!("{item}/segments/0/words"), Some(json!([]))),
+        (
+            "POST",
+            format!("{item}/apply-entry"),
+            Some(
+                json!({ "word_text": "Hund", "entry": { "term": "Hund", "reading": null, "l1_definition": "", "l2_definition": "" } }),
+            ),
+        ),
         ("POST", format!("{item}/publish"), None),
         ("POST", format!("{item}/unpublish"), None),
         ("DELETE", item.clone(), None),
@@ -215,7 +222,7 @@ async fn a_library_user_is_forbidden_every_manager_route() {
     let item_id = document_item(&server).await;
     let token = sign_up(&server, "learner@example.com").await;
     let statuses = manager_route_statuses(&server, &token, &item_id).await;
-    assert_eq!(statuses, vec![403; 10]);
+    assert_eq!(statuses, vec![403; 11]);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -353,6 +360,74 @@ async fn the_words_of_a_published_item_cannot_change() {
         (response.status, response.json()["code"].clone()),
         (409, json!("item_published"))
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_language_of_a_published_item_cannot_change() {
+    let (server, _dir) = library_server().await;
+    let item_id = published_document(&server).await;
+    let mut changed = draft("document");
+    changed["language"] = json!("fr");
+    let response = server
+        .put_json(&format!("/library/items/{item_id}"), &changed)
+        .await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (409, json!("item_published"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_language_of_a_draft_changes() {
+    let (server, _dir) = library_server().await;
+    let item_id = create_item(&server, "document").await;
+    let mut changed = draft("document");
+    changed["translation_language"] = json!("fr");
+    let response = server
+        .put_json(&format!("/library/items/{item_id}"), &changed)
+        .await;
+    assert_eq!(response.json()["translation_language"], "fr");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn applying_an_entry_changes_every_word_with_its_text_and_no_other() {
+    let (server, _dir) = library_server().await;
+    let item_id = create_item(&server, "document").await;
+    let text = b"Der Hund schl\xc3\xa4ft.\n\nDer Hund frisst.\n".to_vec();
+    upload(&server, &item_id, "hunde.txt", text).await;
+    for segment in 0..2 {
+        let path = format!("/library/items/{item_id}/segments/{segment}/words");
+        let words = json!([word(0, 3, "der"), word(4, 8, "Hund")]);
+        server.put_json(&path, &words).await;
+    }
+    let entry =
+        json!({ "term": "Hund", "reading": null, "l1_definition": "a dog", "l2_definition": "" });
+    let body = json!({ "word_text": "Hund", "entry": entry });
+    let applied = server
+        .post_json(&format!("/library/items/{item_id}/apply-entry"), &body)
+        .await
+        .json();
+    let definitions: Vec<Value> = (applied["segments"].as_array().unwrap().iter())
+        .flat_map(|segment| segment["words"].as_array().unwrap().clone())
+        .map(|word| word["entry"]["l1_definition"].clone())
+        .collect();
+    assert_eq!(
+        definitions,
+        [json!("dog"), json!("a dog"), json!("dog"), json!("a dog")]
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn applying_an_entry_to_a_published_item_is_refused() {
+    let (server, _dir) = library_server().await;
+    let item_id = published_document(&server).await;
+    let entry =
+        json!({ "term": "Hund", "reading": null, "l1_definition": "a dog", "l2_definition": "" });
+    let body = json!({ "word_text": "Hund", "entry": entry });
+    let response = server
+        .post_json(&format!("/library/items/{item_id}/apply-entry"), &body)
+        .await;
+    assert_eq!(response.json()["code"], "item_published");
 }
 
 #[tokio::test(flavor = "multi_thread")]

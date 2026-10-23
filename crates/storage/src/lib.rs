@@ -70,8 +70,8 @@ use easyimmerse_core::dictionary::{
 };
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::library::{
-    LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus, LibrarySegment, LibraryText,
-    LibraryWord,
+    LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus, LibrarySegment,
+    LibraryText, LibraryWord,
 };
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
@@ -1203,6 +1203,16 @@ impl Storage {
         words: &[LibraryWord],
     ) -> Result<LibrarySegment, StorageError> {
         self.write(|conn| library_segments::set_segment_words(conn, item_id, segment_index, words))
+    }
+
+    /// Gives the entry to every word of the library item whose text is `word_text`, and returns the item's text.
+    pub fn apply_library_entry(
+        &self,
+        item_id: &LibraryItemId,
+        word_text: &str,
+        entry: &LibraryEntry,
+    ) -> Result<LibraryText, StorageError> {
+        self.write(|conn| library_segments::apply_library_entry(conn, item_id, word_text, entry))
     }
 
     /// Records the screenshot time of each listed segment, given as pairs of segment index and time.

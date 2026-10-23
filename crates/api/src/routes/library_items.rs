@@ -89,7 +89,7 @@ pub async fn create_library_item(
     Ok((StatusCode::CREATED, Json(item)))
 }
 
-/// Changes an item's metadata in any status, except its kind once it is published.
+/// Changes an item's metadata in any status, except its kind and languages once it is published or being published.
 /// Changing the cover time of a published video item renders its cover again.
 #[utoipa::path(
     put,
@@ -104,7 +104,7 @@ pub async fn create_library_item(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published", body = ApiError),
+        (status = 409, description = "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change, nor the cover time of an item being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 503, description = "The cover must be rendered again, and this server has no ffmpeg (code `conversion_unavailable`)", body = ApiError),
     ),
@@ -117,7 +117,10 @@ pub async fn update_library_item(
 ) -> Result<Json<LibraryItem>, ApiFailure> {
     let item = load_item(&state, &item_id).await?;
     let is_published = item.status == LibraryItemStatus::Published;
-    if draft.kind != item.kind {
+    let changes_what_learners_study = draft.kind != item.kind
+        || draft.language != item.language
+        || draft.translation_language != item.translation_language;
+    if changes_what_learners_study {
         require_editable(&item)?;
     }
     if item.status == LibraryItemStatus::Processing && draft.cover_at_ms != item.cover_at_ms {

@@ -224,6 +224,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(library_text::put_library_subtitles))
         .routes(routes!(library_text::propose_library_words))
         .routes(routes!(library_text::put_library_words))
+        .routes(routes!(library_text::apply_library_entry))
         .routes(routes!(library_publication::publish_library_item))
         .routes(routes!(library_publication::unpublish_library_item))
         .routes(routes!(library_learning::add_library_item))

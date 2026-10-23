@@ -2334,7 +2334,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Changes an item's metadata in any status, except its kind once it is published.\nChanging the cover time of a published video item renders its cover again.",
+        "summary": "Changes an item's metadata in any status, except its kind and languages once it is published or being published.\nChanging the cover time of a published video item renders its cover again.",
         "operationId": "updateLibraryItem",
         "parameters": [
           {
@@ -2399,7 +2399,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published",
+            "description": "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change, nor the cover time of an item being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -2575,6 +2575,103 @@
           },
           "409": {
             "description": "`item_not_published`: the item is not published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/library/items/{item_id}/apply-entry": {
+      "post": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Gives the entry to every word of the item whose text in its segment is `word_text`, and returns the item's text.",
+        "operationId": "applyLibraryEntry",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "The library item id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyLibraryEntry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The item's text with the entry applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryText"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_published` or `item_processing`: the item is published or being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -10908,6 +11005,23 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "ApplyLibraryEntry": {
+        "type": "object",
+        "description": "What a manager sends to give one entry to every word of an item that has the given text.",
+        "required": [
+          "word_text",
+          "entry"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/LibraryEntry"
+          },
+          "word_text": {
+            "type": "string",
+            "description": "The text of the words, exactly as it stands in their segments."
           }
         }
       },

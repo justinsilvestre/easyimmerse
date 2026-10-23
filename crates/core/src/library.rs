@@ -163,6 +163,15 @@ pub struct LibrarySubtitles {
     pub format: Option<TimedTextFormat>,
 }
 
+/// What a manager sends to give one entry to every word of an item that has the given text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ApplyLibraryEntry {
+    /// The text of the words, exactly as it stands in their segments.
+    pub word_text: String,
+    pub entry: LibraryEntry,
+}
+
 /// What a learner sends to add an item to a project.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
@@ -247,6 +256,33 @@ fn screenshot(segment: &LibrarySegment, kind: LibraryItemKind) -> Option<Screens
         return None;
     }
     segment.screenshot_at_ms.map(|at_ms| Screenshot { at_ms })
+}
+
+/// Gives the entry to each word of the segment whose text is `word_text`.
+/// Returns the segment's new words, or None when no word has that text.
+pub fn words_with_entry(
+    segment: &LibrarySegment,
+    word_text: &str,
+    entry: &LibraryEntry,
+) -> Option<Vec<LibraryWord>> {
+    let units: Vec<u16> = segment.text.encode_utf16().collect();
+    let text_of = |word: &LibraryWord| {
+        let range = units.get(word.start as usize..word.end as usize)?;
+        String::from_utf16(range).ok()
+    };
+    let matches = |word: &LibraryWord| text_of(word).as_deref() == Some(word_text);
+    if !segment.words.iter().any(matches) {
+        return None;
+    }
+    let words = segment.words.iter().map(|word| LibraryWord {
+        entry: if matches(word) {
+            entry.clone()
+        } else {
+            word.entry.clone()
+        },
+        ..word.clone()
+    });
+    Some(words.collect())
 }
 
 /// Checks that each word lies within the text on character boundaries,
@@ -380,6 +416,30 @@ mod tests {
             translation: Some("The dog barks".to_string()),
             words: vec![word(4, 8)],
         }
+    }
+
+    fn segment_with_two_words() -> LibrarySegment {
+        LibrarySegment {
+            words: vec![word(0, 3), word(4, 8)],
+            ..segment()
+        }
+    }
+
+    #[test]
+    fn words_with_entry_gives_the_entry_to_the_word_with_the_text() {
+        let words = words_with_entry(&segment_with_two_words(), "Hund", &entry("dog")).unwrap();
+        assert_eq!(words[1].entry, entry("dog"));
+    }
+
+    #[test]
+    fn words_with_entry_leaves_the_other_words_alone() {
+        let words = words_with_entry(&segment_with_two_words(), "Hund", &entry("dog")).unwrap();
+        assert_eq!(words[0].entry, entry("Hund"));
+    }
+
+    #[test]
+    fn words_with_entry_changes_nothing_when_no_word_has_the_text() {
+        assert_eq!(words_with_entry(&segment(), "Katze", &entry("cat")), None);
     }
 
     fn content(word_start: Option<u32>, kind: LibraryItemKind) -> Option<FlashcardContent> {

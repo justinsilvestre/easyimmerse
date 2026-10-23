@@ -1,6 +1,8 @@
 //! The text of library items: their segments with the words the manager set, and a document's chapter titles.
 
-use easyimmerse_core::library::{LibraryItemId, LibrarySegment, LibraryText, LibraryWord};
+use easyimmerse_core::library::{
+    LibraryEntry, LibraryItemId, LibrarySegment, LibraryText, LibraryWord, words_with_entry,
+};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
@@ -54,6 +56,25 @@ pub fn set_segment_words(
         return Err(segment_not_found(item_id, segment_index));
     }
     get_segment(conn, item_id, segment_index)
+}
+
+/// Gives the entry to every word of the item whose text is `word_text`, in one transaction, and returns the item's text.
+pub fn apply_library_entry(
+    conn: &mut Connection,
+    item_id: &LibraryItemId,
+    word_text: &str,
+    entry: &LibraryEntry,
+) -> Result<LibraryText, StorageError> {
+    let transaction = conn.transaction()?;
+    let text = get_library_text(&transaction, item_id)?;
+    for segment in &text.segments {
+        if let Some(words) = words_with_entry(segment, word_text, entry) {
+            set_segment_words(&transaction, item_id, segment.index, &words)?;
+        }
+    }
+    let applied = get_library_text(&transaction, item_id)?;
+    transaction.commit()?;
+    Ok(applied)
 }
 
 /// Records the screenshot time of each listed segment, given as pairs of segment index and time, in one transaction.
