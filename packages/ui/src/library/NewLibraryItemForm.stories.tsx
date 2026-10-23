@@ -5,13 +5,21 @@ import { NewLibraryItemForm } from "./NewLibraryItemForm.tsx";
 const meta = {
   title: "Library/NewLibraryItemForm",
   component: NewLibraryItemForm,
-  args: { isCreating: false, failure: null, onCreate: fn() },
+  args: {
+    upload: "media",
+    isCreating: false,
+    failure: null,
+    onChooseUpload: fn(),
+    onCreate: fn(),
+  },
 } satisfies Meta<typeof NewLibraryItemForm>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {};
+
+export const TextFile: Story = { args: { upload: "text" } };
 
 export const Uploading: Story = { args: { isCreating: true } };
 

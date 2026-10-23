@@ -1,3 +1,4 @@
+import type { LibraryUpload } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LibraryItemCard } from "./LibraryItemCard.tsx";
@@ -10,6 +11,8 @@ export function LibraryManagementView({
   status,
   items,
   coverUrlOf,
+  upload,
+  onChooseUpload,
   isCreating,
   createFailure,
   onCreate,
@@ -19,6 +22,8 @@ export function LibraryManagementView({
   status: LibraryListStatus;
   items: readonly LibraryItem[];
   coverUrlOf: (item: LibraryItem) => string | null;
+  upload: LibraryUpload;
+  onChooseUpload: (upload: LibraryUpload) => void;
   isCreating: boolean;
   createFailure: string | null;
   onCreate: (item: NewLibraryItem) => void;
@@ -29,6 +34,8 @@ export function LibraryManagementView({
     <ScreenLayout onBack={onBack} backLabel="Library" wide>
       <h1 className="text-xl font-semibold">Manage library</h1>
       <NewLibraryItemForm
+        upload={upload}
+        onChooseUpload={onChooseUpload}
         isCreating={isCreating}
         failure={createFailure}
         onCreate={onCreate}

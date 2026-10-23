@@ -1,6 +1,5 @@
 import type { LibraryItem, Project } from "@easyimmerse/types";
 import { Pencil, Plus } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
@@ -17,16 +16,19 @@ const newProject = "";
 
 /**
  * One item of the library: its cover, full description and details, and the way to add it to one of the person's projects
- * in its language or to a new project made for it. A library manager also gets an Edit button.
+ * in its language or to a new project made for it. A library manager also gets an Edit button,
+ * and an item that is not published yet says it must be published before it can be added.
  */
 export function LibraryItemView({
   item,
   coverUrl,
   projects,
+  chosenProjectId,
   canManage,
   isAdding,
   addFailure,
   onAdd,
+  onChooseProject,
   onEdit,
   onBack,
 }: {
@@ -34,16 +36,19 @@ export function LibraryItemView({
   coverUrl: string | null;
   /** The person's projects in the item's language, which it can be added to. */
   projects: readonly Project[];
+  /** The project the "Add to" choice shows, or null for a new project. */
+  chosenProjectId: string | null;
   canManage: boolean;
   isAdding: boolean;
   /** Why the item could not be added, or null. */
   addFailure: string | null;
   /** Adds the item to the project with the given id, or to a new project for null. */
   onAdd: (projectId: string | null) => void;
+  onChooseProject: (projectId: string | null) => void;
   onEdit: () => void;
   onBack: () => void;
 }) {
-  const [chosen, setChosen] = useState(projects[0]?.id ?? newProject);
+  const chosen = chosenProjectId ?? newProject;
   return (
     <ScreenLayout onBack={onBack} backLabel="Library">
       {coverUrl && (
@@ -82,39 +87,45 @@ export function LibraryItemView({
           <p className="whitespace-pre-line">{item.description}</p>
         )}
       </div>
-      <form
-        aria-label="Add to project"
-        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-end"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!isAdding) onAdd(chosen === newProject ? null : chosen);
-        }}
-      >
-        <SelectField
-          label="Add to"
-          className="flex-1"
-          value={chosen}
-          options={[
-            ...projects.map((project) => ({
-              value: project.id,
-              label: project.settings.name,
-            })),
-            {
-              value: newProject,
-              label: `New ${languageName(item.language)} project`,
-            },
-          ]}
-          onChange={(event) => setChosen(event.target.value)}
-        />
-        <Button
-          type="submit"
-          variant="primary"
-          aria-disabled={isAdding || undefined}
+      {item.status.kind !== "published" ? (
+        <p className="rounded-lg border border-line bg-surface p-4 text-sm text-fg-muted">
+          Publish the item before adding it to a project.
+        </p>
+      ) : (
+        <form
+          aria-label="Add to project"
+          className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 sm:flex-row sm:items-end"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!isAdding) onAdd(chosen === newProject ? null : chosen);
+          }}
         >
-          <Plus className="size-4" aria-hidden />
-          {isAdding ? "Adding…" : "Add to project"}
-        </Button>
-      </form>
+          <SelectField
+            label="Add to"
+            className="flex-1"
+            value={chosen}
+            options={[
+              ...projects.map((project) => ({
+                value: project.id,
+                label: project.settings.name,
+              })),
+              {
+                value: newProject,
+                label: `New ${languageName(item.language)} project`,
+              },
+            ]}
+            onChange={(event) => onChooseProject(event.target.value || null)}
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            aria-disabled={isAdding || undefined}
+          >
+            <Plus className="size-4" aria-hidden />
+            {isAdding ? "Adding…" : "Add to project"}
+          </Button>
+        </form>
+      )}
       {addFailure && (
         <p role="alert" className="text-sm text-danger-fg">
           {addFailure}

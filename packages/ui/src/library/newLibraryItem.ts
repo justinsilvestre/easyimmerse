@@ -1,7 +1,5 @@
+import type { LibraryUpload } from "@easyimmerse/state";
 import type { LibraryItemDraft, LibraryItemKind } from "@easyimmerse/types";
-
-/** What uploading a new library item takes: a video or audio file with its subtitles, or a text file. */
-export type LibraryUpload = "media" | "text";
 
 /** A new library item as its form gives it: the draft to create, the file to upload, and for media its subtitle files. */
 export type NewLibraryItem = {

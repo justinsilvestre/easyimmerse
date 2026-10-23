@@ -12,6 +12,9 @@ const meta = {
     onProposeWords: fn(),
     onPublish: fn(),
     onUnpublish: fn(),
+    isConfirmingDelete: false,
+    onAskDelete: fn(),
+    onCancelDelete: fn(),
     onDelete: fn(),
   },
 } satisfies Meta<typeof LibraryPublication>;
@@ -42,3 +45,5 @@ export const Failed: Story = {
 export const Published: Story = { args: { item: exampleLibraryItem() } };
 
 export const Busy: Story = { args: { isBusy: true } };
+
+export const ConfirmingDelete: Story = { args: { isConfirmingDelete: true } };

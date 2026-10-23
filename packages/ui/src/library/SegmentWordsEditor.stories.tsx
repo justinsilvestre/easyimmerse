@@ -14,8 +14,13 @@ const meta = {
   args: {
     segments: exampleLibraryVideoText.segments,
     languages: { target: "de", translation: "en" },
-    isLocked: false,
-    onSaveWords: fn(),
+    lock: null,
+    selectedWord: null,
+    isOnlyUndefinedShown: false,
+    onSelectWord: fn(),
+    onShowOnlyUndefined: fn(),
+    onSaveWords: fn(async () => true),
+    onApplyEverywhere: fn(async () => true),
   },
 } satisfies Meta<typeof SegmentWordsEditor>;
 
@@ -28,6 +33,23 @@ export const Paragraphs: Story = {
   args: { segments: exampleLibraryDocumentText.segments },
 };
 
-export const Published: Story = { args: { isLocked: true } };
+export const WordSelected: Story = {
+  args: { selectedWord: { segmentIndex: 0, start: 4 } },
+};
+
+export const OnlyLinesWithUndefinedWords: Story = {
+  args: { isOnlyUndefinedShown: true },
+};
+
+export const EveryWordDefined: Story = {
+  args: {
+    segments: exampleLibraryDocumentText.segments,
+    isOnlyUndefinedShown: true,
+  },
+};
+
+export const Preparing: Story = { args: { lock: "processing" } };
+
+export const Published: Story = { args: { lock: "published" } };
 
 export const NoText: Story = { args: { segments: [] } };

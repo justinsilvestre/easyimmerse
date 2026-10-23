@@ -3,14 +3,13 @@ import { describe, expect, it } from "vitest";
 import { exampleLibraryVideoText } from "./exampleLibrary.ts";
 import {
   addWord,
-  applyToEveryOccurrence,
   blankEntry,
   isWithoutDefinition,
   mergeWithNext,
   splitWord,
 } from "./segmentWordEdits.ts";
 
-const [first, second] = exampleLibraryVideoText.segments as [
+const [first] = exampleLibraryVideoText.segments as [
   LibrarySegment,
   LibrarySegment,
   LibrarySegment,
@@ -66,25 +65,6 @@ describe("addWord", () => {
       [4, 8],
       [9, 16],
     ]);
-  });
-});
-
-describe("applyToEveryOccurrence", () => {
-  const entry = { ...blankEntry("Hund"), l1_definition: "hound" };
-
-  it("changes every segment that has a word written the same", () => {
-    expect(
-      applyToEveryOccurrence(
-        exampleLibraryVideoText.segments,
-        "Hund",
-        entry,
-      ).map(({ segmentIndex }) => segmentIndex),
-    ).toEqual([0, 1]);
-  });
-
-  it("gives the word's occurrences the entry", () => {
-    const [, change] = applyToEveryOccurrence([first, second], "Hund", entry);
-    expect(change?.words[1]?.entry).toEqual(entry);
   });
 });
 

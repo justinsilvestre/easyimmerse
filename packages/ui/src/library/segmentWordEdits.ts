@@ -4,9 +4,6 @@ import type {
   LibraryWord,
 } from "@easyimmerse/types";
 
-/** A segment's words as a change would set them. */
-export type SegmentWords = { segmentIndex: number; words: LibraryWord[] };
-
 /** Returns an entry for a word's text with no reading and no definitions yet. */
 export function blankEntry(term: string): LibraryEntry {
   return { term, reading: null, l1_definition: "", l2_definition: "" };
@@ -72,23 +69,6 @@ export function withEntry(
   return segment.words.map((word, index) =>
     index === wordIndex ? { ...word, entry } : word,
   );
-}
-
-/** Returns the changes that give every word written `text`, in every segment, the same entry; segments without such a word are left out. */
-export function applyToEveryOccurrence(
-  segments: readonly LibrarySegment[],
-  text: string,
-  entry: LibraryEntry,
-): SegmentWords[] {
-  return segments.flatMap((segment) => {
-    const isOccurrence = (word: LibraryWord) =>
-      wordText(segment, word) === text;
-    if (!segment.words.some(isOccurrence)) return [];
-    const words = segment.words.map((word) =>
-      isOccurrence(word) ? { ...word, entry } : word,
-    );
-    return [{ segmentIndex: segment.index, words }];
-  });
 }
 
 function withBlankEntry(

@@ -5,7 +5,11 @@ import {
   useGetLibraryItemQuery,
   useListProjectsQuery,
 } from "@easyimmerse/backend";
-import { actions, selectServerConfig } from "@easyimmerse/state";
+import {
+  actions,
+  selectLibraryAddTarget,
+  selectServerConfig,
+} from "@easyimmerse/state";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -13,6 +17,7 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { canManageLibrary } from "../library/canManageLibrary.ts";
 import { LibraryItemView } from "../library/LibraryItemView.tsx";
+import { libraryFailureMessage } from "../library/libraryFailureMessage.ts";
 
 /**
  * One item of the library, which the person adds to one of their projects in its language, or to a new project made for it.
@@ -27,6 +32,9 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
   const principal = useGetCurrentPrincipalQuery("self").data;
   const server = useAppSelector(selectServerConfig);
   const [add, added] = useAddLibraryItemMutation();
+  const chosen = useAppSelector((state) =>
+    selectLibraryAddTarget(state, itemId),
+  );
   const back = () => go({ type: "openLibrary" });
   if (item.isError)
     return (
@@ -45,19 +53,28 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
       </ScreenLayout>
     );
   const { language, has_cover } = item.data;
+  const projectsInLanguage = projects.filter(
+    ({ settings }) => settings.target_language === language,
+  );
   return (
     <LibraryItemView
       item={item.data}
       coverUrl={
         server && has_cover ? buildLibraryCoverUrl(server, itemId) : null
       }
-      projects={projects.filter(
-        ({ settings }) => settings.target_language === language,
-      )}
+      projects={projectsInLanguage}
+      chosenProjectId={
+        chosen === undefined ? (projectsInLanguage[0]?.id ?? null) : chosen
+      }
       canManage={canManageLibrary(principal)}
       isAdding={added.isLoading}
       addFailure={
-        added.isError ? "Could not add the item to the project." : null
+        added.isError
+          ? libraryFailureMessage(
+              added.error,
+              "Could not add the item to the project.",
+            )
+          : null
       }
       onAdd={(projectId) =>
         add({ itemId, projectId })
@@ -69,6 +86,9 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
               ),
             () => undefined,
           )
+      }
+      onChooseProject={(projectId) =>
+        dispatch(actions.libraryAddTargetChosen(itemId, projectId))
       }
       onEdit={() => go({ type: "editLibraryItem", itemId })}
       onBack={back}

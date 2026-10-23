@@ -22,6 +22,7 @@ import type {
   AnkiDeletionsCleared,
   AnkiExportedRequest,
   AnkiPendingDeletions,
+  ApplyLibraryEntry,
   BatchLookupRequest,
   BatchLookupResponse,
   ConversionCacheBudget,
@@ -241,6 +242,8 @@ type LibraryWordsArgs = {
   segmentIndex: number;
   words: readonly LibraryWord[];
 };
+
+type ApplyLibraryEntryArgs = { itemId: string; apply: ApplyLibraryEntry };
 
 type LibraryManagerArgs = { userId: string; managesLibrary: boolean };
 
@@ -1441,6 +1444,20 @@ export const backendApi = createApi({
         await cacheLibraryText(dispatch, itemId, queryFulfilled);
       },
     }),
+    /** Gives one entry to every word of an item written as `apply.word_text` says, in every segment. */
+    applyLibraryEntry: build.mutation<LibraryText, ApplyLibraryEntryArgs>({
+      query: ({ itemId, apply }) => ({
+        method: "POST",
+        path: `${libraryItemPath(itemId)}/apply-entry`,
+        body: { kind: "json", value: apply },
+      }),
+      async onQueryStarted({ itemId }, { dispatch, queryFulfilled }) {
+        await cacheLibraryText(dispatch, itemId, queryFulfilled);
+      },
+      invalidatesTags: (_result, _error, { itemId }) => [
+        libraryTextTag(itemId),
+      ],
+    }),
     /** Sets the words of one segment, with the entry of each. */
     putLibraryWords: build.mutation<LibrarySegment, LibraryWordsArgs>({
       query: ({ itemId, segmentIndex, words }) => ({
@@ -1676,6 +1693,7 @@ export const {
   useUploadLibraryFileMutation,
   usePutLibrarySubtitlesMutation,
   useProposeLibraryWordsMutation,
+  useApplyLibraryEntryMutation,
   usePutLibraryWordsMutation,
   usePublishLibraryItemMutation,
   useUnpublishLibraryItemMutation,

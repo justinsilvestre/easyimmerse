@@ -27,7 +27,11 @@ const meta = {
     },
     languages: { target: "de", translation: "en" },
     ankiFate: null,
+    isConfirmingDelete: false,
     onPlayAudio: fn(),
+    onUnsuspend: null,
+    onAskDelete: fn(),
+    onCancelDelete: fn(),
     onDelete: fn(),
     onClose: fn(),
   },
@@ -44,3 +48,7 @@ export const FromAText: Story = {
     onPlayAudio: undefined,
   },
 };
+
+export const Suspended: Story = { args: { onUnsuspend: fn() } };
+
+export const ConfirmingDelete: Story = { args: { isConfirmingDelete: true } };

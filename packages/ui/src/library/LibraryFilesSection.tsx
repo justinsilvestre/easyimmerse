@@ -6,13 +6,14 @@ import {
   subtitleFileTypes,
   textFileTypes,
 } from "./libraryFileTypes.ts";
+import { libraryLockOf, libraryLockText } from "./libraryLock.ts";
 
 /** Subtitle files that replace a video or audio item's text. */
 export type LibrarySubtitleFiles = { target: File; translation: File | null };
 
 /**
  * The file a library item was made from, which can be replaced, and for a video or audio item its subtitles, which can be replaced too,
- * replacing the item's words. Neither can change while the item is published.
+ * replacing the item's words. Neither can change while the item is being prepared or is published.
  */
 export function LibraryFilesSection({
   item,
@@ -25,8 +26,7 @@ export function LibraryFilesSection({
   onReplaceFile: (file: File) => void;
   onReplaceSubtitles: (files: LibrarySubtitleFiles) => void;
 }) {
-  const isLocked =
-    item.status.kind !== "draft" && item.status.kind !== "failed";
+  const lock = libraryLockOf(item.status);
   const isMedia = item.kind !== "document";
   return (
     <section aria-label="Files" className="flex flex-col gap-4">
@@ -36,9 +36,9 @@ export function LibraryFilesSection({
           ? "No file is uploaded yet."
           : `Made from ${item.file_name}, in ${item.segment_count} ${isMedia ? "lines" : "paragraphs"}.`}
       </p>
-      {isLocked ? (
+      {lock ? (
         <p className="text-sm text-fg-muted">
-          Unpublish the item to change its file, subtitles, or words.
+          {libraryLockText(lock, "change its file, subtitles, or words")}
         </p>
       ) : (
         <>

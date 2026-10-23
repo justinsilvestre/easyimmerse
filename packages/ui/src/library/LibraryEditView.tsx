@@ -1,7 +1,10 @@
+import type { LibraryWordPlace } from "@easyimmerse/state";
 import type {
+  LibraryEntry,
   LibraryItem,
   LibraryItemDraft,
   LibraryText,
+  LibraryWord,
 } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import {
@@ -10,8 +13,8 @@ import {
 } from "./LibraryFilesSection.tsx";
 import { LibraryItemForm } from "./LibraryItemForm.tsx";
 import { LibraryPublication } from "./LibraryPublication.tsx";
+import { libraryLockOf } from "./libraryLock.ts";
 import { SegmentWordsEditor } from "./SegmentWordsEditor.tsx";
-import type { SegmentWords } from "./segmentWordEdits.ts";
 
 /** What is under way on the library edit screen, and why the last change failed, or null. */
 export type LibraryEditActivity = {
@@ -27,13 +30,21 @@ export function LibraryEditView({
   text,
   previewUrl,
   activity,
+  isConfirmingDelete,
+  selectedWord,
+  isOnlyUndefinedShown,
   onSave,
   onReplaceFile,
   onReplaceSubtitles,
+  onSelectWord,
+  onShowOnlyUndefined,
   onSaveWords,
+  onApplyEverywhere,
   onProposeWords,
   onPublish,
   onUnpublish,
+  onAskDelete,
+  onCancelDelete,
   onDelete,
   onBack,
 }: {
@@ -42,18 +53,24 @@ export function LibraryEditView({
   text: LibraryText | null;
   previewUrl: string | null;
   activity: LibraryEditActivity;
+  isConfirmingDelete: boolean;
+  selectedWord: LibraryWordPlace | null;
+  isOnlyUndefinedShown: boolean;
   onSave: (draft: LibraryItemDraft) => void;
   onReplaceFile: (file: File) => void;
   onReplaceSubtitles: (files: LibrarySubtitleFiles) => void;
-  onSaveWords: (changes: SegmentWords[]) => void;
+  onSelectWord: (place: LibraryWordPlace | null) => void;
+  onShowOnlyUndefined: (isOn: boolean) => void;
+  onSaveWords: (segmentIndex: number, words: LibraryWord[]) => Promise<boolean>;
+  onApplyEverywhere: (text: string, entry: LibraryEntry) => Promise<boolean>;
   onProposeWords: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
   onDelete: () => void;
   onBack: () => void;
 }) {
-  const isLocked =
-    item.status.kind !== "draft" && item.status.kind !== "failed";
   return (
     <ScreenLayout onBack={onBack} backLabel="Manage library" wide>
       <h1 className="text-xl font-semibold">{item.title}</h1>
@@ -68,6 +85,9 @@ export function LibraryEditView({
         onProposeWords={onProposeWords}
         onPublish={onPublish}
         onUnpublish={onUnpublish}
+        isConfirmingDelete={isConfirmingDelete}
+        onAskDelete={onAskDelete}
+        onCancelDelete={onCancelDelete}
         onDelete={onDelete}
       />
       <LibraryItemForm
@@ -90,8 +110,13 @@ export function LibraryEditView({
             target: item.language,
             translation: item.translation_language,
           }}
-          isLocked={isLocked}
+          lock={libraryLockOf(item.status)}
+          selectedWord={selectedWord}
+          isOnlyUndefinedShown={isOnlyUndefinedShown}
+          onSelectWord={onSelectWord}
+          onShowOnlyUndefined={onShowOnlyUndefined}
           onSaveWords={onSaveWords}
+          onApplyEverywhere={onApplyEverywhere}
         />
       ) : (
         <p role="status" className="text-sm text-fg-muted">

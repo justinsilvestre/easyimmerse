@@ -89,6 +89,17 @@ type Story = StoryObj<typeof meta>;
 
 export const SeveralUsers: Story = {};
 
+export const WithALibraryManager: Story = {
+  parameters: serverWith(administrator, [
+    administrator,
+    {
+      ...user("u2", "someone@example.com", "library_user"),
+      manages_library: true,
+    },
+    user("u3", "reader@example.com", "privileged"),
+  ]),
+};
+
 export const EmptyList: Story = {
   parameters: serverWith(administrator, []),
 };

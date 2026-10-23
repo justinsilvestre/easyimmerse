@@ -7,6 +7,7 @@ import {
 import {
   cuesOfLibraryText,
   documentOfLibraryText,
+  libraryChaptersOf,
   libraryFlashcardPlaceOf,
   librarySegmentAt,
 } from "./libraryText.ts";
@@ -61,6 +62,16 @@ describe("cuesOfLibraryText", () => {
 
   it("makes no cue of a segment without times", () => {
     expect(cuesOfLibraryText(book).cues).toEqual([]);
+  });
+});
+
+describe("libraryChaptersOf", () => {
+  it("groups the segments by the chapter each names, in order", () => {
+    expect(
+      libraryChaptersOf(book).map((segments) =>
+        segments.map(({ index }) => index),
+      ),
+    ).toEqual([[0], [1, 2]]);
   });
 });
 

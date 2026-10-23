@@ -35,9 +35,10 @@ export function WordEntryEditor({
   /** Saves the entry for every word written as this one is, in every segment. */
   onApplyEverywhere: (text: string, entry: LibraryEntry) => void;
 }) {
-  const word = segment.words[wordIndex] as LibraryWord;
+  const word = segment.words[wordIndex];
+  const [entry, setEntry] = useState(word?.entry);
+  if (word === undefined || entry === undefined) return null;
   const text = wordText(segment, word);
-  const [entry, setEntry] = useState(word.entry);
   const change = (changes: Partial<LibraryEntry>) =>
     setEntry({ ...entry, ...changes });
   const hasNext = wordIndex + 1 < segment.words.length;

@@ -8,6 +8,8 @@ export type BrowserFileRegistry<F extends HeldFile = HeldFile> = {
   register(file: F): MediaFileSource;
   /** Returns the held file whose name, size, and modification time match a media file's, or null. */
   find(name: string, source: MediaFileSource): F | null;
+  /** Lets go of a file once nothing needs its bytes any longer, such as one only picked to be uploaded. */
+  unregister(file: F): void;
 };
 
 /**
@@ -32,6 +34,9 @@ export function createBrowserFileRegistry<
       return (
         files.get(keyOf(name, source.size, source.last_modified_ms)) ?? null
       );
+    },
+    unregister: (file) => {
+      files.delete(keyOf(file.name, file.size, file.lastModified));
     },
   };
 }

@@ -1573,6 +1573,24 @@ describe("the library endpoints", () => {
     ).toEqual([{ method: "POST", path: "/library/items/i1/proposed-words" }]);
   });
 
+  it("post the entry and the words' text for applyLibraryEntry", async () => {
+    const apply = { word_text: "Hund", entry: hundWord.entry };
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.applyLibraryEntry.initiate({
+          itemId: "i1",
+          apply,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items/i1/apply-entry",
+        body: { kind: "json", value: apply },
+      },
+    ]);
+  });
+
   it("put the words of a segment for putLibraryWords", async () => {
     expect(
       await libraryRequests(

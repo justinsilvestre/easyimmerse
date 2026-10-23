@@ -1,4 +1,5 @@
 import {
+  useApplyLibraryEntryMutation,
   useDeleteLibraryItemMutation,
   useProposeLibraryWordsMutation,
   usePublishLibraryItemMutation,
@@ -8,7 +9,11 @@ import {
   useUpdateLibraryItemMutation,
   useUploadLibraryFileMutation,
 } from "@easyimmerse/backend";
-import type { LibraryItemDraft } from "@easyimmerse/types";
+import type {
+  LibraryEntry,
+  LibraryItemDraft,
+  LibraryWord,
+} from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import type { LibraryEditActivity } from "./LibraryEditView.tsx";
@@ -16,13 +21,14 @@ import type { LibrarySubtitleFiles } from "./LibraryFilesSection.tsx";
 import { libraryFailureMessage } from "./libraryFailureMessage.ts";
 import {
   librarySubtitlesOf,
-  pickedFileOf,
   unreachableFile,
+  uploadFromRegistry,
 } from "./libraryUploads.ts";
-import type { SegmentWords } from "./segmentWordEdits.ts";
+import { createSaveQueue } from "./saveQueue.ts";
 
 /**
  * The changes the library edit screen makes to an item through the server, with what is under way and why the last one failed.
+ * Each change resolves to whether it was made. Saves of one segment's words go one after another.
  * `onDeleted` is called once the item is deleted.
  */
 export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
@@ -31,15 +37,21 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
   const [upload, uploaded] = useUploadLibraryFileMutation();
   const [putSubtitles, subtitlesPut] = usePutLibrarySubtitlesMutation();
   const [putWords] = usePutLibraryWordsMutation();
+  const [applyEntry] = useApplyLibraryEntryMutation();
   const [propose, proposed] = useProposeLibraryWordsMutation();
   const [publish, published] = usePublishLibraryItemMutation();
   const [unpublish, unpublished] = useUnpublishLibraryItemMutation();
   const [remove] = useDeleteLibraryItemMutation();
   const [failure, setFailure] = useState<string | null>(null);
+  const [wordSaves] = useState(createSaveQueue);
   const run = (fallback: string, change: () => Promise<unknown>) => {
     setFailure(null);
-    change().catch((error) =>
-      setFailure(libraryFailureMessage(error, fallback)),
+    return change().then(
+      () => true,
+      (error) => {
+        setFailure(libraryFailureMessage(error, fallback));
+        return false;
+      },
     );
   };
   const activity: LibraryEditActivity = {
@@ -59,7 +71,9 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
       run("Could not upload the file.", () =>
         registry === null
           ? Promise.reject(unreachableFile)
-          : upload({ itemId, file: pickedFileOf(registry, file) }).unwrap(),
+          : uploadFromRegistry(registry, file, (picked) =>
+              upload({ itemId, file: picked }).unwrap(),
+            ),
       ),
     replaceSubtitles: (files: LibrarySubtitleFiles) =>
       run("Could not upload the subtitles.", async () =>
@@ -68,13 +82,15 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
           subtitles: await librarySubtitlesOf(files),
         }).unwrap(),
       ),
-    saveWords: (changes: SegmentWords[]) =>
+    saveWords: (segmentIndex: number, words: LibraryWord[]) =>
       run("Could not save the words.", () =>
-        Promise.all(
-          changes.map(({ segmentIndex, words }) =>
-            putWords({ itemId, segmentIndex, words }).unwrap(),
-          ),
+        wordSaves.run(segmentIndex, () =>
+          putWords({ itemId, segmentIndex, words }).unwrap(),
         ),
+      ),
+    applyEverywhere: (text: string, entry: LibraryEntry) =>
+      run("Could not save the entry.", () =>
+        applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
       ),
     proposeWords: () =>
       run("Could not propose words.", () => propose(itemId).unwrap()),

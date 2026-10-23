@@ -1,16 +1,16 @@
 import type { AnkiFateOfDeletion } from "@easyimmerse/state";
 import type { FlashcardContent, ProjectSettings } from "@easyimmerse/types";
 import { X } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { FlashcardDeleteDialog } from "./FlashcardDeleteDialog.tsx";
 import { FlashcardPreview } from "./FlashcardPreview.tsx";
 import type { FlashcardLanguages } from "./flashcardFields.ts";
+import { SuspendedStrip } from "./SuspendedStrip.tsx";
 
 /**
  * A flashcard made from a library item, shown as it is reviewed rather than in the editor, since the server fills it and refuses changes.
- * It can be closed, or deleted after confirming.
+ * It can be closed, brought back into the review while suspended, or deleted after confirming.
  */
 export function LibraryFlashcardView({
   content,
@@ -18,7 +18,11 @@ export function LibraryFlashcardView({
   languages,
   screenshotUrl = null,
   ankiFate,
+  isConfirmingDelete,
   onPlayAudio,
+  onUnsuspend = null,
+  onAskDelete,
+  onCancelDelete,
   onDelete,
   onClose,
 }: {
@@ -31,11 +35,16 @@ export function LibraryFlashcardView({
   languages: FlashcardLanguages;
   screenshotUrl?: string | null;
   ankiFate: AnkiFateOfDeletion | null;
+  /** Whether the deletion waits for confirmation in its dialog. */
+  isConfirmingDelete: boolean;
   onPlayAudio?: () => void;
+  /** Brings the suspended flashcard back into the review. Null, the default, for a flashcard that is not suspended. */
+  onUnsuspend?: (() => void) | null;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
-  const [isConfirmingDelete, setConfirmingDelete] = useState(false);
   return (
     <section
       aria-label="Flashcard"
@@ -47,6 +56,7 @@ export function LibraryFlashcardView({
           <X className="size-4" />
         </IconButton>
       </div>
+      {onUnsuspend && <SuspendedStrip onUnsuspend={onUnsuspend} />}
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
         <p className="text-sm text-fg-muted">
           This flashcard was made from the library, so it can't be edited.
@@ -61,7 +71,7 @@ export function LibraryFlashcardView({
         />
       </div>
       <div className="flex justify-start border-t border-line px-4 py-2">
-        <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
+        <Button variant="danger" onClick={onAskDelete}>
           Delete
         </Button>
       </div>
@@ -69,11 +79,8 @@ export function LibraryFlashcardView({
         <FlashcardDeleteDialog
           word={content.word}
           ankiFate={ankiFate}
-          onCancel={() => setConfirmingDelete(false)}
-          onDelete={() => {
-            setConfirmingDelete(false);
-            onDelete();
-          }}
+          onCancel={onCancelDelete}
+          onDelete={onDelete}
         />
       )}
     </section>

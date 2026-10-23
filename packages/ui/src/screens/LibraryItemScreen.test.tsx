@@ -2,7 +2,11 @@ import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleLibraryItem } from "../library/exampleLibrary.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { bodyOf, requestsTo } from "../testSupport/renderMediaScreen.tsx";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
@@ -10,12 +14,13 @@ import { LibraryItemScreen } from "./LibraryItemScreen.tsx";
 
 afterEach(cleanup);
 
-/** Renders the German item i1, which the server adds to project p1 as media file m3. */
-function renderItem() {
+/** Renders the German item i1, which the server adds to project p1 as media file m3, unless answered otherwise. */
+function renderItem(responses: Record<string, FakeResponse> = {}) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
     "GET /library/items/i1": exampleLibraryItem(),
     "POST /library/items/i1/add": { project_id: "p1", media_file_id: "m3" },
+    ...responses,
   });
   return {
     client,
@@ -65,5 +70,35 @@ describe("LibraryItemScreen", () => {
         mediaFileId: "m3",
       }),
     );
+  });
+
+  it("tells why the server refused to add the item", async () => {
+    renderItem({
+      "POST /library/items/i1/add": fakeFailure({
+        status: 409,
+        code: "item_not_published",
+        message: "",
+      }),
+    });
+    await addToProject();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "The item is not published, so it can't be added to a project yet.",
+    );
+  });
+
+  describe("for an item that is not published", () => {
+    it("offers no way to add it", async () => {
+      renderItem({
+        "GET /library/items/i1": exampleLibraryItem({
+          status: { kind: "draft" },
+        }),
+      });
+      await screen.findByText(
+        "Publish the item before adding it to a project.",
+      );
+      expect(
+        screen.queryByRole("button", { name: "Add to project" }),
+      ).toBeNull();
+    });
   });
 });

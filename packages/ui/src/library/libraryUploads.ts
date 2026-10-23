@@ -9,12 +9,27 @@ export const unreachableFile = {
   message: "",
 };
 
-/** Holds a file the manager picked in the browser's file registry, from which the upload reads it. */
-export function pickedFileOf(
+/**
+ * Holds a file the manager picked in the browser's file registry while `upload` reads it from there,
+ * then lets go of it, unless the registry held it already for something else.
+ */
+export async function uploadFromRegistry<T>(
   registry: BrowserFileRegistry<File>,
   file: File,
-): PickedMediaFile {
-  return { name: file.name, source: registry.register(file) };
+  upload: (picked: PickedMediaFile) => Promise<T>,
+): Promise<T> {
+  const source = {
+    kind: "browser_file",
+    size: file.size,
+    last_modified_ms: file.lastModified,
+  } as const;
+  const wasHeld = registry.find(file.name, source) !== null;
+  const picked = { name: file.name, source: registry.register(file) };
+  try {
+    return await upload(picked);
+  } finally {
+    if (!wasHeld) registry.unregister(file);
+  }
 }
 
 /** Reads subtitle files as text, leaving their format for the server to detect. */

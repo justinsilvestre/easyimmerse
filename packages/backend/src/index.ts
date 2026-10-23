@@ -5,6 +5,7 @@ export {
   selectCachedWaveformWindow,
   useAddAlignmentMutation,
   useAddLibraryItemMutation,
+  useApplyLibraryEntryMutation,
   useCaptureFrameQuery,
   useChoosePlaybackMethodQuery,
   useCreateFlashcardMutation,

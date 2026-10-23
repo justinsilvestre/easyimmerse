@@ -8,8 +8,8 @@ import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { libraryFailureMessage } from "./libraryFailureMessage.ts";
 import {
   librarySubtitlesOf,
-  pickedFileOf,
   unreachableFile,
+  uploadFromRegistry,
 } from "./libraryUploads.ts";
 import type { NewLibraryItem } from "./newLibraryItem.ts";
 
@@ -36,14 +36,18 @@ export function useLibraryItemCreation(onCreated: (itemId: string) => void) {
     setCreation({ isCreating: true, failure: null });
     const created = await createItem(draft)
       .unwrap()
-      .catch(() => null);
-    if (created === null)
-      return fail(null, "Could not add the item to the library.");
+      .then(
+        (item) => item,
+        (error: unknown) => {
+          fail(error, "Could not add the item to the library.");
+          return null;
+        },
+      );
+    if (created === null) return;
     try {
-      await upload({
-        itemId: created.id,
-        file: pickedFileOf(registry, file),
-      }).unwrap();
+      await uploadFromRegistry(registry, file, (picked) =>
+        upload({ itemId: created.id, file: picked }).unwrap(),
+      );
       if (subtitles) {
         const texts = await librarySubtitlesOf(subtitles);
         await putSubtitles({ itemId: created.id, subtitles: texts }).unwrap();

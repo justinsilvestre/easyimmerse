@@ -32,15 +32,25 @@ export function documentOfLibraryText(
   text: LibraryText,
   item: Pick<LibraryItem, "title" | "language">,
 ): Document {
+  const chapters = libraryChaptersOf(text).map((segments, index) => ({
+    title: text.chapter_titles[index] ?? null,
+    paragraphs: segments.map((segment) => segment.text),
+  })) satisfies Chapter[];
+  return { title: item.title, language: item.language, chapters };
+}
+
+/**
+ * Returns the segments of a document item's text grouped into chapters, in order: those that name a chapter in it,
+ * and those that name none in the first. The book `documentOfLibraryText` builds has one paragraph per segment, in these places.
+ */
+export function libraryChaptersOf(text: LibraryText): LibrarySegment[][] {
   const chapterCount = Math.max(
     text.chapter_titles.length,
     ...text.segments.map((segment) => chapterOf(segment) + 1),
   );
-  const chapters = Array.from({ length: chapterCount }, (_, index) => ({
-    title: text.chapter_titles[index] ?? null,
-    paragraphs: segmentsOfChapter(text, index).map((segment) => segment.text),
-  })) satisfies Chapter[];
-  return { title: item.title, language: item.language, chapters };
+  return Array.from({ length: chapterCount }, (_, index) =>
+    segmentsOfChapter(text, index),
+  );
 }
 
 /** Returns the segment a word was chosen in: the segment of its cue, or the paragraph of its place in the book. Null when none matches. */

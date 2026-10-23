@@ -15,7 +15,11 @@ import {
   exampleLibraryMediaFile,
   exampleLibraryVideoText,
 } from "../library/exampleLibrary.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import {
@@ -50,7 +54,10 @@ const libraryFlashcard: Flashcard = {
 };
 
 /** Renders project p1 with its library media file m3 open, the video item i1, over a server with German dictionaries. */
-function renderLibraryVideo(flashcards: Flashcard[] = []) {
+function renderLibraryVideo(
+  flashcards: Flashcard[] = [],
+  responses: Record<string, FakeResponse> = {},
+) {
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
@@ -62,6 +69,7 @@ function renderLibraryVideo(flashcards: Flashcard[] = []) {
       "GET /library/items/i1": exampleLibraryItem(),
       "GET /library/items/i1/text": exampleLibraryVideoText,
       "POST /projects/p1/media/m3/library-flashcards": libraryFlashcard,
+      ...responses,
     },
     directPlaybackRoutes,
   );
@@ -152,6 +160,26 @@ describe("ProjectScreen with a media file from the library", () => {
       await openFlashcard();
       await screen.findByRole("article", { name: "Flashcard preview" });
       expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    });
+  });
+
+  describe("when the item cannot be read", () => {
+    it("says a deleted item is no longer available", async () => {
+      renderLibraryVideo([], {
+        "GET /library/items/i1": fakeFailure({ status: 404, message: "" }),
+      });
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "This library item is no longer available.",
+      );
+    });
+
+    it("says the item could not be loaded for any other failure", async () => {
+      renderLibraryVideo([], {
+        "GET /library/items/i1": fakeFailure({ status: 500, message: "" }),
+      });
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "This library item could not be loaded.",
+      );
     });
   });
 });

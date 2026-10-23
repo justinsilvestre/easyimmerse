@@ -1,3 +1,4 @@
+import { libraryChaptersOf } from "@easyimmerse/state";
 import type { LibraryText } from "@easyimmerse/types";
 import type { WordSpan } from "../components/splitAtWords.ts";
 import type { TextSpan } from "./wordAt.ts";
@@ -10,15 +11,8 @@ export type StoredWords = readonly (readonly (readonly WordSpan[])[])[];
 
 /** Returns the stored words of each paragraph of the book `documentOfLibraryText` builds from the same text, in the same places. */
 export function storedWordsOf(text: LibraryText): StoredWords {
-  const chapterOf = (index: number | null) => index ?? 0;
-  const chapterCount = Math.max(
-    text.chapter_titles.length,
-    ...text.segments.map((segment) => chapterOf(segment.chapter_index) + 1),
-  );
-  return Array.from({ length: chapterCount }, (_, chapterIndex) =>
-    text.segments
-      .filter((segment) => chapterOf(segment.chapter_index) === chapterIndex)
-      .map((segment) => segment.words),
+  return libraryChaptersOf(text).map((segments) =>
+    segments.map((segment) => segment.words),
   );
 }
 

@@ -1,5 +1,4 @@
 import type { LibraryItem } from "@easyimmerse/types";
-import { useState } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { libraryStatusLabels } from "./libraryLabels.ts";
@@ -24,7 +23,7 @@ const statusTexts = {
 /**
  * Where a library item stands, with why its last publishing failed, and the actions that move it on:
  * "Propose words", which fills the lines that have no words from the manager's dictionaries, "Publish", "Unpublish",
- * and "Delete", which asks for confirmation first.
+ * and "Delete", which asks for confirmation first and is not offered while the item is being prepared.
  */
 export function LibraryPublication({
   item,
@@ -32,6 +31,9 @@ export function LibraryPublication({
   onProposeWords,
   onPublish,
   onUnpublish,
+  isConfirmingDelete,
+  onAskDelete,
+  onCancelDelete,
   onDelete,
 }: {
   item: LibraryItem;
@@ -40,9 +42,12 @@ export function LibraryPublication({
   onProposeWords: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
+  /** Whether the deletion waits for confirmation. */
+  isConfirmingDelete: boolean;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
   onDelete: () => void;
 }) {
-  const [isConfirmingDelete, setConfirmingDelete] = useState(false);
   const { status } = item;
   const isEditable = status.kind === "draft" || status.kind === "failed";
   const act = (action: () => void) => () => {
@@ -90,11 +95,13 @@ export function LibraryPublication({
             Unpublish
           </Button>
         )}
-        <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
-          Delete
-        </Button>
+        {status.kind !== "processing" && (
+          <Button variant="danger" onClick={onAskDelete}>
+            Delete
+          </Button>
+        )}
       </div>
-      {isConfirmingDelete && (
+      {isConfirmingDelete && status.kind !== "processing" && (
         <fieldset
           aria-label={`Delete ${item.title}?`}
           className="flex flex-wrap items-center gap-2 rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger-fg"
@@ -105,7 +112,7 @@ export function LibraryPublication({
           <Button size="sm" variant="danger" onClick={act(onDelete)}>
             Delete item
           </Button>
-          <Button size="sm" onClick={() => setConfirmingDelete(false)}>
+          <Button size="sm" onClick={onCancelDelete}>
             Keep
           </Button>
         </fieldset>

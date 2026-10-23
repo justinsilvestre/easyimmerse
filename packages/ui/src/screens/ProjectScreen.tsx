@@ -5,12 +5,14 @@ import {
   useListMediaFilesQuery,
 } from "@easyimmerse/backend";
 import {
+  actions,
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
 import type { MediaFile, Project } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
@@ -104,12 +106,18 @@ function LibraryFileScreen({
   mediaFile: MediaFile;
   itemId: string;
 }) {
+  const dispatch = useAppDispatch();
   const item = useGetLibraryItemQuery(itemId);
   const text = useGetLibraryTextQuery(itemId);
-  if (item.isError || text.isError)
+  const error = item.error ?? text.error;
+  if (error)
     return (
-      <ScreenLayout>
-        <p role="alert">This library item is no longer available.</p>
+      <ScreenLayout onBack={() => dispatch(actions.closeMedia())}>
+        <p role="alert">
+          {isNotFound(error)
+            ? "This library item is no longer available."
+            : "This library item could not be loaded."}
+        </p>
       </ScreenLayout>
     );
   if (!item.data || !text.data) return <OpeningFile />;
@@ -136,5 +144,15 @@ function OpeningFile() {
         Opening the file…
       </p>
     </ScreenLayout>
+  );
+}
+
+/** Tells whether a request failed because the server has no such thing, as for a library item deleted or unpublished since. */
+function isNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    error.status === 404
   );
 }

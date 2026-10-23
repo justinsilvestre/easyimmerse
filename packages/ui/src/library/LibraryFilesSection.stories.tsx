@@ -44,3 +44,7 @@ export const Text: Story = {
 export const Uploading: Story = { args: { isUploading: true } };
 
 export const Published: Story = { args: { item: exampleLibraryItem() } };
+
+export const Preparing: Story = {
+  args: { item: exampleLibraryItem({ status: { kind: "processing" } }) },
+};

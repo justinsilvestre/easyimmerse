@@ -13,6 +13,8 @@ const meta = {
     status: "ready",
     items: exampleManagedLibraryItems,
     coverUrlOf: () => null,
+    upload: "media",
+    onChooseUpload: fn(),
     isCreating: false,
     createFailure: null,
     onCreate: fn(),

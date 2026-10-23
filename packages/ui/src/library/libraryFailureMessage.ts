@@ -1,6 +1,6 @@
 /**
  * Says why a change to a library item failed: that a published item must be unpublished first,
- * that the server keeps no uploads, or else `fallback`.
+ * to wait while it is being prepared, that it is not published yet, that the server keeps no uploads, or else `fallback`.
  */
 export function libraryFailureMessage(
   error: unknown,
@@ -12,6 +12,10 @@ export function libraryFailureMessage(
       : undefined;
   if (code === "item_published")
     return "Unpublish the item to change its file, subtitles, or words.";
+  if (code === "item_processing")
+    return "Wait until the item is prepared, then try again.";
+  if (code === "item_not_published")
+    return "The item is not published, so it can't be added to a project yet.";
   if (code === "uploads_unavailable")
     return "This server keeps no uploaded files, so it has no library.";
   if (code === "browserFileUnreachable")

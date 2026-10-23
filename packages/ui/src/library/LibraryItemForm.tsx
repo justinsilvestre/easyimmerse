@@ -14,6 +14,7 @@ import {
   formatLibraryDuration,
   libraryDifficultyLabels,
 } from "./libraryLabels.ts";
+import { libraryLockOf } from "./libraryLock.ts";
 
 const difficultyOptions = [
   { value: "", label: "Not set" },
@@ -29,7 +30,8 @@ function changed(draft: LibraryItemDraft, changes: Partial<LibraryItemDraft>) {
 
 /**
  * The metadata of a library item: its title, description, languages, difficulty and tags, and for a video, the moment its cover is taken from,
- * which the library manager picks in a preview of the video. These can change whatever the item's status.
+ * which the library manager picks in a preview of the video. These can change whatever the item's status,
+ * except the languages, which are fixed while the item is being prepared or is published.
  */
 export function LibraryItemForm({
   item,
@@ -44,6 +46,8 @@ export function LibraryItemForm({
   onSave: (draft: LibraryItemDraft) => void;
 }) {
   const [draft, change] = useReducer(changed, item, libraryDraftOf);
+  // The languages decide how the text was divided into words, so they change only with the words.
+  const areLanguagesLocked = libraryLockOf(item.status) !== null;
   return (
     <form
       aria-label="Item details"
@@ -71,12 +75,14 @@ export function LibraryItemForm({
           label="Language"
           options={languageOptions}
           value={draft.language}
+          disabled={areLanguagesLocked}
           onChange={(event) => change({ language: event.target.value })}
         />
         <SelectField
           label="Translation language"
           options={languageOptions}
           value={draft.translation_language}
+          disabled={areLanguagesLocked}
           onChange={(event) =>
             change({ translation_language: event.target.value })
           }

@@ -12,6 +12,7 @@ import type { MainRoute, MediaRoute } from "../route/route.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { updateLibraryBrowse } from "./libraryBrowse/libraryBrowseFilter.ts";
+import { updateLibraryEdit } from "./libraryEdit/libraryEditState.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaScreenActionOf } from "./mediaScreen/mediaScreenActionOf.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
@@ -38,6 +39,7 @@ import { updateSettings } from "./updateSettings.ts";
 export const updateScreen = combineUpdates<ScreenState, [ScreenApp]>({
   main: updateMain,
   libraryBrowse: updateLibraryBrowse,
+  libraryEdit: updateLibraryEdit,
   settings: (settings, action, app) =>
     updateSettings(settings, action, routeAfter(app, action)),
   dialog: updateDialog,

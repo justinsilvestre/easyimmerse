@@ -25,13 +25,21 @@ const meta = {
     text: exampleLibraryVideoText,
     previewUrl: null,
     activity: idle,
+    isConfirmingDelete: false,
+    selectedWord: null,
+    isOnlyUndefinedShown: false,
     onSave: fn(),
     onReplaceFile: fn(),
     onReplaceSubtitles: fn(),
-    onSaveWords: fn(),
+    onSelectWord: fn(),
+    onShowOnlyUndefined: fn(),
+    onSaveWords: fn(async () => true),
+    onApplyEverywhere: fn(async () => true),
     onProposeWords: fn(),
     onPublish: fn(),
     onUnpublish: fn(),
+    onAskDelete: fn(),
+    onCancelDelete: fn(),
     onDelete: fn(),
     onBack: fn(),
   },
@@ -75,6 +83,12 @@ export const ChangeRefused: Story = {
       failure: "Unpublish the item to change its file, subtitles, or words.",
     },
   },
+};
+
+export const ConfirmingDelete: Story = { args: { isConfirmingDelete: true } };
+
+export const WordSelected: Story = {
+  args: { selectedWord: { segmentIndex: 1, start: 13 } },
 };
 
 export const LoadingText: Story = { args: { text: null } };

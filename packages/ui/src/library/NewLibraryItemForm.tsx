@@ -1,5 +1,5 @@
+import type { LibraryUpload } from "@easyimmerse/state";
 import { Upload } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { SelectField } from "../components/SelectField.tsx";
@@ -11,11 +11,7 @@ import {
   subtitleFileTypes,
   textFileTypes,
 } from "./libraryFileTypes.ts";
-import {
-  type LibraryUpload,
-  type NewLibraryItem,
-  newLibraryItemOf,
-} from "./newLibraryItem.ts";
+import { type NewLibraryItem, newLibraryItemOf } from "./newLibraryItem.ts";
 
 const uploadOptions = [
   { value: "media", label: "Video or audio" },
@@ -27,16 +23,20 @@ const uploadOptions = [
  * and an optional translation subtitles file, or a text file on its own.
  */
 export function NewLibraryItemForm({
+  upload,
   isCreating,
   failure,
+  onChooseUpload,
   onCreate,
 }: {
+  /** What the new item is made from, which decides the file pickers shown. */
+  upload: LibraryUpload;
   isCreating: boolean;
-  /** Why the last attempt failed, or null. */
+  /** Why the last attempt failed, or null. The fields keep what was entered meanwhile. */
   failure: string | null;
+  onChooseUpload: (upload: LibraryUpload) => void;
   onCreate: (item: NewLibraryItem) => void;
 }) {
-  const [upload, setUpload] = useState<LibraryUpload>("media");
   return (
     <form
       aria-label="New library item"
@@ -74,7 +74,7 @@ export function NewLibraryItemForm({
         label="File"
         options={uploadOptions}
         value={upload}
-        onChange={setUpload}
+        onChange={onChooseUpload}
       />
       {upload === "media" ? (
         <div className="flex flex-col gap-3">

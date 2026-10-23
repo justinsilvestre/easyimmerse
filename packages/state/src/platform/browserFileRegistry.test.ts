@@ -39,4 +39,11 @@ describe("createBrowserFileRegistry", () => {
       registry.find("clip.webm", { kind: "path", path: "/clip.webm" }),
     ).toBeNull();
   });
+
+  it("finds nothing for a file it let go of", () => {
+    const registry = createBrowserFileRegistry();
+    const source = registry.register(clip);
+    registry.unregister(clip);
+    expect(registry.find("clip.webm", source)).toBeNull();
+  });
 });

@@ -6,7 +6,7 @@ import {
   saveStatusOf,
   selectAnkiFateOfDeletion,
   selectIsFlashcardSuspended,
-  selectIsLibraryFlashcard,
+  selectLibraryEdit,
   selectMediaDurationMs,
 } from "@easyimmerse/state";
 import type { Flashcard } from "@easyimmerse/types";
@@ -48,15 +48,12 @@ export function ConnectedFlashcardEditor({
       saved !== null &&
       selectIsFlashcardSuspended(state, saved.project_id, saved.id),
   );
-  const isFromLibrary = useAppSelector(
-    (state) =>
-      saved !== null &&
-      selectIsLibraryFlashcard(state, saved.project_id, saved.id),
-  );
-  if (saved && isFromLibrary)
+  // The card itself says whether it came from the library, so this holds before the project's flashcards are listed.
+  if (saved?.is_from_library)
     return (
       <ConnectedLibraryFlashcard
         flashcard={saved}
+        isSuspended={isSuspended}
         languages={languages}
         screenshotUrl={screenshotUrl}
       />
@@ -92,13 +89,18 @@ export function ConnectedFlashcardEditor({
   );
 }
 
-/** A flashcard made from the library, read-only, laid out as the project's settings choose, with its clip and deletion through the store. */
+/**
+ * A flashcard made from the library, read-only, laid out as the project's settings choose,
+ * with its clip, its unsuspension and its confirmed deletion through the store.
+ */
 function ConnectedLibraryFlashcard({
   flashcard,
+  isSuspended,
   languages,
   screenshotUrl,
 }: {
   flashcard: Flashcard;
+  isSuspended: boolean;
   languages: FlashcardLanguages;
   screenshotUrl: string | null;
 }) {
@@ -107,6 +109,8 @@ function ConnectedLibraryFlashcard({
   const ankiFate = useAppSelector((state) =>
     selectAnkiFateOfDeletion(state, flashcard.project_id, flashcard.id),
   );
+  const deletion = useAppSelector((state) => selectLibraryEdit(state).deletion);
+  const { project_id: projectId, id: flashcardId } = flashcard;
   const clip = flashcard.content.audio_context;
   if (!settings) return null;
   return (
@@ -116,9 +120,26 @@ function ConnectedLibraryFlashcard({
       languages={languages}
       screenshotUrl={screenshotUrl}
       ankiFate={ankiFate}
+      isConfirmingDelete={
+        deletion?.kind === "flashcard" && deletion.flashcardId === flashcardId
+      }
       onPlayAudio={
         clip ? () => dispatch(actions.clipPlayRequested(clip)) : undefined
       }
+      onUnsuspend={
+        isSuspended
+          ? () =>
+              dispatch(
+                actions.flashcardUnsuspendRequested(projectId, flashcardId),
+              )
+          : null
+      }
+      onAskDelete={() =>
+        dispatch(
+          actions.libraryDeletionAsked({ kind: "flashcard", flashcardId }),
+        )
+      }
+      onCancelDelete={() => dispatch(actions.libraryDeletionAsked(null))}
       onDelete={() => dispatch(actions.flashcardDeleteRequested())}
       onClose={() => dispatch(actions.flashcardClosed())}
     />
