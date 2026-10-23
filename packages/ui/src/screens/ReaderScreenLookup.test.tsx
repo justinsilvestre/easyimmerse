@@ -133,6 +133,7 @@ async function renderReader({ hasBatchLookups = false } = {}) {
 function click(detail = 1) {
   const text = screen.getByRole("main");
   fireEvent.pointerDown(text, { ...point, pointerType: "mouse" });
+  fireEvent.pointerUp(text, { ...point, pointerType: "mouse" });
   fireEvent.click(text, { ...point, detail });
 }
 

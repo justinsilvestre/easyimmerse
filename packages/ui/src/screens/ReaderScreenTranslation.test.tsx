@@ -216,6 +216,7 @@ async function chooseView(name: RegExp) {
 function click(detail = 1) {
   const text = screen.getByRole("main");
   fireEvent.pointerDown(text, { ...point, pointerType: "mouse", button: 0 });
+  fireEvent.pointerUp(text, { ...point, pointerType: "mouse", button: 0 });
   fireEvent.click(text, { ...point, detail });
 }
 
