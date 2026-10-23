@@ -221,6 +221,7 @@ run = "cargo build -p easyimmerse-server"
 
 # The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
 # It gives them sample media and dictionaries once per database, so an older database receives them too.
+# The sample content is stored as paths into fixtures/, so the server may read files on this machine.
 # Plugins placed under .dev/plugins are installed, and what they fetch lands in .dev/media.
 # Port 8788 leaves 8787 to the desktop app's embedded server.
 [tasks."web-dev:server"]
@@ -229,7 +230,7 @@ env = { EASYIMMERSE_TOKEN = "dev" }
 run = '''
 mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
-exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --plugins-dir .dev/plugins --media-dir .dev/media
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --allow-local-paths --plugins-dir .dev/plugins --media-dir .dev/media
 '''
 
 # The development builds offer this server as the easyImmerse cloud, through the .env.development file of each app.
