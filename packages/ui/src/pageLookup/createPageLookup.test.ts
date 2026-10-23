@@ -11,12 +11,26 @@ const response: LookupResponse = {
   stylesheets: [],
 };
 
-function wordOf(term: string, left = 0): PageWord {
-  return {
+const viewport = { width: 800, height: 600 };
+
+function rectAt(left: number, top = 10) {
+  return { top, bottom: top + 10, left, right: left + 40 };
+}
+
+/** A word drawn at `left`, which `moveTo` moves elsewhere, as a scroll of the page would. */
+function wordOf(term: string, left = 0) {
+  let rect = rectAt(left);
+  const word: PageWord = {
     term,
     query: { text: term, language: "de", context: `Der ${term}`, offset: 4 },
-    rect: { top: 10, bottom: 20, left, right: left + 40 },
+    rect,
+    measure: () => rect,
   };
+  return Object.assign(word, {
+    moveTo: (moved: ReturnType<typeof rectAt>) => {
+      rect = moved;
+    },
+  });
 }
 
 /** Builds a page lookup whose words lie at the x coordinates the map gives, and records every view it shows. */
@@ -62,7 +76,7 @@ describe("createPageLookup", () => {
   it("stands at the word", async () => {
     const { lookup, views } = createRecordedLookup({ 1: wordOf("Hund", 50) });
     await lookup.pointAt({ x: 1, y: 0 });
-    expect(views.at(-1)?.anchor).toEqual(wordOf("Hund", 50).rect);
+    expect(views.at(-1)?.anchor).toEqual(rectAt(50));
   });
 
   it("shows nothing for a point on no word", async () => {
@@ -151,5 +165,40 @@ describe("createPageLookup", () => {
     lookup.close();
     await lookup.pointAt({ x: 1, y: 0 });
     expect(views.at(-1)?.term).toBe("Hund");
+  });
+
+  describe("once the page scrolls", () => {
+    it("follows the word", async () => {
+      const word = wordOf("Hund");
+      const { lookup, views } = createRecordedLookup({ 1: word });
+      await lookup.pointAt({ x: 1, y: 0 });
+      word.moveTo(rectAt(0, 200));
+      lookup.reanchor(viewport);
+      expect(views.at(-1)?.anchor).toEqual(rectAt(0, 200));
+    });
+
+    it("closes when the word has left the window", async () => {
+      const word = wordOf("Hund");
+      const { lookup, views } = createRecordedLookup({ 1: word });
+      await lookup.pointAt({ x: 1, y: 0 });
+      word.moveTo(rectAt(0, -30));
+      lookup.reanchor(viewport);
+      expect(views.at(-1)).toBeNull();
+    });
+
+    it("closes when the word is no longer on the page", async () => {
+      const word = wordOf("Hund");
+      const { lookup, views } = createRecordedLookup({ 1: word });
+      await lookup.pointAt({ x: 1, y: 0 });
+      word.moveTo({ top: 0, bottom: 0, left: 0, right: 0 });
+      lookup.reanchor(viewport);
+      expect(views.at(-1)).toBeNull();
+    });
+
+    it("shows nothing while closed", () => {
+      const { lookup, views } = createRecordedLookup({});
+      lookup.reanchor(viewport);
+      expect(views).toEqual([]);
+    });
   });
 });

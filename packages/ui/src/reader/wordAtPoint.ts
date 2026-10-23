@@ -10,7 +10,7 @@ import {
 } from "./textOffsets.ts";
 
 /** A word in the text, as `ParagraphWord` describes it, with the place in the book where it begins. */
-export type ReaderWord = Omit<ParagraphWord, "start"> & {
+export type ReaderWord = Omit<ParagraphWord, "start" | "range" | "line"> & {
   /** Where the word begins, or in a script written without spaces, the character pointed at. */
   location: ReaderLocation;
 };
@@ -30,7 +30,7 @@ export function wordAtPoint(
   const offset = offsetWithin(paragraph, caret.node, caret.offset);
   const word = paragraphWordAt(paragraph, offset, point, language);
   if (!word) return null;
-  const { start, ...found } = word;
+  const { start, range: _range, line: _line, ...found } = word;
   return {
     ...found,
     location: {

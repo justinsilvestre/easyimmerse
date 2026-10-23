@@ -20,7 +20,7 @@ const meta = {
   args: {
     state: { kind: "found", term: "fressen", results: exampleResults },
     mode: "word",
-    resolveMediaUrl: resolveExampleMediaUrl,
+    resolveMedia: resolveExampleMediaUrl,
     onSearch: fn(),
     onCreateFlashcard: fn(),
     onToggleSize: fn(),

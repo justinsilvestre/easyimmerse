@@ -37,7 +37,7 @@ function PopupAtWord({
           state={{ kind: "found", term: "fressen", results: exampleResults }}
           mode={wordAt ? "word" : "search"}
           size={size}
-          resolveMediaUrl={resolveExampleMediaUrl}
+          resolveMedia={resolveExampleMediaUrl}
           onSearch={fn()}
           onCreateFlashcard={fn()}
           onToggleSize={() =>
@@ -81,7 +81,7 @@ function PopupFollowingWords() {
           <DictionaryPopup
             state={{ kind: "found", term: "fressen", results: exampleResults }}
             mode="word"
-            resolveMediaUrl={resolveExampleMediaUrl}
+            resolveMedia={resolveExampleMediaUrl}
             onSearch={fn()}
             onCreateFlashcard={fn()}
             onClose={() => setWord(null)}

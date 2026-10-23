@@ -2,7 +2,7 @@ import type { Definition } from "@easyimmerse/types";
 import { ContentText } from "./ContentText.tsx";
 import {
   DefinitionContext,
-  type ResolveMediaUrl,
+  type ResolveDictionaryMedia,
 } from "./definitionContext.ts";
 import { FormOfView } from "./FormOfView.tsx";
 import { MarkupView } from "./MarkupView.tsx";
@@ -11,20 +11,20 @@ import { yomitanClassName } from "./yomitanClassName.ts";
 
 /**
  * Renders one definition in the form its dictionary wrote it: plain text, Yomitan structured content, HTML, Pango or XDXF markup, or a pointer to a base form.
- * Double-clicked words go to `onWordLookup`, held words to `onWordHold`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
+ * Double-clicked words go to `onWordLookup`, held words to `onWordHold`, links to other headwords go to `onLookup`, and images come from `resolveMedia`. Nothing in a definition can run code or load remote resources.
  * Place it inside its dictionary's `DictionaryScope`, where `DictionaryStylesheets` applies the dictionary's own stylesheet.
  */
 export function DefinitionView({
   definition,
   dictionaryId,
-  resolveMediaUrl,
+  resolveMedia,
   onWordLookup,
   onWordHold,
   onLookup,
 }: {
   definition: Definition;
   dictionaryId: string;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
   onWordLookup: (word: string) => void;
   onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
@@ -33,7 +33,7 @@ export function DefinitionView({
     <DefinitionContext
       value={{
         dictionaryId,
-        resolveMediaUrl,
+        resolveMedia,
         onWordLookup,
         onWordHold,
         onLookup,

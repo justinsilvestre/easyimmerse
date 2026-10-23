@@ -8,3 +8,8 @@ export function bytesToBase64(bytes: Uint8Array): string {
     binary += String.fromCharCode(...bytes.subarray(start, start + chunkSize));
   return btoa(binary);
 }
+
+/** Decodes base64 into bytes, as `bytesToBase64` encodes them. */
+export function base64ToBytes(base64: string): Uint8Array {
+  return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+}

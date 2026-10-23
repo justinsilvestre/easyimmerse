@@ -1,6 +1,6 @@
 import type { CssNode, Raw, Value } from "css-tree";
 import walk from "css-tree/walker";
-import type { ResolveMediaUrl } from "../definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "../definition/definitionContext.ts";
 import { imageSource } from "../definition/imageSource.ts";
 import { customPropertyPrefix } from "./dictionaryScope.ts";
 
@@ -29,11 +29,14 @@ const embeddedResourcePattern =
 /** The dictionary whose stylesheet is being sanitized, which its media paths belong to. */
 export type MediaOwner = {
   dictionaryId: string;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
+  /** The size of a rem in CSS pixels, when lengths in rem are to be written in pixels; absent, they stay in rem. */
+  remPx?: number;
 };
 
 /**
- * Checks a declaration's value and makes it safe in place: media paths become URLs from `resolveMediaUrl`, and custom property names gain the dictionary prefix.
+ * Checks a declaration's value and makes it safe in place: media paths become URLs from `resolveMedia`, and custom property names gain the dictionary prefix.
+ * With the owner's `remPx`, lengths in rem are written in pixels.
  * Returns false when the value loads anything else, calls a function outside the allowlist, or holds escapes or text the parser could not read.
  */
 export function sanitizeValue(value: Value | Raw, owner: MediaOwner): boolean {
@@ -56,12 +59,24 @@ function sanitizeNode(node: CssNode, owner: MediaOwner): boolean {
     case "Identifier":
       return sanitizeIdentifier(node);
     case "Dimension":
-      return !node.unit.includes("\\");
+      return sanitizeDimension(node, owner.remPx);
     case "Hash":
       return !node.value.includes("\\");
     default:
       return true;
   }
+}
+
+function sanitizeDimension(
+  node: { value: string; unit: string },
+  remPx: number | undefined,
+): boolean {
+  if (node.unit.includes("\\")) return false;
+  if (remPx !== undefined && node.unit.toLowerCase() === "rem") {
+    node.value = String(Number(node.value) * remPx);
+    node.unit = "px";
+  }
+  return true;
 }
 
 /** Rejects escaped identifiers, which could spell a keyword that checks look for, and prefixes custom property names. */
@@ -76,8 +91,9 @@ function resolveUrl(node: { value: string }, owner: MediaOwner): boolean {
   if (embeddedResourcePattern.test(node.value.trim())) return true;
   const source = imageSource(node.value);
   if (source?.kind !== "media") return false;
-  const url = owner.resolveMediaUrl(owner.dictionaryId, source.path);
-  if (url === null) return false;
+  const url = owner.resolveMedia(owner.dictionaryId, source.path);
+  // A stylesheet can only load a file from a URL, not take a decoded picture.
+  if (typeof url !== "string") return false;
   node.value = url;
   return true;
 }

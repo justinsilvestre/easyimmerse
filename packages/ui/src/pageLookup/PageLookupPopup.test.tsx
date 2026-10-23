@@ -21,6 +21,7 @@ function renderPopup(view: PageLookupView | null) {
   render(
     <PageLookupPopup
       view={view}
+      resolveMedia={() => null}
       onSearch={() => undefined}
       onToggleSize={() => undefined}
       onClose={() => undefined}

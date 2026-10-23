@@ -1,16 +1,15 @@
 import {
   createBackgroundLookUp,
+  createBackgroundMediaFetch,
   createI18nDetectLanguage,
 } from "@easyimmerse/effects-extension";
-import { mountPageLookup } from "@easyimmerse/ui/pageLookup";
+import { mountPageLookup, pageLookupHostCss } from "@easyimmerse/ui/pageLookup";
 import { browser } from "wxt/browser";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 import { defineContentScript } from "wxt/utils/define-content-script";
 import "@easyimmerse/ui/styles.css";
 
-/** Keeps the pop-up above everything on the page. */
-const hostCss =
-  ":host { position: fixed !important; top: 0 !important; left: 0 !important; z-index: 2147483647 !important; }";
+const sendMessage = (message: unknown) => browser.runtime.sendMessage(message);
 
 /** Looks up the words of web pages in the connected server's dictionaries, in a pop-up inside a shadow root that the page's styles do not reach. */
 export default defineContentScript({
@@ -21,14 +20,13 @@ export default defineContentScript({
       name: "easyimmerse-lookup",
       position: "inline",
       anchor: "body",
-      css: hostCss,
+      css: pageLookupHostCss,
       onMount: (container, _shadow, host) =>
         mountPageLookup({
           container,
           host,
-          lookUp: createBackgroundLookUp((message) =>
-            browser.runtime.sendMessage(message),
-          ),
+          lookUp: createBackgroundLookUp(sendMessage),
+          fetchMedia: createBackgroundMediaFetch(sendMessage),
           detectLanguage: createI18nDetectLanguage((text) =>
             browser.i18n.detectLanguage(text),
           ),

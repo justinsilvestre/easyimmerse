@@ -17,7 +17,7 @@ function renderCard(
   return render(
     <LookupResultCard
       result={result}
-      resolveMediaUrl={() => null}
+      resolveMedia={() => null}
       onWordLookup={onWordLookup}
       onLookup={() => undefined}
       onCreateFlashcard={() => undefined}

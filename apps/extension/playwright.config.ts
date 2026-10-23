@@ -13,8 +13,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
+  // The sample content gives the page lookup a dictionary with an image to show.
   webServer: {
-    command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:${serverPort} --token ${token} --seed-placeholders`,
+    command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:${serverPort} --token ${token} --seed-placeholders --seed-sample-content`,
     url: `${serverUrl}/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

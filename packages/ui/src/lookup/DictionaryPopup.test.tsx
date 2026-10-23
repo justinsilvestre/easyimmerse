@@ -48,7 +48,7 @@ function renderPopup({
       </button>
       <DictionaryPopup
         state={state}
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         mode="word"
         sentence={sentence}
         onSearch={onSearch}
@@ -159,7 +159,7 @@ describe("DictionaryPopup", () => {
     render(
       <DictionaryPopup
         state={foundState}
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         mode="word"
         onWordHold={(word) => flashcards.push(word)}
         onSearch={() => undefined}
@@ -228,7 +228,7 @@ function SearchOpener() {
         <DictionaryPopup
           state={null}
           mode="search"
-          resolveMediaUrl={() => null}
+          resolveMedia={() => null}
           onSearch={() => undefined}
           onCreateFlashcard={() => undefined}
           onClose={() => setOpen(false)}
@@ -244,7 +244,7 @@ function renderState(state: LookupDisplayState) {
     <DictionaryPopup
       state={state}
       mode="word"
-      resolveMediaUrl={() => null}
+      resolveMedia={() => null}
       onSearch={() => undefined}
       onCreateFlashcard={() => undefined}
       onClose={() => undefined}
@@ -343,7 +343,7 @@ describe("DictionaryPopup states", () => {
       <DictionaryPopup
         state={{ kind: "notFound", term: "Hundi" }}
         mode="word"
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         onSearch={() => undefined}
         onCreateFlashcard={() => undefined}
         onClose={() => undefined}
@@ -363,7 +363,7 @@ describe("DictionaryPopup states", () => {
         <DictionaryPopup
           state={null}
           mode="word"
-          resolveMediaUrl={() => null}
+          resolveMedia={() => null}
           onSearch={() => undefined}
           onCreateFlashcard={() => undefined}
           onClose={() => (closeCount += 1)}
@@ -403,7 +403,7 @@ describe("DictionaryPopup size", () => {
         state={foundState}
         mode="word"
         size={size}
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         onSearch={() => undefined}
         onCreateFlashcard={() => undefined}
         onToggleSize={onToggleSize}
@@ -488,7 +488,7 @@ describe("DictionaryPopup links", () => {
           results: [exampleInflectedResult],
         }}
         mode="word"
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         onSearch={() => undefined}
         onCreateFlashcard={() => undefined}
         onClose={() => (closeCount += 1)}
@@ -511,7 +511,7 @@ describe("DictionaryPopup links", () => {
           results: [exampleInflectedResult],
         }}
         mode="word"
-        resolveMediaUrl={() => null}
+        resolveMedia={() => null}
         onSearch={(term) => searched.push(term)}
         onCreateFlashcard={() => undefined}
         onClose={() => undefined}

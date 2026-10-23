@@ -19,6 +19,10 @@ export type ParagraphWord = {
   lookup: LookupText;
   /** Where the word is drawn in the window, for placing the dictionary pop-up. */
   rect: DOMRect;
+  /** The range of the whole word, which can be measured again once the text moves. */
+  range: Range;
+  /** Which of the range's line boxes, in the order `getClientRects` lists them, `rect` is, for a word broken across lines. */
+  line: number;
 };
 
 /**
@@ -35,8 +39,11 @@ export function paragraphWordAt(
 ): ParagraphWord | null {
   const text = paragraphTextOf(paragraph);
   for (const word of wordsAroundCaret(text, caretOffset, language)) {
-    const rect = rectsOf(paragraph, word).find((r) => contains(r, point));
-    if (!rect) continue;
+    const range = rangeOfSpan(paragraph, word.start, word.end);
+    const rects = [...(range?.getClientRects() ?? [])];
+    const line = rects.findIndex((r) => contains(r, point));
+    const rect = rects[line];
+    if (!range || !rect) continue;
     const isUnspaced = isUnspacedWord(word.text);
     const start = isUnspaced
       ? word.start +
@@ -51,6 +58,8 @@ export function paragraphWordAt(
       start,
       ...sentenceLookupAt(text, start, language),
       rect,
+      range,
+      line,
     };
   }
   return null;

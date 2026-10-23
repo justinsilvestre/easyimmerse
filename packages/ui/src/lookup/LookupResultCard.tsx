@@ -2,7 +2,7 @@ import type { LookupResult, TagDefinition } from "@easyimmerse/types";
 import { IconButton } from "../components/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { DictionaryDefinitionsSection } from "./DictionaryDefinitionsSection.tsx";
-import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "./definition/definitionContext.ts";
 import { FrequencyList } from "./FrequencyList.tsx";
 import { formatInflectionChains } from "./formatInflectionChains.ts";
 import { PronunciationList } from "./PronunciationList.tsx";
@@ -18,14 +18,14 @@ import { TagList } from "./TagList.tsx";
  */
 export function LookupResultCard({
   result,
-  resolveMediaUrl,
+  resolveMedia,
   onWordLookup,
   onWordHold,
   onLookup,
   onCreateFlashcard,
 }: {
   result: LookupResult;
-  resolveMediaUrl: ResolveMediaUrl;
+  resolveMedia: ResolveDictionaryMedia;
   onWordLookup: (word: string) => void;
   onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
@@ -70,7 +70,7 @@ export function LookupResultCard({
           // biome-ignore lint/suspicious/noArrayIndexKey: see above
           key={index}
           dictionaryDefinitions={dictionaryDefinitions}
-          resolveMediaUrl={resolveMediaUrl}
+          resolveMedia={resolveMedia}
           onWordLookup={onWordLookup}
           onWordHold={onWordHold}
           onLookup={onLookup}

@@ -83,7 +83,7 @@ describe("StructuredContentView", () => {
   it("gives an image Yomitan's class for its tag", () => {
     renderContent(
       { tag: "img", path: "a.png", alt: "a" },
-      { resolveMediaUrl: resolveFakeMediaUrl },
+      { resolveMedia: resolveFakeMediaUrl },
     );
     expect(screen.getByRole("img", { name: "a" }).className).toContain(
       "dict-gloss-sc-img",
@@ -181,10 +181,10 @@ describe("StructuredContentView", () => {
     expect(container.querySelector("a")).toBeNull();
   });
 
-  it("resolves an image through resolveMediaUrl", () => {
+  it("resolves an image through resolveMedia", () => {
     renderContent(
       { tag: "img", path: "img/a.png", alt: "a" },
-      { resolveMediaUrl: resolveFakeMediaUrl },
+      { resolveMedia: resolveFakeMediaUrl },
     );
     expect(screen.getByRole("img", { name: "a" }).getAttribute("src")).toBe(
       "media://dict/img/a.png",
@@ -195,7 +195,7 @@ describe("StructuredContentView", () => {
     function renderImage(image: Omit<ImageElement, "path">) {
       return renderContent(
         { tag: "img", path: "a.png", alt: "a", ...image },
-        { resolveMediaUrl: resolveFakeMediaUrl },
+        { resolveMedia: resolveFakeMediaUrl },
       );
     }
 
@@ -288,12 +288,45 @@ describe("StructuredContentView", () => {
       );
       expect(background?.getAttribute("style")).toContain("media://dict/a.png");
     });
+
+    describe("given as a decoded picture", () => {
+      const picture = { width: 2, height: 2 } as ImageBitmap;
+
+      function renderPicture(image: Omit<ImageElement, "path">) {
+        return renderContent(
+          { tag: "img", path: "a.png", alt: "a", ...image },
+          { resolveMedia: () => picture },
+        );
+      }
+
+      it("draws it on a canvas named by its alternative text", () => {
+        renderPicture({});
+        expect(screen.getByRole("img", { name: "a" }).tagName).toBe("CANVAS");
+      });
+
+      it("counts it as loaded", () => {
+        const { container } = renderPicture({});
+        expect(
+          container
+            .querySelector(".dict-gloss-image-link")
+            ?.getAttribute("data-image-load-state"),
+        ).toBe("loaded");
+      });
+
+      it("paints a monochrome one without a mask", () => {
+        const { container } = renderPicture({ appearance: "monochrome" });
+        const background = container.querySelector<HTMLElement>(
+          ".dict-gloss-image-background",
+        );
+        expect(background?.getAttribute("style")).toBeNull();
+      });
+    });
   });
 
   it("hides a collapsed image until it is shown", () => {
     renderContent(
       { tag: "img", path: "a.png", alt: "a", collapsed: true },
-      { resolveMediaUrl: resolveFakeMediaUrl },
+      { resolveMedia: resolveFakeMediaUrl },
     );
     expect(screen.queryByRole("img")).toBeNull();
   });
@@ -301,7 +334,7 @@ describe("StructuredContentView", () => {
   it("shows a collapsed image when its toggle is pressed", () => {
     renderContent(
       { tag: "img", path: "a.png", alt: "a", collapsed: true },
-      { resolveMediaUrl: resolveFakeMediaUrl },
+      { resolveMedia: resolveFakeMediaUrl },
     );
     fireEvent.click(screen.getByRole("button", { name: "Show image: a" }));
     expect(screen.getByRole("img", { name: "a" })).toBeDefined();

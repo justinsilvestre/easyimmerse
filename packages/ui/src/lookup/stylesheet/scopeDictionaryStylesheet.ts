@@ -2,7 +2,7 @@ import type { Atrule, CssNode, Rule, SelectorList } from "css-tree";
 import generate from "css-tree/generator";
 import parse from "css-tree/parser";
 import walk from "css-tree/walker";
-import type { ResolveMediaUrl } from "../definition/definitionContext.ts";
+import type { ResolveDictionaryMedia } from "../definition/definitionContext.ts";
 import { dictionaryFontFamilies } from "./dictionaryFontFamilies.ts";
 import { scopeAttribute } from "./dictionaryScope.ts";
 import { flattenNestedSelectors } from "./flattenNestedSelectors.ts";
@@ -18,18 +18,21 @@ const conditionalAtrules = new Set(["media", "supports", "container"]);
 /**
  * Turns a dictionary's own stylesheet into CSS that styles only that dictionary's content, inside elements marked with its scope attribute.
  * Every selector is confined to the scope, and anything that could load a remote resource, run code, or reach outside the dictionary's content is dropped.
- * Media paths in `url()` resolve through `resolveMediaUrl`, and colors adapt to the app's dark theme.
+ * Media paths in `url()` resolve through `resolveMedia`, and colors adapt to the app's dark theme.
+ * With `remPx`, lengths in rem are written in pixels at that size of a rem, for content whose own stylesheet fixes it so.
  */
 export function scopeDictionaryStylesheet(
   css: string,
   dictionaryId: string,
-  resolveMediaUrl: ResolveMediaUrl,
+  resolveMedia: ResolveDictionaryMedia,
+  remPx?: number,
 ): string {
   const stylesheet = parse(css, { parseCustomProperty: true });
   if (stylesheet.type !== "StyleSheet") return "";
   const owner: StylesheetOwner = {
     dictionaryId,
-    resolveMediaUrl,
+    resolveMedia,
+    remPx,
     fontFamilies: dictionaryFontFamilies(stylesheet, dictionaryId),
   };
   const scope = `[${scopeAttribute}=${generate({ type: "String", value: dictionaryId })}]`;

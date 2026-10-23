@@ -31,3 +31,19 @@ describe("popupHeight", () => {
     });
   });
 });
+
+describe("popupSize at a fixed size of a rem", () => {
+  it("writes the width in pixels", () => {
+    expect(popupWidth("compact", 16)).toBe("min(512px, 100vw - 16px)");
+  });
+
+  it("writes the compact height limit in pixels", () => {
+    expect(popupHeight("compact", 16)).toEqual({
+      maxHeight: "min(512px, 100%)",
+    });
+  });
+
+  it("measures the width at that size of a rem", () => {
+    expect(popupWidthPx("compact", 16)).toBe(512);
+  });
+});

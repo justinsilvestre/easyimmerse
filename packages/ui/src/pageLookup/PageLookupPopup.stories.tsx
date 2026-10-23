@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentProps } from "react";
 import { fn } from "storybook/test";
+import { exampleInflectedResult } from "../lookup/exampleJapaneseLookup.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
+import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
 import type { PageLookupView } from "./createPageLookup.ts";
 import { PageLookupPopup } from "./PageLookupPopup.tsx";
 
@@ -39,6 +41,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     view,
+    resolveMedia: resolveExampleMediaUrl,
     onSearch: fn(),
     onToggleSize: fn(),
     onClose: fn(),
@@ -50,6 +53,24 @@ type Story = StoryObj<typeof meta>;
 
 /** Showing the entries the server's dictionaries have for the word. */
 export const EntriesFound: Story = {};
+
+/** Showing entries with images, which the extension fetches from the server. */
+export const EntriesWithImages: Story = {
+  args: {
+    view: {
+      ...view,
+      term: "食べた",
+      outcome: {
+        kind: "answered",
+        response: {
+          results: [exampleInflectedResult],
+          kanji: [],
+          stylesheets: [],
+        },
+      },
+    },
+  },
+};
 
 /** Waiting for the server's answer. */
 export const LookingUp: Story = {

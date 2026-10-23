@@ -11,9 +11,17 @@ export function buildDictionaryMediaUrl(
   path: string,
 ): string {
   const url = new URL(
-    `/dictionaries/${encodeURIComponent(dictionaryId)}/media/${encodeURIComponent(path)}`,
+    dictionaryMediaPath(dictionaryId, path),
     server.serverUrl,
   );
   url.searchParams.set("token", server.token);
   return url.toString();
+}
+
+/** The path of the media route for a file stored with a dictionary, for a request that sends the token in a header. */
+export function dictionaryMediaPath(
+  dictionaryId: string,
+  path: string,
+): string {
+  return `/dictionaries/${encodeURIComponent(dictionaryId)}/media/${encodeURIComponent(path)}`;
 }

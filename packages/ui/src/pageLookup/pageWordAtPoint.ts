@@ -6,8 +6,16 @@ import { caretAtPoint, offsetWithin } from "../reader/textOffsets.ts";
 import { pageBlockOf } from "./pageBlockOf.ts";
 import { type DetectLanguage, pageLanguageOf } from "./pageLanguageOf.ts";
 
-/** A word of a web page under the pointer: the word as the pop-up shows it, its lookup, and where it is drawn in the window. */
-export type PageWord = { term: string; query: LookupQuery; rect: AnchorRect };
+/**
+ * A word of a web page under the pointer: the word as the pop-up shows it, its lookup, and where it is drawn in the window,
+ * which `measure` finds again once the page scrolls or its layout changes.
+ */
+export type PageWord = {
+  term: string;
+  query: LookupQuery;
+  rect: AnchorRect;
+  measure: () => AnchorRect;
+};
 
 /**
  * Finds the word of a web page under a point of the window, as `paragraphWordAt` finds it in the block of text around the point,
@@ -24,10 +32,18 @@ export async function pageWordAtPoint(
   const offset = offsetWithin(block, caret.node, caret.offset);
   const word = paragraphWordAt(block, offset, point, language);
   if (!word) return null;
-  const { top, bottom, left, right } = word.rect;
+  const { range, line } = word;
   return {
     term: word.text,
     query: { ...word.lookup, language },
-    rect: { top, bottom, left, right },
+    rect: anchorRectOf(word.rect),
+    measure: () =>
+      anchorRectOf(
+        range.getClientRects()[line] ?? range.getBoundingClientRect(),
+      ),
   };
+}
+
+function anchorRectOf({ top, bottom, left, right }: DOMRect): AnchorRect {
+  return { top, bottom, left, right };
 }

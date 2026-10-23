@@ -142,7 +142,7 @@ function popupFor(word: string, onClose: () => void) {
     <DictionaryPopup
       state={lookupStateOf(word)}
       mode="word"
-      resolveMediaUrl={resolveExampleMediaUrl}
+      resolveMedia={resolveExampleMediaUrl}
       onSearch={fn()}
       onCreateFlashcard={fn()}
       onClose={onClose}
@@ -556,7 +556,7 @@ export const SentenceTranslationInPopup: Story = {
       <DictionaryPopup
         state={{ kind: "notFound", term: "dog" }}
         mode="word"
-        resolveMediaUrl={resolveExampleMediaUrl}
+        resolveMedia={resolveExampleMediaUrl}
         sentence={{
           play: { label: "Play the sentence (R)", onPlay: fn() },
           translation: {
