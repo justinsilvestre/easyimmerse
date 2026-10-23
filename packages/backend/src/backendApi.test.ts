@@ -1367,32 +1367,67 @@ const parkText: LibraryText = {
   chapter_titles: [],
 };
 
-/** The requests a library endpoint sends when the client answers every request alike. */
+/** The requests a library endpoint sends when the client answers every request with a draft item. */
 async function libraryRequests(start: unknown) {
-  const client = createRecordingClient();
+  const requests: BackendRequest[] = [];
+  const client = {
+    requests,
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      return { data: parkItem({ kind: "draft" }) as T };
+    },
+  };
   const { dispatch } = createStore(client);
   await (dispatch as (action: unknown) => unknown)(start);
   return client.requests;
 }
 
-/** Counts the fetches of item i1 within `ms`, while the server answers with each status in turn and then with the last one. */
-async function itemFetchCount(statuses: LibraryItemStatus[], ms: number) {
-  vi.useFakeTimers();
-  let count = 0;
+/** How the server answers a fetch of item i1: with the item in a status, or with 404 once the item is deleted. */
+type ItemAnswer = LibraryItemStatus | "gone";
+
+/**
+ * A store whose server answers the fetches of item i1 with each answer in turn and then with the last one,
+ * a publish with the item processing, and any other request with item i1's listing or text. It counts the requests by method and path.
+ */
+function createLibraryPollingStore(answers: ItemAnswer[]) {
+  const counts = new Map<string, number>();
   const client: BackendClient = {
-    send: async <T>() => {
-      const status = statuses[Math.min(count, statuses.length - 1)];
-      count += 1;
-      return { data: parkItem(status ?? { kind: "draft" }) as T };
+    send: async <T>({ method, path }: BackendRequest) => {
+      const key = `${method} ${path}`;
+      const count = counts.get(key) ?? 0;
+      counts.set(key, count + 1);
+      if (path.endsWith("/publish"))
+        return { data: parkItem({ kind: "processing" }) as T };
+      if (path === "/library/items") return { data: { items: [] } as T };
+      if (path.endsWith("/text")) return { data: parkText as T };
+      const answer = answers[Math.min(count, answers.length - 1)];
+      return answer === "gone" || answer === undefined
+        ? { error: { status: 404, message: "No such item." } }
+        : { data: parkItem(answer) as T };
     },
   };
-  createStore(client).dispatch(
-    backendApi.endpoints.getLibraryItem.initiate("i1"),
-  );
+  return { store: createStore(client), counts };
+}
+
+/** Counts the requests to a path within `ms` of fetching item i1 after the starting actions, with timers faked. */
+async function libraryRequestCount(
+  answers: ItemAnswer[],
+  key: string,
+  ms: number,
+  ...starts: unknown[]
+) {
+  vi.useFakeTimers();
+  const { store, counts } = createLibraryPollingStore(answers);
+  const dispatch = store.dispatch as (action: unknown) => unknown;
+  for (const start of starts) dispatch(start);
+  dispatch(backendApi.endpoints.getLibraryItem.initiate("i1"));
   await vi.advanceTimersByTimeAsync(ms);
   vi.useRealTimers();
-  return count;
+  return counts.get(key) ?? 0;
 }
+
+const itemFetchCount = (answers: ItemAnswer[], ms: number) =>
+  libraryRequestCount(answers, "GET /library/items/i1", ms);
 
 /** The cached text of item i1 once the words of its first segment are saved. */
 async function textAfterSavingWords() {
@@ -1599,6 +1634,49 @@ describe("the library endpoints", () => {
 
   it("fetch a published item only once", async () => {
     expect(await itemFetchCount([{ kind: "published" }], 7000)).toBe(1);
+  });
+
+  it("stop fetching an item being prepared once a fetch fails", async () => {
+    expect(await itemFetchCount([{ kind: "processing" }, "gone"], 7000)).toBe(
+      2,
+    );
+  });
+
+  it("fetch the listing again once an item's preparation ends", async () => {
+    expect(
+      await libraryRequestCount(
+        [{ kind: "processing" }, { kind: "published" }],
+        "GET /library/items",
+        3000,
+        backendApi.endpoints.listLibraryItems.initiate(),
+      ),
+    ).toBe(2);
+  });
+
+  it("fetch the item's text again once its preparation ends", async () => {
+    expect(
+      await libraryRequestCount(
+        [{ kind: "processing" }, { kind: "published" }],
+        "GET /library/items/i1/text",
+        3000,
+        backendApi.endpoints.getLibraryText.initiate("i1"),
+      ),
+    ).toBe(2);
+  });
+
+  it("start fetching an item again once it is published", async () => {
+    vi.useFakeTimers();
+    const { store, counts } = createLibraryPollingStore([
+      { kind: "draft" },
+      { kind: "published" },
+    ]);
+    await store.dispatch(backendApi.endpoints.getLibraryItem.initiate("i1"));
+    await store.dispatch(
+      backendApi.endpoints.publishLibraryItem.initiate("i1"),
+    );
+    await vi.advanceTimersByTimeAsync(2100);
+    vi.useRealTimers();
+    expect(counts.get("GET /library/items/i1")).toBe(2);
   });
 
   it("put the saved segment into the item's cached text", async () => {

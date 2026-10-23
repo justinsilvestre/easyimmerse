@@ -124,7 +124,7 @@ import {
   type LibraryFileUploadArgs,
   uploadLibraryFile,
 } from "./libraryFileUpload.ts";
-import { pollWhileProcessing } from "./libraryItemPolling.ts";
+import { followLibraryItemFetch } from "./libraryItemPolling.ts";
 import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
@@ -1314,16 +1314,16 @@ export const backendApi = createApi({
         ...(result?.items ?? []).map(({ id }) => libraryItemTag(id)),
       ],
     }),
-    /** One item of the library, fetched again every two seconds while it is being prepared for publishing. */
+    /** One item of the library, fetched again every two seconds while it is being prepared for publishing, after which its listing and text are fetched again. */
     getLibraryItem: build.query<LibraryItem, string>({
       query: (itemId) => ({ method: "GET", path: libraryItemPath(itemId) }),
       providesTags: (_result, _error, itemId) => [libraryItemTag(itemId)],
-      async onCacheEntryAdded(
+      async onQueryStarted(
         itemId,
-        { dispatch, getCacheEntry, cacheEntryRemoved },
+        { dispatch, getCacheEntry, queryFulfilled },
       ) {
-        await pollWhileProcessing(
-          () => getCacheEntry().data?.status.kind === "processing",
+        await followLibraryItemFetch(
+          { getCacheEntry, queryFulfilled },
           () =>
             dispatch(
               backendApi.endpoints.getLibraryItem.initiate(itemId, {
@@ -1331,7 +1331,14 @@ export const backendApi = createApi({
                 forceRefetch: true,
               }),
             ),
-          cacheEntryRemoved,
+          // Publishing fills in the screenshot times of the text, and the listing shows the new status.
+          () =>
+            dispatch(
+              backendApi.util.invalidateTags([
+                libraryListTag,
+                libraryTextTag(itemId),
+              ]),
+            ),
         );
       },
     }),
