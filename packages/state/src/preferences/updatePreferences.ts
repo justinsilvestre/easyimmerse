@@ -1,6 +1,7 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import { applyingAppearance } from "./appearance.ts";
+import { withSuggestionDismissed } from "./dismissedSuggestions.ts";
 import type {
   PlayerControls,
   PreferenceKey,
@@ -35,6 +36,13 @@ export const updatePreferences: FeatureUpdate<PreferencesState, "screen"> = (
     }
     case "preferenceSet":
       return save(preferences, action.key, action.value);
+    case "suggestionDismissed": {
+      const stored = preferences.values.dismissedSuggestions;
+      const value = withSuggestionDismissed(stored, action.id);
+      return save(preferences, "dismissedSuggestions", value);
+    }
+    case "dismissedSuggestionsRestored":
+      return save(preferences, "dismissedSuggestions", "[]");
     case "textScaleChosen":
       return save(preferences, "textScale", String(action.scale));
     case "appStarted":
