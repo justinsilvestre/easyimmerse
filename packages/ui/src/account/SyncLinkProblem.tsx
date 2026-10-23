@@ -1,6 +1,7 @@
 import {
   actions,
   type NativePlatform,
+  selectIsCloudServer,
   selectIsSignInFormStarted,
   selectIsSyncRunRequested,
   selectServerName,
@@ -26,6 +27,9 @@ export function SyncLinkProblem({
   const host = useAppSelector((state) =>
     selectServerName(state, link.server_url),
   );
+  const isCloud = useAppSelector((state) =>
+    selectIsCloudServer(state, link.server_url),
+  );
   const device = deviceNames[platform];
   switch (link.state.kind) {
     case "idle":
@@ -47,7 +51,9 @@ export function SyncLinkProblem({
       );
     case "failed":
       return (
-        <Problem text={syncFailureReason(link.state.code, host, device)}>
+        <Problem
+          text={syncFailureReason(link.state.code, host, device, isCloud)}
+        >
           <p className="text-xs text-fg-muted">Details: {link.state.message}</p>
           <TryAgain />
         </Problem>

@@ -44,7 +44,7 @@ function NotLinked({ platform }: { platform: NativePlatform }) {
     : "an easyImmerse server";
   return (
     <SignInForm
-      intro={`Your work is currently saved only on ${deviceNames[platform]}. Log in to back it up to ${where} and use it on your other devices.`}
+      intro={`Your work is currently saved only on ${deviceNames[platform]}. With an account on ${where}, you can back it up there and use it on your other devices.`}
     />
   );
 }

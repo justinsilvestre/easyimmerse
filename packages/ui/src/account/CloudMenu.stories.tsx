@@ -17,7 +17,7 @@ import {
   fixtureSyncLink,
   fixtureSyncStatus,
 } from "../testSupport/fixtureResponses.ts";
-import { NotBackedUpSign } from "./NotBackedUpSign.tsx";
+import { CloudMenu } from "./CloudMenu.tsx";
 
 /** A backend that saves no flashcard, as one that runs offline cannot. */
 const offlineSaves = createFakeBackendClient({
@@ -84,13 +84,13 @@ const savingWord = withDispatchedActions(
   savedWord,
 );
 
-/** Draws the sign in the footer bar, with room above it for the explanation it opens. */
+/** Draws the cloud button in the footer bar, with room above it for the menu it opens. */
 const inFooter: Decorator = (Story) => (
-  <div className="flex min-h-64 flex-col justify-end">
+  <div className="flex min-h-96 flex-col justify-end">
     <FooterBar
       isSettingsOpen={false}
       onOpenSettings={fn()}
-      backupSign={<Story />}
+      cloudMenu={<Story />}
       activities={[]}
       onOpenActivity={fn()}
     />
@@ -98,12 +98,12 @@ const inFooter: Decorator = (Story) => (
 );
 
 const meta = {
-  title: "Account/NotBackedUpSign",
-  component: NotBackedUpSign,
+  title: "Account/CloudMenu",
+  component: CloudMenu,
   decorators: [inFooter, withAppStore],
   args: { isInitiallyOpen: true },
   parameters: { layout: "fullscreen" },
-} satisfies Meta<typeof NotBackedUpSign>;
+} satisfies Meta<typeof CloudMenu>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -144,7 +144,7 @@ export const DeviceOnlyWithoutOfficialServer: Story = {
   },
 };
 
-/** At phone width, the sign shows only its icon, and its panel is placed against the footer. */
+/** At phone width, the sign shows only its icon, and its menu is placed against the footer. */
 export const DeviceOnlyOnAPhone: Story = {
   parameters: {
     viewport: { options: INITIAL_VIEWPORTS },
@@ -192,8 +192,18 @@ export const LoggedOut: Story = {
   },
 };
 
-export const Hidden: Story = {
+/** With every project backed up, the button is a plain cloud, and its menu holds only the ways to other devices. */
+export const BackedUp: Story = {
   parameters: {
     appStore: { client: allBackedUp, server: builtInServer("desktop") },
   },
+};
+
+/** At phone width, the plain cloud's menu is placed against the footer. */
+export const BackedUpOnAPhone: Story = {
+  parameters: {
+    viewport: { options: INITIAL_VIEWPORTS },
+    appStore: { client: allBackedUp, server: builtInServer("mobile") },
+  },
+  globals: { viewport: { value: "iphonex", isRotated: false } },
 };

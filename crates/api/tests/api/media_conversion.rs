@@ -368,7 +368,8 @@ async fn clearing_the_cache_answers_with_the_status() {
     }
     let (server, _cache_dir, _) = converting_server().await;
     let response = server
-        .post_json("/conversion-cache/clear", &json!({}))
+        .request("POST", "/conversion-cache/clear")
+        .send()
         .await;
     assert_eq!(
         (response.status, response.json()["usage_bytes"].as_u64()),

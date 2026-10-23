@@ -864,135 +864,231 @@ As a web/mobile app user who is not logged in:
 
 ---
 
-### Account and cloud sync
+### Cloud button
 
 As a user:
-- when I choose to sign up or log in:
-  - [x] I can create an account with my email address
-  - [x] I can log in to a self-hosted easyImmerse server, instead of using the easyImmerse cloud, by entering its address (in a field revealed by clicking "More options")
-  - [x] I can keep using all offline features of the app without an account
-- while I have work, such as flashcards, that is kept only on this device and is not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
-  - [x] the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
-  - [x] clicking it tells me where my work is kept and how it could be lost, and offers the ways of backing it up that this app has
-- when all my work is backed up:
-  - [x] the sign is gone
-- a project counts as backed up when any of these is true:
-  - [x] it is kept on a server I am logged in to (in the web app, the browser extension or the mobile app)
-  - [ ] I have exported it to a project file since I last changed it (in any app)
-  - [ ] I have synchronized it over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it
-- when I enter the address of a server that does not have accounts:
-  - [x] I am told that the server has no accounts, and I stay in offline mode
-- when I try to sign up on a server whose sign-up is closed:
-  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
-- when I choose a password while signing up:
+- while some of my work, such as flashcards, is kept only on this device and not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
+  - [x] the cloud button in the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
+- while all my work is backed up:
+  - [x] the cloud button in the footer shows a plain cloud
+- when I click the cloud button in the footer while some of my work is not backed up:
+  - [x] its menu tells me where my work is kept and how it could be lost
+  - [x] its menu offers the ways of backing up my work that this app has, such as a "Log in or sign up" button
+- when I click the cloud button in the footer:
+  - [x] I can open the "Local network sync" page with the "Local network sync" item
+  - [x] I can open the account settings screen with the "Account settings" item
+- when I click "Log in or sign up" in the cloud button's menu, or any other button that asks me to log in:
+  - [x] I'm taken to the log-in/signup screen
+
+---
+
+### Log-in/signup screen
+
+As a user:
+- when I open the log-in/signup screen:
+  - [x] I can switch the form between "Log in" and "Sign up"
+  - [x] I can log in to the easyImmerse cloud with my email address and password
+  - [x] I can log in to my own easyImmerse server instead, by entering its address under "More options"
+- when I open the log-in/signup screen in the desktop app or the mobile app:
+  - [x] I am told that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
+- when I switch the form to "Sign up":
+  - [x] I can create an account with my email address and a password
+- when I type a password while signing up:
   - [x] I see how strong it is as I type, and how to make it stronger
 - when I sign up on a server that can send email:
   - [x] I confirm my email address by following a link sent to it
 - when I try to sign up with an email address that already has an account, or with a password shorter than eight characters:
   - [x] I am told which of the two is wrong
+- when I try to sign up on a server whose sign-up is closed:
+  - [x] I am told that sign-up is closed on that server, and that its administrator can create an account for me
+- when I enter the address of a server that does not have accounts:
+  - [x] I am told that the server has no accounts, and I stay in offline mode
 - when I try to log in with a wrong password:
   - [x] I am told that the email address or the password is wrong, without being told which, so that nobody can find out whether an email address has an account
 - when I fail to log in too many times in a row:
   - [x] I am told how many minutes to wait before trying again
-- when I have forgotten my password, on a server that can send email:
-  - [x] I can have a link sent to my email address, and follow it to choose a new password, which logs me out on every other device
-- when I am logged in:
-  - [x] I see my email address and my role, and a button to log out
-  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
-  - [x] I see the devices I am logged in on, and can log out any of them from here
-  - [x] I see my own projects, flashcards and dictionaries
-- when I am logged into a server besides the easyImmerse cloud:
-  - [x] I see the server's address, and can log out of it
-- when I log out:
-  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
-  - [x] other users logged in on the same machine or server cannot see or change them
-- when I log out of the web app while some of my flashcards have not been saved to the server yet:
+- when I click "Forgot your password?" on a server that can send email:
+  - [x] I can have a link sent to my email address with the "Send a reset link" button
+- when I follow the link to reset my password:
+  - [x] I can choose a new password, which logs me out on every other device
+
+---
+
+### Account settings screen
+
+As a user:
+- when I open the account settings screen while logged in:
+  - [x] I see my email address and my role
+  - [x] I can log out with the "Log out" button
+  - [x] I see the devices I am logged in on, and can log out any of them
+- when I open the account settings screen while logged in to a server besides the easyImmerse cloud:
+  - [x] I see the server's address
+- when I click "Log out" in the web app while some of my flashcards have not been saved to the server yet:
   - [x] I am told how many would be lost, and can stay logged in to save them or log out anyway
-- when I log out in the desktop app or the mobile app:
-  - [x] my work stays on this device, and my new changes are no longer backed up
-- when the app is using its own built-in server and no account, as the desktop app and the mobile app do:
-  - [x] the account settings tell me that my work is saved only on this device, and that logging in would back it up and let me use it on my other devices
-  - [x] I can log in to the easyImmerse cloud or to my own server, which then keeps a copy of my work, while the app goes on keeping my work on this device with its own built-in server
-- when I am an administrator and open the Account section:
+- when I subscribe:
+  - [ ] I can choose the amount I pay on a sliding scale
+  - [ ] I can manage or cancel my subscription from the account settings screen
+
+As a privileged user (a subscriber or a self-hosted server account holder):
+- when I open the account settings screen after some of my changes conflicted with changes made on another device:
+  - [x] I see the conflicting changes listed by project, and within a project by media file
+- when there are more conflicting changes than the account settings screen lists at first:
+  - [x] I can list all of them with the "Show all" button
+
+As an administrator of a server with accounts:
+- when I open the account settings screen:
   - [x] I see the server's accounts with their roles
   - [x] I can create an account by giving an email address, a password and a role
   - [x] I can change an account's role
   - [x] I can delete an account after confirming, which logs out anyone using it
 - when I try to demote or delete the server's only administrator:
   - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
-- when I subscribe:
-  - [ ] I can choose the amount I pay on a sliding scale
-  - [ ] I can manage or cancel my subscription from the account settings
+
+---
+
+### Account and cloud sync
+
+As a user:
+- while I am not logged in:
+  - [x] I can use all offline features of the app
+- while I am logged in:
+  - [x] I see my own projects, flashcards and dictionaries
+  - [x] I stay logged in on this device until I log out, or until I have gone 90 days without using the app
+- when I log out of the web app:
+  - [x] the web app returns to offline mode, and none of my account's projects, flashcards or settings stay in this browser
+- when I log out:
+  - [x] other users logged in on the same machine or server cannot see or change my projects, flashcards or settings
+- when I log out in the desktop app or the mobile app:
+  - [x] my work stays on this device, and my new changes are no longer backed up
+- when I log in from the desktop app or the mobile app, which keep my work on this device with their own built-in server:
+  - [x] the easyImmerse cloud or my own server keeps a copy of my work, while the app goes on keeping it on this device
+- when a project is kept on a server I am logged in to (in the web app, the browser extension or the mobile app):
+  - [x] the project counts as backed up, and the cloud button in the footer reflects it
+- when I have exported a project to a project file since I last changed it (in any app):
+  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
+- when I have synchronized a project over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it:
+  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
 
 As a privileged user (a subscriber or a self-hosted server account holder):
-- when I am logged in on a device:
+- while I am logged in on a device:
   - [x] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
   - [x] changes I make on one device appear on my other devices
   - [x] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
-  - [x] I can choose which media files are uploaded to the cloud
-- when I open the cloud storage settings:
-  - [x] I see how much of my storage quota is used, and can delete files from the cloud
-- when a change conflicts with one made on another device:
+  - [x] I can choose which media files are uploaded to the cloud, from a project's list of media files
+- when a change I make conflicts with one made on another device:
   - [x] the more recent change is kept, and I am notified
-  - [x] the account settings list the conflicting changes by project, and within a project by media file
-- when there are more conflicting changes than the account settings list at first:
-  - [x] I can list all of them with a "Show all" button
 
 ---
 
 ### LAN sync
 
 As a desktop app user:
-- when I click the button for local network sync:
-  - [ ] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+- when I open the "Local network sync" page while the server is running on the local network:
+  - [x] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+- when I open the "Local network sync" page while the server is running on the local network with "Launch token only" authentication:
+  - [x] I also see a six-digit pairing code
+  - [x] I see the time until which the pairing code is valid
+  - [x] I am told that the pairing code works for one device
+  - [x] I can ask for a new pairing code
+- when the pairing code is about to expire:
+  - [x] a new pairing code replaces it
+- when another device pairs with the pairing code:
+  - [x] a new pairing code replaces it
+- when I open the "Local network sync" page while the server is not running, or while only this computer can reach it:
+  - [x] I am told that other devices cannot reach the server
+  - [x] I can start the server on the local network from there
+- when I open the "Local network sync" page while this computer is not connected to a network:
+  - [x] I am told that no other device can reach the server
 
 As a web/mobile app user:
-- when I click the button for local network sync:
-  - [ ] I see a QR code scanner and an input field for entering an address to pair with another easyImmerse app on the same local network
+- when I open the "Local network sync" page:
+  - [x] I see fields for entering the address and the pairing code of another easyImmerse app on the same local network
+  - [x] I see a button for scanning its QR code instead, if my device can scan one
 - when I scan the QR code or enter the address of another easyImmerse app on the same local network:
-  - [ ] the two devices are paired, and my projects, flashcards, and dictionaries are synchronized between them
-  - [ ] media files on the desktop can be played on the paired device without copying them
+  - [x] the two devices are paired, and this app connects to the desktop app's server
+  - [ ] my projects, flashcards, and dictionaries are synchronized between them
+  - [x] media files on the desktop can be played on the paired device without copying them
   - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
+- when I scan the QR code or enter the address of a desktop app whose server uses accounts for authentication:
+  - [x] the log-in/signup screen opens with the server's address filled in
+  - [x] I log in with an account on that server instead of entering a pairing code
+- when I enter a pairing code that is wrong or has expired:
+  - [x] I am told so
+- when I enter a pairing code that another device has already used:
+  - [x] I am told that the code has been used
+- when I have entered too many wrong pairing codes:
+  - [x] I am told how long to wait before trying again
+- when I open the address held in the desktop app's QR code in a browser on the same local network:
+  - [x] the web app served by the desktop app opens and pairs with it by itself
+- when I open that address in a browser that is already connected to a server:
+  - [x] the web app shows me the pairing first, so that I can confirm the change of server
 
 ---
 
 ### Desktop app, local server, and self-hosting
 
 As a desktop app user:
-- when I open the server settings:
-  - [ ] I can configure the server's address and port
-  - [ ] I can set up authentication for the server
-  - [ ] I can start and stop the server
-  - [ ] I can see the server's status, including whether it is running and whether it is reachable from other devices on the local network
-  - [ ] I can see the server's logs, including any errors or warnings
-  - [ ] I can configure whether to start the server automatically when the app starts
-  - [ ] I can choose whether the server serves the complete web app or only the API
+- when I open the Server section of Settings:
+  - [x] I see whether the server is stopped, starting, running, or has failed
+  - [x] I can start the server with a button
+  - [x] I can stop the server with a button
+  - [x] I can set the IP address and port the server listens on, such as 0.0.0.0:8787, in the "Address and port" field
+  - [x] I can set up authentication for the server, by switching "Authentication" between "Launch token only" and "Accounts"
+  - [x] I can choose whether the server serves the complete web app or only the API, by switching "What the server serves" between those two options
+  - [x] I can choose whether to start the server automatically when the app starts, with the "Start the server when the app starts" checkbox
+  - [x] I can save my changes to these settings with a button
+  - [x] I can see the server's log, including any errors or warnings
+  - [x] I can copy the server's log with a button
+- when I open the Server section of Settings while the server is running:
+  - [x] I see the addresses that other devices use to reach the server
+  - [x] I see whether other devices on the local network can reach the server, or only this computer
+- when I switch "Authentication" to "Accounts":
+  - [x] I can choose whether anyone who can reach the server may sign up for an account, with the "Let anyone who can reach the server sign up" checkbox
+- when the server has failed:
+  - [x] the Server section of Settings tells me why
+- when I change a server setting that takes effect only after a restart:
+  - [x] I am told that saving the change restarts the server
 - when I close the app with the server running:
-  - [ ] the server continues to run in the background, and I can see its status in the system tray or menu bar
-- when I use the CLI:
-  - [ ] I can manage the server
-  - [ ] I can configure my settings
-- when I visit the download page, install, or first open the desktop app on a computer without a hardware video encoder:
-  - [ ] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder, and I am guided through installing one and choosing it in the settings
+  - [x] the server continues to run in the background
+  - [x] I can see the server's status in the system tray or menu bar
+  - [x] I can open the app's window again from the system tray or menu bar
+  - [x] I can stop the server or quit the app from the system tray or menu bar
+- when I run the desktop app's program from a terminal:
+  - [x] I can run the app's server without a window, with `serve`
+  - [x] I can manage the server's user accounts, with `users`
+  - [x] I can show and change the settings in the app's server config file, with `config`
+- when I visit the download page or install the desktop app on a computer without a hardware video encoder:
+  - [ ] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder
+  - [ ] I am guided through installing one and choosing it in the settings
+- when I first open the desktop app on a computer without a hardware video encoder:
+  - [x] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder
+  - [x] I can open the media conversion settings from that notice
 - when a video cannot be converted because my computer has no usable video encoder:
-  - [ ] I am told how to install a suitable ffmpeg build and choose it in the settings
+  - [x] I am told how to install a suitable ffmpeg build and choose it in the settings
+  - [x] I can open the media conversion settings from the player
 - when I open the media conversion settings:
-  - [ ] I can choose my own ffmpeg build for media conversion
-  - [ ] I can choose the quality of converted video, trading picture quality against the disk space used by the conversion cache
+  - [x] I can see which ffmpeg build converts media, and its version
+  - [x] I can see which video encoder that build found
+  - [x] I can choose my own ffmpeg build for media conversion
+  - [x] I can go back to the bundled ffmpeg build
+  - [x] I can choose the quality of converted video (smaller files, balanced, or best picture), trading picture quality against the disk space used by the media cache
+- when I open the media conversion settings and the ffmpeg build in use has no usable video encoder:
+  - [x] I see how to install an ffmpeg build with a software H.264 encoder on macOS, Windows or Linux
 - when I am running an unauthenticated local server:
-  - [ ] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
+  - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [ ] I can create and manage user accounts, and assign them different roles:
+  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the account settings screen
+  - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
     - administrator: can also manage the server, user accounts, my library, dictionaries available to users, and services like translation available to users
 
 As a standalone server user:
 - when I install the server without the desktop app:
-  - [ ] I can start and stop it from the command line, and configure it through a config file or command-line options
-  - [ ] the server offers the same user account management as the desktop app's server
+  - [x] I can start and stop it from the command line, and configure it through a config file or command-line options
+  - [x] the server offers the same user account management as the desktop app's server
 - when I start the server:
-  - [ ] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
+  - [x] it serves the web app at its own address, so that people can open it in a browser and log in to their accounts there, with nothing else to host
 - when I start the server with `--accounts`:
   - [x] people can log in to it with an email address and password
   - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
@@ -1030,7 +1126,7 @@ As a user:
 
 As a subscriber:
 - when I translate text:
-  - [ ] translations count against a monthly? quota, whose remaining balance I can see in my account settings
+  - [ ] translations count against a monthly? quota, whose remaining balance I can see on the account settings screen
 
 ---
 
@@ -1095,6 +1191,7 @@ As a user:
 
 As a user:
 - when I am on the settings screen:
+  - [x] I see whether I am logged in, and can open the account settings screen with the "Account" button
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
   - [x] I can open the subtitles appearance dialog
   - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
@@ -1114,6 +1211,10 @@ As a user:
   - [ ] the "Clear media cache" button is absent
 - when I use the keyboard shortcut (e.g. Cmd + ,):
   - [ ] the settings screen opens
+
+As a privileged user (a subscriber or a self-hosted server account holder):
+- when I am on the settings screen:
+  - [x] I see how much of my storage quota is used, and can delete files from the cloud
 
 ---
 

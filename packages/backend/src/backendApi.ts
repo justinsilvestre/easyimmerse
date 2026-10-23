@@ -26,6 +26,7 @@ import type {
   BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  ConversionCapabilities,
   CreateUserRequest,
   CurrentPrincipal,
   Document,
@@ -51,6 +52,7 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
+  PairingCode,
   ParseTimedTextRequest,
   PlaybackMethodRequest,
   PlaybackMethodResponse,
@@ -415,10 +417,12 @@ export const backendApi = createApi({
     "Alignments",
     "Dictionaries",
     "ConversionCache",
+    "ConversionCapabilities",
     "Users",
     "CurrentPrincipal",
     "Sessions",
     "Review",
+    "PairingCode",
     "SyncStatus",
     "SyncConflicts",
     "StorageStatus",
@@ -938,7 +942,7 @@ export const backendApi = createApi({
     }),
     clearConversionCache: build.mutation<ConversionCacheStatus, void>({
       query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
-      invalidatesTags: ["ConversionCache"],
+      invalidatesTags: ["ConversionCache", "ConversionCapabilities"],
     }),
     setConversionCacheBudget: build.mutation<
       ConversionCacheStatus,
@@ -949,7 +953,11 @@ export const backendApi = createApi({
         path: "/conversion-cache/budget",
         body: { kind: "json", value: budget },
       }),
-      invalidatesTags: ["ConversionCache"],
+      invalidatesTags: ["ConversionCache", "ConversionCapabilities"],
+    }),
+    getConversionCapabilities: build.query<ConversionCapabilities, void>({
+      query: () => ({ method: "GET", path: "/conversion/capabilities" }),
+      providesTags: ["ConversionCapabilities"],
     }),
     parseTimedText: build.mutation<TimedTextTrack, ParseTimedTextRequest>({
       query: (request) => ({
@@ -1234,7 +1242,7 @@ export const backendApi = createApi({
         path: accountPath(via, `/users/${encodeURIComponent(userId)}/role`),
         body: { kind: "json", value: body },
       }),
-      // The account may be the app's own, whose role the Account section shows.
+      // The account may be the app's own, whose role the account settings screen shows.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
     deleteUser: build.mutation<void, UserArgs>({
@@ -1244,6 +1252,19 @@ export const backendApi = createApi({
       }),
       // The account may be the app's own, whose session then ends.
       invalidatesTags: ["Users", "CurrentPrincipal"],
+    }),
+    /**
+     * Reads the pairing code to show to another device on the local network.
+     * The server issues a new one when the last one was used or is about to expire, so polling this keeps a working code on screen.
+     */
+    currentPairingCode: build.query<PairingCode, void>({
+      query: () => ({ method: "POST", path: "/pairing/code/current" }),
+      providesTags: ["PairingCode"],
+    }),
+    /** Issues a new pairing code, replacing the one on screen. */
+    issuePairingCode: build.mutation<PairingCode, void>({
+      query: () => ({ method: "POST", path: "/pairing/code" }),
+      invalidatesTags: ["PairingCode"],
     }),
     /** The devices the account is logged in on, which only an account may list. */
     listSessions: build.query<SessionList, AccountVia>({
@@ -1350,6 +1371,7 @@ export const {
   useRemoveAlignmentMutation,
   useSetTranslationDocumentMutation,
   useGetConversionCacheStatusQuery,
+  useGetConversionCapabilitiesQuery,
   useOpenBookQuery,
   useLicenseNoticesQuery,
   useProbePicturesQuery,
@@ -1367,6 +1389,8 @@ export const {
   useGetStorageStatusQuery,
   useGetReviewSummaryQuery,
   useListReviewCountsQuery,
+  useCurrentPairingCodeQuery,
+  useIssuePairingCodeMutation,
 } = backendApi;
 
 type BackendState = Parameters<

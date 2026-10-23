@@ -4,24 +4,11 @@
 //! The `plugin-check` feature turns the check on.
 //! The end-to-end tests call it through the `check_plugin_host` command, and the smoke test runs it after the health check.
 
-use tauri::{Builder, Wry};
-
 #[cfg(feature = "plugin-check")]
 pub use enabled::{PluginCheckError, run};
 
-/// Registers the `check_plugin_host` command when the feature is on.
 #[cfg(feature = "plugin-check")]
-pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
-    builder.invoke_handler(tauri::generate_handler![enabled::check_plugin_host])
-}
-
-#[cfg(not(feature = "plugin-check"))]
-pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
-    builder
-}
-
-#[cfg(feature = "plugin-check")]
-mod enabled {
+pub mod enabled {
     use std::path::PathBuf;
 
     use easyimmerse_plugins::{ExecutionMode, HelloPlugin, HostLimits, PluginError};

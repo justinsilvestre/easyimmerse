@@ -250,6 +250,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversion/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Without a conversion service, `ffmpeg` is null and no encoder is reported. */
+        get: operations["getConversionCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/conversions/{key}/index.m3u8": {
         parameters: {
             query?: never;
@@ -526,6 +543,64 @@ export interface paths {
         get: operations["getOpenApiDocument"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pairing/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchanges the active pairing code for the launch token. Needs no token. */
+        post: operations["claimPairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pairing/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issues a pairing code, replacing any earlier one.
+         *     Only the launch token may do so, and only on a server without accounts.
+         */
+        post: operations["issuePairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pairing/code/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns the active pairing code, or issues a new one when none is active,
+         *     the active one has been used, or it expires within fifteen seconds.
+         *     Only the launch token may call it, and only on a server without accounts.
+         */
+        post: operations["currentPairingCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2028,6 +2103,12 @@ export interface components {
             /** Format: int64 */
             usage_bytes: number;
         };
+        ConversionCapabilities: {
+            /** @description Whether encoder discovery has finished. While false, `video_encoder` is not known yet. */
+            encoder_discovery_finished: boolean;
+            ffmpeg?: components["schemas"]["FfmpegBuild"] | null;
+            video_encoder?: components["schemas"]["VideoEncoder"] | null;
+        };
         ConversionPlan: {
             audio?: components["schemas"]["AudioAction"] | null;
             reasons: components["schemas"]["ConversionReason"][];
@@ -2169,6 +2250,14 @@ export interface components {
         };
         EmbeddedSubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
+        };
+        FfmpegBuild: {
+            /** @description True when the server was given an ffmpeg directory, and false when it searched the usual places. */
+            is_custom: boolean;
+            /** @description The path of the ffmpeg executable. */
+            path: string;
+            /** @description The version that `ffmpeg -version` reports, such as `8.1.2`. */
+            version: string;
         };
         /** @description A flashcard saved in a project. */
         Flashcard: {
@@ -2643,6 +2732,23 @@ export interface components {
             /** @description The token that the mailed link carries. */
             token: string;
         };
+        PairingClaim: {
+            code: string;
+        };
+        /** @description A pairing code that another device can exchange for the launch token once. */
+        PairingCode: {
+            /** @description Six decimal digits. */
+            code: string;
+            /**
+             * Format: int64
+             * @description When the code stops being valid, in milliseconds since the Unix epoch.
+             */
+            expires_at: number;
+        };
+        /** @description The token to present as `Authorization: Bearer <token>` from now on. */
+        PairingGrant: {
+            token: string;
+        };
         /** @description Where one paragraph came from in its content document. */
         ParagraphProvenance: {
             /** @description The `id` attribute of the block element the paragraph was extracted from. */
@@ -2710,6 +2816,7 @@ export interface components {
             environment: components["schemas"]["PlaybackEnvironment"];
             preferred_audio_target?: components["schemas"]["AudioTarget"] | null;
             selection?: components["schemas"]["TrackSelection"] | null;
+            video_quality?: components["schemas"]["VideoQuality"] | null;
         };
         PlaybackMethodResponse: {
             method: components["schemas"]["PlaybackMethod"];
@@ -3569,7 +3676,7 @@ export interface components {
             translation_spans: components["schemas"]["TextSpan"][];
         };
         /** @enum {string} */
-        UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
+        UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall" | "no_video_encoder";
         /** @description The person's choice whether to keep a copy of a media file's bytes on a server. */
         UploadChoiceRequest: {
             is_upload_chosen: boolean;
@@ -3590,6 +3697,18 @@ export interface components {
             index: number;
             scale_to?: components["schemas"]["PictureSize"] | null;
         };
+        VideoEncoder: {
+            /** @description The ffmpeg encoder name, such as `h264_videotoolbox` or `libx264`. */
+            name: string;
+            /** @description Whether the encoder runs on the processor rather than on video hardware. */
+            software: boolean;
+        };
+        /**
+         * @description How much of the bit rate transcoded video may use. Higher quality takes more space in the
+         *     conversion cache.
+         * @enum {string}
+         */
+        VideoQuality: "compact" | "balanced" | "best";
         /**
          * @description One window of waveform peaks: 100 per second from `start_ms`, each the loudest sample of the
          *     loudest channel in its hundredth of a second, from 0 (silence) to 255 (full scale).
@@ -4327,6 +4446,44 @@ export interface operations {
             };
             /** @description This server does not convert media (code `conversion_unavailable`) */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ffmpeg build and the video encoder conversion uses */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionCapabilities"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5273,6 +5430,162 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    claimPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairingClaim"];
+            };
+        };
+        responses: {
+            /** @description The code was used up */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingGrant"];
+                };
+            };
+            /** @description `pairing_code_invalid`: the code is wrong, expired or replaced */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `pairing_code_used`: the code was the most recently used one */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `too_many_attempts`: too many failed claims recently, from this peer or from all peers */
+            429: {
+                headers: {
+                    /** @description The seconds to wait before trying again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    issuePairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new pairing code */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCode"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `pairing_needs_launch_token`: the server has accounts, or the token is an account's */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    currentPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pairing code to show */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCode"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `pairing_needs_launch_token`: the server has accounts, or the token is an account's */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

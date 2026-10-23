@@ -20,6 +20,7 @@ describe("SettingsScreen", () => {
         onBack={() => {
           backCount += 1;
         }}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -32,6 +33,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => {
           openCount += 1;
         }}
@@ -41,10 +43,37 @@ describe("SettingsScreen", () => {
     expect(openCount).toBe(1);
   });
 
+  it("opens the account settings screen from its button", () => {
+    let openCount = 0;
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => {
+          openCount += 1;
+        }}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Account/ }));
+    expect(openCount).toBe(1);
+  });
+
+  it("tells on the account button that the app is logged in to no account", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/You are not logged in/)).toBeDefined();
+  });
+
   it("marks the footer's Settings control as the page already open", () => {
     const { store } = renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -62,6 +91,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -77,6 +107,7 @@ describe("SettingsScreen", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
+        onOpenAccount={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
@@ -85,5 +116,50 @@ describe("SettingsScreen", () => {
         "Media conversion is unavailable, so there is no cache.",
       ),
     ).toBeDefined();
+  });
+
+  it("shows the lossless audio toggle in a Media conversion section", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(
+      within(
+        screen.getByRole("region", { name: "Media conversion" }),
+      ).getByRole("checkbox", { name: "Keep audio lossless when converting" }),
+    ).toBeDefined();
+  });
+
+  it("shows the server settings on the desktop app", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+      undefined,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:5000",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    expect(screen.getByRole("region", { name: "Server" })).toBeDefined();
+  });
+
+  it("shows no server settings elsewhere", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole("region", { name: "Server" })).toBeNull();
   });
 });

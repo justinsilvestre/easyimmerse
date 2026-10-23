@@ -1,10 +1,18 @@
-import type { ServerAuthInfo, SessionCreated } from "@easyimmerse/types";
+import type {
+  DesktopServerSettings,
+  DesktopServerStatus,
+  PairingGrant,
+  ServerAuthInfo,
+  ServerLogEntry,
+  SessionCreated,
+} from "@easyimmerse/types";
 import {
   connectionNotKeptCode,
   type SignInAttempt,
   type SignInOutcome,
 } from "../account/signInAttempt.ts";
 import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
+import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
@@ -54,6 +62,15 @@ type EffectCall =
   | { type: "createSession"; attempt: SignInAttempt }
   | { type: "connectToServer"; server: ServerConfig }
   | { type: "disconnectFromServer" }
+  | { type: "claimPairingCode"; serverUrl: string; code: string }
+  | { type: "scanPairingCode" }
+  | { type: "pickExecutable" }
+  | { type: "readDesktopServerSettings" }
+  | { type: "saveDesktopServerSettings"; settings: DesktopServerSettings }
+  | { type: "startDesktopServer" }
+  | { type: "stopDesktopServer" }
+  | { type: "readDesktopServerStatus" }
+  | { type: "readDesktopServerLogs" }
   | { type: "confirmEmail"; serverUrl: string; token: string }
   | { type: "requestPasswordReset"; serverUrl: string; email: string }
   | {
@@ -62,6 +79,19 @@ type EffectCall =
       token: string;
       password: string;
     };
+
+/** What each of the desktop server controls answers. */
+type DesktopServerAnswers = {
+  readDesktopServerSettings: DesktopServerSettings;
+  saveDesktopServerSettings: DesktopServerStatus;
+  startDesktopServer: DesktopServerStatus;
+  stopDesktopServer: DesktopServerStatus;
+  readDesktopServerStatus: DesktopServerStatus;
+  readDesktopServerLogs: readonly ServerLogEntry[];
+};
+
+/** A desktop server control, named as the effects name it. */
+export type DesktopServerControl = keyof DesktopServerAnswers;
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -102,6 +132,21 @@ export type RecordingEffects = Effects & {
   resolveSession(outcome: SignInOutcome<SessionCreated>): void;
   /** Makes every later connection to a server fail, as a browser whose storage is full does. */
   refuseConnections(): void;
+  /** Settles the pending claimPairingCode promise. Throws when no claim is pending. */
+  resolvePairingClaim(outcome: SignInOutcome<PairingGrant>): void;
+  /** Settles the pending scanPairingCode promise. Throws when no scan is pending. */
+  resolvePairingScan(scan: PairingScan): void;
+  /** Settles the pending pickExecutable promise. Throws when no pick is pending. */
+  resolvePickExecutable(path: string | null): void;
+  /** Settles the pending call of a desktop server control with its answer. Throws when none is pending. */
+  resolveDesktopServer<C extends DesktopServerControl>(
+    control: C,
+    answer: DesktopServerAnswers[C],
+  ): void;
+  /** Rejects the pending call of a desktop server control with the message. Throws when none is pending. */
+  rejectDesktopServer(control: DesktopServerControl, message: string): void;
+  /** Acts as the server controls reporting a new status, by calling every subscribed listener. */
+  changeDesktopServerStatus(status: DesktopServerStatus): void;
   /** Settles the pending confirmEmail promise. Throws when no confirmation is pending. */
   resolveEmailConfirmation(outcome: SignInOutcome<null>): void;
   /** Settles the pending requestPasswordReset promise. Throws when no request is pending. */
@@ -171,6 +216,14 @@ export function createRecordingEffects(
     "server auth info question",
   );
   const session = createPendingPick<SignInOutcome<SessionCreated>>("sign-in");
+  const pairingClaim =
+    createPendingPick<SignInOutcome<PairingGrant>>("pairing claim");
+  const pairingScan = createPendingPick<PairingScan>("pairing scan");
+  const executablePick = createPendingPick<string | null>("executable pick");
+  const desktopServerCalls = createDesktopServerCalls();
+  const desktopServerListeners = new Set<
+    (status: DesktopServerStatus) => void
+  >();
   const emailConfirmation =
     createPendingPick<SignInOutcome<null>>("email confirmation");
   const passwordResetRequest = createPendingPick<SignInOutcome<null>>(
@@ -288,6 +341,46 @@ export function createRecordingEffects(
     disconnectFromServer: () => {
       calls.push({ type: "disconnectFromServer" });
     },
+    claimPairingCode: (serverUrl, code) => {
+      calls.push({ type: "claimPairingCode", serverUrl, code });
+      return pairingClaim.start();
+    },
+    scanPairingCode: () => {
+      calls.push({ type: "scanPairingCode" });
+      return pairingScan.start();
+    },
+    pickExecutable: () => {
+      calls.push({ type: "pickExecutable" });
+      return executablePick.start();
+    },
+    readDesktopServerSettings: () => {
+      calls.push({ type: "readDesktopServerSettings" });
+      return desktopServerCalls.readDesktopServerSettings.start();
+    },
+    saveDesktopServerSettings: (settings) => {
+      calls.push({ type: "saveDesktopServerSettings", settings });
+      return desktopServerCalls.saveDesktopServerSettings.start();
+    },
+    startDesktopServer: () => {
+      calls.push({ type: "startDesktopServer" });
+      return desktopServerCalls.startDesktopServer.start();
+    },
+    stopDesktopServer: () => {
+      calls.push({ type: "stopDesktopServer" });
+      return desktopServerCalls.stopDesktopServer.start();
+    },
+    readDesktopServerStatus: () => {
+      calls.push({ type: "readDesktopServerStatus" });
+      return desktopServerCalls.readDesktopServerStatus.start();
+    },
+    readDesktopServerLogs: () => {
+      calls.push({ type: "readDesktopServerLogs" });
+      return desktopServerCalls.readDesktopServerLogs.start();
+    },
+    subscribeToDesktopServerStatus: (listener) => {
+      desktopServerListeners.add(listener);
+      return () => desktopServerListeners.delete(listener);
+    },
     confirmEmail: (serverUrl, token) => {
       calls.push({ type: "confirmEmail", serverUrl, token });
       return emailConfirmation.start();
@@ -352,5 +445,54 @@ export function createRecordingEffects(
     resolveNewPassword: (outcome) => {
       newPassword.take().resolve(outcome);
     },
+    resolvePairingClaim: (outcome) => {
+      pairingClaim.take().resolve(outcome);
+    },
+    resolvePairingScan: (scan) => {
+      pairingScan.take().resolve(scan);
+    },
+    resolvePickExecutable: (path) => {
+      executablePick.take().resolve(path);
+    },
+    resolveDesktopServer: (control, answer) => {
+      const pending = desktopServerCalls[control].take() as PendingPick<
+        typeof answer
+      >;
+      pending.resolve(answer);
+    },
+    rejectDesktopServer: (control, message) => {
+      desktopServerCalls[control].take().reject(new Error(message));
+    },
+    changeDesktopServerStatus: (status) => {
+      for (const listener of desktopServerListeners) listener(status);
+    },
+  };
+}
+
+/** One pending call for each desktop server control. */
+function createDesktopServerCalls() {
+  return {
+    readDesktopServerSettings: createPendingPick<DesktopServerSettings>(
+      "desktop server settings read",
+    ),
+    saveDesktopServerSettings: createPendingPick<DesktopServerStatus>(
+      "desktop server settings save",
+    ),
+    startDesktopServer: createPendingPick<DesktopServerStatus>(
+      "desktop server start",
+    ),
+    stopDesktopServer: createPendingPick<DesktopServerStatus>(
+      "desktop server stop",
+    ),
+    readDesktopServerStatus: createPendingPick<DesktopServerStatus>(
+      "desktop server status read",
+    ),
+    readDesktopServerLogs: createPendingPick<readonly ServerLogEntry[]>(
+      "desktop server log read",
+    ),
+  } satisfies {
+    [C in DesktopServerControl]: ReturnType<
+      typeof createPendingPick<DesktopServerAnswers[C]>
+    >;
   };
 }

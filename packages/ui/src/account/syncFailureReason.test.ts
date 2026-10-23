@@ -2,12 +2,25 @@ import { describe, expect, it } from "vitest";
 import { syncFailureReason } from "./syncFailureReason.ts";
 
 const reasonFor = (code: string) =>
-  syncFailureReason(code, "cloud.example.org", "this computer");
+  syncFailureReason(code, "cloud.example.org", "this computer", false);
 
 describe("syncFailureReason", () => {
-  it("suggests updating when the server's answer is not understood", () => {
+  it("suggests updating the app or an own server when the two don't work together", () => {
     expect(reasonFor("remote_protocol")).toBe(
-      "The answer from cloud.example.org isn't one this version of easyImmerse understands. Updating the app or the server may fix this.",
+      "This version of the app doesn't work with cloud.example.org. Updating the app or the server may fix this.",
+    );
+  });
+
+  it("suggests updating only the app when it doesn't work with the easyImmerse cloud", () => {
+    expect(
+      syncFailureReason(
+        "remote_protocol",
+        "the easyImmerse cloud",
+        "this computer",
+        true,
+      ),
+    ).toBe(
+      "This version of the app doesn't work with the easyImmerse cloud. Updating the app may fix this.",
     );
   });
 

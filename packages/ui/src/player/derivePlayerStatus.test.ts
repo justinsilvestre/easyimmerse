@@ -62,4 +62,15 @@ describe("derivePlayerStatus", () => {
       cause: "The server did not answer.",
     });
   });
+
+  it("marks a video that needs an encoder that no ffmpeg build here has", () => {
+    const state = derivePlayerStatus({
+      ...inputs,
+      playback: {
+        ...fixtureCopyPlayback,
+        method: { kind: "unsupported", reason: "no_video_encoder" },
+      },
+    });
+    expect(state).toMatchObject({ needsVideoEncoder: true });
+  });
 });

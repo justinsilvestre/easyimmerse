@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
+use easyimmerse_media_ffmpeg::FfmpegPaths;
 use easyimmerse_storage::{Storage, StorageError};
 
 use tokio::sync::Semaphore;
@@ -14,6 +15,7 @@ use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
 use crate::mail::MailService;
 use crate::media_source_jobs::MediaSourceJobs;
+use crate::pairing_codes::PairingCodeState;
 use crate::plugins::{PluginRegistry, fetched_item_dir};
 use crate::sync::SyncEngine;
 
@@ -25,6 +27,12 @@ pub struct AppState {
     pub probes: Option<Arc<ProbeCache>>,
     /// Converts media while it plays. None without ffmpeg or a cache directory.
     pub conversion: Option<ConversionService>,
+    /// The ffmpeg and ffprobe binaries in the directory given to ServeOptions,
+    /// or None to search the usual places.
+    pub ffmpeg_paths: FfmpegPaths,
+    /// The directory holding the built web app, which the server serves beside the API.
+    /// None when the server serves only the API.
+    pub web_app_dir: Option<PathBuf>,
     /// The dictionary imports running or recently finished.
     pub import_jobs: Arc<Mutex<ImportJobs>>,
     /// The installed plugins. Empty without a plugin directory.
@@ -48,6 +56,8 @@ pub struct AppState {
     pub owners_fitting_review_parameters: Arc<Mutex<HashSet<String>>>,
     /// Syncs the device's own data with the remote it is linked to. A server without a link only waits.
     pub sync: Arc<SyncEngine>,
+    /// The active pairing code and the recent failed claims of one.
+    pub pairing_code: Arc<PairingCodeState>,
 }
 
 impl AppState {
@@ -65,6 +75,8 @@ impl AppState {
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,
+            ffmpeg_paths: FfmpegPaths::default(),
+            web_app_dir: None,
             import_jobs: Arc::default(),
             plugins: Arc::new(PluginRegistry::default()),
             media_source_jobs: Arc::new(MediaSourceJobs::default()),
@@ -75,7 +87,18 @@ impl AppState {
             mail: None,
             confirmation_mails: Arc::default(),
             owners_fitting_review_parameters: Arc::default(),
+            pairing_code: Arc::default(),
         }
+    }
+
+    pub fn with_ffmpeg_paths(mut self, ffmpeg_paths: FfmpegPaths) -> Self {
+        self.ffmpeg_paths = ffmpeg_paths;
+        self
+    }
+
+    pub fn with_web_app_dir(mut self, web_app_dir: Option<PathBuf>) -> Self {
+        self.web_app_dir = web_app_dir;
+        self
     }
 
     pub fn with_plugins(mut self, plugins: PluginRegistry, media_dir: Option<PathBuf>) -> Self {

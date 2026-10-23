@@ -1,5 +1,5 @@
 //! Converts media files into HLS segments with ffmpeg while they play, keeps the converted
-//! segments in a bounded cache, discovers a hardware video encoder, and decodes waveform peaks.
+//! segments in a bounded cache, discovers a video encoder, and decodes waveform peaks.
 //! Desktop and server only.
 
 pub mod cache_budget;
@@ -22,6 +22,7 @@ mod segment_files;
 mod service_cache;
 mod service_segments;
 
+pub use encoder_discovery::{EncoderDiscoveryStatus, H264Encoder};
 pub use error::ConversionError;
 pub use key::{CONVERTER_VERSION, ConversionKey};
 pub use probe_cache::ProbeCache;

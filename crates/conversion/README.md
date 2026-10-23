@@ -1,6 +1,6 @@
 # easyimmerse-conversion
 
-Converts media files into HLS segments with ffmpeg while they play, keeps the converted segments in a bounded cache, discovers a hardware video encoder, and decodes waveform peaks. Desktop and server only; the pure planning it relies on (segment plans, playlists, codec strings) lives in `easyimmerse-media`.
+Converts media files into HLS segments with ffmpeg while they play, keeps the converted segments in a bounded cache, discovers a video encoder (hardware first, then the software encoders libx264 and libopenh264), and decodes waveform peaks. Desktop and server only; the pure planning it relies on (segment plans, playlists, codec strings) lives in `easyimmerse-media`.
 
 Tests that run ffmpeg live in `tests/conversion/` and skip when ffmpeg and ffprobe are found neither in `EASYIMMERSE_FFMPEG_DIR` nor on `PATH`. To run them against the bundled build, run `mise run fetch-ffmpeg` and set `EASYIMMERSE_FFMPEG_DIR` to the absolute path of `apps/native/src-tauri/binaries/`; the lookup recognizes the sidecar names there. CI does the same on every operating system and fails when a test skips for want of ffmpeg.
 

@@ -122,11 +122,19 @@ function waitUntilFetched(store: AppStore) {
 
 const findSign = () => screen.findByRole("button", { name: "Not backed up" });
 
+const queryPlainCloud = () =>
+  screen.queryByRole("button", { name: "Backup and sync" });
+
+/** Opens the menu of the plain cloud, which shows while there is no sign. */
+function openPlainCloud() {
+  fireEvent.click(screen.getByRole("button", { name: "Backup and sync" }));
+}
+
 async function openSign() {
   fireEvent.click(await findSign());
 }
 
-describe("NotBackedUpSign", () => {
+describe("CloudMenu", () => {
   describe("while flashcards are kept only in this browser", () => {
     it("shows in the footer", () => {
       renderWithOpenCard();
@@ -145,7 +153,7 @@ describe("NotBackedUpSign", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings from its menu", async () => {
+    it("opens the account settings screen from its menu", async () => {
       const { store } = renderWithOpenCard();
       await openSign();
       fireEvent.click(
@@ -153,17 +161,22 @@ describe("NotBackedUpSign", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
   });
 
   describe("while the app is connected to an account's server", () => {
-    it("does not show while no save has failed", () => {
+    it("shows no sign while no save has failed", () => {
       renderWithOpenCard(accountServer);
       expect(
         screen.queryByRole("button", { name: "Not backed up" }),
       ).toBeNull();
+    });
+
+    it("shows a plain cloud while no save has failed", () => {
+      renderWithOpenCard(accountServer);
+      expect(queryPlainCloud()).not.toBeNull();
     });
 
     it("shows while a save has failed", async () => {
@@ -184,7 +197,7 @@ describe("NotBackedUpSign", () => {
     it("offers no way to log in for failed saves", async () => {
       await renderWithFailedSave();
       await openSign();
-      expect(screen.queryByRole("menuitem")).toBeNull();
+      expect(screen.queryByRole("menuitem", { name: /Log in/ })).toBeNull();
     });
   });
 
@@ -217,7 +230,7 @@ describe("NotBackedUpSign", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings from its menu", async () => {
+    it("opens the account settings screen from its menu", async () => {
       const { store } = renderBundled();
       await openSign();
       fireEvent.click(
@@ -225,16 +238,22 @@ describe("NotBackedUpSign", () => {
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
 
-    it("does not show while every project is backed up", async () => {
+    it("shows no sign while every project is backed up", async () => {
       const { store } = renderBundled(allBackedUp);
       await waitUntilFetched(store);
       expect(
         screen.queryByRole("button", { name: "Not backed up" }),
       ).toBeNull();
+    });
+
+    it("shows a plain cloud while every project is backed up", async () => {
+      const { store } = renderBundled(allBackedUp);
+      await waitUntilFetched(store);
+      expect(queryPlainCloud()).not.toBeNull();
     });
 
     it("explains why the work couldn't be backed up to the remote", async () => {
@@ -249,17 +268,17 @@ describe("NotBackedUpSign", () => {
       ).toBeDefined();
     });
 
-    it("opens the account settings after a round failed", async () => {
+    it("opens the account settings screen after a round failed", async () => {
       const { store } = renderBundled(
         linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
       await openSign();
       fireEvent.click(
-        screen.getByRole("menuitem", { name: "Open account settings" }),
+        screen.getByRole("menuitem", { name: "Account settings" }),
       );
       expect(store.getState().app.route).toMatchObject({
         screen: "settings",
-        pages: ["general"],
+        pages: ["account"],
       });
     });
 
@@ -283,12 +302,46 @@ describe("NotBackedUpSign", () => {
       });
     });
 
-    it("does not show while the link to the remote is working", async () => {
+    it("shows no sign while the link to the remote is working", async () => {
       const { store } = renderBundled(linkedIn({ kind: "idle" }));
       await waitUntilFetched(store);
       expect(
         screen.queryByRole("button", { name: "Not backed up" }),
       ).toBeNull();
+    });
+  });
+
+  describe("from its menu", () => {
+    it("opens the local network sync page", () => {
+      const { store } = renderWithOpenCard(accountServer);
+      openPlainCloud();
+      fireEvent.click(
+        screen.getByRole("menuitem", { name: "Local network sync" }),
+      );
+      expect(store.getState().app.route).toMatchObject({
+        screen: "settings",
+        pages: ["pairing"],
+      });
+    });
+
+    it("opens the account settings screen", () => {
+      const { store } = renderWithOpenCard(accountServer);
+      openPlainCloud();
+      fireEvent.click(
+        screen.getByRole("menuitem", { name: "Account settings" }),
+      );
+      expect(store.getState().app.route).toMatchObject({
+        screen: "settings",
+        pages: ["account"],
+      });
+    });
+
+    it("offers local network sync beside the sign's explanation", async () => {
+      renderWithOpenCard();
+      await openSign();
+      expect(
+        screen.getByRole("menuitem", { name: "Local network sync" }),
+      ).toBeDefined();
     });
   });
 });

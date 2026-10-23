@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fails unless every desktop bundle under a directory contains the easyimmerse-ffmpeg and easyimmerse-ffprobe sidecars and both start.
+# Fails unless every desktop bundle under a directory contains the easyimmerse-ffmpeg and easyimmerse-ffprobe sidecars, both start,
+# and the bundled web app's web/index.html is present.
 # Each bundle is unpacked the way its installer would place the files, and the sidecars run from there.
 # Expects to run on the platform the bundles were built for.
 #
@@ -30,7 +31,7 @@ check_bundle() {
     echo "Could not unpack $bundle." >&2
     return 1
   fi
-  check_sidecar "$bundle" "$dest" easyimmerse-ffmpeg && check_sidecar "$bundle" "$dest" easyimmerse-ffprobe
+  check_sidecar "$bundle" "$dest" easyimmerse-ffmpeg && check_sidecar "$bundle" "$dest" easyimmerse-ffprobe && check_web_app "$bundle" "$dest"
 }
 
 unpack() {
@@ -74,6 +75,17 @@ check_sidecar() {
     return 1
   fi
   echo "${version%%$'\n'*}"
+}
+
+# The web app is a resource, which each installer places in a web directory among the app's other resources.
+check_web_app() {
+  local bundle=$1 dest=$2 index
+  index=$(find "$dest" -type f -path '*/web/index.html' | head -n 1)
+  if [ -z "$index" ]; then
+    echo "$bundle has no web/index.html." >&2
+    return 1
+  fi
+  echo "${index#"$dest"/}"
 }
 
 main "$@"

@@ -2,6 +2,7 @@
 import type { AudioTarget } from "./AudioTarget";
 import type { PlaybackEnvironment } from "./PlaybackEnvironment";
 import type { TrackSelection } from "./TrackSelection";
+import type { VideoQuality } from "./VideoQuality";
 
 export type PlaybackMethodRequest = { environment: PlaybackEnvironment, 
 /**
@@ -11,4 +12,8 @@ selection: TrackSelection | null,
 /**
  * The user's preferred converted audio codec; the server's default when absent.
  */
-preferred_audio_target: AudioTarget | null, };
+preferred_audio_target: AudioTarget | null, 
+/**
+ * The quality of transcoded video; balanced when absent.
+ */
+video_quality: VideoQuality | null, };

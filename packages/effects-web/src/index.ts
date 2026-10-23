@@ -13,13 +13,16 @@ import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 import { downloadFile } from "./downloadFile.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
+import { createPairingEffects } from "./pairingEffects.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
+import { readLocalStorage } from "./readLocalStorage.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { createScopedPreferenceStore } from "./scopedPreferenceStore.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
+import { unavailableDesktopServerEffects } from "./unavailableDesktopServerEffects.ts";
 
 /** Builds the browser implementation of the app's side effects. */
 export function createWebEffects(options: {
@@ -64,9 +67,11 @@ export function createWebEffects(options: {
     ),
     ...createAccountEffects(
       (input, init) => globalThis.fetch(input, init),
-      localStorage,
+      readLocalStorage(),
       () => location.reload(),
     ),
+    ...createPairingEffects((input, init) => globalThis.fetch(input, init)),
+    ...unavailableDesktopServerEffects,
   };
 }
 
@@ -89,4 +94,5 @@ export { requestJson } from "./accountEffects.ts";
 export { createApplyAppearance } from "./applyAppearance.ts";
 export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
+export { readLocalStorage } from "./readLocalStorage.ts";
 export { createServerPreferenceStore } from "./serverPreferenceStore.ts";

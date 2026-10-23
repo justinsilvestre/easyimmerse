@@ -62,26 +62,61 @@ describe("navigate", () => {
     expect(navigate(dictionaries, { type: "closeSettings" })).toEqual(project);
   });
 
-  it("opens the account settings over the current screen", () => {
+  it("opens the pairing page on top of the general settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openPairing" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general", "pairing"],
+    });
+  });
+
+  it("opens the account settings screen by itself over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",
       beneath: project,
-      pages: ["general"],
+      pages: ["account"],
     });
   });
 
-  it("leaves the dictionaries for the account settings", () => {
-    const dictionaries = navigate(project, { type: "openDictionaries" });
-    expect(navigate(dictionaries, { type: "openAccountSettings" })).toEqual({
+  it("opens the account settings screen on top of the general settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openAccountSettings" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general", "account"],
+    });
+  });
+
+  it("returns from the account settings screen to the screen it was opened over", () => {
+    const account = navigate(project, { type: "openAccountSettings" });
+    expect(navigate(account, { type: "closeSettings" })).toEqual(project);
+  });
+
+  it("opens the general settings at the media conversion section", () => {
+    expect(navigate(project, { type: "openMediaConversionSettings" })).toEqual({
       screen: "settings",
       beneath: project,
       pages: ["general"],
+      scrollTarget: "mediaConversion",
     });
   });
 
-  it("keeps the general settings as they are for the account settings", () => {
-    const settings = navigate(project, { type: "openSettings" });
-    expect(navigate(settings, { type: "openAccountSettings" })).toBe(settings);
+  it("leaves the dictionaries for the media conversion settings", () => {
+    const dictionaries = navigate(project, { type: "openDictionaries" });
+    expect(
+      navigate(dictionaries, { type: "openMediaConversionSettings" }),
+    ).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general"],
+      scrollTarget: "mediaConversion",
+    });
+  });
+
+  it("stays on the account settings screen when it is already open", () => {
+    const account = navigate(project, { type: "openAccountSettings" });
+    expect(navigate(account, { type: "openAccountSettings" })).toBe(account);
   });
 
   it("opens a project from home", () => {
