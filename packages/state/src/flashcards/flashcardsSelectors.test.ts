@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
-import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
 import {
@@ -22,7 +21,6 @@ import {
   startNew,
   typeWord,
 } from "./flashcardsTestSupport.ts";
-import { libraryVideo } from "./libraryFlashcardTestSupport.ts";
 
 const katze = exampleListedFlashcard("k", "Katze");
 const listed = [hund, katze];
@@ -195,25 +193,18 @@ describe("selectUnsavedWorkCount", () => {
 });
 
 describe("selectIsLibraryFlashcard", () => {
-  /** The server cache with the flashcard Hund of m1, and m1 as the given media file. */
-  const backendWith = (mediaFile = libraryVideo) =>
-    serverCacheWith(
-      "listFlashcards",
-      "p1",
-      { flashcards: [{ ...hund, media_file_id: "m1" }] },
-      serverCacheWith("listMediaFiles", "p1", { media_files: [mediaFile] }),
-    );
-
-  it("tells that a flashcard of a library media file is a library flashcard", () => {
-    expect(
-      selectIsLibraryFlashcard({ backend: backendWith() }, "p1", "h"),
-    ).toBe(true);
+  /** The server cache with the flashcard Hund of p1, made from the library or not. */
+  const backendWith = (isFromLibrary: boolean) => ({
+    backend: serverCacheWith("listFlashcards", "p1", {
+      flashcards: [{ ...hund, is_from_library: isFromLibrary }],
+    }),
   });
 
-  it("tells that a flashcard of any other media file is not", () => {
-    const video = exampleMediaFile("m1", "film.mkv");
-    expect(
-      selectIsLibraryFlashcard({ backend: backendWith(video) }, "p1", "h"),
-    ).toBe(false);
+  it("tells that a flashcard made from the library is a library flashcard", () => {
+    expect(selectIsLibraryFlashcard(backendWith(true), "p1", "h")).toBe(true);
+  });
+
+  it("tells that any other flashcard is not", () => {
+    expect(selectIsLibraryFlashcard(backendWith(false), "p1", "h")).toBe(false);
   });
 });

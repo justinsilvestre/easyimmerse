@@ -3,7 +3,6 @@ import { createSelector } from "reselect";
 import { cachedFlashcards } from "../anki/ankiCache.ts";
 import type { AppState } from "../app/appState.ts";
 import type { AppRoot, RootState } from "../app/createAppStore.ts";
-import { cachedLibraryItemIdOf } from "../screen/cachedLibrary.ts";
 import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import {
@@ -89,20 +88,15 @@ export function selectContentBeforeSave(
 
 /**
  * Tells whether a flashcard of the project was made from a library item, which the server fills and refuses to change,
- * as the cached lists of the project's flashcards and media files say. False while either is not cached.
+ * as the cached list of the project's flashcards says. It stays one after its media file is removed. False while the list is not cached.
  */
 export function selectIsLibraryFlashcard(
   root: Pick<RootState, "backend">,
   projectId: string,
   flashcardId: string,
 ): boolean {
-  const flashcard = cachedFlashcards(root.backend, projectId).find(
-    ({ id }) => id === flashcardId,
-  );
-  const mediaFileId = flashcard?.media_file_id;
-  return (
-    mediaFileId != null &&
-    cachedLibraryItemIdOf(root.backend, projectId, mediaFileId) !== null
+  return cachedFlashcards(root.backend, projectId).some(
+    ({ id, is_from_library }) => id === flashcardId && is_from_library,
   );
 }
 
