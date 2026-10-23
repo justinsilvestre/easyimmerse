@@ -231,7 +231,7 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 26989,
-        "light-desktop.png": 47252,
+        "light-desktop.png": 47255,
         "dark-phone.png": 28674,
         "dark-desktop.png": 49716
       },
@@ -512,8 +512,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21518,
-        "light-desktop.png": 40408,
+        "light-phone.png": 21521,
+        "light-desktop.png": 40409,
         "dark-phone.png": 22499,
         "dark-desktop.png": 41834
       },
@@ -559,8 +559,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 21605,
-        "light-desktop.png": 40610,
+        "light-phone.png": 21607,
+        "light-desktop.png": 40608,
         "dark-phone.png": 22539,
         "dark-desktop.png": 41992
       },
@@ -606,8 +606,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23320,
-        "light-desktop.png": 42603,
+        "light-phone.png": 23317,
+        "light-desktop.png": 42609,
         "dark-phone.png": 24530,
         "dark-desktop.png": 44346
       },
@@ -1311,8 +1311,8 @@
       "importPath": "./src/account/AccountSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 10882,
-        "light-desktop.png": 12735,
+        "light-phone.png": 10883,
+        "light-desktop.png": 12734,
         "dark-phone.png": 11295,
         "dark-desktop.png": 13159
       },
@@ -1360,8 +1360,8 @@
       "changedVariants": {
         "light-phone.png": 22892,
         "light-desktop.png": 42040,
-        "dark-phone.png": 23975,
-        "dark-desktop.png": 43581
+        "dark-phone.png": 23976,
+        "dark-desktop.png": 43580
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1406,7 +1406,7 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 13059,
-        "light-desktop.png": 14906,
+        "light-desktop.png": 14905,
         "dark-phone.png": 13397,
         "dark-desktop.png": 15253
       },
@@ -1454,8 +1454,8 @@
       "changedVariants": {
         "light-phone.png": 11732,
         "light-desktop.png": 13824,
-        "dark-phone.png": 11985,
-        "dark-desktop.png": 14075
+        "dark-phone.png": 11984,
+        "dark-desktop.png": 14076
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1500,9 +1500,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 12399,
-        "light-desktop.png": 14387,
+        "light-desktop.png": 14385,
         "dark-phone.png": 12727,
-        "dark-desktop.png": 14715
+        "dark-desktop.png": 14714
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1547,9 +1547,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 13749,
-        "light-desktop.png": 15841,
-        "dark-phone.png": 14208,
-        "dark-desktop.png": 16278
+        "light-desktop.png": 15840,
+        "dark-phone.png": 14207,
+        "dark-desktop.png": 16280
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1876,9 +1876,9 @@
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 2649,
-        "light-desktop.png": 2700,
+        "light-desktop.png": 2701,
         "dark-phone.png": 2737,
-        "dark-desktop.png": 2799
+        "dark-desktop.png": 2800
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -2537,9 +2537,9 @@
       "importPath": "./src/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 19722,
+        "light-phone.png": 19723,
         "light-desktop.png": 21688,
-        "dark-phone.png": 21336,
+        "dark-phone.png": 21334,
         "dark-desktop.png": 23438
       },
       "imageSizes": {
@@ -6002,34 +6002,6 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 996
-        }
-      }
-    },
-    {
-      "id": "reader-readerview--pages",
-      "title": "Reader/ReaderView",
-      "name": "Pages",
-      "importPath": "./src/reader/ReaderView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 33
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
         }
       }
     },
