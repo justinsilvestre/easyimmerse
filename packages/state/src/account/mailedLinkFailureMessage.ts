@@ -9,7 +9,7 @@ const attempts = {
 
 /**
  * Tells a person why following a mailed link on the server at the address failed.
- * An expired or used confirmation link points to a new one, which the Account section offers once the app is connected.
+ * An expired or used confirmation link points to a new one, which the account settings screen offers once the app is connected.
  */
 export function mailedLinkFailureMessage(
   kind: MailedLink["kind"],

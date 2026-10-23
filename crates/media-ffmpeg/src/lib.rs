@@ -5,6 +5,7 @@ pub mod clip_command;
 pub mod conversion_command;
 pub mod encoders;
 pub mod error;
+pub mod ffmpeg_version;
 pub mod ffprobe_output;
 pub mod ffprobe_timing_output;
 pub mod frame_command;
@@ -26,8 +27,12 @@ pub use conversion_command::{
     AAC_ENCODER, ConversionJob, INIT_SEGMENT_FILE_NAME, OUTPUT_TS_OFFSET_SECONDS,
     RUN_PLAYLIST_FILE_NAME, RUN_SEGMENT_FILE_PATTERN, conversion_args,
 };
-pub use encoders::{H264_HARDWARE_ENCODERS, find_working_h264_encoder, list_encoders};
+pub use encoders::{
+    H264_HARDWARE_ENCODERS, H264_SOFTWARE_ENCODERS, find_working_h264_encoder,
+    h264_encoder_candidates, is_software_encoder, list_encoders,
+};
 pub use error::FfmpegError;
+pub use ffmpeg_version::read_ffmpeg_version;
 pub use frame_command::{FrameGrab, frame_grab_args};
 pub use keyframes::list_keyframes;
 pub use locate::{BinaryName, FfmpegPaths, locate_binary};

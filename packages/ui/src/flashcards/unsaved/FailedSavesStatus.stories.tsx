@@ -65,6 +65,9 @@ type Story = StoryObj<typeof meta>;
 
 export const SeveralNotSaved: Story = {};
 
+/** A single flashcard has only its own Retry, so the count line offers no Retry all. */
+export const OneNotSaved: Story = { args: { words: ["fressen"] } };
+
 export const OneRefusedByTheServer: Story = {
   args: { words: ["fressen"] },
   parameters: failingSaves(422),

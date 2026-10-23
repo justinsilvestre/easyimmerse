@@ -98,7 +98,7 @@ fn direct_playback_obstacles(
 mod tests {
     use super::*;
     use crate::container::ContainerFormat;
-    use crate::conversion_settings::{AudioTarget, VideoTarget};
+    use crate::conversion_settings::{AudioTarget, VideoQuality, VideoTarget};
     use crate::playback_environment::{CanPlayAnswer, PlaybackEngine};
     use crate::playback_method::{AudioAction, VideoAction};
 
@@ -149,6 +149,7 @@ mod tests {
             video_target: Some(VideoTarget {
                 encoder: "h264_videotoolbox".to_owned(),
             }),
+            video_quality: VideoQuality::Balanced,
         }
     }
 
@@ -255,6 +256,56 @@ mod tests {
         let method = choose_playback_method(
             &h264_aac(ContainerFormat::Matroska),
             &both_tracks(),
+            &chromium(CanPlayAnswer::No),
+            None,
+        );
+        assert_eq!(
+            method,
+            PlaybackMethod::Unsupported {
+                reason: UnsupportedReason::ConversionUnavailable
+            }
+        );
+    }
+
+    fn uncopyable_video() -> ContainerInfo {
+        container(
+            ContainerFormat::Matroska,
+            vec![track(0, TrackKind::Video, "mpeg4", None)],
+        )
+    }
+
+    fn video_only() -> TrackSelection {
+        TrackSelection {
+            video: Some(0),
+            audio: None,
+        }
+    }
+
+    #[test]
+    fn names_the_missing_encoder_when_video_needs_converting() {
+        let without_encoder = ConversionSettings {
+            video_target: None,
+            ..settings()
+        };
+        let method = choose_playback_method(
+            &uncopyable_video(),
+            &video_only(),
+            &chromium(CanPlayAnswer::No),
+            Some(&without_encoder),
+        );
+        assert_eq!(
+            method,
+            PlaybackMethod::Unsupported {
+                reason: UnsupportedReason::NoVideoEncoder
+            }
+        );
+    }
+
+    #[test]
+    fn names_the_missing_service_when_video_needs_converting_without_one() {
+        let method = choose_playback_method(
+            &uncopyable_video(),
+            &video_only(),
             &chromium(CanPlayAnswer::No),
             None,
         );

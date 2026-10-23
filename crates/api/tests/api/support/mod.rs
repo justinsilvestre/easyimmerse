@@ -268,6 +268,16 @@ impl TestServer {
 }
 
 impl TestRequest {
+    /// A request without a token to a server that a test started on its own.
+    pub fn to(method: &'static str, url: String) -> Self {
+        Self {
+            method,
+            url,
+            headers: Vec::new(),
+            body: Vec::new(),
+        }
+    }
+
     pub fn without_token(mut self) -> Self {
         self.headers.retain(|(name, _)| name != "Authorization");
         self

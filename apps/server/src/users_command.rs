@@ -84,7 +84,11 @@ fn delete_user_of(storage: &Storage, email: &str) -> anyhow::Result<AccountUser>
 }
 
 fn open(args: &DatabaseArgs) -> anyhow::Result<Storage> {
-    Storage::open(&args.db).with_context(|| format!("could not open {}", args.db.display()))
+    let db = args
+        .db
+        .as_deref()
+        .context("name the database file with --db")?;
+    Storage::open(db).with_context(|| format!("could not open {}", db.display()))
 }
 
 fn find_user(storage: &Storage, email: &str) -> anyhow::Result<AccountUser> {

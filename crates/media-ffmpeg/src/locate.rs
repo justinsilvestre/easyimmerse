@@ -20,6 +20,26 @@ pub struct FfmpegPaths {
     pub ffprobe: Option<PathBuf>,
 }
 
+impl FfmpegPaths {
+    /// Names the two binaries inside `dir`, each by the first of the file names that
+    /// [`locate_binary`] searches a directory for which exists there, or by its plain name when none does.
+    pub fn in_dir(dir: &Path) -> Self {
+        Self {
+            ffmpeg: Some(binary_in_dir(BinaryName::Ffmpeg, dir)),
+            ffprobe: Some(binary_in_dir(BinaryName::Ffprobe, dir)),
+        }
+    }
+}
+
+fn binary_in_dir(name: BinaryName, dir: &Path) -> PathBuf {
+    let [sidecar, sidecar_with_triple, plain] =
+        directory_file_names(name).map(|file| dir.join(file));
+    [sidecar, sidecar_with_triple]
+        .into_iter()
+        .find(|candidate| candidate.is_file())
+        .unwrap_or(plain)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinaryName {
     Ffmpeg,
@@ -271,6 +291,30 @@ mod tests {
             found,
             Err(FfmpegError::BinaryNotFound(BinaryName::Ffmpeg))
         ));
+    }
+
+    #[test]
+    fn names_the_plain_binary_in_a_directory() {
+        let dir = TempDir::new().expect("temp dir");
+        let expected = create_file(dir.path(), &file_name(BinaryName::Ffmpeg));
+        assert_eq!(FfmpegPaths::in_dir(dir.path()).ffmpeg, Some(expected));
+    }
+
+    #[test]
+    fn names_the_sidecar_in_a_directory_before_the_plain_binary() {
+        let dir = TempDir::new().expect("temp dir");
+        create_file(dir.path(), &file_name(BinaryName::Ffprobe));
+        let expected = create_file(dir.path(), &format!("easyimmerse-ffprobe{EXE_SUFFIX}"));
+        assert_eq!(FfmpegPaths::in_dir(dir.path()).ffprobe, Some(expected));
+    }
+
+    #[test]
+    fn names_the_plain_binary_in_a_directory_that_holds_neither() {
+        let dir = TempDir::new().expect("temp dir");
+        assert_eq!(
+            FfmpegPaths::in_dir(dir.path()).ffmpeg,
+            Some(dir.path().join(file_name(BinaryName::Ffmpeg)))
+        );
     }
 
     #[test]

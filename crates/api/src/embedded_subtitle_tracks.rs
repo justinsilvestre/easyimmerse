@@ -10,8 +10,7 @@ use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{TimedTextFormat, clean_converted_srt};
 use easyimmerse_media::{TrackInfo, TrackKind, text_subtitle_format};
 use easyimmerse_media_ffmpeg::{
-    BinaryName, FfmpegError, FfmpegPaths, background_command, locate_binary,
-    subtitle_extraction_args,
+    BinaryName, FfmpegError, background_command, locate_binary, subtitle_extraction_args,
 };
 use tokio::process::Command;
 
@@ -31,7 +30,7 @@ pub async fn add_embedded_subtitle_tracks(
     path: &str,
 ) -> Result<Vec<FoundTrack>, ApiFailure> {
     let container = probe_media(state, path).await?;
-    let ffmpeg = locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default())
+    let ffmpeg = locate_binary(BinaryName::Ffmpeg, &state.ffmpeg_paths)
         .map_err(|_| conversion_unavailable())?;
     let mut added = Vec::new();
     for (position, track) in container.tracks_of_kind(TrackKind::Subtitle).enumerate() {

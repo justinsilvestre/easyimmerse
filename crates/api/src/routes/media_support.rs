@@ -14,9 +14,7 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_media::{
     ContainerInfo, TrackInfo, TrackKind, TrackSelection, default_track_selection,
 };
-use easyimmerse_media_ffmpeg::{
-    BinaryName, FfmpegError, FfmpegPaths, background_command, locate_binary,
-};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegError, background_command, locate_binary};
 use tokio::process::Command;
 
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
@@ -142,8 +140,8 @@ pub fn micros(ms: u64) -> i64 {
 }
 
 /// The path of the ffmpeg binary; 503 when this server has none.
-pub fn locate_ffmpeg() -> Result<std::path::PathBuf, ApiFailure> {
-    locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default()).map_err(|_| conversion_unavailable())
+pub fn locate_ffmpeg(state: &AppState) -> Result<std::path::PathBuf, ApiFailure> {
+    locate_binary(BinaryName::Ffmpeg, &state.ffmpeg_paths).map_err(|_| conversion_unavailable())
 }
 
 /// A response carrying media rendered from a media file, which the client may keep for a day.

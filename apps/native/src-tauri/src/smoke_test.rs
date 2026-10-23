@@ -6,6 +6,8 @@
 //! On Linux, `tauri::Builder::run` still initializes GTK before `setup` runs, and GTK refuses to start without a display,
 //! which is why the CI job wraps the binary in `xvfb-run` there.
 
+use std::time::Duration;
+
 use tauri::AppHandle;
 use thiserror::Error;
 
@@ -13,6 +15,8 @@ use crate::embedded_server::EmbeddedServer;
 
 const ENV_VAR: &str = "EASYIMMERSE_SMOKE_TEST";
 const EXPECTED_BODY: &str = r#"{"status":"ok"}"#;
+/// Long enough for a slow CI runner, short enough that a server which never answers fails the job quickly.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Error)]
 enum SmokeTestError {
@@ -63,6 +67,9 @@ fn check_plugin_host(_app: &AppHandle) -> Result<(), SmokeTestError> {
 fn check_health(server: &EmbeddedServer) -> Result<(), SmokeTestError> {
     let mut response = ureq::get(format!("{}/health", server.url))
         .header("authorization", format!("Bearer {}", server.token))
+        .config()
+        .timeout_global(Some(REQUEST_TIMEOUT))
+        .build()
         .call()?;
     let status = response.status().as_u16();
     let body = response.body_mut().read_to_string()?;

@@ -25,11 +25,13 @@ pub mod mail;
 pub mod media_copy_files;
 pub mod media_source_jobs;
 mod now_ms;
+pub mod pairing_codes;
 mod plugin_compile_cache;
 pub mod plugins;
 pub mod router;
 pub mod routes;
 pub mod serve;
+pub mod server_control;
 pub mod sidecar_subtitle_tracks;
 mod source_update;
 pub mod state;
@@ -37,6 +39,7 @@ pub mod sync;
 #[cfg(test)]
 mod typescript_constants;
 mod unread_body;
+pub mod web_app;
 
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::principal::Principal;
@@ -46,5 +49,5 @@ pub use config::{
 };
 pub use plugins::PluginRegistry;
 pub use router::{build_router, openapi_document};
-pub use serve::{ServeError, ServeOptions, ServerHandle, serve};
+pub use serve::{ListenerHandle, ServeError, ServeOptions, ServerHandle, serve};
 pub use state::AppState;

@@ -1,11 +1,16 @@
 import type {
   Definition,
+  DesktopServerSettings,
+  DesktopServerStatus,
   MediaFileSource,
+  PairingGrant,
   ServerAuthInfo,
+  ServerLogEntry,
   SessionCreated,
   TextSource,
 } from "@easyimmerse/types";
 import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
+import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { ServerConfig } from "../server/serverState.ts";
@@ -118,6 +123,42 @@ export interface Effects {
   connectToServer(server: ServerConfig): Promise<SignInOutcome<null>>;
   /** Makes the app run offline from now on, forgetting the server it was connected to, which starts the app anew. */
   disconnectFromServer(): void;
+  /** Exchanges a pairing code for the token of the server at the address. Never rejects. */
+  claimPairingCode(
+    serverUrl: string,
+    code: string,
+  ): Promise<SignInOutcome<PairingGrant>>;
+  /**
+   * Reads a QR code with the platform's own scanner and resolves with the text it holds,
+   * or with why it read none: the person closed the scanner, or the platform has no camera it may use. Never rejects.
+   */
+  scanPairingCode(): Promise<PairingScan>;
+  /**
+   * Opens the platform's file dialog for a program and resolves with its path, or with null when the person cancelled
+   * or the platform has no such dialog.
+   */
+  pickExecutable(): Promise<string | null>;
+  /**
+   * The desktop app's server controls. Each rejects with the reason as an error's message when the controls refuse,
+   * and in an app without them.
+   */
+  readDesktopServerSettings(): Promise<DesktopServerSettings>;
+  /** Saves the settings, restarting the server when a change needs it, and resolves with its status afterwards. */
+  saveDesktopServerSettings(
+    settings: DesktopServerSettings,
+  ): Promise<DesktopServerStatus>;
+  startDesktopServer(): Promise<DesktopServerStatus>;
+  stopDesktopServer(): Promise<DesktopServerStatus>;
+  readDesktopServerStatus(): Promise<DesktopServerStatus>;
+  /** Reads the server's recent log records, oldest first. */
+  readDesktopServerLogs(): Promise<readonly ServerLogEntry[]>;
+  /**
+   * Calls the listener with the server's status whenever it changes. An app without server controls never calls it.
+   * Returns a function that stops the calls.
+   */
+  subscribeToDesktopServerStatus(
+    listener: (status: DesktopServerStatus) => void,
+  ): () => void;
   /** Confirms an account's email address on the server at the address, with the token of the link mailed to it. Never rejects. */
   confirmEmail(serverUrl: string, token: string): Promise<SignInOutcome<null>>;
   /** Asks the server at the address to mail a link that lets the account with the email address choose a new password. Never rejects. */

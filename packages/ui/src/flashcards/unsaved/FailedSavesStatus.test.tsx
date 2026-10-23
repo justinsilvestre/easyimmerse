@@ -92,6 +92,11 @@ describe("FailedSavesStatus", () => {
     expect(saves(client)).toBe(4);
   });
 
+  it("offers no Retry all for a single flashcard, which has its own Retry", async () => {
+    await renderFailedSaves("fressen");
+    expect(screen.queryByRole("button", { name: "Retry all" })).toBeNull();
+  });
+
   it("offers Undo once a flashcard is discarded", async () => {
     await renderFailedSaves("fressen");
     expand();

@@ -236,6 +236,7 @@ describe("selectBackupSign", () => {
           platform: "desktop",
           serverUrl: "https://cloud.example.org",
           serverName: "cloud.example.org",
+          isCloudServer: false,
           code: "storage",
         });
       });

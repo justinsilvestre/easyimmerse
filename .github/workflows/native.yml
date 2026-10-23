@@ -14,6 +14,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "apps/native/**"
+      - "apps/web/**"
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
@@ -38,6 +39,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "apps/native/**"
+      - "apps/web/**"
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
@@ -99,6 +101,7 @@ jobs:
 
       - name: Embedded server health check
         shell: bash
+        timeout-minutes: 5
         run: |
           binary=target/debug/easyimmerse-native
           if [ "$RUNNER_OS" = "Windows" ]; then binary="$binary.exe"; fi
@@ -116,7 +119,7 @@ jobs:
             pnpm --filter @easyimmerse/native e2e
           fi
 
-  # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars.
+  # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars and the web app.
   # Every target has a runner of its own architecture, so the sidecars run from inside each bundle.
   # The job is slow, so it skips pull requests and runs once changes reach main, or on a native-ci-bundle tag.
   bundle:
@@ -143,10 +146,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Release build with every bundle for the platform
-        run: pnpm --filter @easyimmerse/native exec tauri build --ci
+      # The desktop app serves the web app to the devices on its network, so each bundle carries it as a resource.
+      # The extra config file adds the resource, which debug builds do without.
+      - name: Build the web app
+        run: |
+          mise run wasm:build
+          pnpm --filter @easyimmerse/web build
 
-      - name: Check the ffmpeg sidecars in each bundle
+      - name: Release build with every bundle for the platform
+        run: pnpm --filter @easyimmerse/native exec tauri build --ci --config src-tauri/tauri.bundle.conf.json
+
+      - name: Check the ffmpeg sidecars and the web app in each bundle
         shell: bash
         run: scripts/check-bundle-sidecars.sh target/release/bundle
 
@@ -295,6 +305,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+      # The emulator shuts down when this step ends, so the device's log is collected inside the script.
+      # The runner runs each script line in its own shell, so the collection after a failure fits on one line.
+      # A larger log buffer keeps the app's startup from scrolling out while Appium waits for the webview.
       - name: End-to-end tests through Appium
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -304,14 +317,20 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: pnpm --filter @easyimmerse/native e2e:android
-      - name: Upload the Appium logs
+          script: |
+            mkdir -p android-diagnostics
+            adb logcat -G 16M || true
+            pnpm --filter @easyimmerse/native e2e:android || { adb logcat -d > android-diagnostics/logcat.txt; adb logcat -d -b crash > android-diagnostics/crash.txt; adb exec-out screencap -p > android-diagnostics/screen.png; exit 1; }
+      - name: Collect the Appium logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        run: |
+          mkdir -p android-diagnostics
+          cp apps/native/e2e/logs/* android-diagnostics/ || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          name: appium-android-logs
-          path: apps/native/e2e/logs
-          if-no-files-found: ignore
+          name: android-diagnostics
+          path: android-diagnostics
 
   ios:
     needs: gate

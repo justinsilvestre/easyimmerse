@@ -15,9 +15,13 @@ on:
       - "pnpm-workspace.yaml"
       - "crates/**"
       - "apps/server/**"
+      - "apps/web/**"
+      - "packages/**"
       - "fixtures/**"
+  # A tag named server-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["server-ci-*"]
     paths:
       - ".github/workflows/server.yml"
       - ".github/actions/**"
@@ -31,6 +35,8 @@ on:
       - "pnpm-workspace.yaml"
       - "crates/**"
       - "apps/server/**"
+      - "apps/web/**"
+      - "packages/**"
       - "fixtures/**"
 
 # A newer push to the same branch cancels the run still going for the older one.
@@ -52,7 +58,7 @@ jobs:
 
   server:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'server-ci-server-'))
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -81,8 +87,52 @@ jobs:
         run: |
           cargo test -p easyimmerse-api -p easyimmerse-storage -- --skip plugin_routes::
 
+  # Builds the server binary together with the web app it serves, for downloading and testing.
+  # The job is slow, so it skips pull requests and runs once changes reach main, or on a server-ci-bundle tag.
+  bundle:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true' && github.event_name != 'pull_request' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'server-ci-bundle-'))
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the WebAssembly module
+        run: mise run wasm:build
+
+      - name: Build the web app
+        run: pnpm --filter @easyimmerse/web build
+
+      - name: Build the release server
+        run: cargo build --release -p easyimmerse-server
+
+      # The server looks for the web app in a web directory beside its binary.
+      - name: Assemble the server directory
+        shell: bash
+        run: |
+          mkdir easyimmerse-server
+          cp target/release/easyimmerse-server* easyimmerse-server/
+          rm -f easyimmerse-server/*.d easyimmerse-server/*.pdb
+          cp -R apps/web/dist easyimmerse-server/web
+          test -f easyimmerse-server/web/index.html
+
+      - name: Upload the server
+        uses: actions/upload-artifact@v4
+        with:
+          name: easyimmerse-server-${{ matrix.os }}
+          path: easyimmerse-server
+          if-no-files-found: error
+          retention-days: 14
+
+  # Runs although bundle is skipped on pull requests.
+  # A pass recorded by a pull request cannot skip bundle on main, because a run on main cannot read caches saved by a pull request.
   record:
-    needs: [gate, server]
+    needs: [gate, server, bundle]
+    if: ${{ !cancelled() && !failure() && needs.gate.outputs.passed != 'true' && github.ref_type != 'tag' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7

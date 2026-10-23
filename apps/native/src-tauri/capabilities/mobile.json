@@ -1,8 +1,14 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "mobile",
-  "description": "What the main window may ask the native shell to do on Android and iOS only, where the save-copy plugin exists.",
+  "description": "What the main window may ask the native shell to do on Android and iOS only, where the save-copy and barcode scanner plugins exist.",
   "platforms": ["android", "iOS"],
   "windows": ["main"],
-  "permissions": ["save-copy:allow-save-copy"]
+  "permissions": [
+    "save-copy:allow-save-copy",
+    "barcode-scanner:allow-scan",
+    "barcode-scanner:allow-cancel",
+    "barcode-scanner:allow-check-permissions",
+    "barcode-scanner:allow-request-permissions"
+  ]
 }

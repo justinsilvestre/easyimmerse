@@ -12,6 +12,12 @@ describe("describeUnsupportedReason", () => {
     );
   });
 
+  it("explains a missing video encoder wherever the server runs", () => {
+    expect(describeUnsupportedReason("no_video_encoder")).toBe(
+      "This video needs converting, and the server's ffmpeg build has no video encoder that it can use.",
+    );
+  });
+
   it("explains missing conversion", () => {
     expect(describeUnsupportedReason("conversion_unavailable")).toContain(
       "conversion is unavailable",

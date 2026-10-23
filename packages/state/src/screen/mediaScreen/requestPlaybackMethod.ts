@@ -1,4 +1,8 @@
-import type { AudioTarget, PlaybackMethodRequest } from "@easyimmerse/types";
+import type {
+  AudioTarget,
+  PlaybackMethodRequest,
+  VideoQuality,
+} from "@easyimmerse/types";
 import type { ReadableState } from "../../app/feature.ts";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
@@ -24,9 +28,15 @@ export function requestFirstPlaybackMethod(
     : updated(playback);
 }
 
+const videoQualities = [
+  "compact",
+  "balanced",
+  "best",
+] as const satisfies readonly VideoQuality[];
+
 /**
- * Sends the playback method request for the selection once the browser is measured, with the audio target of the first request,
- * or of the preference, once loaded, for the first.
+ * Sends the playback method request for the selection once the browser is measured, with the audio target and video quality of the first request,
+ * or of the preferences, once loaded, for the first.
  */
 export function requestPlaybackMethod(
   playback: PathPlayback | null,
@@ -40,6 +50,7 @@ export function requestPlaybackMethod(
     environment: playback.environment,
     selection: playback.selection,
     preferred_audio_target: audioTargetOf(sent, preferences),
+    video_quality: videoQualityOf(sent, preferences),
   };
   return updated(
     { ...playback, methodRequest: request },
@@ -54,4 +65,14 @@ function audioTargetOf(
 ): AudioTarget | null {
   if (sent !== null) return sent.preferred_audio_target;
   return preferences.values.losslessAudio === "true" ? "flac" : null;
+}
+
+/** The video quality of the request sent first, or for the first, the video quality preference's. */
+function videoQualityOf(
+  sent: PlaybackMethodRequest | null,
+  preferences: MethodPreferences,
+): VideoQuality | null {
+  if (sent !== null) return sent.video_quality;
+  const preferred = preferences.values.videoQuality;
+  return videoQualities.find((quality) => quality === preferred) ?? null;
 }

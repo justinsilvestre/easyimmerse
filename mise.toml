@@ -202,6 +202,16 @@ description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]
 run = ["node scripts/web-desktop/guardDesktop.ts", "pnpm --filter @easyimmerse/native dev"]
 
+# The desktop app connects to this server in development, and the monitor page that its Vite server serves
+# at http://localhost:1421/devtools.html shows its store through the server.
+# The server is fetched on demand rather than installed with the workspace, because its sqlite3 dependency has no
+# prebuilt binary for some CI platforms and fails to build there. Reading from /dev/null stops pnpm from asking which
+# other install scripts to run, so it skips Electron's, which downloads a desktop window the browser extension
+# replaces, and Apollo protobuf's, which only checks the installed version.
+[tasks.devtools]
+description = "Serve Redux DevTools for the desktop and mobile apps in development"
+run = "pnpm dlx --allow-build=sqlite3 @redux-devtools/cli@5.0.0 --hostname=localhost --port=8000 < /dev/null"
+
 [tasks.web-dev]
 description = "Run the web app with hot reloading against a local server at http://127.0.0.1:8788"
 depends = ["web-dev:server", "web-dev:vite"]
@@ -220,6 +230,17 @@ run = '''
 mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
 exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --plugins-dir .dev/plugins --media-dir .dev/media
+'''
+
+# The development builds offer this server as the easyImmerse cloud, through the .env.development file of each app.
+# It keeps its own database, so its accounts and backed-up work stay apart from the data of the other dev servers.
+# Mail, such as address confirmations and password resets, is printed to the terminal, with links that open the web-dev app.
+[tasks."dev:cloud"]
+description = "Run a local stand-in for the easyImmerse cloud at http://127.0.0.1:8791, which the development builds offer for logging in"
+depends = ["web-dev:build"]
+run = '''
+mkdir -p .dev
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8791 --db .dev/cloud.sqlite --accounts --open-signup --mail-to-stderr --public-url http://localhost:5173 --uploads-dir .dev/cloud-uploads
 '''
 
 # Waits for the server build so that a compile error stops the task before Vite starts.

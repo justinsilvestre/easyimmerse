@@ -30,8 +30,10 @@ mise run web-dev        # web app with hot reloading, against a local server
 mise run desktop        # desktop app with its embedded server
 mise run web:desktop    # web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data
 mise run dev            # desktop app, with the web app served to this machine and the local network against its server
+mise run dev:cloud      # local stand-in for the easyImmerse cloud, for logging in from the development builds
 mise run storybook      # UI component stories at http://localhost:6006
 mise run storybook-diff # before and after screenshots of the stories the working tree changes against main
+mise run devtools       # Redux DevTools server for the desktop and mobile apps; the monitor is at http://localhost:1421/devtools.html
 ```
 
 #### Web app against a local server (`web-dev`)
@@ -57,8 +59,8 @@ mise run storybook-diff # before and after screenshots of the stories the workin
 #### Desktop app (`desktop`)
 
 - On **start-up**, the task fetches the ffmpeg sidecars when they are missing or come from an older release than the one pinned (through `mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)). It then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The first build can take several minutes.
-- The **database** is stored in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS. Installed plugins go in `plugins/` and the media they fetch in `media/`, both next to the database.
-- **Converted media** is cached in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`.
+- The **database** is stored in the checkout, at `.dev/desktop/data/easyimmerse.sqlite`, so a development build never touches an installed app's data. Installed plugins go in `plugins/` and the media they fetch in `media/`, both next to the database. The server config file is in `.dev/desktop/config/`. A release build keeps these in the system's app directories instead, such as `~/Library/Application Support/com.easyimmerse.app` on macOS.
+- **Converted media** is cached in `.dev/desktop/cache/`, where a release build uses the system's cache directory, such as `~/Library/Caches/com.easyimmerse.app`.
 - Each start **writes `.dev/desktop-server.env`** with the server's address, a new token, and the database and cache paths. The `web:desktop` and `dev` tasks read this file.
 - A debug build **seeds the same placeholder projects and sample content** as `web-dev`: the projects into an empty database, and the sample content once per database. A placeholder project that still has no media receives the sample content on the next start, even in an older database. A release build starts empty.
 - The app **refuses to start while the standalone server of `web:desktop` is running**, because both would convert media into the same cache.
@@ -85,6 +87,20 @@ mise run storybook-diff # before and after screenshots of the stories the workin
 - **Restart the task after a change to Rust sources.** `tauri dev` rebuilds and restarts the desktop app, which writes a new token and possibly a new port, while Vite keeps the values it started with.
 - **Quitting the desktop app or stopping Vite** stops the whole task.
 
+#### Local easyImmerse cloud (`dev:cloud`)
+
+- The development builds of the web app, the desktop app and the extension **offer `http://127.0.0.1:8791` as the easyImmerse cloud** on the account settings screen, as a release build offers the real one. The address is set in each app's `.env.development`.
+- **No other task starts this server**, so logging in to the cloud fails until `mise run dev:cloud` is running. A server of your own can still be named under More options.
+- The server has **accounts with open sign-up**, keeps its data in `.dev/cloud.sqlite` and its media copies in `.dev/cloud-uploads/`, and **prints its mail to the terminal**, with links that open the `web-dev` app.
+
+#### Redux DevTools for the desktop and mobile apps (`devtools`)
+
+- The Tauri webview cannot run browser extensions, so in development the desktop and mobile apps **send their store to a Redux DevTools server** at `localhost:8000`, which this task starts. Start it before or after the app; the app connects once the server is up.
+- To **watch the store**, open `http://localhost:1421/devtools.html` in a browser while `mise run desktop` runs. The desktop app's Vite server serves this monitor page, which connects to the server by itself and lists the app as `easyImmerse desktop` or `easyImmerse mobile`.
+- The server's own page at `http://localhost:8000` does not load, and the browser extension's remote monitor fails in Firefox, so use the page above instead.
+- On an **Android emulator**, `localhost` is the emulator itself, so run `adb reverse tcp:8000 tcp:8000` first. The iOS simulator shares the Mac's `localhost`.
+- Release builds contain no DevTools code.
+
 #### Storybook (`storybook`)
 
 - The task **serves the stories** of `packages/ui`, where screens are designed before they are wired to the store.
@@ -107,7 +123,7 @@ mise exec -- pnpm --filter @easyimmerse/extension build:firefox    # Firefox, in
 
 Set `VITE_EASYIMMERSE_SERVER_URL` and `VITE_EASYIMMERSE_TOKEN` before building to point the extension at a server. Without them it runs offline through the WebAssembly module.
 
-Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server in the Account section of Settings. Without it, the section offers only a server whose address the person types in.
+Set `VITE_EASYIMMERSE_CLOUD_URL` before building the web app, the extension or the native app to offer the official easyImmerse server on the account settings screen. Without it, the screen offers only a server whose address the person types in.
 
 ### Running a server of your own
 
@@ -120,8 +136,9 @@ target/release/easyimmerse-server serve --db server.sqlite
 
 - Without `--db`, the server keeps its **data in memory**, and the data is lost when the server stops.
 - The server **listens at `127.0.0.1:8787`** by default. To reach it from other machines, bind it to every interface with `--bind 0.0.0.0:8787`, and name each address that clients use with `--expected-host`, for example `--expected-host 192.168.1.5:8787`. The server refuses a request whose Host header names any other address.
-- The server's **directories and ffmpeg** are set as described under `web-dev` above. `easyimmerse-server serve --help` lists every flag.
-- The server is meant to serve the web app at its own address, but **does not serve it yet**. Until it does, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and serve `apps/web/dist` with any static file server.
+- The server's **directories and ffmpeg** are set as described under `web-dev` above, or with `--ffmpeg-dir` for a directory holding `ffmpeg` and `ffprobe`. `easyimmerse-server serve --help` lists every flag.
+- The settings can also live in a **config file**, named with `--config server.toml` or `EASYIMMERSE_CONFIG`. Its keys are the flag names with underscores, such as `bind = "0.0.0.0:8787"` or `cache_dir = "cache"`, and relative paths in it are relative to the file. A flag or an environment variable overrides the file. `easyimmerse-server config show --config server.toml` prints the settings the server would use, and `easyimmerse-server config set bind 0.0.0.0:8787 --config server.toml` changes one of them.
+- The server **serves the web app** at its own address from a directory named `web` next to its executable, or from the directory `--web-app-dir` names. A CI build holds the binary and `web/` together, as described under Test builds. When building from source, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and pass `--web-app-dir apps/web/dist`. `--api-only` turns this off.
 - By default every client presents the server's launch token. To let several people log in with their own accounts, and to send them email for address confirmation and password resets, see [docs/self-hosting.md](docs/self-hosting.md).
 
 ### Generated code
@@ -147,7 +164,7 @@ mise exec -- pnpm lint && mise exec -- pnpm format     # Biome lint, then format
 
 Each crate's integration tests form one binary named after the crate. Cargo builds are heavy on a shared machine, so build one crate at a time and run cold or workspace-wide jobs through `scripts/cargo-heavy.sh`, which lets one such job run at a time. Before the first build in a new git worktree, run `scripts/seed-worktree-target.sh <worktree>` from the main checkout; it clones the `target/` directory and removes build-script outputs that name paths into another checkout.
 
-Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are found neither in `EASYIMMERSE_FFMPEG_DIR` nor on `PATH`. To run them against the bundled LGPL build, run `mise run fetch-ffmpeg` and set `EASYIMMERSE_FFMPEG_DIR` to the absolute path of `apps/native/src-tauri/binaries/`, for example `EASYIMMERSE_FFMPEG_DIR=$PWD/apps/native/src-tauri/binaries cargo test -p easyimmerse-conversion`. The transcoding tests in `crates/conversion` also need a working H.264 encoder from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, because the bundled builds include no software H.264 encoder of their own. They skip with a message on a machine where none works, which includes most Linux machines without a VA-API or NVENC capable GPU.
+Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are found neither in `EASYIMMERSE_FFMPEG_DIR` nor on `PATH`. To run them against the bundled LGPL build, run `mise run fetch-ffmpeg` and set `EASYIMMERSE_FFMPEG_DIR` to the absolute path of `apps/native/src-tauri/binaries/`, for example `EASYIMMERSE_FFMPEG_DIR=$PWD/apps/native/src-tauri/binaries cargo test -p easyimmerse-conversion`. The transcoding tests in `crates/conversion` also need a working H.264 encoder: one from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, or the software encoder `libx264` or `libopenh264` of an ffmpeg build found in `EASYIMMERSE_FFMPEG_DIR` or on `PATH`. The bundled builds include no software H.264 encoder of their own. The tests skip with a message on a machine where none works, which includes most Linux machines with the bundled build and without a VA-API or NVENC capable GPU.
 
 The tests in `crates/api/tests/api/local_media_sample.rs` add a media file from your own library, so they skip unless `EASYIMMERSE_SAMPLE_MEDIA` names one. The file must hold an embedded English text subtitle track and sit beside a `.ja.srt` file. `mise run test:sample-media` fetches the sidecars and runs these tests against them; the variable can be set in `.env`. The tests fail, rather than skip, when the ffmpeg they find cannot write SubRip, since the app would then add the file without its embedded tracks.
 
@@ -184,17 +201,19 @@ On Linux the Tauri runtime initializes GTK before the check runs, so the command
 
 #### One-off CI runs
 
-To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `apk`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` and `apk` jobs never run on pull requests, so a tag is how to check a branch's installers before it merges.
+To run one job of the `native`, `server`, or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `apk`, `android`, and `ios` in `native`, `server` and `bundle` in `server`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own. The `bundle` and `apk` jobs never run on pull requests, so a tag is how to check a branch's installers and server download before it merges. For example, `server-ci-bundle-1` builds the server download for macOS, Windows and Linux.
 
 #### Test builds
 
 CI keeps the builds it makes as artifacts of each workflow run for 14 days, so prerelease versions can be tested without a GitHub release. Open a run of the workflow on the Actions tab and download from the Artifacts list at the bottom of its summary page. Downloading needs a GitHub sign-in.
 
 - `easyimmerse-desktop-<runner>`: the installers from the `native` workflow's `bundle` job, one artifact per platform (`.dmg` on macOS; `.deb`, `.rpm`, and `.AppImage` on Linux; `.msi` and `-setup.exe` on Windows).
+  The bundled ffmpeg converts video that the system cannot play directly with the computer's hardware encoder: VideoToolbox on macOS, Media Foundation, NVENC or AMF on Windows, and VA-API or NVENC on Linux. It has no software H.264 encoder. A computer without a working hardware encoder, such as most Linux machines without a VA-API or NVENC capable GPU, needs an ffmpeg build with libx264 or libopenh264, chosen in the Media conversion section of Settings. Such builds include the distribution's ffmpeg package on Linux, Homebrew's on macOS, and the gyan.dev and BtbN builds on Windows. The app says so the first time it starts on such a computer.
+- `easyimmerse-server-<runner>`: the server from the `server` workflow's `bundle` job, one artifact per platform. It holds the `easyimmerse-server` binary with its `web/` directory beside it. To try it, unzip it, run `easyimmerse-server serve --db server.sqlite`, and open the address it prints. On macOS and Linux, first run `chmod +x easyimmerse-server`, since the zip drops the executable bit. The binary is unsigned, so on macOS also run `xattr -dr com.apple.quarantine` on the unzipped folder.
 - `easyimmerse-android-arm64`: a debug APK from the `native` workflow's `apk` job, for 64-bit ARM phones. Allow installs from unknown sources on the phone to open it.
 - `easyimmerse-extension`: the Chrome and Firefox zips from the `extension` workflow. Unzip one and load it unpacked as described under Browser extension.
 
-The desktop installers and the APK are built only on pushes to main and on tags, and a run that touches none of a workflow's paths builds nothing new. The installers are unsigned: macOS refuses to open the app until `xattr -dr com.apple.quarantine /Applications/easyImmerse.app` clears its quarantine flag, and Windows shows a SmartScreen warning that "More info" then "Run anyway" passes.
+The desktop installers, the server download, and the APK are built only on pushes to main and on tags, and a run that touches none of a workflow's paths builds nothing new. The installers are unsigned: macOS refuses to open the app until `xattr -dr com.apple.quarantine /Applications/easyImmerse.app` clears its quarantine flag, and Windows shows a SmartScreen warning that "More info" then "Run anyway" passes.
 
 For a link that needs no sign-in, [nightly.link](https://nightly.link) serves the newest artifact of a branch, for example `https://nightly.link/justinsilvestre/easyimmerse/workflows/native/main/easyimmerse-android-arm64.zip`.
 
