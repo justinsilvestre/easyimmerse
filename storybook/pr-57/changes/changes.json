@@ -1,0 +1,195 @@
+{
+  "variants": [
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "light",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "phone",
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "theme": "dark",
+      "viewport": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "storyCount": 569,
+  "changes": [
+    {
+      "id": "pagelookup-pagelookuppopup--entries-found",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Entries Found",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--looking-up",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Looking Up",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--no-entry",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "No Entry",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--server-unreachable",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Server Unreachable",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--expanded",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Expanded",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--dark-system-theme",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Dark System Theme",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    }
+  ]
+}
