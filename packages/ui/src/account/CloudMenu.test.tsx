@@ -153,7 +153,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account page from its menu", async () => {
+    it("opens the account settings screen from its menu", async () => {
       const { store } = renderWithOpenCard();
       await openSign();
       fireEvent.click(
@@ -230,7 +230,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account page from its menu", async () => {
+    it("opens the account settings screen from its menu", async () => {
       const { store } = renderBundled();
       await openSign();
       fireEvent.click(
@@ -268,7 +268,7 @@ describe("CloudMenu", () => {
       ).toBeDefined();
     });
 
-    it("opens the account page after a round failed", async () => {
+    it("opens the account settings screen after a round failed", async () => {
       const { store } = renderBundled(
         linkedIn({ kind: "failed", code: "storage", message: "Disk full." }),
       );
@@ -324,7 +324,7 @@ describe("CloudMenu", () => {
       });
     });
 
-    it("opens the account page", () => {
+    it("opens the account settings screen", () => {
       const { store } = renderWithOpenCard(accountServer);
       openPlainCloud();
       fireEvent.click(

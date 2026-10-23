@@ -13,7 +13,7 @@ import {
 
 /**
  * Asks the server to mail the account another link that confirms its email address, and keeps what came of it.
- * When the server says the address is confirmed already, it fetches the account anew, so that the Account page shows it.
+ * When the server says the address is confirmed already, it fetches the account anew, so that the account settings screen shows it.
  */
 export function updateConfirmationEmail(
   status: ConfirmationEmailStatus,

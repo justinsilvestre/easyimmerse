@@ -43,7 +43,7 @@ describe("SettingsScreen", () => {
     expect(openCount).toBe(1);
   });
 
-  it("opens the account page from its button", () => {
+  it("opens the account settings screen from its button", () => {
     let openCount = 0;
     renderWithAppStore(
       <SettingsScreen

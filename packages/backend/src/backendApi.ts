@@ -1242,7 +1242,7 @@ export const backendApi = createApi({
         path: accountPath(via, `/users/${encodeURIComponent(userId)}/role`),
         body: { kind: "json", value: body },
       }),
-      // The account may be the app's own, whose role the Account section shows.
+      // The account may be the app's own, whose role the account settings screen shows.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
     deleteUser: build.mutation<void, UserArgs>({

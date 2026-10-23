@@ -71,7 +71,7 @@ describe("navigate", () => {
     });
   });
 
-  it("opens the account page by itself over the current screen", () => {
+  it("opens the account settings screen by itself over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",
       beneath: project,
@@ -79,7 +79,7 @@ describe("navigate", () => {
     });
   });
 
-  it("opens the account page on top of the general settings", () => {
+  it("opens the account settings screen on top of the general settings", () => {
     const settings = navigate(project, { type: "openSettings" });
     expect(navigate(settings, { type: "openAccountSettings" })).toEqual({
       screen: "settings",
@@ -88,7 +88,7 @@ describe("navigate", () => {
     });
   });
 
-  it("returns from the account page to the screen it was opened over", () => {
+  it("returns from the account settings screen to the screen it was opened over", () => {
     const account = navigate(project, { type: "openAccountSettings" });
     expect(navigate(account, { type: "closeSettings" })).toEqual(project);
   });
@@ -114,7 +114,7 @@ describe("navigate", () => {
     });
   });
 
-  it("stays on the account page when it is already open", () => {
+  it("stays on the account settings screen when it is already open", () => {
     const account = navigate(project, { type: "openAccountSettings" });
     expect(navigate(account, { type: "openAccountSettings" })).toBe(account);
   });
