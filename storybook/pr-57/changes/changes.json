@@ -33,12 +33,38 @@
       }
     }
   ],
-  "storyCount": 569,
+  "storyCount": 570,
   "changes": [
     {
       "id": "pagelookup-pagelookuppopup--entries-found",
       "title": "PageLookup/PageLookupPopup",
       "name": "Entries Found",
+      "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      }
+    },
+    {
+      "id": "pagelookup-pagelookuppopup--entries-with-images",
+      "title": "PageLookup/PageLookupPopup",
+      "name": "Entries With Images",
       "importPath": "./src/pageLookup/PageLookupPopup.stories.tsx",
       "kind": "added",
       "changedVariants": {},
