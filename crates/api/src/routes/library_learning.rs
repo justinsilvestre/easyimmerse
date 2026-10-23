@@ -186,7 +186,7 @@ pub async fn create_library_flashcard(
     let draft = library_flashcard_draft(&state, &item, &media_file, &new).await?;
     let id = new.id;
     let flashcard = state
-        .with_storage(move |storage| storage.create_flashcard(&project_id, &id, &draft))
+        .with_storage(move |storage| storage.create_library_flashcard(&project_id, &id, &draft))
         .await?;
     Ok((StatusCode::CREATED, Json(flashcard)))
 }

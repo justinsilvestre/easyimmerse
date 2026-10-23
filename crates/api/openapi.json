@@ -2399,7 +2399,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change",
+            "description": "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -2478,6 +2478,16 @@
           },
           "404": {
             "description": "No such item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -4984,7 +4994,7 @@
             }
           },
           "409": {
-            "description": "The id belongs to a flashcard of another project",
+            "description": "The id belongs to a flashcard of another project, or `library_flashcard`: to a flashcard made from a library item",
             "content": {
               "application/json": {
                 "schema": {
@@ -11821,7 +11831,8 @@
           "created_at_ms",
           "updated_at_ms",
           "was_packaged",
-          "is_suspended"
+          "is_suspended",
+          "is_from_library"
         ],
         "properties": {
           "content": {
@@ -11860,6 +11871,10 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields the card shows, in no particular order."
+          },
+          "is_from_library": {
+            "type": "boolean",
+            "description": "Whether the server built the flashcard from a library item. Such a flashcard cannot be changed, only deleted."
           },
           "is_suspended": {
             "type": "boolean",

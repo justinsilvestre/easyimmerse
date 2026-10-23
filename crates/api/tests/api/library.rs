@@ -20,6 +20,12 @@ const DOCUMENT_TEXT: &str = "Der Hund schläft.\n\nDie Katze frisst.\n";
 /// A server with open sign-up that keeps library files in a new directory, which lives as long as the `TempDir`.
 async fn library_server() -> (TestServer, TempDir) {
     let dir = tempfile::tempdir().unwrap();
+    let server = library_server_on(Storage::open_in_memory().unwrap(), &dir).await;
+    (server, dir)
+}
+
+/// A server with open sign-up on the storage that keeps library files in the directory.
+async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
     let uploads = UploadsConfig {
         dir: dir.path().join("uploads"),
         account_quota_bytes: Some(1_000_000),
@@ -30,9 +36,7 @@ async fn library_server() -> (TestServer, TempDir) {
         uploads: Some(uploads),
         ..ApiConfig::for_loopback(port, TOKEN.to_string(), true)
     };
-    let storage = Storage::open_in_memory().unwrap();
-    let server = spawn_configured_test_server(configure, storage, ServeOptions::default()).await;
-    (server, dir)
+    spawn_configured_test_server(configure, storage, ServeOptions::default()).await
 }
 
 fn draft(kind: &str) -> Value {
@@ -500,6 +504,71 @@ async fn a_library_flashcard_cannot_be_updated() {
     assert_eq!(
         (response.status, response.json()["code"].clone()),
         (409, json!("library_flashcard"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_library_flashcard_stays_unchangeable_once_its_media_file_is_removed() {
+    let (server, _dir) = library_server().await;
+    let (token, project_id, media_id) = learner_media(&server).await;
+    let card = create_card(&server, &token, &project_id, &media_id)
+        .await
+        .json();
+    let media_path = format!("/projects/{project_id}/media/{media_id}");
+    send_as(&server, &token, "DELETE", &media_path, None).await;
+    let draft = json!({
+        "media_file_id": null,
+        "cue_index": 0,
+        "word_start": 4,
+        "content": card["content"],
+        "included_fields": card["included_fields"],
+    });
+    let path = format!(
+        "/projects/{project_id}/flashcards/{}",
+        card["id"].as_str().unwrap()
+    );
+    let response = send_as(&server, &token, "PUT", &path, Some(&draft)).await;
+    assert_eq!(response.json()["code"], "library_flashcard");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_library_flashcard_cannot_be_replaced_by_an_ordinary_one() {
+    let (server, _dir) = library_server().await;
+    let (token, project_id, media_id) = learner_media(&server).await;
+    let card = create_card(&server, &token, &project_id, &media_id)
+        .await
+        .json();
+    let body = json!({
+        "id": card["id"],
+        "draft": {
+            "media_file_id": null,
+            "cue_index": null,
+            "word_start": null,
+            "content": card["content"],
+            "included_fields": card["included_fields"],
+        },
+    });
+    let path = format!("/projects/{project_id}/flashcards");
+    let response = send_as(&server, &token, "POST", &path, Some(&body)).await;
+    assert_eq!(response.json()["code"], "library_flashcard");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_publish_the_server_stopped_during_is_failed_at_startup() {
+    let dir = tempfile::tempdir().unwrap();
+    let storage = Storage::open_in_memory().unwrap();
+    let item = storage
+        .create_library_item(&serde_json::from_value(draft("video")).unwrap())
+        .unwrap();
+    storage.begin_library_publish(&item.id).unwrap();
+    let server = library_server_on(storage, &dir).await;
+    let read = server
+        .get(&format!("/library/items/{}", item.id.0))
+        .await
+        .json();
+    assert_eq!(
+        read["status"],
+        json!({ "kind": "failed", "message": "the server stopped during the publish" })
     );
 }
 

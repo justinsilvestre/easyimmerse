@@ -148,7 +148,8 @@ async fn read_document(
     Ok(text_of_document(&parse_document(&bytes, None)?))
 }
 
-/// Moves the upload into the place of the source, removing an earlier source of another extension.
+/// Moves the upload into the place of the source, removing an earlier source of another extension
+/// and the cover rendered from it.
 async fn replace_source(
     paths: &LibraryItemPaths,
     item: &LibraryItem,
@@ -157,6 +158,7 @@ async fn replace_source(
     if let Some(previous) = &item.file_name {
         let _ = tokio::fs::remove_file(paths.source(previous)).await;
     }
+    let _ = tokio::fs::remove_file(paths.cover()).await;
     tokio::fs::rename(paths.upload(), paths.source(file_name))
         .await
         .map_err(|error| internal(format!("the file could not be stored: {error}")))

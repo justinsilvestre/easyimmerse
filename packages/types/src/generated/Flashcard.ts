@@ -51,4 +51,8 @@ sent_at_ms: number | null,
 /**
  * Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it.
  */
-is_suspended: boolean, };
+is_suspended: boolean, 
+/**
+ * Whether the server built the flashcard from a library item. Such a flashcard cannot be changed, only deleted.
+ */
+is_from_library: boolean, };

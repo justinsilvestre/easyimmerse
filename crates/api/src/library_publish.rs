@@ -4,12 +4,14 @@
 use std::path::Path;
 
 use easyimmerse_core::library::{
-    LibraryItem, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
+    LibraryItem, LibraryItemId, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
 };
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::library_paths::LibraryItemPaths;
-use crate::routes::library_support::{item_paths, source_path};
+use crate::routes::library_support::{
+    item_paths, item_processing, load_item, require_editable, source_path,
+};
 use crate::routes::media_clip::render_clip_at;
 use crate::routes::media_frame::render_frame_at;
 use crate::routes::media_support::{conversion_unavailable, locate_ffmpeg, probe_media};
@@ -17,6 +19,7 @@ use crate::state::AppState;
 
 /// Marks the item as being published and starts the task that publishes it, returning the item as it now stands.
 /// A video or audio item needs ffmpeg, which is checked before the task starts.
+/// Answers 409 when the item is already published or being published, so that two publishes never run at once.
 pub async fn start_library_publish(
     state: &AppState,
     item: LibraryItem,
@@ -28,17 +31,31 @@ pub async fn start_library_publish(
         locate_ffmpeg(state)?;
     }
     let id = item.id.clone();
-    let processing = state
-        .with_storage(move |storage| {
-            storage.set_library_status(&id, &LibraryItemStatus::Processing)
-        })
+    let begun = state
+        .with_storage(move |storage| storage.begin_library_publish(&id))
         .await?;
+    let Some(processing) = begun else {
+        require_editable(&load_item(state, &item.id).await?)?;
+        return Err(item_processing());
+    };
     let task_state = state.clone();
     tokio::spawn(async move {
-        let outcome = publish(&task_state, &item, &paths, &source).await;
+        let outcome = run_publish(task_state.clone(), item.clone(), paths, source).await;
         record_outcome(&task_state, &item, outcome).await;
     });
     Ok(processing)
+}
+
+/// Runs the publish in a task of its own, so that a panic inside it still ends in a recorded failure.
+async fn run_publish(
+    state: AppState,
+    item: LibraryItem,
+    paths: LibraryItemPaths,
+    source: String,
+) -> Result<(), ApiFailure> {
+    let task = tokio::spawn(async move { publish(&state, &item, &paths, &source).await });
+    task.await
+        .unwrap_or_else(|error| Err(internal(format!("the publish stopped: {error}"))))
 }
 
 async fn record_outcome(state: &AppState, item: &LibraryItem, outcome: Result<(), ApiFailure>) {
@@ -126,21 +143,27 @@ async fn render_screenshots(
         chapter_titles: text.chapter_titles,
     };
     match cover_time(item.cover_at_ms, &text) {
-        Some(at_ms) => render_cover(state, paths, source, at_ms).await,
+        Some(at_ms) => render_cover(state, &item.id, source, at_ms).await,
         None => Ok(()),
     }
 }
 
-/// Renders the cover of a video item from the frame at `at_ms`.
+/// Renders the cover of a video item from the frame at `at_ms`, and records that the item has one.
 pub async fn render_cover(
     state: &AppState,
-    paths: &LibraryItemPaths,
+    item_id: &LibraryItemId,
     source: &str,
     at_ms: u64,
 ) -> Result<(), ApiFailure> {
+    let paths = item_paths(state, item_id)?;
     let cover = render_frame_at(state, source, None, at_ms).await?;
     create_dir(&paths.dir).await?;
-    write_file(&paths.cover(), &cover).await
+    write_file(&paths.cover(), &cover).await?;
+    let id = item_id.clone();
+    state
+        .with_storage(move |storage| storage.set_library_cover(&id))
+        .await?;
+    Ok(())
 }
 
 /// The time of the cover: the one the manager chose, else the first cue's screenshot time.

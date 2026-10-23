@@ -222,6 +222,7 @@ const SPECS: [SyncTableSpec; 12] = [
             "exported_at_ms",
             "was_packaged",
             "sent_at_ms",
+            "is_from_library",
         ],
         copied_on_insert: &[],
         rank: 3,

@@ -13,7 +13,7 @@ use crate::auth::library_manager::LibraryManager;
 use crate::auth::principal::Principal;
 use crate::library_publish::{cover_time, render_cover};
 use crate::routes::library_support::{
-    item_paths, load_item, load_visible_item, require_editable, source_path,
+    item_paths, item_processing, load_item, load_visible_item, require_editable, source_path,
 };
 use crate::state::AppState;
 
@@ -104,7 +104,7 @@ pub async fn create_library_item(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change", body = ApiError),
+        (status = 409, description = "`item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 503, description = "The cover must be rendered again, and this server has no ffmpeg (code `conversion_unavailable`)", body = ApiError),
     ),
@@ -119,6 +119,9 @@ pub async fn update_library_item(
     let is_published = item.status == LibraryItemStatus::Published;
     if draft.kind != item.kind {
         require_editable(&item)?;
+    }
+    if item.status == LibraryItemStatus::Processing && draft.cover_at_ms != item.cover_at_ms {
+        return Err(item_processing());
     }
     if is_published && item.kind == LibraryItemKind::Video && draft.cover_at_ms != item.cover_at_ms
     {
@@ -142,7 +145,7 @@ async fn render_new_cover(
         .with_storage(move |storage| storage.get_library_text(&item_id))
         .await?;
     match cover_time(cover_at_ms, &text) {
-        Some(at_ms) => render_cover(state, &paths, &source, at_ms).await,
+        Some(at_ms) => render_cover(state, &item.id, &source, at_ms).await,
         None => Ok(()),
     }
 }
@@ -160,6 +163,7 @@ async fn render_new_cover(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -168,6 +172,9 @@ pub async fn delete_library_item(
     State(state): State<AppState>,
     Path(item_id): Path<LibraryItemId>,
 ) -> Result<StatusCode, ApiFailure> {
+    if load_item(&state, &item_id).await?.status == LibraryItemStatus::Processing {
+        return Err(item_processing());
+    }
     let deleted = item_id.clone();
     state
         .with_storage(move |storage| storage.delete_library_item(&deleted))

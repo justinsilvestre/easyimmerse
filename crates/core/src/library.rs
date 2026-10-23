@@ -17,6 +17,17 @@ use crate::timed_text::TimedTextFormat;
 #[ts(export)]
 pub struct LibraryItemId(pub String);
 
+impl LibraryItemId {
+    /// Tells whether the id has the form of the ids the server makes: thirty-two lowercase hexadecimal digits.
+    pub fn is_well_formed(&self) -> bool {
+        self.0.len() == 32
+            && self
+                .0
+                .bytes()
+                .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]

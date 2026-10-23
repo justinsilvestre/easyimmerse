@@ -14,11 +14,12 @@ pub struct LibraryItemPaths {
 }
 
 impl LibraryItemPaths {
-    /// The item ids come from the server, so they hold only hexadecimal digits and stay inside the directory.
-    pub fn new(uploads_dir: &Path, item_id: &LibraryItemId) -> Self {
-        Self {
+    /// The files of the item with the id, or None for an id not of the form the server makes.
+    /// The ids may come from a request path, and only a well-formed id is sure to stay inside the uploads directory.
+    pub fn new(uploads_dir: &Path, item_id: &LibraryItemId) -> Option<Self> {
+        item_id.is_well_formed().then(|| Self {
             dir: uploads_dir.join("library").join(&item_id.0),
-        }
+        })
     }
 
     /// The uploaded file, named after the extension of its original name so that its type can be told.
@@ -55,28 +56,34 @@ impl LibraryItemPaths {
 mod tests {
     use super::*;
 
+    const ID: &str = "0123456789abcdef0123456789abcdef";
+
     fn paths() -> LibraryItemPaths {
-        LibraryItemPaths::new(Path::new("uploads"), &LibraryItemId("abc".to_string()))
+        LibraryItemPaths::new(Path::new("uploads"), &LibraryItemId(ID.to_string())).unwrap()
+    }
+
+    fn in_item_dir(name: &str) -> PathBuf {
+        Path::new("uploads/library").join(ID).join(name)
+    }
+
+    #[test]
+    fn refuses_an_id_that_could_leave_the_uploads_directory() {
+        let id = LibraryItemId("../escape".to_string());
+        assert_eq!(LibraryItemPaths::new(Path::new("uploads"), &id), None);
     }
 
     #[test]
     fn names_the_source_after_the_uploaded_extension() {
-        assert_eq!(
-            paths().source("Film.MP4"),
-            Path::new("uploads/library/abc/source.mp4")
-        );
+        assert_eq!(paths().source("Film.MP4"), in_item_dir("source.mp4"));
     }
 
     #[test]
     fn names_a_source_without_an_extension_plainly() {
-        assert_eq!(
-            paths().source("film"),
-            Path::new("uploads/library/abc/source")
-        );
+        assert_eq!(paths().source("film"), in_item_dir("source"));
     }
 
     #[test]
     fn keeps_the_clip_of_a_segment_under_its_index() {
-        assert_eq!(paths().clip(3), Path::new("uploads/library/abc/cues/3.m4a"));
+        assert_eq!(paths().clip(3), in_item_dir("cues/3.m4a"));
     }
 }

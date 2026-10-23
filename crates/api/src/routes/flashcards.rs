@@ -4,8 +4,8 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId, NewFlashcard};
-use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::ProjectId;
+use easyimmerse_storage::{Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -61,7 +61,7 @@ pub async fn list_flashcards(
         (status = 400, description = "The id is not 32 lowercase hexadecimal digits", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such project, or no such media file in it", body = ApiError),
-        (status = 409, description = "The id belongs to a flashcard of another project", body = ApiError),
+        (status = 409, description = "The id belongs to a flashcard of another project, or `library_flashcard`: to a flashcard made from a library item", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -75,6 +75,13 @@ pub async fn create_flashcard(
             "the flashcard id {:?} is not 32 lowercase hexadecimal digits",
             new.id.0
         )));
+    }
+    let id = new.id.clone();
+    let is_taken_by_library = state
+        .with_storage(move |storage| is_library_flashcard(storage, &id))
+        .await?;
+    if is_taken_by_library {
+        return Err(library_flashcard());
     }
     let flashcard = state
         .with_storage(move |storage| storage.create_flashcard(&project_id, &new.id, &new.draft))
@@ -107,12 +114,8 @@ pub async fn update_flashcard(
     Json(draft): Json<FlashcardDraft>,
 ) -> Result<Json<Flashcard>, ApiFailure> {
     let flashcard = load_flashcard(&state, project_id, flashcard_id.clone()).await?;
-    if is_from_library(&state, &flashcard).await? {
-        return Err(ApiFailure::new(
-            StatusCode::CONFLICT,
-            "library_flashcard",
-            "a flashcard made from a library item cannot be changed",
-        ));
+    if flashcard.is_from_library {
+        return Err(library_flashcard());
     }
     let flashcard = state
         .with_storage(move |storage| storage.update_flashcard(&flashcard_id, &draft))
@@ -148,15 +151,21 @@ pub async fn delete_flashcard(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Whether the flashcard's media file comes from the library.
-async fn is_from_library(state: &AppState, flashcard: &Flashcard) -> Result<bool, ApiFailure> {
-    let Some(media_id) = flashcard.media_file_id.clone() else {
-        return Ok(false);
-    };
-    let media_file = state
-        .with_storage(move |storage| storage.get_media_file(&media_id))
-        .await?;
-    Ok(matches!(media_file.source, MediaFileSource::Library { .. }))
+/// Whether a flashcard with the id exists and was made from a library item.
+fn is_library_flashcard(storage: &Storage, id: &FlashcardId) -> Result<bool, StorageError> {
+    match storage.get_flashcard(id) {
+        Ok(flashcard) => Ok(flashcard.is_from_library),
+        Err(StorageError::FlashcardNotFound(_)) => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+fn library_flashcard() -> ApiFailure {
+    ApiFailure::new(
+        StatusCode::CONFLICT,
+        "library_flashcard",
+        "a flashcard made from a library item cannot be changed",
+    )
 }
 
 /// Loads a flashcard, answering 404 when it does not exist or belongs to another project.

@@ -13,7 +13,7 @@ use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to
 const SELECTED_COLUMNS: &str = "id, title, description, language, translation_language, kind, \
      difficulty, tags_json, file_name, duration_ms, cover_at_ms, status, failure, \
      created_at_ms, updated_at_ms, \
-     (SELECT COUNT(*) FROM library_segments s WHERE s.item_id = library_items.id)";
+     (SELECT COUNT(*) FROM library_segments s WHERE s.item_id = library_items.id), has_cover";
 
 /// Creates a draft item with no file and no text.
 pub fn create_library_item(
@@ -102,7 +102,7 @@ pub fn delete_library_item(conn: &Connection, id: &LibraryItemId) -> Result<(), 
     ensure_one_row_changed(deleted, id)
 }
 
-/// Records the name and size of the file uploaded for an item.
+/// Records the name and size of the file uploaded for an item. The cover of an earlier file no longer counts.
 pub fn set_library_file(
     conn: &Connection,
     id: &LibraryItemId,
@@ -110,7 +110,8 @@ pub fn set_library_file(
     size_bytes: u64,
 ) -> Result<LibraryItem, StorageError> {
     let updated = conn.execute(
-        "UPDATE library_items SET file_name = ?2, size_bytes = ?3, updated_at_ms = ?4 WHERE id = ?1",
+        "UPDATE library_items SET file_name = ?2, size_bytes = ?3, has_cover = 0, updated_at_ms = ?4 \
+         WHERE id = ?1",
         params![
             id.0,
             file_name,
@@ -135,6 +136,50 @@ pub fn set_library_status(
     let updated = conn.execute(
         "UPDATE library_items SET status = ?2, failure = ?3, updated_at_ms = ?4 WHERE id = ?1",
         params![id.0, status.as_str(), failure, to_stored_integer(now_ms())],
+    )?;
+    ensure_one_row_changed(updated, id)?;
+    get_library_item(conn, id)
+}
+
+/// Marks a draft or failed item as being published, and returns it.
+/// Returns None, changing nothing, when the item is already published or being published.
+pub fn begin_library_publish(
+    conn: &Connection,
+    id: &LibraryItemId,
+) -> Result<Option<LibraryItem>, StorageError> {
+    let updated = conn.execute(
+        "UPDATE library_items SET status = 'processing', failure = NULL, updated_at_ms = ?2 \
+         WHERE id = ?1 AND status IN ('draft', 'failed')",
+        params![id.0, to_stored_integer(now_ms())],
+    )?;
+    if updated == 0 {
+        ensure_library_item_exists(conn, id)?;
+        return Ok(None);
+    }
+    get_library_item(conn, id).map(Some)
+}
+
+/// Marks every item that was being published as failed with the message, and returns how many there were.
+/// The server calls it when it starts, since no publish outlives the process that ran it.
+pub fn fail_interrupted_library_publishes(
+    conn: &Connection,
+    message: &str,
+) -> Result<usize, StorageError> {
+    Ok(conn.execute(
+        "UPDATE library_items SET status = 'failed', failure = ?1, updated_at_ms = ?2 \
+         WHERE status = 'processing'",
+        params![message, to_stored_integer(now_ms())],
+    )?)
+}
+
+/// Records that a cover image was rendered for the item's current file.
+pub fn set_library_cover(
+    conn: &Connection,
+    id: &LibraryItemId,
+) -> Result<LibraryItem, StorageError> {
+    let updated = conn.execute(
+        "UPDATE library_items SET has_cover = 1, updated_at_ms = ?2 WHERE id = ?1",
+        params![id.0, to_stored_integer(now_ms())],
     )?;
     ensure_one_row_changed(updated, id)?;
     get_library_item(conn, id)
@@ -178,7 +223,6 @@ fn ensure_one_row_changed(changed: usize, id: &LibraryItemId) -> Result<(), Stor
     }
 }
 
-/// A video item has a cover once it is published, since the publish renders it.
 fn read_library_item(row: &Row) -> rusqlite::Result<LibraryItem> {
     let kind = parse_column(row, 5, LibraryItemKind::parse)?;
     let difficulty: Option<String> = row.get(6)?;
@@ -201,7 +245,7 @@ fn read_library_item(row: &Row) -> rusqlite::Result<LibraryItem> {
         file_name: row.get(8)?,
         duration_ms: read_optional_unsigned(row, 9)?,
         cover_at_ms: read_optional_unsigned(row, 10)?,
-        has_cover: kind == LibraryItemKind::Video && status == LibraryItemStatus::Published,
+        has_cover: row.get(16)?,
         segment_count: row.get(15)?,
         status,
         created_at_ms: read_unsigned(row, 13)?,
@@ -297,13 +341,64 @@ mod tests {
     }
 
     #[test]
-    fn a_published_video_has_a_cover() {
+    fn a_published_video_has_no_cover_until_one_is_rendered() {
         let storage = Storage::open_in_memory().unwrap();
         let item = storage.create_library_item(&draft("Film")).unwrap();
         let published = storage
             .set_library_status(&item.id, &LibraryItemStatus::Published)
             .unwrap();
-        assert!(published.has_cover);
+        assert!(!published.has_cover);
+    }
+
+    #[test]
+    fn records_a_rendered_cover() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        assert!(storage.set_library_cover(&item.id).unwrap().has_cover);
+    }
+
+    #[test]
+    fn a_new_file_drops_the_cover() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        storage.set_library_cover(&item.id).unwrap();
+        let updated = storage.set_library_file(&item.id, "film.mp4", 10).unwrap();
+        assert!(!updated.has_cover);
+    }
+
+    #[test]
+    fn begins_the_publish_of_a_draft() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        let begun = storage.begin_library_publish(&item.id).unwrap();
+        assert_eq!(
+            begun.map(|item| item.status),
+            Some(LibraryItemStatus::Processing)
+        );
+    }
+
+    #[test]
+    fn does_not_begin_a_second_publish() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        storage.begin_library_publish(&item.id).unwrap();
+        assert_eq!(storage.begin_library_publish(&item.id).unwrap(), None);
+    }
+
+    #[test]
+    fn fails_the_publishes_a_stop_interrupted() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        storage.begin_library_publish(&item.id).unwrap();
+        storage
+            .fail_interrupted_library_publishes("stopped")
+            .unwrap();
+        assert_eq!(
+            storage.get_library_item(&item.id).unwrap().status,
+            LibraryItemStatus::Failed {
+                message: "stopped".to_string()
+            }
+        );
     }
 
     #[test]

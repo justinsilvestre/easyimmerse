@@ -300,6 +300,16 @@ impl Storage {
         self.write(|conn| flashcards::create_flashcard(conn, project_id, id, draft))
     }
 
+    /// Saves a flashcard the server built from a library item, which cannot be changed afterwards.
+    pub fn create_library_flashcard(
+        &self,
+        project_id: &ProjectId,
+        id: &FlashcardId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.write(|conn| flashcards::create_library_flashcard(conn, project_id, id, draft))
+    }
+
     pub fn update_flashcard(
         &self,
         id: &FlashcardId,
@@ -1146,6 +1156,25 @@ impl Storage {
         status: &LibraryItemStatus,
     ) -> Result<LibraryItem, StorageError> {
         self.write(|conn| library_items::set_library_status(conn, id, status))
+    }
+
+    /// Marks a draft or failed library item as being published, and returns it.
+    /// Returns None, changing nothing, when the item is already published or being published.
+    pub fn begin_library_publish(
+        &self,
+        id: &LibraryItemId,
+    ) -> Result<Option<LibraryItem>, StorageError> {
+        self.write(|conn| library_items::begin_library_publish(conn, id))
+    }
+
+    /// Marks every library item that was being published as failed with the message, and returns how many there were.
+    pub fn fail_interrupted_library_publishes(&self, message: &str) -> Result<usize, StorageError> {
+        self.write(|conn| library_items::fail_interrupted_library_publishes(conn, message))
+    }
+
+    /// Records that a cover image was rendered for the library item's current file.
+    pub fn set_library_cover(&self, id: &LibraryItemId) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_cover(conn, id))
     }
 
     /// Records the length of a video or audio library item, as probed when it is published.

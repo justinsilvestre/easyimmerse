@@ -2535,6 +2535,8 @@ export interface components {
             id: components["schemas"]["FlashcardId"];
             /** @description The fields the card shows, in no particular order. */
             included_fields: components["schemas"]["FlashcardFieldKey"][];
+            /** @description Whether the server built the flashcard from a library item. Such a flashcard cannot be changed, only deleted. */
+            is_from_library: boolean;
             /** @description Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it. */
             is_suspended: boolean;
             media_file_id?: components["schemas"]["MediaFileId"] | null;
@@ -6004,7 +6006,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the kind of an item that is published or being published cannot change */
+            /** @description `item_published` or `item_processing`: the kind of an item that is published or being published cannot change, nor the cover time of an item being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6072,6 +6074,15 @@ export interface operations {
             };
             /** @description No such item */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_processing`: the item is being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7952,7 +7963,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The id belongs to a flashcard of another project */
+            /** @description The id belongs to a flashcard of another project, or `library_flashcard`: to a flashcard made from a library item */
             409: {
                 headers: {
                     [name: string]: unknown;

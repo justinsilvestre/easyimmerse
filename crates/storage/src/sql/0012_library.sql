@@ -14,6 +14,7 @@ CREATE TABLE library_items (
     size_bytes INTEGER,
     duration_ms INTEGER,               -- probed at publish, null for documents
     cover_at_ms INTEGER,               -- the video time of the cover frame
+    has_cover INTEGER NOT NULL DEFAULT 0, -- whether a cover image was rendered for the current file
     status TEXT NOT NULL CHECK (status IN ('draft', 'processing', 'published', 'failed')),
     failure TEXT,                      -- why the last publish failed
     created_at_ms INTEGER NOT NULL,

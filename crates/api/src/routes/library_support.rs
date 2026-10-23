@@ -9,6 +9,7 @@ use crate::auth::principal::Principal;
 use crate::library_paths::LibraryItemPaths;
 use crate::state::AppState;
 
+/// Loads an item whatever its status; callers check whether the principal may see it.
 pub async fn load_item(
     state: &AppState,
     item_id: &LibraryItemId,
@@ -88,7 +89,8 @@ pub fn item_processing() -> ApiFailure {
     )
 }
 
-/// The files of the item; 409 `uploads_unavailable` when the server has no uploads directory to keep them in.
+/// The files of the item; 409 `uploads_unavailable` when the server has no uploads directory to keep them in,
+/// and 404 for an id not of the form the server makes.
 pub fn item_paths(
     state: &AppState,
     item_id: &LibraryItemId,
@@ -100,7 +102,8 @@ pub fn item_paths(
             "this server has no uploads directory, so it keeps no library files",
         )
     })?;
-    Ok(LibraryItemPaths::new(&uploads.dir, item_id))
+    LibraryItemPaths::new(&uploads.dir, item_id)
+        .ok_or_else(|| not_found(format!("no library item has the id {:?}", item_id.0)))
 }
 
 /// The uploaded file of the item; 404 when none has been uploaded.

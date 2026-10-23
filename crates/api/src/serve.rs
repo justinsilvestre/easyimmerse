@@ -211,11 +211,25 @@ fn build_app_state(
         .as_deref()
         .map(PluginRegistry::scan)
         .unwrap_or_default();
+    fail_interrupted_library_publishes(&storage);
     let probes = open_probe_cache(ffmpeg_paths.clone());
     Ok(AppState::new(storage, config, probes, conversion)
         .with_plugins(plugins, media_dir)
         .with_ffmpeg_paths(ffmpeg_paths)
         .with_web_app_dir(existing_web_app_dir(options.web_app_dir)))
+}
+
+/// Marks the library items a stopped server was publishing as failed, so that their managers can publish them again.
+fn fail_interrupted_library_publishes(storage: &Storage) {
+    match storage.fail_interrupted_library_publishes("the server stopped during the publish") {
+        Ok(0) => {}
+        Ok(count) => {
+            tracing::warn!("{count} library publishes were interrupted and marked as failed")
+        }
+        Err(error) => {
+            tracing::warn!("interrupted library publishes could not be marked as failed: {error}")
+        }
+    }
 }
 
 fn existing_web_app_dir(web_app_dir: Option<PathBuf>) -> Option<PathBuf> {
