@@ -16,6 +16,7 @@ import type { FlashcardApp } from "./flashcardForm.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
+import { libraryFlashcardCommands } from "./libraryFlashcards.ts";
 import {
   isFlashcardSettled,
   settleFlashcardRequest,
@@ -33,7 +34,7 @@ type FlashcardCommandsApp = FlashcardApp & Pick<AppState, "notices">;
 
 /**
  * Returns the flashcard requests and notices an action asks for outside the form: flashcards from words saved at once
- * or held for their lookup, the outcomes of flashcard requests, and the failed saves' Retry, Open and Discard.
+ * or held for their lookup, the outcomes of flashcard requests, the failed saves' Retry, Open and Discard, and library flashcards.
  * The flashcards keep no state of their own.
  * Each request goes in its flashcard's scope with a time limit, under the first id free for its flashcard.
  */
@@ -47,6 +48,7 @@ export function flashcardCommands(
     ...answer(action, app),
     ...withdrawFormNotices(action, app),
     ...giveUpOpeningsAway(action, app),
+    ...libraryFlashcardCommands(action),
   ];
 }
 

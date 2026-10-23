@@ -136,8 +136,12 @@ export {
   isAwaitingLookup,
   saveStatusOf,
 } from "./flashcards/flashcardForm.ts";
-export { selectMediaFlashcards } from "./flashcards/flashcardsSelectors.ts";
+export {
+  selectIsLibraryFlashcard,
+  selectMediaFlashcards,
+} from "./flashcards/flashcardsSelectors.ts";
 export { isSameLanguage, primarySubtag } from "./flashcards/languageTags.ts";
+export type { LibraryFlashcardPlace } from "./flashcards/libraryFlashcards.ts";
 export type {
   DefinitionWriter,
   LookupFlashcardFields,
@@ -236,11 +240,34 @@ export {
   selectRoute,
   selectSettingsScrollTarget,
 } from "./route/routeSelectors.ts";
+export {
+  cachedLibraryItemIdOf,
+  cachedLibraryText,
+} from "./screen/cachedLibrary.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export { isPlayedByServer } from "./screen/isPlayedByServer.ts";
 export type { ItemSpan } from "./screen/itemSpan.ts";
+export {
+  type LibraryBrowseFilter,
+  selectLibraryBrowseFilter,
+} from "./screen/libraryBrowse/libraryBrowseFilter.ts";
+export { libraryItemsShown } from "./screen/libraryBrowse/libraryItemsShown.ts";
+export { libraryLanguagesOf } from "./screen/libraryBrowse/libraryLanguagesOf.ts";
+export { libraryTagsOf } from "./screen/libraryBrowse/libraryTagsOf.ts";
+export {
+  cuesOfLibraryText,
+  documentOfLibraryText,
+  libraryFlashcardPlaceOf,
+  librarySegmentAt,
+  librarySegmentOf,
+  libraryWordAt,
+} from "./screen/libraryText.ts";
+export {
+  libraryDictionaryId,
+  libraryLookupResponse,
+} from "./screen/lookup/libraryLookupResponse.ts";
 export {
   selectLookup,
   selectLookupCursor,

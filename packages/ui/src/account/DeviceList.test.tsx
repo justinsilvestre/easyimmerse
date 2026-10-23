@@ -19,6 +19,7 @@ const user: AccountUser = {
   role: "library_user",
   created_at_ms: 0,
   email_confirmed_at_ms: null,
+  manages_library: false,
 };
 
 const session = (

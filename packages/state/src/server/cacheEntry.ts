@@ -1,6 +1,9 @@
 import type {
   AnkiPendingDeletions,
   Document,
+  LibraryItem,
+  LibraryListing,
+  LibraryText,
   ListDictionariesResponse,
   ListProjectsResponse,
   MediaFile,
@@ -55,6 +58,9 @@ export type CachedQueries = {
   checkAnkiConnection: undefined;
   getReviewSummary: string;
   getSyncStatus: undefined;
+  listLibraryItems: undefined;
+  getLibraryItem: string;
+  getLibraryText: string;
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
@@ -66,6 +72,9 @@ export type CachedResponses = ServerResponses & {
   getSubtitleCues: TimedTextTrack;
   getReviewSummary: ReviewSummary;
   getSyncStatus: SyncStatus;
+  listLibraryItems: LibraryListing;
+  getLibraryItem: LibraryItem;
+  getLibraryText: LibraryText;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

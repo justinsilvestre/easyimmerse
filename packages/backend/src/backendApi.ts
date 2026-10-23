@@ -38,6 +38,14 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LibraryItem,
+  LibraryItemAdded,
+  LibraryItemDraft,
+  LibraryListing,
+  LibrarySegment,
+  LibrarySubtitles,
+  LibraryText,
+  LibraryWord,
   LinkRemoteRequest,
   ListDictionariesResponse,
   ListFlashcardsResponse,
@@ -52,6 +60,7 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
+  NewLibraryFlashcard,
   PairingCode,
   ParseTimedTextRequest,
   PlaybackMethodRequest,
@@ -70,6 +79,7 @@ import type {
   ReviewSummary,
   ServerAuthInfo,
   SessionList,
+  SetLibraryManager,
   SetUserRoleRequest,
   SourceStepRequest,
   SourceStepResponse,
@@ -110,6 +120,11 @@ import {
   isQuerySubscribed,
   type SubscriptionActions,
 } from "./isQuerySubscribed.ts";
+import {
+  type LibraryFileUploadArgs,
+  uploadLibraryFile,
+} from "./libraryFileUpload.ts";
+import { pollWhileProcessing } from "./libraryItemPolling.ts";
 import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
@@ -212,6 +227,22 @@ type ReviewHoldArgs = {
   flashcardId: string;
   hold: ReviewHoldKind;
 };
+
+type LibraryItemArgs = { itemId: string; draft: LibraryItemDraft };
+
+type AddLibraryItemArgs = { itemId: string; projectId: string | null };
+
+type LibraryFlashcardArgs = MediaFileArgs & { card: NewLibraryFlashcard };
+
+type LibrarySubtitlesArgs = { itemId: string; subtitles: LibrarySubtitles };
+
+type LibraryWordsArgs = {
+  itemId: string;
+  segmentIndex: number;
+  words: readonly LibraryWord[];
+};
+
+type LibraryManagerArgs = { userId: string; managesLibrary: boolean };
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -358,6 +389,66 @@ const mediaFileAddedTags = (projectId: string) =>
     "Projects",
   ] as const;
 
+const libraryItemPath = (itemId: string) =>
+  `/library/items/${encodeURIComponent(itemId)}`;
+
+/** The tag of the library's listing, which every change to an item makes stale. */
+const libraryListTag = { type: "Library", id: "list" } as const;
+
+const libraryItemTag = (itemId: string) =>
+  ({ type: "Library", id: itemId }) as const;
+
+const libraryTextTag = (itemId: string) =>
+  ({ type: "Library", id: `${itemId}/text` }) as const;
+
+/** Puts the item a change answered with into its cache entry at once, as the library management screen shows it. */
+async function cacheLibraryItem(
+  dispatch: (action: unknown) => unknown,
+  queryFulfilled: Promise<{ data: LibraryItem }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  dispatch(
+    backendApi.util.upsertQueryData(
+      "getLibraryItem",
+      result.data.id,
+      result.data,
+    ),
+  );
+}
+
+/** Puts the text a change answered with into the item's cache entry at once. */
+async function cacheLibraryText(
+  dispatch: (action: unknown) => unknown,
+  itemId: string,
+  queryFulfilled: Promise<{ data: LibraryText }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  dispatch(
+    backendApi.util.upsertQueryData("getLibraryText", itemId, result.data),
+  );
+}
+
+/** Puts the segment whose words a change set into the item's cached text, in place of the segment before it. */
+async function cacheLibrarySegment(
+  dispatch: (action: unknown) => unknown,
+  itemId: string,
+  queryFulfilled: Promise<{ data: LibrarySegment }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  const saved = result.data;
+  dispatch(
+    backendApi.util.updateQueryData("getLibraryText", itemId, (text) => {
+      const index = text.segments.findIndex(
+        (each) => each.index === saved.index,
+      );
+      if (index >= 0) text.segments[index] = saved;
+    }),
+  );
+}
+
 /** The path under which the built-in server forwards account routes to the remote it is linked to. */
 const linkedRemotePrefix = "/sync/remote";
 
@@ -426,6 +517,7 @@ export const backendApi = createApi({
     "SyncStatus",
     "SyncConflicts",
     "StorageStatus",
+    "Library",
   ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
@@ -1214,6 +1306,167 @@ export const backendApi = createApi({
         path: accountPath(via, "/auth/server"),
       }),
     }),
+    /** The library's items: the published ones, or every item for a library manager. */
+    listLibraryItems: build.query<LibraryListing, void>({
+      query: () => ({ method: "GET", path: "/library/items" }),
+      providesTags: (result) => [
+        libraryListTag,
+        ...(result?.items ?? []).map(({ id }) => libraryItemTag(id)),
+      ],
+    }),
+    /** One item of the library, fetched again every two seconds while it is being prepared for publishing. */
+    getLibraryItem: build.query<LibraryItem, string>({
+      query: (itemId) => ({ method: "GET", path: libraryItemPath(itemId) }),
+      providesTags: (_result, _error, itemId) => [libraryItemTag(itemId)],
+      async onCacheEntryAdded(
+        itemId,
+        { dispatch, getCacheEntry, cacheEntryRemoved },
+      ) {
+        await pollWhileProcessing(
+          () => getCacheEntry().data?.status.kind === "processing",
+          () =>
+            dispatch(
+              backendApi.endpoints.getLibraryItem.initiate(itemId, {
+                subscribe: false,
+                forceRefetch: true,
+              }),
+            ),
+          cacheEntryRemoved,
+        );
+      },
+    }),
+    /** The subtitle cues or paragraphs of a library item, with the words the library manager set. */
+    getLibraryText: build.query<LibraryText, string>({
+      query: (itemId) => ({
+        method: "GET",
+        path: `${libraryItemPath(itemId)}/text`,
+      }),
+      providesTags: (_result, _error, itemId) => [libraryTextTag(itemId)],
+    }),
+    /** Adds a library item to a project, or to a project made for it when `projectId` is null. Adding it again returns the same media file. */
+    addLibraryItem: build.mutation<LibraryItemAdded, AddLibraryItemArgs>({
+      query: ({ itemId, projectId }) => ({
+        method: "POST",
+        path: `${libraryItemPath(itemId)}/add`,
+        body: { kind: "json", value: { project_id: projectId } },
+      }),
+      invalidatesTags: (result) =>
+        result ? mediaFileAddedTags(result.project_id) : [],
+    }),
+    /** Makes a flashcard from a word or a segment of a library media file, which the server fills from the item's text. */
+    createLibraryFlashcard: build.mutation<Flashcard, LibraryFlashcardArgs>({
+      query: ({ card, ...file }) => ({
+        method: "POST",
+        path: `${mediaFilePath(file)}/library-flashcards`,
+        body: { kind: "json", value: card },
+      }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
+      },
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
+        { type: "Projects", id: projectId },
+        "Projects",
+        { type: "Review", id: projectId },
+      ],
+    }),
+    /** Creates a draft item of the library. */
+    createLibraryItem: build.mutation<LibraryItem, LibraryItemDraft>({
+      query: (draft) => ({
+        method: "POST",
+        path: "/library/items",
+        body: { kind: "json", value: draft },
+      }),
+      async onQueryStarted(_draft, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Changes the title, description, languages, kind, difficulty, tags or cover time of a library item. */
+    updateLibraryItem: build.mutation<LibraryItem, LibraryItemArgs>({
+      query: ({ itemId, draft }) => ({
+        method: "PUT",
+        path: libraryItemPath(itemId),
+        body: { kind: "json", value: draft },
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    deleteLibraryItem: build.mutation<void, string>({
+      query: (itemId) => ({ method: "DELETE", path: libraryItemPath(itemId) }),
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Uploads the media or text file of a library item, which a browser holds. A text file's paragraphs become the item's text. */
+    uploadLibraryFile: build.mutation<LibraryItem, LibraryFileUploadArgs>({
+      queryFn: (args, api, _options, baseQuery) =>
+        uploadLibraryFile(args, api.extra as BackendThunkExtra, baseQuery),
+      invalidatesTags: (_result, _error, { itemId }) => [
+        libraryListTag,
+        libraryItemTag(itemId),
+        libraryTextTag(itemId),
+      ],
+    }),
+    /** Replaces a video or audio item's segments with the cues of its subtitles, each paired with the translation cue that overlaps it most. */
+    putLibrarySubtitles: build.mutation<LibraryText, LibrarySubtitlesArgs>({
+      query: ({ itemId, subtitles }) => ({
+        method: "PUT",
+        path: `${libraryItemPath(itemId)}/subtitles`,
+        body: { kind: "json", value: subtitles },
+      }),
+      async onQueryStarted({ itemId }, { dispatch, queryFulfilled }) {
+        await cacheLibraryText(dispatch, itemId, queryFulfilled);
+      },
+      invalidatesTags: (_result, _error, { itemId }) => [
+        libraryListTag,
+        libraryItemTag(itemId),
+      ],
+    }),
+    /** Fills the segments that have no words yet with words from the library manager's own dictionaries. */
+    proposeLibraryWords: build.mutation<LibraryText, string>({
+      query: (itemId) => ({
+        method: "POST",
+        path: `${libraryItemPath(itemId)}/proposed-words`,
+      }),
+      async onQueryStarted(itemId, { dispatch, queryFulfilled }) {
+        await cacheLibraryText(dispatch, itemId, queryFulfilled);
+      },
+    }),
+    /** Sets the words of one segment, with the entry of each. */
+    putLibraryWords: build.mutation<LibrarySegment, LibraryWordsArgs>({
+      query: ({ itemId, segmentIndex, words }) => ({
+        method: "PUT",
+        path: `${libraryItemPath(itemId)}/segments/${segmentIndex}/words`,
+        body: { kind: "json", value: words },
+      }),
+      async onQueryStarted({ itemId }, { dispatch, queryFulfilled }) {
+        await cacheLibrarySegment(dispatch, itemId, queryFulfilled);
+      },
+    }),
+    /** Starts preparing a library item's clips, screenshots and cover. The item shows as processing until they are ready. */
+    publishLibraryItem: build.mutation<LibraryItem, string>({
+      query: (itemId) => ({
+        method: "POST",
+        path: `${libraryItemPath(itemId)}/publish`,
+      }),
+      async onQueryStarted(_itemId, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Hides a library item from learners again, as a draft. */
+    unpublishLibraryItem: build.mutation<LibraryItem, string>({
+      query: (itemId) => ({
+        method: "POST",
+        path: `${libraryItemPath(itemId)}/unpublish`,
+      }),
+      async onQueryStarted(_itemId, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
     /** Who the token used on the server that `via` names belongs to: the owner of the machine the server runs on, or an account. */
     getCurrentPrincipal: build.query<CurrentPrincipal, AccountVia>({
       query: (via) => ({ method: "GET", path: accountPath(via, "/auth/me") }),
@@ -1243,6 +1496,21 @@ export const backendApi = createApi({
         body: { kind: "json", value: body },
       }),
       // The account may be the app's own, whose role the account settings screen shows.
+      invalidatesTags: ["Users", "CurrentPrincipal"],
+    }),
+    /** Lets an account manage the library, or stops it, as only an administrator may. */
+    setLibraryManager: build.mutation<AccountUser, LibraryManagerArgs>({
+      query: ({ userId, managesLibrary }) => ({
+        method: "PUT",
+        path: `/users/${encodeURIComponent(userId)}/library-manager`,
+        body: {
+          kind: "json",
+          value: {
+            manages_library: managesLibrary,
+          } satisfies SetLibraryManager,
+        },
+      }),
+      // The account may be the app's own, whose "Manage library" button depends on it.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
     deleteUser: build.mutation<void, UserArgs>({
@@ -1391,6 +1659,20 @@ export const {
   useListReviewCountsQuery,
   useCurrentPairingCodeQuery,
   useIssuePairingCodeMutation,
+  useListLibraryItemsQuery,
+  useGetLibraryItemQuery,
+  useGetLibraryTextQuery,
+  useAddLibraryItemMutation,
+  useCreateLibraryItemMutation,
+  useUpdateLibraryItemMutation,
+  useDeleteLibraryItemMutation,
+  useUploadLibraryFileMutation,
+  usePutLibrarySubtitlesMutation,
+  useProposeLibraryWordsMutation,
+  usePutLibraryWordsMutation,
+  usePublishLibraryItemMutation,
+  useUnpublishLibraryItemMutation,
+  useSetLibraryManagerMutation,
 } = backendApi;
 
 type BackendState = Parameters<

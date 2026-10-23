@@ -16,6 +16,7 @@ const session = {
     role: "library_user",
     created_at_ms: 0,
     email_confirmed_at_ms: 0,
+    manages_library: false,
   },
 } as const;
 

@@ -3,6 +3,7 @@ import type { FailedRequest } from "../operations/failedRequests.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
 import type { SaveUndo } from "./flashcardSaves.ts";
+import type { LibraryFlashcardPlace } from "./libraryFlashcards.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
 
 /** Whether a flashcard is saved at once, or opened in the flashcard-editing form. */
@@ -15,6 +16,17 @@ export const flashcardActions = {
     flashcard: NewFlashcard,
     destination: FlashcardDestination,
   ) => ({ type: "flashcardStarted", flashcard, destination }) as const,
+  /**
+   * The user asked for a flashcard from a word or a segment of a library media file, by a double-click or a key.
+   * It is saved at once, filled by the server from the library item's text.
+   */
+  libraryFlashcardRequested: (place: LibraryFlashcardPlace) =>
+    ({ type: "libraryFlashcardRequested", place }) as const,
+  /** A library flashcard that was asked for got its id, under which it is now sent. */
+  libraryFlashcardStarted: (
+    place: LibraryFlashcardPlace,
+    flashcardId: string,
+  ) => ({ type: "libraryFlashcardStarted", place, flashcardId }) as const,
   /**
    * The user opened a flashcard from its waveform segment or its cue's mark.
    * `listed` is the cached record, or null for a failed save that was never saved, which only the store holds.

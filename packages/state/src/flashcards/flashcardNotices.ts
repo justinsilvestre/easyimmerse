@@ -108,6 +108,13 @@ export const flashcardNotices = {
     buttons: [],
     isTransient: false,
   }),
+  /** The server did not make a flashcard from a library item. */
+  libraryFlashcardFailed: (): NoticeContent => ({
+    tone: "danger",
+    message: "Couldn't save the flashcard. Try again.",
+    buttons: [],
+    isTransient: false,
+  }),
   deleteFailed: (): NoticeContent =>
     transientNotice("danger", "The flashcard could not be deleted"),
 };

@@ -1,5 +1,9 @@
 import type {
   AddAlignmentRequest,
+  LibraryItem,
+  LibraryItemDraft,
+  LibraryItemStatus,
+  LibraryText,
   LookupResponse,
   MediaFile,
   PlaybackMethodRequest,
@@ -1303,5 +1307,303 @@ describe("the storage endpoints", () => {
       backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
     );
     await vi.waitFor(() => expect(listings()).toBe(2));
+  });
+});
+
+const parkItem = (status: LibraryItemStatus): LibraryItem => ({
+  id: "i1",
+  title: "Im Park",
+  description: "",
+  language: "de",
+  translation_language: "en",
+  kind: "video",
+  difficulty: null,
+  tags: [],
+  file_name: "park.mp4",
+  duration_ms: null,
+  cover_at_ms: null,
+  has_cover: false,
+  segment_count: 1,
+  status,
+  created_at_ms: 0,
+  updated_at_ms: 0,
+});
+
+const parkDraft = {
+  title: "Im Park",
+  description: "",
+  language: "de",
+  translation_language: "en",
+  kind: "video",
+  difficulty: null,
+  tags: [],
+  cover_at_ms: null,
+} satisfies LibraryItemDraft;
+
+const hundWord = {
+  start: 4,
+  end: 8,
+  entry: {
+    term: "Hund",
+    reading: null,
+    l1_definition: "dog",
+    l2_definition: "",
+  },
+};
+
+const parkText: LibraryText = {
+  segments: [
+    {
+      index: 0,
+      chapter_index: null,
+      start_ms: 0,
+      end_ms: 1000,
+      screenshot_at_ms: null,
+      text: "Der Hund.",
+      translation: null,
+      words: [],
+    },
+  ],
+  chapter_titles: [],
+};
+
+/** The requests a library endpoint sends when the client answers every request alike. */
+async function libraryRequests(start: unknown) {
+  const client = createRecordingClient();
+  const { dispatch } = createStore(client);
+  await (dispatch as (action: unknown) => unknown)(start);
+  return client.requests;
+}
+
+/** Counts the fetches of item i1 within `ms`, while the server answers with each status in turn and then with the last one. */
+async function itemFetchCount(statuses: LibraryItemStatus[], ms: number) {
+  vi.useFakeTimers();
+  let count = 0;
+  const client: BackendClient = {
+    send: async <T>() => {
+      const status = statuses[Math.min(count, statuses.length - 1)];
+      count += 1;
+      return { data: parkItem(status ?? { kind: "draft" }) as T };
+    },
+  };
+  createStore(client).dispatch(
+    backendApi.endpoints.getLibraryItem.initiate("i1"),
+  );
+  await vi.advanceTimersByTimeAsync(ms);
+  vi.useRealTimers();
+  return count;
+}
+
+/** The cached text of item i1 once the words of its first segment are saved. */
+async function textAfterSavingWords() {
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) =>
+      request.method === "GET"
+        ? { data: parkText as T }
+        : { data: { ...parkText.segments[0], words: [hundWord] } as T },
+  };
+  const store = createStore(client);
+  await store.dispatch(backendApi.endpoints.getLibraryText.initiate("i1"));
+  await store.dispatch(
+    backendApi.endpoints.putLibraryWords.initiate({
+      itemId: "i1",
+      segmentIndex: 0,
+      words: [hundWord],
+    }),
+  );
+  return backendApi.endpoints.getLibraryText.select("i1")(store.getState())
+    .data;
+}
+
+describe("the library endpoints", () => {
+  it("send GET /library/items for listLibraryItems", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.listLibraryItems.initiate()),
+    ).toEqual([{ method: "GET", path: "/library/items" }]);
+  });
+
+  it("send GET /library/items/{item_id} for getLibraryItem", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.getLibraryItem.initiate("i1")),
+    ).toEqual([{ method: "GET", path: "/library/items/i1" }]);
+  });
+
+  it("send GET .../text for getLibraryText", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.getLibraryText.initiate("i1")),
+    ).toEqual([{ method: "GET", path: "/library/items/i1/text" }]);
+  });
+
+  it("post the project for addLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.addLibraryItem.initiate({
+          itemId: "i1",
+          projectId: null,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items/i1/add",
+        body: { kind: "json", value: { project_id: null } },
+      },
+    ]);
+  });
+
+  it("post the segment and word for createLibraryFlashcard", async () => {
+    const card = { id: "f1", segment_index: 0, word_start: 4 };
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.createLibraryFlashcard.initiate({
+          ...mediaArgs,
+          card,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/projects/p1/media/m1/library-flashcards",
+        body: { kind: "json", value: card },
+      },
+    ]);
+  });
+
+  it("post the draft for createLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.createLibraryItem.initiate(parkDraft),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items",
+        body: { kind: "json", value: parkDraft },
+      },
+    ]);
+  });
+
+  it("put the draft for updateLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.updateLibraryItem.initiate({
+          itemId: "i1",
+          draft: parkDraft,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1",
+        body: { kind: "json", value: parkDraft },
+      },
+    ]);
+  });
+
+  it("send DELETE /library/items/{item_id} for deleteLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.deleteLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "DELETE", path: "/library/items/i1" }]);
+  });
+
+  it("put the subtitle texts for putLibrarySubtitles", async () => {
+    const subtitles = {
+      target_text: "WEBVTT",
+      translation_text: null,
+      format: null,
+    };
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.putLibrarySubtitles.initiate({
+          itemId: "i1",
+          subtitles,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/subtitles",
+        body: { kind: "json", value: subtitles },
+      },
+    ]);
+  });
+
+  it("send POST .../proposed-words for proposeLibraryWords", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.proposeLibraryWords.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/proposed-words" }]);
+  });
+
+  it("put the words of a segment for putLibraryWords", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.putLibraryWords.initiate({
+          itemId: "i1",
+          segmentIndex: 3,
+          words: [hundWord],
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/segments/3/words",
+        body: { kind: "json", value: [hundWord] },
+      },
+    ]);
+  });
+
+  it("send POST .../publish for publishLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.publishLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/publish" }]);
+  });
+
+  it("send POST .../unpublish for unpublishLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.unpublishLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/unpublish" }]);
+  });
+
+  it("put the flag for setLibraryManager", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.setLibraryManager.initiate({
+          userId: "u1",
+          managesLibrary: true,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/users/u1/library-manager",
+        body: { kind: "json", value: { manages_library: true } },
+      },
+    ]);
+  });
+
+  it("fetch an item being prepared again every two seconds until it is published", async () => {
+    const processing = { kind: "processing" } as const;
+    const published = { kind: "published" } as const;
+    expect(
+      await itemFetchCount([processing, processing, published], 7000),
+    ).toBe(3);
+  });
+
+  it("fetch a published item only once", async () => {
+    expect(await itemFetchCount([{ kind: "published" }], 7000)).toBe(1);
+  });
+
+  it("put the saved segment into the item's cached text", async () => {
+    expect((await textAfterSavingWords())?.segments[0]?.words).toEqual([
+      hundWord,
+    ]);
   });
 });

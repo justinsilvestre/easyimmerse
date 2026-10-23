@@ -184,6 +184,11 @@ export const requestEndpoints = {
           { projectId, flashcardId, draft },
           { track: false },
         ),
+  createLibraryFlashcard: ({ projectId, mediaFileId, flashcard }) =>
+    backendApi.endpoints.createLibraryFlashcard.initiate(
+      { projectId, mediaFileId, card: flashcard },
+      { track: false },
+    ),
   deleteFlashcard: ({ projectId, flashcardId }) =>
     backendApi.endpoints.deleteFlashcard.initiate(
       { projectId, flashcardId },

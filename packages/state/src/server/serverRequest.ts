@@ -22,6 +22,7 @@ import type {
   LookupResponse,
   MediaFile,
   MediaSourceJob,
+  NewLibraryFlashcard,
   ParseTimedTextRequest,
   PlaybackMethodRequest,
   PlaybackMethodResponse,
@@ -148,6 +149,13 @@ export type ServerRequest =
       draft: FlashcardDraft;
       isNew: boolean;
       purpose: SavePurpose;
+    }
+  /** Makes a flashcard from a word or a segment of a library media file, which the server fills from the library item's text. */
+  | {
+      kind: "createLibraryFlashcard";
+      projectId: string;
+      mediaFileId: string;
+      flashcard: NewLibraryFlashcard;
     }
   /** Deletes a flashcard. `purpose` comes back with the outcome and is not sent. */
   | {
@@ -320,6 +328,7 @@ export type ServerResponses = {
   setSubtitleSelection: void;
   setTranslationDocument: MediaFile;
   saveFlashcard: Flashcard;
+  createLibraryFlashcard: Flashcard;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;

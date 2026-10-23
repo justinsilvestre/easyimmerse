@@ -23,6 +23,8 @@ import type { ReviewAction } from "../review/reviewActions.ts";
 import { reviewActions } from "../review/reviewActions.ts";
 import type { RouteAction } from "../route/routeActions.ts";
 import { routeActions } from "../route/routeActions.ts";
+import type { LibraryBrowseAction } from "../screen/libraryBrowse/libraryBrowseActions.ts";
+import { libraryBrowseActions } from "../screen/libraryBrowse/libraryBrowseActions.ts";
 import type { LookupAction } from "../screen/lookup/lookupActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
 import type { ReaderScreenAction } from "../screen/readerScreen/readerScreenActions.ts";
@@ -46,6 +48,7 @@ const featureActionCreators = [
   screenActions,
   settingsActions,
   lookupActions,
+  libraryBrowseActions,
   readerScreenActions,
   preferencesActions,
   storedPlacesActions,
@@ -86,6 +89,7 @@ export type AppAction =
   | ScreenAction
   | SettingsAction
   | LookupAction
+  | LibraryBrowseAction
   | ReaderScreenAction
   | PreferencesAction
   | StoredPlacesAction

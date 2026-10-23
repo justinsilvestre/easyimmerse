@@ -10,6 +10,10 @@ import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { ItemSpan } from "./itemSpan.ts";
+import {
+  initialLibraryBrowseFilter,
+  type LibraryBrowseFilter,
+} from "./libraryBrowse/libraryBrowseFilter.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
 import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
@@ -68,6 +72,9 @@ export type MainScreenState =
   | { kind: "home" }
   | { kind: "newProject" }
   | { kind: "projectSettings" }
+  | { kind: "library" }
+  | { kind: "libraryItem" }
+  | { kind: "libraryEdit" }
   | OfflineScreenState
   | ProjectScreenState
   | ReviewScreenState
@@ -77,6 +84,8 @@ export type MainScreenState =
 export type ScreenState = {
   /** The main screen's own state. Replaced when the route's main screen changes. */
   main: MainScreenState;
+  /** Which items the library screen shows, kept while the app runs so that leaving the library and coming back keeps it. */
+  libraryBrowse: LibraryBrowseFilter;
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
   settings: {
     /** How the last clearing of the media cache, or a failed change of its size, went, while the general page is on top. */
@@ -115,6 +124,9 @@ export function initialMainScreen(
     case "home":
     case "newProject":
     case "projectSettings":
+    case "library":
+    case "libraryItem":
+    case "libraryEdit":
       return { kind: route.screen };
     case "offline":
       return { kind: "offline", cues: [], hasFailed: false };
@@ -152,6 +164,7 @@ export function initialMainScreen(
 /** The screens when the app starts, on the home screen. */
 export const initialScreen: ScreenState = {
   main: { kind: "home" },
+  libraryBrowse: initialLibraryBrowseFilter,
   settings: null,
   dialog: null,
 };
