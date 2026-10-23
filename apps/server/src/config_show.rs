@@ -92,10 +92,7 @@ fn describe_settings(settings: &ServeSettings, file: &ServerFileConfig) -> Vec<S
         format!("public_url = {}", optional(&settings.public_url)),
         format!("mail_to_stderr = {}", settings.mail_to_stderr),
         format!("desktop.autostart = {}", file.should_autostart()),
-        format!(
-            "desktop.device_name = {}",
-            optional(&file.device_name())
-        ),
+        format!("desktop.device_name = {}", optional(&file.device_name())),
     ]
 }
 

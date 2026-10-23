@@ -153,7 +153,10 @@ pub fn file_text_with(
         ("api_only", settings.api_only.to_string()),
         ("expected_hosts", settings.expected_hosts.join(",")),
         ("desktop.autostart", settings.autostart.to_string()),
-        ("desktop.device_name", settings.device_name.trim().to_string()),
+        (
+            "desktop.device_name",
+            settings.device_name.trim().to_string(),
+        ),
     ];
     let mut updated = text.to_string();
     for (key, value) in values {
