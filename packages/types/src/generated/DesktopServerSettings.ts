@@ -30,6 +30,6 @@ ffmpeg_dir: string | null,
  */
 expected_hosts: Array<string>, 
 /**
- * The name paired devices show for this computer, such as `Justin's MacBook Pro`.
+ * The name paired devices show for this computer, such as `X's MacBook Pro`.
  */
 device_name: string, };

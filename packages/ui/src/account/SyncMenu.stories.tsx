@@ -228,7 +228,7 @@ export const LoggedInToServer: Story = {
 export const PairedWithDesktop: Story = {
   parameters: {
     appStore: {
-      client: pairedDesktop(false, "Justin's MacBook Pro"),
+      client: pairedDesktop(false, "X's MacBook Pro"),
       server: lanServer,
     },
   },

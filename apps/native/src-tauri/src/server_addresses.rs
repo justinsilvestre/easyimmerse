@@ -24,7 +24,7 @@ pub fn host_name() -> Option<String> {
     (!name.is_empty()).then(|| name.to_lowercase())
 }
 
-/// The machine's host name made readable, as paired devices show it by default, such as `Justins MacBook Pro`.
+/// The machine's host name made readable, as paired devices show it by default, such as `Xs MacBook Pro`.
 pub fn default_device_name() -> Option<String> {
     let name = gethostname::gethostname().into_string().ok()?;
     let name = device_name_from_host_name(&name);

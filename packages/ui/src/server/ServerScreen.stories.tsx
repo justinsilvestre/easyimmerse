@@ -18,7 +18,7 @@ const settings: DesktopServerSettings = {
   autostart: false,
   ffmpeg_dir: null,
   expected_hosts: [],
-  device_name: "Justin's MacBook Pro",
+  device_name: "X's MacBook Pro",
 };
 
 const stopped: DesktopServerStatus = {

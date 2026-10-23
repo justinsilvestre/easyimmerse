@@ -3,7 +3,7 @@ import { fn } from "storybook/test";
 import { DesktopPairingPanel } from "./DesktopPairingPanel.tsx";
 
 const url = "http://192.168.1.5:8787";
-const deviceName = "Justin's MacBook Pro";
+const deviceName = "X's MacBook Pro";
 
 const issued = {
   kind: "issued",
