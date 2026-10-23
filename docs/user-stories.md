@@ -888,7 +888,7 @@ As a user:
 - when I click the Sync button:
   - [ ] I see where my work is saved and whether it is backed up, e.g. "Saved only on this computer" or "Backed up to the easyImmerse cloud 2 minutes ago"
 - when I click the Sync button while paired with a desktop app:
-  - [x] I see the name of the desktop app's computer, e.g. "Paired with Justin's MacBook Pro"
+  - [x] I see the name of the desktop app's computer, e.g. "Paired with X's MacBook Pro"
 - when I click the Sync button while my work can't be backed up:
   - [ ] I see what went wrong
   - [ ] I see a button to fix it, e.g. "Try again" or "Log in again"
@@ -1083,7 +1083,7 @@ As a desktop app user:
   - [x] I see whether the server is stopped, starting, running, or has failed
   - [x] I can start the server with a button
   - [x] I can stop the server with a button
-  - [x] I can set the name that paired devices show for this computer in the "Device name" field, which starts as the computer's own name, e.g. "Justins MacBook Pro"
+  - [x] I can set the name that paired devices show for this computer in the "Device name" field, which starts as the computer's own name, e.g. "Xs MacBook Pro"
   - [x] I can set the IP address and port the server listens on, such as 0.0.0.0:8787, in the "Address and port" field
   - [x] I can set up authentication for the server, by switching "Authentication" between "Launch token only" and "Accounts"
   - [x] I can choose whether the server serves the complete web app or only the API, by switching "What the server serves" between those two options
