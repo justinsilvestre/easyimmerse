@@ -33,7 +33,9 @@ pub fn quota_of(uploads: &UploadsConfig, principal: &Principal) -> Option<u64> {
 pub fn copy_file_name(media_file: &MediaFile) -> String {
     let original = match &media_file.source {
         MediaFileSource::Path { path } => path.as_str(),
-        MediaFileSource::BrowserFile { .. } => media_file.name.as_str(),
+        MediaFileSource::BrowserFile { .. } | MediaFileSource::Library { .. } => {
+            media_file.name.as_str()
+        }
     };
     let random = hex::encode(rand::random::<[u8; 8]>());
     let id = plain_part_of(&media_file.id.0);
@@ -54,7 +56,8 @@ fn plain_part_of(id: &str) -> String {
         .collect()
 }
 
-fn extension_of(name: &str) -> Option<String> {
+/// The lowercased extension of a file name, when it is short and plain enough to keep in a file name of the server's own.
+pub fn extension_of(name: &str) -> Option<String> {
     let extension = Path::new(name).extension()?.to_str()?;
     let is_plain = extension.len() <= 8 && extension.chars().all(|c| c.is_ascii_alphanumeric());
     is_plain.then(|| extension.to_ascii_lowercase())
@@ -115,6 +118,7 @@ mod tests {
         Principal::Account {
             user_id: "u".to_string(),
             role,
+            manages_library: false,
             session_id: "s".to_string(),
         }
     }

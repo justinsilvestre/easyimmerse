@@ -10,7 +10,9 @@ use easyimmerse_core::subtitle_track::{
     SubtitleTracksResponse,
 };
 use easyimmerse_core::text_source::TextSource;
-use easyimmerse_core::timed_text::{TimedTextTrack, detect_format, parse_timed_text};
+use easyimmerse_core::timed_text::{
+    TimedTextFormat, TimedTextTrack, detect_format, parse_timed_text,
+};
 use easyimmerse_storage::NewSubtitleTrack;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
@@ -97,11 +99,10 @@ pub async fn store_subtitle_track(
 ) -> Result<SubtitleTrack, ApiFailure> {
     let source = resolve_text_source(state, principal, request.source).await?;
     let text = read_text(state, principal, &source).await?;
-    let format = request.format.unwrap_or_else(|| detect_format(&text));
-    let parsed = parse_timed_text(&text, Some(format))?;
+    let parsed = parse_subtitle_text(&text, request.format)?;
     let new_track = NewSubtitleTrack {
         name: request.name,
-        format,
+        format: parsed.format,
         source,
         sample: parsed.cues.first().map(|cue| cue.text.clone()),
     };
@@ -117,6 +118,15 @@ pub async fn store_subtitle_track(
             Ok(track)
         })
         .await
+}
+
+/// Parses subtitle text in the given format, or in the format detected from the text when none is given.
+pub fn parse_subtitle_text(
+    text: &str,
+    format: Option<TimedTextFormat>,
+) -> Result<TimedTextTrack, ApiFailure> {
+    let format = format.unwrap_or_else(|| detect_format(text));
+    Ok(parse_timed_text(text, Some(format))?)
 }
 
 #[utoipa::path(

@@ -529,6 +529,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/library/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the published items, or every item for a library manager, by title. */
+        get: operations["listLibraryItems"];
+        put?: never;
+        /** Creates a draft item with no file and no text. */
+        post: operations["createLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLibraryItem"];
+        /**
+         * Changes an item's metadata in any status, except its kind once it is published.
+         *     Changing the cover time of a published video item renders its cover again.
+         */
+        put: operations["updateLibraryItem"];
+        post?: never;
+        /** Deletes an item with its text and files. Learners' media files of the item stay, but can no longer be played. */
+        delete: operations["deleteLibraryItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adds a published item to one of the principal's projects, or to a new project for the item's languages
+         *     named after its language. A project that already has the item keeps its media file, which is returned.
+         */
+        post: operations["addLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves the cover of a published video item, a frame of the video. */
+        get: operations["getLibraryCover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves the item's file with range requests, for the manager's preview. */
+        get: operations["getLibraryFile"];
+        /**
+         * Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.
+         *     A document item's file is parsed at once into one segment per paragraph, which replace the item's text.
+         */
+        put: operations["uploadLibraryFile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/proposed-words": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Divides the segments that have no words yet into words, by the longest match at each place in the manager's own dictionaries.
+         *     Each word takes the first entry of its best result.
+         */
+        post: operations["proposeLibraryWords"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts preparing the clip and screenshot of every cue, and the cover, in the background.
+         *     The item is shown to learners once that is done; until then its status is `processing`.
+         *     The item needs a file and at least one segment.
+         */
+        post: operations["publishLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/segments/{segment_index}/words": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces the words of one segment. Words lie on character boundaries of the segment's text, in order, without overlapping. */
+        put: operations["putLibraryWords"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/subtitles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replaces the segments of a video or audio item with the cues of the subtitles, without words.
+         *     Each cue of the translation subtitles is joined to the target cue it overlaps most.
+         */
+        put: operations["putLibrarySubtitles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLibraryText"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/items/{item_id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hides the item from learners. The flashcards they made from it are kept. */
+        post: operations["unpublishLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/openapi.json": {
         parameters: {
             query?: never;
@@ -885,7 +1093,7 @@ export interface paths {
          * Adds a media file to a project. A `path` source must name an existing file on the
          *     server's machine, which only a token allowed to read local paths may do; the text
          *     subtitle tracks inside it and the subtitle files beside it that share its name are added
-         *     as its subtitle tracks.
+         *     as its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.
          */
         post: operations["addMediaFile"];
         delete?: never;
@@ -1036,7 +1244,8 @@ export interface paths {
         };
         /**
          * Returns the window of the chosen audio track, else of the default audio track,
-         *     encoded as AAC in an MP4 file.
+         *     encoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,
+         *     from the clip rendered when the item was published.
          */
         get: operations["getMediaClip"];
         put?: never;
@@ -1072,11 +1281,33 @@ export interface paths {
         };
         /**
          * Returns the frame of the chosen video track at the given time, else of the default video track,
-         *     as a JPEG image at most 640 pixels wide.
+         *     as a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues
+         *     is served, from the screenshot rendered when the item was published.
          */
         get: operations["getMediaFrame"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/library-flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Saves a flashcard built by the server from a segment of a library media file, and from one of its words when
+         *     `word_start` names one. The project's default tags, and the media name tag when the project adds it, are its tags.
+         *     Sending the same id again replaces that flashcard.
+         */
+        post: operations["createLibraryFlashcard"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1736,6 +1967,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{user_id}/library-manager": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Lets an account manage the server's library, or stops it. Administrators manage it whatever this says. */
+        put: operations["setLibraryManager"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1761,6 +2009,8 @@ export interface components {
              */
             email_confirmed_at_ms?: number | null;
             id: string;
+            /** @description Whether an administrator let the account manage the server's library. Administrators manage it whatever this says. */
+            manages_library: boolean;
             role: components["schemas"]["AccountRole"];
         };
         AddAlignmentRequest: {
@@ -1770,6 +2020,10 @@ export interface components {
              *     from a file.
              */
             provider?: string | null;
+        };
+        /** @description What a learner sends to add an item to a project. */
+        AddLibraryItem: {
+            project_id?: components["schemas"]["ProjectId"] | null;
         };
         AddMediaFileRequest: {
             /** @description The name shown in the project's media list, usually the file name. */
@@ -2539,6 +2793,135 @@ export interface components {
             frequencies: components["schemas"]["DictionaryFrequency"][];
             tags: components["schemas"]["TagDefinition"][];
         };
+        /** @enum {string} */
+        LibraryDifficulty: "beginner" | "intermediate" | "advanced";
+        /**
+         * @description The dictionary entry a manager chose or wrote for a word.
+         *     L1 is the language the learner already knows; L2 is the one they are learning.
+         */
+        LibraryEntry: {
+            l1_definition: string;
+            l2_definition: string;
+            reading?: string | null;
+            term: string;
+        };
+        /** @description An item of the library, without its text. */
+        LibraryItem: {
+            /**
+             * Format: int64
+             * @description The time of the video frame the cover is taken from. Null for the first cue's screenshot time.
+             */
+            cover_at_ms?: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            created_at_ms: number;
+            description: string;
+            difficulty?: components["schemas"]["LibraryDifficulty"] | null;
+            /**
+             * Format: int64
+             * @description The length of a video or audio item, known once it is published.
+             */
+            duration_ms?: number | null;
+            /** @description The uploaded file's original name. Null until a file is uploaded. */
+            file_name?: string | null;
+            has_cover: boolean;
+            id: components["schemas"]["LibraryItemId"];
+            kind: components["schemas"]["LibraryItemKind"];
+            language: string;
+            /** Format: int32 */
+            segment_count: number;
+            status: components["schemas"]["LibraryItemStatus"];
+            tags: string[];
+            title: string;
+            translation_language: string;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            updated_at_ms: number;
+        };
+        LibraryItemAdded: {
+            media_file_id: components["schemas"]["MediaFileId"];
+            project_id: components["schemas"]["ProjectId"];
+        };
+        /** @description What a manager sends to create an item or change its metadata. */
+        LibraryItemDraft: {
+            /** Format: int64 */
+            cover_at_ms?: number | null;
+            description: string;
+            difficulty?: components["schemas"]["LibraryDifficulty"] | null;
+            kind: components["schemas"]["LibraryItemKind"];
+            language: string;
+            tags: string[];
+            title: string;
+            translation_language: string;
+        };
+        /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
+        LibraryItemId: string;
+        /** @enum {string} */
+        LibraryItemKind: "video" | "audio" | "document";
+        /** @description Whether learners can see an item. Only a published item is shown to people who cannot manage the library. */
+        LibraryItemStatus: {
+            /** @enum {string} */
+            kind: "draft";
+        } | {
+            /** @enum {string} */
+            kind: "processing";
+        } | {
+            /** @enum {string} */
+            kind: "published";
+        } | {
+            /** @enum {string} */
+            kind: "failed";
+            message: string;
+        };
+        LibraryListing: {
+            items: components["schemas"]["LibraryItem"][];
+        };
+        /** @description A subtitle cue of a video or audio item, or a paragraph of a document, with the words the manager set. */
+        LibrarySegment: {
+            /**
+             * Format: int32
+             * @description The chapter of a document's paragraph.
+             */
+            chapter_index?: number | null;
+            /** Format: int64 */
+            end_ms?: number | null;
+            /** Format: int32 */
+            index: number;
+            /**
+             * Format: int64
+             * @description The time of the cue's screenshot, set when a video item is published.
+             */
+            screenshot_at_ms?: number | null;
+            /** Format: int64 */
+            start_ms?: number | null;
+            text: string;
+            translation?: string | null;
+            words: components["schemas"]["LibraryWord"][];
+        };
+        /** @description Subtitle texts as uploaded; the format is detected when not given, as for subtitle tracks. */
+        LibrarySubtitles: {
+            format?: components["schemas"]["TimedTextFormat"] | null;
+            target_text: string;
+            translation_text?: string | null;
+        };
+        /** @description The text of an item: its subtitle cues or paragraphs, in order. */
+        LibraryText: {
+            /** @description The titles of a document's chapters, one per chapter, null for an untitled one. Empty for video and audio items. */
+            chapter_titles: (string | null)[];
+            segments: components["schemas"]["LibrarySegment"][];
+        };
+        /** @description One word of a segment, and the one entry a learner sees for it. Offsets are UTF-16 code units of the segment's text. */
+        LibraryWord: {
+            /** Format: int32 */
+            end: number;
+            entry: components["schemas"]["LibraryEntry"];
+            /** Format: int32 */
+            start: number;
+        };
         /** @description Logs a built-in server in to a remote, or creates an account there, to keep a copy of the device's data on it. */
         LinkRemoteRequest: {
             email: string;
@@ -2637,6 +3020,7 @@ export interface components {
          *     The `path` variant names a file on the machine running the server. The `browser_file`
          *     variant describes a file the web app holds in memory; the server never sees its bytes,
          *     so it records only what identifies the file when the user picks it again.
+         *     The `library` variant names an item of the server's library, whose files the server keeps.
          */
         MediaFileSource: {
             /** @enum {string} */
@@ -2652,6 +3036,10 @@ export interface components {
             last_modified_ms: number;
             /** Format: int64 */
             size: number;
+        } | {
+            item_id: components["schemas"]["LibraryItemId"];
+            /** @enum {string} */
+            kind: "library";
         };
         /**
          * @description Identifies a media item at an external source, in whatever form the source's plugin
@@ -2724,6 +3112,17 @@ export interface components {
             draft: components["schemas"]["FlashcardDraft"];
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
+        };
+        /** @description What a learner sends to make a flashcard from a library item. Sending the same id again replaces that flashcard. */
+        NewLibraryFlashcard: {
+            id: components["schemas"]["FlashcardId"];
+            /** Format: int32 */
+            segment_index: number;
+            /**
+             * Format: int32
+             * @description Where the card's word begins in the segment's text. Null for a card of the whole segment.
+             */
+            word_start?: number | null;
         };
         /** @description A new password, chosen through the link mailed for a reset. */
         NewPasswordRequest: {
@@ -3239,6 +3638,10 @@ export interface components {
             last_used_at_ms: number;
             /** @description The User-Agent header that the device sent when it logged in, which may be empty. */
             user_agent: string;
+        };
+        /** @description What an administrator sends to let an account manage the library, or to stop it. */
+        SetLibraryManager: {
+            manages_library: boolean;
         };
         SetUserRoleRequest: {
             role: components["schemas"]["AccountRole"];
@@ -5410,6 +5813,1025 @@ export interface operations {
             };
         };
     };
+    listLibraryItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The items the principal may see */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryListing"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryItemDraft"];
+            };
+        };
+        responses: {
+            /** @description The new draft item */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, or one that is not published and the principal does not manage the library */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryItemDraft"];
+            };
+        };
+        responses: {
+            /** @description The item as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the kind of an item that is published or being published cannot change */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The cover must be rendered again, and this server has no ffmpeg (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item was deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddLibraryItem"];
+            };
+        };
+        responses: {
+            /** @description The project and the item's media file in it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItemAdded"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, one the principal may not see, or no such project of the principal's */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_not_published`: the item is not published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLibraryCover: {
+        parameters: {
+            query?: {
+                /** @description The bearer token, for media and image elements, which cannot send headers. */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cover */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, one the principal may not see, or an item without a cover */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no library files */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLibraryFile: {
+        parameters: {
+            query?: {
+                /** @description The bearer token, for media and image elements, which cannot send headers. */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The whole file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description The requested byte range */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, or no file uploaded for it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `uploads_unavailable`: this server keeps no library files */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The range lies outside the file */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    uploadLibraryFile: {
+        parameters: {
+            query: {
+                /** @description The uploaded file's original name, whose extension tells its type. */
+                file_name: string;
+            };
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The file's bytes */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The item with its new file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description The file name is empty, the body was not as long as its `Content-Length`, or a document could not be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is published or being published; or `uploads_unavailable`: this server keeps no library files */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `length_required`: the request has no `Content-Length` */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    proposeLibraryWords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item's text with the proposed words */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryText"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is published or being published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    publishLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item, now being published */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description The item has no file or no segments */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is already published or being published; or `uploads_unavailable`: this server keeps no library files */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A video or audio item, and this server has no ffmpeg (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putLibraryWords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+                /** @description The index of the segment */
+                segment_index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryWord"][];
+            };
+        };
+        responses: {
+            /** @description The segment with its new words */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySegment"];
+                };
+            };
+            /** @description Words outside the text, off a character boundary, overlapping or out of order */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, or no such segment of it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is published or being published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putLibrarySubtitles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibrarySubtitles"];
+            };
+        };
+        responses: {
+            /** @description The item's new text */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryText"];
+                };
+            };
+            /** @description Subtitles that could not be parsed, or a document item, which takes no subtitles */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the item is published or being published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLibraryText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item's segments in order, with its chapter titles */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryText"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item, or one that is not published and the principal does not manage the library */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unpublishLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The library item id */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item, now a draft */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryItem"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_processing`: the item is being published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getOpenApiDocument: {
         parameters: {
             query?: never;
@@ -6595,6 +8017,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description `library_flashcard`: the flashcard was made from a library item, which fixes its content */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description Unexpected Host header */
             421: {
                 headers: {
@@ -6720,6 +8151,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description A `library` source, which only adding the library item makes */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
@@ -7286,7 +8726,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without audio */
+            /** @description No such media file, no file at its path, a browser-held file (code `not_resolvable`), a file without audio, or a library media file and a window that is not one of its cues (code `not_preprocessed`) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7458,7 +8898,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without video */
+            /** @description No such media file, no file at its path, a browser-held file (code `not_resolvable`), a file without video, or a library media file and a time that is not the screenshot time of one of its cues (code `not_preprocessed`) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7487,6 +8927,80 @@ export interface operations {
             };
             /** @description This server has no ffmpeg (code `conversion_unavailable`) */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createLibraryFlashcard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewLibraryFlashcard"];
+            };
+        };
+        responses: {
+            /** @description The saved flashcard */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flashcard"];
+                };
+            };
+            /** @description The id is not 32 lowercase hexadecimal digits, or no such segment or word */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project, or its item is not published */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `not_library_media`: the media file is not from the library; or the id belongs to a flashcard of another project */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10195,6 +11709,69 @@ export interface operations {
             };
             /** @description `last_administrator`: the change would leave the server without an administrator account */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setLibraryManager: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account id */
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLibraryManager"];
+            };
+        };
+        responses: {
+            /** @description The account with its new permission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountUser"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the token is not an administrator's */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No account has this id */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -13,6 +13,7 @@ use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
 use crate::now_ms::now_ms;
 use crate::routes::dictionary_media::DICTIONARY_MEDIA_ROUTE_PATH;
+use crate::routes::library_files::{LIBRARY_COVER_ROUTE_PATH, LIBRARY_FILE_ROUTE_PATH};
 use crate::routes::media_clip::CLIP_ROUTE_PATH;
 use crate::routes::media_frame::FRAME_ROUTE_PATH;
 use crate::routes::media_stream::STREAM_ROUTE_PATH;
@@ -21,7 +22,7 @@ use crate::state::AppState;
 /// Requires `Authorization: Bearer <token>` and records on the request the principal the token belongs to:
 /// the launch principal for the launch token, or the user of the session with that token.
 ///
-/// The media stream, frame, clip and dictionary media routes also accept the token as the `token` query parameter,
+/// The media stream, frame, clip, dictionary media, library file and library cover routes also accept the token as the `token` query parameter,
 /// because media and image elements cannot send headers.
 /// No other route does, since a token in a URL ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
@@ -103,6 +104,8 @@ fn accepts_query_token(request: &Request) -> bool {
                 FRAME_ROUTE_PATH,
                 CLIP_ROUTE_PATH,
                 DICTIONARY_MEDIA_ROUTE_PATH,
+                LIBRARY_FILE_ROUTE_PATH,
+                LIBRARY_COVER_ROUTE_PATH,
             ]
             .contains(&matched.as_str())
         })
@@ -153,6 +156,8 @@ mod tests {
             .route(FRAME_ROUTE_PATH, get(|| async { "framed" }))
             .route(CLIP_ROUTE_PATH, get(|| async { "clipped" }))
             .route(DICTIONARY_MEDIA_ROUTE_PATH, get(|| async { "image" }))
+            .route(LIBRARY_FILE_ROUTE_PATH, get(|| async { "file" }))
+            .route(LIBRARY_COVER_ROUTE_PATH, get(|| async { "cover" }))
             .route("/other/{id}", get(|| async { "other" }))
             .layer(from_fn_with_state(state, require_bearer_token))
     }
@@ -264,6 +269,24 @@ mod tests {
                 "/dictionaries/d/media/img%2Fa.png?token=secret",
                 None,
             ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn accepts_a_query_token_on_the_library_file_route() {
+        let response = app()
+            .oneshot(request_to("/library/items/i/file?token=secret", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn accepts_a_query_token_on_the_library_cover_route() {
+        let response = app()
+            .oneshot(request_to("/library/items/i/cover?token=secret", None))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);

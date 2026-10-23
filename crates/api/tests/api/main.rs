@@ -11,6 +11,7 @@ mod documents;
 mod embedded_subtitles;
 mod extra_listeners;
 mod flashcards;
+mod library;
 mod local_media_sample;
 mod media;
 mod media_availability;

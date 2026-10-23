@@ -4,6 +4,7 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId, NewFlashcard};
+use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::ProjectId;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -96,6 +97,7 @@ pub async fn create_flashcard(
         (status = 200, description = "The flashcard as it now stands", body = Flashcard),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such flashcard in the project, or no such media file in it", body = ApiError),
+        (status = 409, description = "`library_flashcard`: the flashcard was made from a library item, which fixes its content", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -104,7 +106,14 @@ pub async fn update_flashcard(
     Path((project_id, flashcard_id)): Path<(ProjectId, FlashcardId)>,
     Json(draft): Json<FlashcardDraft>,
 ) -> Result<Json<Flashcard>, ApiFailure> {
-    load_flashcard(&state, project_id, flashcard_id.clone()).await?;
+    let flashcard = load_flashcard(&state, project_id, flashcard_id.clone()).await?;
+    if is_from_library(&state, &flashcard).await? {
+        return Err(ApiFailure::new(
+            StatusCode::CONFLICT,
+            "library_flashcard",
+            "a flashcard made from a library item cannot be changed",
+        ));
+    }
     let flashcard = state
         .with_storage(move |storage| storage.update_flashcard(&flashcard_id, &draft))
         .await?;
@@ -137,6 +146,17 @@ pub async fn delete_flashcard(
         .with_storage(move |storage| storage.delete_flashcard(&flashcard_id))
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Whether the flashcard's media file comes from the library.
+async fn is_from_library(state: &AppState, flashcard: &Flashcard) -> Result<bool, ApiFailure> {
+    let Some(media_id) = flashcard.media_file_id.clone() else {
+        return Ok(false);
+    };
+    let media_file = state
+        .with_storage(move |storage| storage.get_media_file(&media_id))
+        .await?;
+    Ok(matches!(media_file.source, MediaFileSource::Library { .. }))
 }
 
 /// Loads a flashcard, answering 404 when it does not exist or belongs to another project.

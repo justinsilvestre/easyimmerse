@@ -66,7 +66,8 @@ fn check_limits(request: &BatchLookupRequest) -> Result<(), ApiFailure> {
     Ok(())
 }
 
-fn look_up_all(
+/// Looks up every text of the request at every position where a word may start, in the owner's dictionaries.
+pub fn look_up_all(
     storage: &Storage,
     owner: &OwnerId,
     request: &BatchLookupRequest,
