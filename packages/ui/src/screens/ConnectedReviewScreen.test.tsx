@@ -1,6 +1,12 @@
 import { actions, selectRoute } from "@easyimmerse/state";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { Screens } from "../Screens.tsx";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
@@ -43,7 +49,7 @@ async function renderReview(listed = listedFlashcards) {
 
 /** Waits until the card shown is that of the word. */
 const showsWord = (word: string) =>
-  vi.waitFor(() => {
+  waitFor(() => {
     expect(
       screen.getByRole("article", { name: "Flashcard" }).textContent,
     ).toContain(word);
@@ -57,7 +63,7 @@ async function remember() {
 
 /** Waits until Undo can be pressed, which it can once the latest step has landed. */
 const undoOnceAvailable = () =>
-  vi.waitFor(() => {
+  waitFor(() => {
     const undo = screen.getByRole("button", { name: "Undo" });
     if (undo.hasAttribute("disabled"))
       throw new Error("Undo is not available yet.");
@@ -83,7 +89,7 @@ describe("ConnectedReviewScreen", () => {
   it("sends the rating of a card to the server", async () => {
     const { client } = await renderReview();
     await remember();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(answersSent(client)[0]?.body?.value).toMatchObject({
         flashcard_id: "r1",
         rating: "good",
@@ -101,7 +107,7 @@ describe("ConnectedReviewScreen", () => {
     const { client } = await renderReview();
     fireEvent.keyDown(document.body, { key: " " });
     fireEvent.keyDown(document.body, { key: "1" });
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(answersSent(client)[0]?.body?.value).toMatchObject({
         rating: "again",
       }),
@@ -122,7 +128,7 @@ describe("ConnectedReviewScreen", () => {
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Bury until tomorrow" }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         client.requests.find(({ method }) => method === "PUT")?.body?.value,
       ).toMatchObject({ kind: "buried" }),

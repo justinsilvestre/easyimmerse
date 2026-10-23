@@ -4,6 +4,7 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +44,7 @@ function tick(
 async function settleRequests(
   store: ReturnType<typeof renderMediaScreen>["store"],
 ) {
-  await vi.waitFor(() => {
+  await waitFor(() => {
     const { queries } = store.getState().backend as {
       queries: Record<string, { status: string } | undefined>;
     };
@@ -63,7 +64,7 @@ describe("MediaScreen renders", () => {
     const dog = within(list).getByRole("button", { name: "dog" });
     commits.count = 0;
     fireEvent.pointerEnter(dog, { pointerType: "mouse" });
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(dog.classList.contains("bg-accent-soft")).toBe(true),
     );
     expect(commits.count).toBeLessThanOrEqual(3);

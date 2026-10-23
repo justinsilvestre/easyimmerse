@@ -1,6 +1,6 @@
 import { actions } from "@easyimmerse/state";
-import { act, cleanup, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { directPlaybackRoutes } from "../testSupport/mediaFixtureResponses.ts";
@@ -32,14 +32,14 @@ const findSlider = () =>
 describe("PlayerWaveform", () => {
   it("requests peaks windows for a file on the server's disk", async () => {
     const { client } = renderWaveform("m1");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(waveformRequests(client).length).toBeGreaterThan(0),
     );
   });
 
   it("asks for the first window up to the probed duration", async () => {
     const { client } = renderWaveform("m1");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(waveformRequests(client)[0]?.query).toEqual({
         start_ms: "0",
         end_ms: "10000",
@@ -49,7 +49,7 @@ describe("PlayerWaveform", () => {
 
   it("spans the probed duration until the player reports one", async () => {
     renderWaveform("m1");
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(findSlider().getAttribute("aria-valuemax")).toBe("10"),
     );
   });

@@ -10,9 +10,8 @@ import type {
   LookupResponse,
   NewFlashcard,
 } from "@easyimmerse/types";
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { Profiler } from "react";
-import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
@@ -265,7 +264,7 @@ export async function findRequestTo(
   method: string,
   path: string,
 ) {
-  return vi.waitFor(() => {
+  return waitFor(() => {
     const [request] = requestsTo(client.requests, method, path);
     if (!request) throw new Error(`No request to ${method} ${path} yet.`);
     return request;
@@ -283,7 +282,7 @@ export async function openFlashcardFor(element: HTMLElement) {
 export async function findCreatedDraft(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
-  return vi.waitFor(() => {
+  return waitFor(() => {
     const draft = createdDraftOf(
       requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
     );

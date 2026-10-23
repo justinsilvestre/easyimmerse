@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   findCreatedDraft,
@@ -49,7 +55,7 @@ describe("MediaScreen lookup cursor", () => {
     it("looks up the word it moved to with L", async () => {
       renderMediaScreen();
       focusAndPress(await cardWord(1, "The"), "ArrowRight", "l");
-      await vi.waitFor(() => expect(fieldValue()).toBe("cat"));
+      await waitFor(() => expect(fieldValue()).toBe("cat"));
     });
 
     it("saves a flashcard from the sentence of the word it moved to with C", async () => {
