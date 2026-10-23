@@ -11,13 +11,16 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@easyimmerse/backend": "workspace:*",
     "@easyimmerse/effects-web": "workspace:*",
     "@easyimmerse/state": "workspace:*",
+    "@easyimmerse/types": "workspace:*",
     "@wxt-dev/browser": "^0.3.4"
   },
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",
     "typescript": "~6.0.3",
+    "vite": "^8.3.1",
     "vitest": "^5.0.2"
   }
 }

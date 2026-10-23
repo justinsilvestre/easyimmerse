@@ -46,7 +46,8 @@ function readStoredConfig(storage: Storage | null): ServerConfig | null {
   }
 }
 
-function parseServerConfig(value: unknown): ServerConfig | null {
+/** Reads a server and token from a value kept in storage, or returns null when it holds no such pair. */
+export function parseServerConfig(value: unknown): ServerConfig | null {
   if (typeof value !== "object" || value === null) return null;
   const { serverUrl, token } = value as Partial<ServerConfig>;
   if (typeof serverUrl !== "string" || typeof token !== "string") return null;

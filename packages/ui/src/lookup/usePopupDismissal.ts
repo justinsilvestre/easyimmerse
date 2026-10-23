@@ -8,6 +8,7 @@ import { isOutOfReach } from "../hooks/isOutOfReach.ts";
  * A click closes it only after the clicked control has acted, so that pressing Play while the pop-up is open plays.
  * Clicks are ignored while the pop-up's screen lies beneath another or under a modal dialog.
  * When the pop-up closes, focus returns to where it was when the pop-up opened, if it was inside the pop-up.
+ * A pop-up inside a shadow root, as on a web page, counts clicks inside it as inside.
  */
 export function usePopupDismissal(
   popupRef: RefObject<HTMLElement | null>,
@@ -27,7 +28,9 @@ export function usePopupDismissal(
     // A click that began before the pop-up opened, such as the one that opened it, is left alone.
     let outsideClick: Event | null = null;
     const onClickStart = (event: MouseEvent) => {
-      outsideClick = isInsideOrTrigger(popupRef.current, event.target)
+      // The first element of the event's path is the one clicked, even inside a shadow root, where `target` names the shadow's host.
+      const clicked = event.composedPath()[0] ?? event.target;
+      outsideClick = isInsideOrTrigger(popupRef.current, clicked)
         ? null
         : event;
     };

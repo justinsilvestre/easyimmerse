@@ -47,6 +47,7 @@ export type {
   BackendClient,
   BackendError,
   BackendRequest,
+  BackendResult,
 } from "./backendClient.ts";
 export {
   type BrowserFiles,
@@ -61,6 +62,7 @@ export type { FrameCapturer } from "./frameCapturer.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
 export { lookupStartsIn } from "./lookupPositions.ts";
+export { lookupTextRequest } from "./lookupTextRequest.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
@@ -71,6 +73,7 @@ export {
 } from "./resolveServedServer.ts";
 export {
   type NativePlatform,
+  parseServerConfig,
   resolveServerConfig,
 } from "./resolveServerConfig.ts";
 export { servedServerActions } from "./servedServerActions.ts";

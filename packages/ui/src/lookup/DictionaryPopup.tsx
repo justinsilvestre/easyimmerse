@@ -25,6 +25,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * Above the entries, `sentence` fills a thin row about the sentence or cue the word belongs to, as `SentenceRow` describes.
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
+ * Without `onCreateFlashcard` it offers no flashcards, and without `onSetUpDictionary` no way to the dictionaries.
  * Pressing outside the pop-up and not on a word marked as a lookup trigger closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
@@ -50,13 +51,13 @@ export function DictionaryPopup({
   size?: PopupSize;
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
-  onCreateFlashcard: (entryIndex: number | null) => void;
+  onCreateFlashcard?: (entryIndex: number | null) => void;
   onToggleSize?: () => void;
   onWordHold?: (word: string) => void;
   pendingFlashcard?: string | null;
   sentence?: SentenceRowProps;
   onClose: () => void;
-  onSetUpDictionary: () => void;
+  onSetUpDictionary?: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
   const isExpanded = size === "expanded";
@@ -80,14 +81,15 @@ export function DictionaryPopup({
           autoFocus={mode === "search"}
           onSearch={onSearch}
         />
-        {(state?.kind === "found" || state?.kind === "notFound") && (
-          <IconButton
-            label="New flashcard"
-            onClick={() => onCreateFlashcard(null)}
-          >
-            <NewFlashcardIcon className="size-4" />
-          </IconButton>
-        )}
+        {onCreateFlashcard &&
+          (state?.kind === "found" || state?.kind === "notFound") && (
+            <IconButton
+              label="New flashcard"
+              onClick={() => onCreateFlashcard(null)}
+            >
+              <NewFlashcardIcon className="size-4" />
+            </IconButton>
+          )}
         <IconButton label="Close" onClick={onClose}>
           <X className="size-4" />
         </IconButton>
@@ -213,8 +215,8 @@ function Body({
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onWordHold?: (word: string) => void;
-  onCreateFlashcard: (entryIndex: number | null) => void;
-  onSetUpDictionary: () => void;
+  onCreateFlashcard?: (entryIndex: number | null) => void;
+  onSetUpDictionary?: () => void;
 }) {
   if (!state) return <Hint>Type a word and press Enter.</Hint>;
   switch (state.kind) {
@@ -223,14 +225,19 @@ function Body({
     case "notFound":
       return (
         <Hint>
-          No entry for “{state.term}”.{" "}
-          <button
-            type="button"
-            onClick={onSetUpDictionary}
-            className="text-accent-fg underline decoration-dotted underline-offset-4 hover:decoration-solid focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            Check your dictionaries
-          </button>
+          No entry for “{state.term}”.
+          {onSetUpDictionary && (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={onSetUpDictionary}
+                className="text-accent-fg underline decoration-dotted underline-offset-4 hover:decoration-solid focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                Check your dictionaries
+              </button>
+            </>
+          )}
         </Hint>
       );
     case "failed":
@@ -242,9 +249,11 @@ function Body({
         <div className="flex flex-col items-center gap-2 py-4 text-center text-sm">
           <BookOpen className="size-6 text-fg-faint" aria-hidden />
           <p>No dictionary is set up for {languageName(state.language)} yet.</p>
-          <Button variant="primary" size="sm" onClick={onSetUpDictionary}>
-            Add a dictionary
-          </Button>
+          {onSetUpDictionary && (
+            <Button variant="primary" size="sm" onClick={onSetUpDictionary}>
+              Add a dictionary
+            </Button>
+          )}
         </div>
       );
     case "found":
@@ -264,7 +273,9 @@ function Body({
               onWordLookup={onSearch}
               onWordHold={onWordHold}
               onLookup={onSearch}
-              onCreateFlashcard={() => onCreateFlashcard(index)}
+              onCreateFlashcard={
+                onCreateFlashcard && (() => onCreateFlashcard(index))
+              }
             />
           ))}
           {state.kanji?.map((kanji) => (
