@@ -1,0 +1,33 @@
+diff --git a/lib/devTools.js b/lib/devTools.js
+index b2a9f7b11b263c28bd89f958dea697becc2bb112..29c0eb14bcee3fb03a1fc9357ab1c35456942d8f 100644
+--- a/lib/devTools.js
++++ b/lib/devTools.js
+@@ -306,16 +306,24 @@ class DevToolsEnhancer {
+             try {
+                 const channelName = (await this.socket.invoke('login', 'master'));
+                 this.channel = channelName;
+-                for await (const data of this.socket.subscribe(channelName)) {
+-                    this.handleMessages(data);
+-                }
++                // A monitor answers START on this socket's own channel,
++                // so the instance announces itself only once both channels are subscribed.
++                const channels = [channelName, `sc-${this.socket.id}`].map((name) => this.socket.subscribe(name));
++                await Promise.all(channels.map((channel) => channel.state === channel.SUBSCRIBED
++                    ? undefined
++                    : channel.listener('subscribe').once()));
++                this.relay('START');
++                await Promise.all(channels.map(async (channel) => {
++                    for await (const data of channel) {
++                        this.handleMessages(data);
++                    }
++                }));
+             }
+             catch (error) {
+                 console.log(error);
+             }
+         })();
+         this.started = true;
+-        this.relay('START');
+     }
+     handleChange(state, liftedState, maxAge) {
+         if (this.checkForReducerErrors(liftedState))
