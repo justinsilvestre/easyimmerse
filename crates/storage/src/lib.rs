@@ -11,6 +11,8 @@ mod dictionaries;
 mod email_tokens;
 mod error;
 mod flashcards;
+mod library_items;
+mod library_segments;
 mod media_copies;
 #[cfg(test)]
 mod media_copies_tests;
@@ -67,6 +69,10 @@ use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
 };
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::library::{
+    LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus, LibrarySegment, LibraryText,
+    LibraryWord,
+};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
@@ -565,6 +571,15 @@ impl Storage {
 
     pub fn set_user_role(&self, id: &str, role: AccountRole) -> Result<AccountUser, StorageError> {
         self.write(|conn| users::set_user_role(conn, id, role))
+    }
+
+    /// Lets the account manage the server's library, or stops it.
+    pub fn set_library_manager(
+        &self,
+        id: &str,
+        manages_library: bool,
+    ) -> Result<AccountUser, StorageError> {
+        self.write(|conn| users::set_library_manager(conn, id, manages_library))
     }
 
     /// Replaces the password hash of an account and ends all of its sessions.
@@ -1079,6 +1094,109 @@ impl Storage {
         media_file_id: &MediaFileId,
     ) -> Result<Option<u64>, StorageError> {
         self.read(|conn| sync::remote_copies::remote_copy_size(conn, remote_id, media_file_id))
+    }
+
+    /// Creates a draft library item with no file and no text.
+    pub fn create_library_item(
+        &self,
+        draft: &LibraryItemDraft,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::create_library_item(conn, draft))
+    }
+
+    /// Replaces a library item's metadata, whatever its status.
+    pub fn update_library_item(
+        &self,
+        id: &LibraryItemId,
+        draft: &LibraryItemDraft,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::update_library_item(conn, id, draft))
+    }
+
+    pub fn get_library_item(&self, id: &LibraryItemId) -> Result<LibraryItem, StorageError> {
+        self.read(|conn| library_items::get_library_item(conn, id))
+    }
+
+    /// Lists the published library items, or every item when `include_unpublished` is true, by title.
+    pub fn list_library_items(
+        &self,
+        include_unpublished: bool,
+    ) -> Result<Vec<LibraryItem>, StorageError> {
+        self.read(|conn| library_items::list_library_items(conn, include_unpublished))
+    }
+
+    /// Deletes a library item together with its text. Its files are the caller's to delete.
+    pub fn delete_library_item(&self, id: &LibraryItemId) -> Result<(), StorageError> {
+        self.write(|conn| library_items::delete_library_item(conn, id))
+    }
+
+    /// Records the name and size of the file uploaded for a library item.
+    pub fn set_library_file(
+        &self,
+        id: &LibraryItemId,
+        file_name: &str,
+        size_bytes: u64,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_file(conn, id, file_name, size_bytes))
+    }
+
+    pub fn set_library_status(
+        &self,
+        id: &LibraryItemId,
+        status: &LibraryItemStatus,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_status(conn, id, status))
+    }
+
+    /// Records the length of a video or audio library item, as probed when it is published.
+    pub fn set_library_duration(
+        &self,
+        id: &LibraryItemId,
+        duration_ms: Option<u64>,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_duration(conn, id, duration_ms))
+    }
+
+    /// Replaces a library item's segments and chapter titles with the given text.
+    pub fn replace_library_segments(
+        &self,
+        item_id: &LibraryItemId,
+        text: &LibraryText,
+    ) -> Result<LibraryText, StorageError> {
+        self.write(|conn| library_segments::replace_library_segments(conn, item_id, text))
+    }
+
+    /// Replaces the words of one segment of a library item. The caller checks them with `validate_words` first.
+    pub fn set_segment_words(
+        &self,
+        item_id: &LibraryItemId,
+        segment_index: u32,
+        words: &[LibraryWord],
+    ) -> Result<LibrarySegment, StorageError> {
+        self.write(|conn| library_segments::set_segment_words(conn, item_id, segment_index, words))
+    }
+
+    /// Records the screenshot time of each listed segment, given as pairs of segment index and time.
+    pub fn set_screenshot_times(
+        &self,
+        item_id: &LibraryItemId,
+        screenshot_times: &[(u32, u64)],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| library_segments::set_screenshot_times(conn, item_id, screenshot_times))
+    }
+
+    /// Returns a library item's segments in order, with its chapter titles.
+    pub fn get_library_text(&self, item_id: &LibraryItemId) -> Result<LibraryText, StorageError> {
+        self.read(|conn| library_segments::get_library_text(conn, item_id))
+    }
+
+    /// Finds the project's media file of the library item.
+    pub fn find_library_media_file(
+        &self,
+        project_id: &ProjectId,
+        item_id: &LibraryItemId,
+    ) -> Result<Option<MediaFile>, StorageError> {
+        self.read(|conn| media_files::find_library_media_file(conn, project_id, item_id))
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

@@ -34,6 +34,10 @@ pub enum StorageError {
     FlashcardNotFound(String),
     #[error("the flashcard id {0:?} belongs to another project")]
     FlashcardIdTaken(String),
+    #[error("no library item has the id {0:?}")]
+    LibraryItemNotFound(String),
+    #[error("the library item {item_id:?} has no segment {segment_index}")]
+    LibrarySegmentNotFound { item_id: String, segment_index: u32 },
     #[error("no subtitle track has the id {0:?}")]
     SubtitleTrackNotFound(String),
     #[error("no alignment has the id {0:?}")]
