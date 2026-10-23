@@ -17,7 +17,6 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { canManageLibrary } from "../library/canManageLibrary.ts";
 import { LibraryView } from "../library/LibraryView.tsx";
-import { libraryManagementId } from "../library/libraryManagementId.ts";
 
 const noItems: readonly LibraryItem[] = [];
 
@@ -49,9 +48,7 @@ export function LibraryScreen() {
       }
       onToggleTag={(tag) => dispatch(actions.libraryTagToggled(tag))}
       onOpenItem={(itemId) => go({ type: "openLibraryItem", itemId })}
-      onManage={() =>
-        go({ type: "editLibraryItem", itemId: libraryManagementId })
-      }
+      onManage={() => go({ type: "manageLibrary" })}
       onBack={() => go({ type: "goHome" })}
     />
   );

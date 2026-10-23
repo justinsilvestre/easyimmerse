@@ -13,6 +13,8 @@ export type MainRoute =
   | { screen: "library" }
   /** One item of the library, with its full description and the control that adds it to a project. */
   | { screen: "libraryItem"; itemId: string }
+  /** The library management screen, with every item and the form for a new one, which only library managers reach. */
+  | { screen: "libraryManage" }
   /** The library management screen for one item, which only library managers reach. */
   | { screen: "libraryEdit"; itemId: string };
 
@@ -59,6 +61,7 @@ export type NavigationStep =
   | { type: "closeSettings" }
   | { type: "openLibrary" }
   | { type: "openLibraryItem"; itemId: string }
+  | { type: "manageLibrary" }
   | { type: "editLibraryItem"; itemId: string };
 
 export const initialRoute: Route = { screen: "home" };
@@ -114,6 +117,8 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return { screen: "library" };
     case "openLibraryItem":
       return { screen: "libraryItem", itemId: step.itemId };
+    case "manageLibrary":
+      return { screen: "libraryManage" };
     case "editLibraryItem":
       return { screen: "libraryEdit", itemId: step.itemId };
   }

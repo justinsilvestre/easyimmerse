@@ -46,6 +46,7 @@ const libraryFlashcard: Flashcard = {
   was_packaged: false,
   sent_at_ms: null,
   is_suspended: false,
+  is_from_library: true,
 };
 
 /** Renders project p1 with its library media file m3 open, the video item i1, over a server with German dictionaries. */

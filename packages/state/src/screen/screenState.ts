@@ -74,6 +74,7 @@ export type MainScreenState =
   | { kind: "projectSettings" }
   | { kind: "library" }
   | { kind: "libraryItem" }
+  | { kind: "libraryManage" }
   | { kind: "libraryEdit" }
   | OfflineScreenState
   | ProjectScreenState
@@ -126,6 +127,7 @@ export function initialMainScreen(
     case "projectSettings":
     case "library":
     case "libraryItem":
+    case "libraryManage":
     case "libraryEdit":
       return { kind: route.screen };
     case "offline":

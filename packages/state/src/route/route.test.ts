@@ -164,6 +164,12 @@ describe("navigate", () => {
     ).toEqual({ screen: "libraryItem", itemId: "i1" });
   });
 
+  it("opens the library management screen from the library", () => {
+    expect(navigate({ screen: "library" }, { type: "manageLibrary" })).toEqual({
+      screen: "libraryManage",
+    });
+  });
+
   it("opens a library item for editing", () => {
     expect(
       navigate(

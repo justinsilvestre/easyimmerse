@@ -23,6 +23,7 @@ import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { LibraryEditScreen } from "./screens/LibraryEditScreen.tsx";
 import { LibraryItemScreen } from "./screens/LibraryItemScreen.tsx";
+import { LibraryManageScreen } from "./screens/LibraryManageScreen.tsx";
 import { LibraryScreen } from "./screens/LibraryScreen.tsx";
 import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
 import { OfflineScreen } from "./screens/OfflineScreen.tsx";
@@ -95,8 +96,10 @@ function MainScreen({ route }: { route: MainRoute }) {
       return <LibraryScreen />;
     case "libraryItem":
       return <LibraryItemScreen key={route.itemId} itemId={route.itemId} />;
+    case "libraryManage":
+      return <LibraryManageScreen />;
     case "libraryEdit":
-      return <LibraryEditScreen itemId={route.itemId} />;
+      return <LibraryEditScreen key={route.itemId} itemId={route.itemId} />;
   }
 }
 

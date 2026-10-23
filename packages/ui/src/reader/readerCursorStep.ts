@@ -5,10 +5,12 @@ import type {
   TextStep,
 } from "@easyimmerse/state";
 import { runLookupStarts } from "../components/runLookupStarts.ts";
+import type { WordSpan } from "../components/splitAtWords.ts";
 import { stepTextCursor } from "../components/textCursorStep.ts";
 import type { ChapterSection } from "./chapterSections.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";
 import { matchedSpanEnd } from "./readerWordHighlight.ts";
+import { storedSpansOf } from "./storedWords.ts";
 import { sentencesOf, wordsOf } from "./wordAt.ts";
 
 /** The lookup cursor in a chapter's text: where it lies, and how much text its lookup matched, if known. */
@@ -37,6 +39,8 @@ export type ChapterText = {
   paragraphs: readonly string[];
   section: ChapterSection;
   language: string;
+  /** The stored words of each paragraph, as for a library document, which alone are words; unset to find them by the language. */
+  storedWords?: readonly (readonly WordSpan[])[];
 };
 
 const wordForward: TextStep = { direction: "forward", unit: "word" };
@@ -105,10 +109,9 @@ function stepFrom(
   step: TextStep,
   matchedLengthAt: MatchedLengthAtLocation,
 ): CursorLanding {
-  const paragraph = text.paragraphs[paragraphIndex] ?? "";
   const at = (offset: number) => locationIn(text, paragraphIndex, offset);
   const landed = stepTextCursor(
-    partsOf(paragraph, text.language),
+    partsOf(text, paragraphIndex),
     from,
     step,
     (offset) => matchedLengthAt(at(offset)),
@@ -187,7 +190,7 @@ function firstWordIn(
   paragraphIndex: number,
   offset: number,
 ): ReaderLocation | null {
-  const parts = partsOf(text.paragraphs[paragraphIndex] ?? "", text.language);
+  const parts = partsOf(text, paragraphIndex);
   const place = parts
     .flatMap((part) => cursorPlacesIn(part))
     .find((found) => found >= offset);
@@ -202,13 +205,18 @@ type TextPart = {
   isUnspaced: boolean;
 };
 
-/** The words of a paragraph, found with the language's word boundaries, as the pointer finds them. */
-function partsOf(paragraph: string, language: string): TextPart[] {
-  return wordsOf(paragraph, language).map((word) => ({
+/** The words of a paragraph, as the pointer finds them: its stored words, or else those of the language's word boundaries. */
+function partsOf(text: ChapterText, paragraphIndex: number): TextPart[] {
+  const paragraph = text.paragraphs[paragraphIndex] ?? "";
+  const stored = text.storedWords?.[paragraphIndex];
+  const words = stored
+    ? storedSpansOf(paragraph, stored)
+    : wordsOf(paragraph, text.language);
+  return words.map((word) => ({
     text: word.text,
     start: word.start,
     isWord: true,
-    isUnspaced: isUnspacedWord(word.text),
+    isUnspaced: !stored && isUnspacedWord(word.text),
   }));
 }
 

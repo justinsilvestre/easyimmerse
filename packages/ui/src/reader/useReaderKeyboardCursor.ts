@@ -87,6 +87,7 @@ export function useReaderKeyboardCursor(props: KeyboardCursorProps) {
       text.paragraphs[location.paragraphIndex] ?? "",
       location,
       text.language,
+      text.storedWords?.[location.paragraphIndex],
     );
     return word ? (gestures.lookUpMatchedLength?.(word) ?? null) : null;
   };
@@ -216,6 +217,7 @@ function placeAt(props: KeyboardCursorProps, landing: ReaderLocation) {
     text.paragraphs[landing.paragraphIndex] ?? "",
     landing,
     text.language,
+    text.storedWords?.[landing.paragraphIndex],
   );
   const range = word && anchorRangeOf(paragraph, word);
   if (!word || !range) return;

@@ -52,6 +52,7 @@ import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
 import { spokenSpansShown } from "./spokenSpansShown.ts";
+import type { StoredWords } from "./storedWords.ts";
 import { TranslationPanel } from "./TranslationPanel.tsx";
 import {
   type HighlightedWord,
@@ -103,6 +104,8 @@ type ReaderViewProps = {
   projectName: string;
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
+  /** The words a library manager set in each paragraph, which alone are the book's words; unset to find them by the language. */
+  storedWords?: StoredWords;
   preferences: ReaderPreferences;
   callbacks: ReaderCallbacks;
   /** The dictionary pop-up, placed beside `lookupRect`. */
@@ -185,14 +188,19 @@ export function ReaderView(props: ReaderViewProps) {
   const sectionIndex = sectionIndexAt(sections, location.paragraphIndex);
   const shownSection = isPaged ? sections[sectionIndex] : undefined;
   /** The text the lookup cursor moves through: the section shown, or the whole chapter in the scrolling layout. */
+  // The translation shown in place of the book has no stored words.
+  const chapterWords = shown.isTranslationShown
+    ? undefined
+    : props.storedWords?.[chapterIndex];
   const chapterText = useMemo(
     () => ({
       chapterIndex,
       paragraphs: chapter.paragraphs,
       section: shownSection ?? { start: 0, end: chapter.paragraphs.length },
       language,
+      storedWords: chapterWords,
     }),
-    [chapterIndex, chapter, shownSection, language],
+    [chapterIndex, chapter, shownSection, language, chapterWords],
   );
   const marks = useMemo(
     () =>
@@ -312,15 +320,20 @@ export function ReaderView(props: ReaderViewProps) {
     else if (isPaged && share > 0.75) turn("next");
     else dispatch(actions.readerChromeToggled());
   };
-  const wordPointer = useWordPointer(chapterIndex, language, {
-    onWordClick: callbacks.onWordClick,
-    onWordDoubleClick: callbacks.onWordDoubleClick,
-    onWordPointed: callbacks.onWordPointed,
-    onWordHover: callbacks.onWordHover,
-    onWordCommandClick: playWord,
-    onWordHold: callbacks.onWordHold,
-    onBlankClick,
-  });
+  const wordPointer = useWordPointer(
+    chapterIndex,
+    language,
+    {
+      onWordClick: callbacks.onWordClick,
+      onWordDoubleClick: callbacks.onWordDoubleClick,
+      onWordPointed: callbacks.onWordPointed,
+      onWordHover: callbacks.onWordHover,
+      onWordCommandClick: playWord,
+      onWordHold: callbacks.onWordHold,
+      onBlankClick,
+    },
+    chapterWords,
+  );
   // The words of the translation are not looked up, since the dictionaries are for the book's language.
   const pointerProps = shown.isTranslationShown
     ? { onClick: onBlankClick }

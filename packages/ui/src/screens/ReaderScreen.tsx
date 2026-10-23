@@ -27,6 +27,7 @@ import { ConnectedReaderView } from "../reader/ConnectedReaderView.tsx";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { selectNearbySentences } from "../reader/selectNearbySentences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
+import { storedWordsOf } from "../reader/storedWords.ts";
 import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
 import { useBookTranslation } from "../reader/useBookTranslation.tsx";
 import { useReaderAudio } from "../reader/useReaderAudio.tsx";
@@ -157,6 +158,11 @@ function BookReader({
       mediaFile,
       settings,
     });
+  const libraryText = library?.text;
+  const storedWords = useMemo(
+    () => libraryText && storedWordsOf(libraryText),
+    [libraryText],
+  );
   const audio = useReaderAudio(project.id, mediaFile.id, text);
   const sentence = useReaderSentenceRow(text, bilingual, audio);
   const lookup = useReaderLookup(
@@ -191,6 +197,7 @@ function BookReader({
       title={document.title || mediaFile.name}
       projectName={settings.name}
       language={textLanguage}
+      storedWords={storedWords}
       preferences={preferences}
       controls={controls}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
