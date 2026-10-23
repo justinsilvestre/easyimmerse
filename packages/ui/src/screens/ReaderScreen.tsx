@@ -5,6 +5,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  documentOfLibraryText,
   selectFlashcardForm,
   selectIsReadingLocationLoaded,
   selectPreferencesLoaded,
@@ -17,6 +18,7 @@ import { draftFromText } from "../flashcards/draftFromText.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import type { LibraryItemText } from "../lookup/libraryWords.ts";
 import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
@@ -41,20 +43,40 @@ import { useReaderSentenceRow } from "../reader/useReaderSentenceRow.ts";
  * A book aligned with an audio file plays it from a bar above the progress slider, as `useReaderAudio` describes.
  * Another document of the project can be paired with the book as its translation, and read alone,
  * or once the two are aligned, together with the book.
+ * A file from the library is read from its item's text, whose words show their stored entries in the pop-up without being looked up,
+ * and every flashcard made from it is a library flashcard.
  */
 export function ReaderScreen({
   project,
   mediaFileId,
+  library,
 }: {
   project: Project;
   mediaFileId: string;
+  /** The library item the file comes from, with its text, or unset for a file from anywhere else. */
+  library?: LibraryItemText;
 }) {
   const dispatch = useAppDispatch();
   const { data } = useListMediaFilesQuery(project.id);
   const mediaFile = data?.media_files.find((file) => file.id === mediaFileId);
-  const book = useOpenBookQuery(
-    mediaFile ? { name: mediaFile.name, source: mediaFile.source } : skipToken,
+  const opened = useOpenBookQuery(
+    mediaFile && !library
+      ? { name: mediaFile.name, source: mediaFile.source }
+      : skipToken,
   );
+  const libraryItem = library?.item;
+  const libraryText = library?.text;
+  const libraryDocument = useMemo(
+    () =>
+      libraryItem &&
+      libraryText &&
+      documentOfLibraryText(libraryText, libraryItem),
+    [libraryItem, libraryText],
+  );
+  const book = {
+    error: opened.error,
+    currentData: libraryDocument ?? opened.currentData,
+  };
   const isPlaceLoaded = useAppSelector(
     selectIsReadingLocationLoaded(mediaFileId),
   );
@@ -87,6 +109,7 @@ export function ReaderScreen({
       mediaFile={mediaFile}
       mediaFiles={data?.media_files ?? [mediaFile]}
       document={book.currentData}
+      library={library}
     />
   );
 }
@@ -96,12 +119,14 @@ function BookReader({
   mediaFile,
   mediaFiles,
   document,
+  library,
 }: {
   project: Project;
   mediaFile: MediaFile;
   /** The project's media files, among which the book's translation is chosen. */
   mediaFiles: readonly MediaFile[];
   document: Document;
+  library?: LibraryItemText;
 }) {
   const dispatch = useAppDispatch();
   const { settings } = project;
@@ -113,7 +138,12 @@ function BookReader({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
+  // A library item's paragraphs stay as stored, since its words are placed by their offsets.
+  const isFromLibrary = library !== undefined;
+  const text = useMemo(
+    () => (isFromLibrary ? document : unwrapHardLineBreaks(document)),
+    [document, isFromLibrary],
+  );
   const bilingual = useBookTranslation(project, mediaFile, mediaFiles, text);
   /** The draft of a flashcard for a word, with its sentence as context, translated where the book is aligned with its translation. */
   const draftFor = (word: string, place: LookupPlace | null) =>
@@ -129,13 +159,25 @@ function BookReader({
     });
   const audio = useReaderAudio(project.id, mediaFile.id, text);
   const sentence = useReaderSentenceRow(text, bilingual, audio);
-  const lookup = useReaderLookup(languages, draftFor, sentence);
+  const lookup = useReaderLookup(
+    languages,
+    draftFor,
+    sentence,
+    library && {
+      ...library,
+      projectId: project.id,
+      mediaFileId: mediaFile.id,
+      wordlessSource: sentence.spokenPlace?.source ?? null,
+    },
+  );
   const textLanguage = document.language ?? settings.target_language;
   const nearbySentences = useAppSelector((state) =>
     selectNearbySentences(state, text, mediaFile.id, textLanguage),
   );
-  useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
-    sentenceWordLookups(sentence, textLanguage),
+  useLookupPrefetch(
+    languages.target,
+    library ? [] : nearbySentences,
+    (sentence) => sentenceWordLookups(sentence, textLanguage),
   );
   const controls = useReaderKeyBindings({
     playAt: audio?.playAt,

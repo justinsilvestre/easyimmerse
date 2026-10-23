@@ -14,6 +14,7 @@ import {
 import { selectCuePosition } from "../media/selectCuePosition.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
+import type { LibraryWords } from "./libraryWords.ts";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
 import type { SentenceRowSource } from "./sentenceRowSource.ts";
 import { useWordLookup } from "./useWordLookup.ts";
@@ -28,15 +29,17 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * the word the pop-up shows, which keeps its identity while it shows the same word and is highlighted only while there is no cursor,
  * the cursor's place, highlighted at once when its word's lookup is cached,
  * and the pop-up's props, or null while it is closed.
+ * Given a library item's words, the pop-up shows their stored entries, as `useWordLookup` describes.
  */
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
   flashcards: WordFlashcards,
   sentence: SentenceRowSource,
+  library?: LibraryWords,
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const lookup = useWordLookup(languages, flashcards, sentence);
+  const lookup = useWordLookup(languages, flashcards, sentence, library);
   const cursor = useAppSelector(selectCuePosition);
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);

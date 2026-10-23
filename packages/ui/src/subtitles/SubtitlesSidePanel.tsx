@@ -72,6 +72,7 @@ export function SubtitlesSidePanel({
         activeCueIndex={shownCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
         flashcardWordRanges={flashcardWordRanges}
+        libraryWords={subtitles.libraryWords}
         activeWord={activeWord}
         cursor={cursor}
         onSeek={onSeek}

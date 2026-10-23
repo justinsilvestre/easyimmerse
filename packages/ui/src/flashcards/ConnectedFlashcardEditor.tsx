@@ -1,3 +1,4 @@
+import { useGetProjectQuery } from "@easyimmerse/backend";
 import {
   actions,
   type FlashcardForm,
@@ -5,15 +6,21 @@ import {
   saveStatusOf,
   selectAnkiFateOfDeletion,
   selectIsFlashcardSuspended,
+  selectIsLibraryFlashcard,
   selectMediaDurationMs,
 } from "@easyimmerse/state";
+import type { Flashcard } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 import type { MediaWaveform } from "./FlashcardEditorFields.tsx";
 import type { FlashcardLanguages } from "./flashcardFields.ts";
+import { LibraryFlashcardView } from "./LibraryFlashcardView.tsx";
 
-/** The flashcard editor for the card open in the form, which it edits, saves and plays through the store. */
+/**
+ * The flashcard editor for the card open in the form, which it edits, saves and plays through the store.
+ * A flashcard made from the library is shown read-only instead, as `LibraryFlashcardView` describes.
+ */
 export function ConnectedFlashcardEditor({
   form,
   languages,
@@ -41,6 +48,19 @@ export function ConnectedFlashcardEditor({
       saved !== null &&
       selectIsFlashcardSuspended(state, saved.project_id, saved.id),
   );
+  const isFromLibrary = useAppSelector(
+    (state) =>
+      saved !== null &&
+      selectIsLibraryFlashcard(state, saved.project_id, saved.id),
+  );
+  if (saved && isFromLibrary)
+    return (
+      <ConnectedLibraryFlashcard
+        flashcard={saved}
+        languages={languages}
+        screenshotUrl={screenshotUrl}
+      />
+    );
   return (
     <FlashcardEditor
       key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
@@ -68,6 +88,39 @@ export function ConnectedFlashcardEditor({
       }
       onClose={() => dispatch(actions.flashcardClosed())}
       onPlayClip={(clip) => dispatch(actions.clipPlayRequested(clip))}
+    />
+  );
+}
+
+/** A flashcard made from the library, read-only, laid out as the project's settings choose, with its clip and deletion through the store. */
+function ConnectedLibraryFlashcard({
+  flashcard,
+  languages,
+  screenshotUrl,
+}: {
+  flashcard: Flashcard;
+  languages: FlashcardLanguages;
+  screenshotUrl: string | null;
+}) {
+  const dispatch = useAppDispatch();
+  const settings = useGetProjectQuery(flashcard.project_id).data?.settings;
+  const ankiFate = useAppSelector((state) =>
+    selectAnkiFateOfDeletion(state, flashcard.project_id, flashcard.id),
+  );
+  const clip = flashcard.content.audio_context;
+  if (!settings) return null;
+  return (
+    <LibraryFlashcardView
+      content={flashcard.content}
+      settings={settings}
+      languages={languages}
+      screenshotUrl={screenshotUrl}
+      ankiFate={ankiFate}
+      onPlayAudio={
+        clip ? () => dispatch(actions.clipPlayRequested(clip)) : undefined
+      }
+      onDelete={() => dispatch(actions.flashcardDeleteRequested())}
+      onClose={() => dispatch(actions.flashcardClosed())}
     />
   );
 }

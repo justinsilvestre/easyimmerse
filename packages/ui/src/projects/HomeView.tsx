@@ -1,5 +1,5 @@
 import type { Project, ReviewCounts } from "@easyimmerse/types";
-import { BookOpen, FolderOpen, Plus } from "lucide-react";
+import { BookOpen, FolderOpen, Library, Plus } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
@@ -10,7 +10,7 @@ import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 
-/** The home screen: the recent projects, most recently opened first, and the way to a new one. */
+/** The home screen: the recent projects, most recently opened first, the way to a new one, and the way to the server's library. */
 export function HomeView({
   status,
   projects,
@@ -20,6 +20,7 @@ export function HomeView({
   onCreateProject,
   onContinueOffline,
   onOpenDictionaries,
+  onOpenLibrary,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
@@ -31,11 +32,16 @@ export function HomeView({
   onCreateProject: () => void;
   onContinueOffline: () => void;
   onOpenDictionaries: () => void;
+  onOpenLibrary: () => void;
 }) {
   return (
     <ScreenLayout
       headerActions={
         <>
+          <Button variant="subtle" aria-label="Library" onClick={onOpenLibrary}>
+            <Library className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Library</span>
+          </Button>
           <Button
             variant="subtle"
             aria-label="Dictionaries"

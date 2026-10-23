@@ -105,6 +105,12 @@ describe("HomeScreen", () => {
     });
   });
 
+  it("opens the library when Library is clicked", () => {
+    const { store } = renderHome();
+    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+    expect(selectRoute(store.getState())).toEqual({ screen: "library" });
+  });
+
   it("requests an external link when Help is clicked", () => {
     const { effects } = renderHome();
     fireEvent.click(screen.getByRole("button", { name: "Help" }));

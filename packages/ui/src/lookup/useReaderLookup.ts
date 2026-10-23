@@ -13,6 +13,7 @@ import type {
   ReaderWordGestures,
 } from "../reader/useWordPointer.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
+import type { LibraryWords } from "./libraryWords.ts";
 import type { LookupPlace } from "./lookupPlace.ts";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
 import type { SentenceRowSource } from "./sentenceRowSource.ts";
@@ -36,11 +37,13 @@ export type ReaderSentenceRowSource = SentenceRowSource & {
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
  * the rectangle of the word the pop-up stands beside, the word it highlights, which is the cursor's while the keyboard
  * placed it and otherwise the pop-up's, and the text whose translation its sentence row shows.
+ * Given a library item's words, the pop-up shows their stored entries, as `useWordLookup` describes.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
   draftFor: WordFlashcards["draftFor"],
   sentence: ReaderSentenceRowSource,
+  library?: LibraryWords,
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -49,6 +52,7 @@ export function useReaderLookup(
     languages,
     { draftFor, savesAtOnce: true },
     sentence,
+    library,
   );
   const chosenFor = (word: ReaderWord): ChosenWord => {
     const { chapterIndex, paragraphIndex, offset } = word.location;

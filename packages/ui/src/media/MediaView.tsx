@@ -7,10 +7,12 @@ import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import type { Range } from "../components/RunText.tsx";
+import type { WordSpan } from "../components/splitAtWords.ts";
 import { useElementSize } from "../hooks/useElementSize.ts";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { CueTextCursor } from "./cueCursor.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
+import { libraryWordsOf } from "./libraryWordsByCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
 import type { PlayerCallbacks, PlayerPanelsState } from "./PlayerControls.tsx";
 import { SourceChip } from "./SourceChip.tsx";
@@ -56,6 +58,8 @@ type MediaViewProps = {
   onCloseSubtitleAppearance: () => void;
   /** Where each cue's text holds the words that flashcards were made from, by cue index. */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** The words of each cue a library item stores, by cue index, which alone are clickable; unset for any other media file. */
+  libraryWords?: ReadonlyMap<number, readonly WordSpan[]>;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, which is highlighted in them; null when there is none. */
@@ -212,6 +216,11 @@ export function MediaView(props: MediaViewProps) {
                         flashcardWordRanges={
                           shownCue
                             ? props.flashcardWordRanges?.get(shownCue.index)
+                            : undefined
+                        }
+                        words={
+                          shownCue
+                            ? libraryWordsOf(props.libraryWords, shownCue)
                             : undefined
                         }
                         activeWord={props.activeWord}

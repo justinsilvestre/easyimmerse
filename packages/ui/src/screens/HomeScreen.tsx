@@ -40,6 +40,7 @@ export function HomeScreen({
         onCreateProject={onCreateProject}
         onContinueOffline={onContinueOffline}
         onOpenDictionaries={openDictionaries}
+        onOpenLibrary={() => navigate({ type: "openLibrary" })}
       />
       <ConnectedEncoderNotice />
     </>

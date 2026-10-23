@@ -154,6 +154,20 @@ describe("ClickableText", () => {
     expect(word.classList.contains("bg-accent-soft")).toBe(true);
   });
 
+  describe("with the words a library item stores", () => {
+    it("makes only those words clickable", () => {
+      render(
+        <ClickableText
+          text="Der Hund schläft."
+          words={[{ start: 4, end: 8 }]}
+        />,
+      );
+      expect(
+        screen.getAllByRole("button").map((word) => word.textContent),
+      ).toEqual(["Hund"]);
+    });
+  });
+
   describe("with words that flashcards were made from", () => {
     it("marks such a word", () => {
       const { container } = render(

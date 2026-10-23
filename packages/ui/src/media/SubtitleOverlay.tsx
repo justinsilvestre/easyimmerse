@@ -4,6 +4,7 @@ import { memo } from "react";
 import { ClickableText } from "../components/ClickableText.tsx";
 import { type LineStep, lineStepOfKey } from "../components/cursorKeys.ts";
 import type { Range } from "../components/RunText.tsx";
+import type { WordSpan } from "../components/splitAtWords.ts";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,
@@ -34,6 +35,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   display,
   appearance,
   flashcardWordRanges,
+  words,
   activeWord,
   cursor,
   wordGestures,
@@ -45,6 +47,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   appearance: SubtitleAppearance;
   /** Where the target cue's text holds the words that flashcards were made from. */
   flashcardWordRanges?: readonly Range[];
+  /** The only words of the target cue to make clickable, as a library item stores them; unset to find them in its text. */
+  words?: readonly WordSpan[];
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, highlighted when it lies in the target cue; null when there is none. */
   cursor?: CueTextCursor | null;
@@ -85,6 +89,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
             activeWord={activeWordIn(activeWord, targetCue)}
             cursor={cursorIn(cursor, targetCue)}
             markedRanges={flashcardWordRanges}
+            words={words}
             gestures={gesturesForCue(wordGestures, targetCue)}
           />
         </p>

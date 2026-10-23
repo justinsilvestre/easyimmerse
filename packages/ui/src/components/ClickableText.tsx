@@ -11,6 +11,7 @@ import {
 } from "./lookupTrigger.ts";
 import { type Range, RunText } from "./RunText.tsx";
 import { runLookupEnd } from "./runLookupStarts.ts";
+import { splitAtWords, type WordSpan } from "./splitAtWords.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
@@ -55,7 +56,8 @@ const wordPattern = new RegExp(
   "gu",
 );
 
-type TextPart = {
+/** A word of a text, or the characters between two words. */
+export type TextPart = {
   text: string;
   isWord: boolean;
   /** Whether the word is a run of a script written without spaces, whose every character can begin a word. */
@@ -105,6 +107,7 @@ export function splitIntoWords(text: string): TextPart[] {
  * The words that flashcards were made from are underlined, and in a run only their characters.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
+ * Given `words`, only those are clickable, in place of the words the text is split into otherwise.
  */
 export function ClickableText({
   text,
@@ -112,6 +115,7 @@ export function ClickableText({
   cursor: givenCursor,
   markedRanges = noRanges,
   gestures = noGestures,
+  words,
 }: {
   text: string;
   activeWord?: ActiveWord;
@@ -123,13 +127,15 @@ export function ClickableText({
   /** Where the text holds the words that flashcards were made from. */
   markedRanges?: readonly Range[];
   gestures?: WordGestures;
+  /** The only words to make clickable, such as those a library manager set, in order and without overlaps. */
+  words?: readonly WordSpan[];
 }) {
   const textId = useId();
   const textCursor = useTextCursor(text, givenCursor, gestures);
   const { cursor } = textCursor;
   const cursorStart = cursor?.start ?? null;
   const pointer = useWordGestures(textCursor.gestures, cursorStart);
-  const parts = splitIntoWords(text);
+  const parts = words ? splitAtWords(text, words) : splitIntoWords(text);
   const keyboard = useKeyboardCursor(parts, cursor, pointer);
   const highlighted = highlightOf(cursor);
   return (

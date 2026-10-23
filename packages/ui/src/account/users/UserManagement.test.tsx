@@ -122,6 +122,23 @@ describe("UserManagement", () => {
     );
   });
 
+  it("lets an account manage the library when its Manages library box is checked", async () => {
+    const client = renderWith({
+      "PUT /users/u2/library-manager": { ...reader, manages_library: true },
+    });
+    fireEvent.click(
+      await screen.findByRole("checkbox", {
+        name: "Manages library (someone@example.com)",
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        requestsTo(client.requests, "PUT", "/users/u2/library-manager")[0]
+          ?.body,
+      ).toEqual({ kind: "json", value: { manages_library: true } }),
+    );
+  });
+
   it("tells when the only administrator would lose its role", async () => {
     renderWith({
       "PUT /users/u1/role": fakeFailure({
