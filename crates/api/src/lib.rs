@@ -36,6 +36,7 @@ pub mod state;
 pub mod sync;
 #[cfg(test)]
 mod typescript_constants;
+mod unread_body;
 
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::principal::Principal;
