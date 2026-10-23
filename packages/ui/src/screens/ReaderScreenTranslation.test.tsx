@@ -11,6 +11,7 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -216,6 +217,7 @@ async function chooseView(name: RegExp) {
 function click(detail = 1) {
   const text = screen.getByRole("main");
   fireEvent.pointerDown(text, { ...point, pointerType: "mouse", button: 0 });
+  fireEvent.pointerUp(text, { ...point, pointerType: "mouse", button: 0 });
   fireEvent.click(text, { ...point, detail });
 }
 
@@ -255,8 +257,7 @@ async function renderAligned() {
   return rendered;
 }
 
-const findPopup = () =>
-  screen.findByRole("dialog", { name: "Dictionary" }, { timeout: 2000 });
+const findPopup = () => screen.findByRole("dialog", { name: "Dictionary" });
 
 /** The text the translated-sentence highlight covers, or null when nothing is highlighted. */
 const translatedText = () =>
@@ -308,7 +309,7 @@ describe("ReaderScreen translation", () => {
     fireEvent.click(
       await within(panel()).findByRole("button", { name: "Remove" }),
     );
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         bodyOf(
           requestsTo(
@@ -365,7 +366,7 @@ describe("ReaderScreen translation", () => {
   it("shows the translation of a sentence under it in the interlinear view", async () => {
     await renderReader({ isAligned: true });
     await chooseView(/^Interlinear/);
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         paragraphHolding(sentence)?.querySelector(`[${translationAttribute}]`)
           ?.textContent,
@@ -376,7 +377,7 @@ describe("ReaderScreen translation", () => {
   it("looks up a clicked word with its sentence alone as context in the interlinear view", async () => {
     const { client } = await renderReader({ isAligned: true });
     await chooseView(/^Interlinear/);
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         paragraphHolding(sentence)?.querySelector(`[${translationAttribute}]`),
       ).not.toBeNull(),

@@ -12,6 +12,7 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -133,6 +134,7 @@ async function renderReader({ hasBatchLookups = false } = {}) {
 function click(detail = 1) {
   const text = screen.getByRole("main");
   fireEvent.pointerDown(text, { ...point, pointerType: "mouse" });
+  fireEvent.pointerUp(text, { ...point, pointerType: "mouse" });
   fireEvent.click(text, { ...point, detail });
 }
 
@@ -148,7 +150,7 @@ async function restMouse(client: ReturnType<typeof createFakeBackendClient>) {
     ...point,
     pointerType: "mouse",
   });
-  await vi.waitFor(() =>
+  await waitFor(() =>
     expect(lookupQueries(client).length).toBeGreaterThan(before),
   );
   await act(async () => {});
@@ -201,7 +203,7 @@ describe("ReaderScreen lookup", () => {
     pointAt("windowsill");
     await restMouse(client);
     const popup = await findPopup();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         within(popup).getByRole<HTMLInputElement>("textbox", {
           name: "Word to look up",
@@ -218,7 +220,7 @@ describe("ReaderScreen lookup", () => {
     pointAt("windowsill");
     click();
     const popup = await findPopup();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         within(popup).getByRole<HTMLInputElement>("textbox", {
           name: "Word to look up",
@@ -254,7 +256,7 @@ describe("ReaderScreen lookup", () => {
     });
     fireEvent.keyDown(document.body, { key: "l" });
     const popup = await findPopup();
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(
         within(popup).getByRole<HTMLInputElement>("textbox", {
           name: "Word to look up",
@@ -357,9 +359,7 @@ describe("ReaderScreen lookup", () => {
       });
       // The hold is the gesture's own half-second timer, which runs in real time.
       fireEvent.pointerDown(devour, { pointerType: "touch" });
-      const draft = await vi.waitFor(() => findCreatedDraft(client), {
-        timeout: 2000,
-      });
+      const draft = await findCreatedDraft(client);
       expect(draft.content.word).toBe("fressen");
     });
   });

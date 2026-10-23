@@ -38,12 +38,12 @@ mise run devtools       # Redux DevTools server for the desktop and mobile apps;
 
 #### Web app against a local server (`web-dev`)
 
-- The **server** listens at `http://127.0.0.1:8788` and accepts the token `dev`. The web app is configured to use it.
+- The **server** listens at `http://127.0.0.1:8788` and accepts the random token in `.dev/web-dev-token`, which the task makes once per checkout. The web app is configured to use it.
 - The **development database** is the file `.dev/server.sqlite`. To start with a fresh database, stop the task, delete `.dev/`, and start the task again.
 - A new database is **seeded with two placeholder projects**: "Spanish practice", with Spanish as the target language, and "Japanese drama", with Japanese. Both translate into English.
 - Once per database, the server also **adds sample content** from the checkout's `fixtures/` directory. Each placeholder project that has no media yet receives a short sample video with subtitles in its target language and in English, the Japanese project also receives a Japanese novel, and small dictionaries for both languages are imported.
 - Each placeholder project also receives a **sample book with its English translation and a narrated clip**: the opening of *Lazarillo de Tormes* for Spanish and of Akutagawa's 杜子春 for Japanese. Each book is paired with its translation and aligned with it sentence by sentence, and the clip, about a minute of a LibriVox reading, is aligned with the book's first sentences. Each book is added once per database, so an older database receives a book that was added to the seed after it was created.
-- The **sample media do not open under this task.** They are stored as paths into `fixtures/`, and this server runs without `--allow-local-paths`, so it refuses to read files outside its own directories. The desktop app and `web:desktop` allow local paths, so the same sample content opens there.
+- The sample content is stored as paths into `fixtures/`, so this server runs with **`--allow-local-paths`**, as the desktop app and `web:desktop` do.
 - The server's **directories** are set with a flag or an environment variable each.
 
   | Directory | Flag | Environment variable | Under `web-dev` |

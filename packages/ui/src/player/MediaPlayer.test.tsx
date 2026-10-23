@@ -9,8 +9,14 @@ import {
   selectPlayerDuration,
 } from "@easyimmerse/state";
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -239,7 +245,7 @@ describe("MediaPlayer", () => {
       const { hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(hls[0]?.sourceUrl).toBe(
           "http://127.0.0.1:1/conversions/copy0001/index.m3u8",
         ),
@@ -250,7 +256,7 @@ describe("MediaPlayer", () => {
       const { hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(hls[0]?.authorizationHeader).toBe("Bearer t0k3n"),
       );
     });
@@ -259,7 +265,7 @@ describe("MediaPlayer", () => {
       const { hls, playerRegistry } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() => expect(hls[0]?.media).toBeTruthy());
+      await waitFor(() => expect(hls[0]?.media).toBeTruthy());
       act(() => playerRegistry.current()?.seek(1));
       expect(hls[0]?.media?.currentTime).toBeCloseTo(1 + halfFrame, 9);
     });
@@ -268,7 +274,7 @@ describe("MediaPlayer", () => {
       const { hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
+      await waitFor(() => expect(hls[0]).toBeDefined());
       act(() =>
         hls[0]?.emitError({ type: "networkError", details: "x", fatal: true }),
       );
@@ -281,7 +287,7 @@ describe("MediaPlayer", () => {
       const { hls, store } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
+      await waitFor(() => expect(hls[0]).toBeDefined());
       act(() => store.dispatch(actions.closeMedia()));
       expect(hls[0]?.destroyed).toBe(true);
     });
@@ -303,7 +309,7 @@ describe("MediaPlayer", () => {
       });
       await screen.findByRole("dialog");
       fireEvent.click(screen.getByRole("button", { name: "Play" }));
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(hls[0]?.sourceUrl).toBe(
           "http://127.0.0.1:1/conversions/transcode01/index.m3u8",
         ),
@@ -332,7 +338,7 @@ describe("MediaPlayer", () => {
       const { hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
+      await waitFor(() => expect(hls[0]).toBeDefined());
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 
@@ -341,7 +347,7 @@ describe("MediaPlayer", () => {
       await screen.findByRole("dialog", { name: "Choose tracks" });
       fireEvent.click(screen.getByRole("radio", { name: /English/ }));
       fireEvent.click(screen.getByRole("button", { name: "Choose" }));
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(
           client.requests.find((request) => request.method === "PUT"),
         ).toMatchObject({
@@ -356,7 +362,7 @@ describe("MediaPlayer", () => {
       await screen.findByRole("dialog", { name: "Choose tracks" });
       fireEvent.click(screen.getByRole("radio", { name: /English/ }));
       fireEvent.click(screen.getByRole("button", { name: "Choose" }));
-      await vi.waitFor(() =>
+      await waitFor(() =>
         expect(playbackRequests(client.requests)).toHaveLength(1),
       );
       expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
