@@ -33,6 +33,7 @@ mise run dev            # desktop app, with the web app served to this machine a
 mise run dev:cloud      # local stand-in for the easyImmerse cloud, for logging in from the development builds
 mise run storybook      # UI component stories at http://localhost:6006
 mise run storybook-diff # before and after screenshots of the stories the working tree changes against main
+mise run devtools       # Redux DevTools server for the desktop and mobile apps; the monitor is at http://localhost:1421/devtools.html
 ```
 
 #### Web app against a local server (`web-dev`)
@@ -91,6 +92,14 @@ mise run storybook-diff # before and after screenshots of the stories the workin
 - The development builds of the web app, the desktop app and the extension **offer `http://127.0.0.1:8791` as the easyImmerse cloud** in the Account section of Settings, as a release build offers the real one. The address is set in each app's `.env.development`.
 - **No other task starts this server**, so logging in to the cloud fails until `mise run dev:cloud` is running. A server of your own can still be named under More options.
 - The server has **accounts with open sign-up**, keeps its data in `.dev/cloud.sqlite` and its media copies in `.dev/cloud-uploads/`, and **prints its mail to the terminal**, with links that open the `web-dev` app.
+
+#### Redux DevTools for the desktop and mobile apps (`devtools`)
+
+- The Tauri webview cannot run browser extensions, so in development the desktop and mobile apps **send their store to a Redux DevTools server** at `localhost:8000`, which this task starts. Start it before or after the app; the app connects once the server is up.
+- To **watch the store**, open `http://localhost:1421/devtools.html` in a browser while `mise run desktop` runs. The desktop app's Vite server serves this monitor page, which connects to the server by itself and lists the app as `easyImmerse desktop` or `easyImmerse mobile`.
+- The server's own page at `http://localhost:8000` does not load, and the browser extension's remote monitor fails in Firefox, so use the page above instead.
+- On an **Android emulator**, `localhost` is the emulator itself, so run `adb reverse tcp:8000 tcp:8000` first. The iOS simulator shares the Mac's `localhost`.
+- Release builds contain no DevTools code.
 
 #### Storybook (`storybook`)
 

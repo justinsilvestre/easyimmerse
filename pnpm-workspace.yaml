@@ -21,3 +21,8 @@ allowBuilds:
 # Appium's install script only prints a notice and installs drivers listed in the consuming
 # package's manifest, which this repository does not use; drivers go through `mise run appium:install`.
   appium: false
+# The Redux DevTools client announces the app to a monitor before it subscribes to the channel the monitor answers on,
+# so a monitor that is already open never learns of the app. The patch subscribes first and then announces.
+# The issue is unfixed upstream as of @redux-devtools/remote 1.0.1.
+patchedDependencies:
+  '@redux-devtools/remote@1.0.1': patches/@redux-devtools__remote@1.0.1.patch
