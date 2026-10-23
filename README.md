@@ -30,6 +30,7 @@ mise run web-dev        # web app with hot reloading, against a local server
 mise run desktop        # desktop app with its embedded server
 mise run web:desktop    # web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data
 mise run dev            # desktop app, with the web app served to this machine and the local network against its server
+mise run dev:cloud      # local stand-in for the easyImmerse cloud, for logging in from the development builds
 mise run storybook      # UI component stories at http://localhost:6006
 mise run storybook-diff # before and after screenshots of the stories the working tree changes against main
 ```
@@ -57,8 +58,8 @@ mise run storybook-diff # before and after screenshots of the stories the workin
 #### Desktop app (`desktop`)
 
 - On **start-up**, the task fetches the ffmpeg sidecars when they are missing or come from an older release than the one pinned (through `mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)). It then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The first build can take several minutes.
-- The **database** is stored in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS. Installed plugins go in `plugins/` and the media they fetch in `media/`, both next to the database.
-- **Converted media** is cached in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`.
+- The **database** is stored in the checkout, at `.dev/desktop/data/easyimmerse.sqlite`, so a development build never touches an installed app's data. Installed plugins go in `plugins/` and the media they fetch in `media/`, both next to the database. The server config file is in `.dev/desktop/config/`. A release build keeps these in the system's app directories instead, such as `~/Library/Application Support/com.easyimmerse.app` on macOS.
+- **Converted media** is cached in `.dev/desktop/cache/`, where a release build uses the system's cache directory, such as `~/Library/Caches/com.easyimmerse.app`.
 - Each start **writes `.dev/desktop-server.env`** with the server's address, a new token, and the database and cache paths. The `web:desktop` and `dev` tasks read this file.
 - A debug build **seeds the same placeholder projects and sample content** as `web-dev`: the projects into an empty database, and the sample content once per database. A placeholder project that still has no media receives the sample content on the next start, even in an older database. A release build starts empty.
 - The app **refuses to start while the standalone server of `web:desktop` is running**, because both would convert media into the same cache.
@@ -84,6 +85,12 @@ mise run storybook-diff # before and after screenshots of the stories the workin
 - The task **starts the desktop app** as `desktop` does, waits until the app has written a new token to `.dev/desktop-server.env` and its server accepts that token, and then **serves the web app** as `web:desktop` does, against the desktop app's server.
 - **Restart the task after a change to Rust sources.** `tauri dev` rebuilds and restarts the desktop app, which writes a new token and possibly a new port, while Vite keeps the values it started with.
 - **Quitting the desktop app or stopping Vite** stops the whole task.
+
+#### Local easyImmerse cloud (`dev:cloud`)
+
+- The development builds of the web app, the desktop app and the extension **offer `http://127.0.0.1:8791` as the easyImmerse cloud** in the Account section of Settings, as a release build offers the real one. The address is set in each app's `.env.development`.
+- **No other task starts this server**, so logging in to the cloud fails until `mise run dev:cloud` is running. A server of your own can still be named under More options.
+- The server has **accounts with open sign-up**, keeps its data in `.dev/cloud.sqlite` and its media copies in `.dev/cloud-uploads/`, and **prints its mail to the terminal**, with links that open the `web-dev` app.
 
 #### Storybook (`storybook`)
 
