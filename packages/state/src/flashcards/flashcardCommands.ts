@@ -22,6 +22,7 @@ import {
   settleFlashcardRequest,
 } from "./settleFlashcardRequest.ts";
 import { saveStarted, takeFinished } from "./startedCards.ts";
+import { sendSuspend, suspendSettled } from "./suspendFlashcard.ts";
 import { sendUnsuspend, unsuspendSettled } from "./unsuspendFlashcard.ts";
 import {
   fieldsAwaitedBy,
@@ -68,6 +69,8 @@ function answer(action: AppAction, app: FlashcardCommandsApp) {
       return discardFailedSave(action.flashcardId, app);
     case "failedSaveDiscardUndone":
       return restoreFailedSave(action.kept, app);
+    case "flashcardSuspendRequested":
+      return [sendSuspend(action.projectId, action.flashcardId)];
     case "flashcardUnsuspendRequested":
       return [sendUnsuspend(action.projectId, action.flashcardId)];
     case "saveUndoRequested":
@@ -77,6 +80,7 @@ function answer(action: AppAction, app: FlashcardCommandsApp) {
     case "requestSettled":
       return [
         ...fieldsAwaitedBy(action, app),
+        ...suspendSettled(action),
         ...unsuspendSettled(action),
         ...(isFlashcardSettled(action)
           ? settleFlashcardRequest(action, app)

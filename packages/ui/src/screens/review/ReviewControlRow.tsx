@@ -26,7 +26,6 @@ export function ReviewControlRow({
   onBack,
   onUndo,
   onEditFlashcard,
-  isFromLibrary = false,
   onBury,
   onSuspend,
   onDeleteFlashcard,
@@ -40,10 +39,8 @@ export function ReviewControlRow({
   hasCard: boolean;
   onBack: () => void;
   onUndo: () => void;
-  /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone. */
+  /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone or one made from the library, which cannot be edited. */
   onEditFlashcard: (() => void) | null;
-  /** Whether the card was made from the library, which opens read-only, so that its item says "Open flashcard". */
-  isFromLibrary?: boolean;
   /** Hides the card until the next day begins. */
   onBury: () => void;
   /** Leaves the card out of the review until the user unsuspends it in the editor. */
@@ -56,7 +53,7 @@ export function ReviewControlRow({
   const editItem: MenuItem[] = onEditFlashcard
     ? [
         {
-          label: isFromLibrary ? "Open flashcard" : "Edit flashcard",
+          label: "Edit flashcard",
           icon: <Pencil className="size-4" aria-hidden />,
           onSelect: onEditFlashcard,
         },

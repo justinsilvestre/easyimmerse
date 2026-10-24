@@ -10,7 +10,7 @@ import {
   selectReviewKeyBinding,
   selectReviewSession,
 } from "@easyimmerse/state";
-import type { ReviewIntervals } from "@easyimmerse/types";
+import type { Flashcard, ReviewIntervals } from "@easyimmerse/types";
 import { FlashcardDeleteDialog } from "../../components/flashcards/FlashcardDeleteDialog.tsx";
 import { useKeyBindings } from "../../lib/useKeyBindings.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
@@ -55,7 +55,7 @@ export function ConnectedReviewScreen({
     rate: ({ rating }) => rate(rating),
   });
   if (session === null || project === undefined) return null;
-  const mediaFileId = shown?.flashcard.media_file_id ?? null;
+  const mediaFileId = editableMediaFileIdOf(shown?.flashcard);
   const { settings } = project;
   return (
     <>
@@ -96,7 +96,6 @@ export function ConnectedReviewScreen({
             ? null
             : () => dispatch(actions.reviewFlashcardEditRequested(mediaFileId))
         }
-        isFromLibrary={shown?.flashcard.is_from_library ?? false}
         onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
         onSuspend={() =>
           dispatch(actions.reviewCardHeld("suspended", Date.now()))
@@ -129,4 +128,10 @@ function intervalsOf(intervals: ReviewIntervals) {
     good: formatInterval(intervals.good_ms),
     easy: formatInterval(intervals.easy_ms),
   } satisfies Record<ReviewGrade, string>;
+}
+
+/** The media file to open the flashcard's editor on, or null for a card the editor cannot open: one made from the library, or one whose media file is gone. */
+function editableMediaFileIdOf(flashcard: Flashcard | undefined) {
+  if (!flashcard || flashcard.is_from_library) return null;
+  return flashcard.media_file_id;
 }

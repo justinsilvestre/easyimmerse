@@ -1,6 +1,6 @@
 import type { AnkiFateOfDeletion } from "@easyimmerse/state";
 import type { FlashcardContent, ProjectSettings } from "@easyimmerse/types";
-import { X } from "lucide-react";
+import { CirclePause, X } from "lucide-react";
 import { Button } from "../common/Button.tsx";
 import { IconButton } from "../common/IconButton.tsx";
 import { FlashcardDeleteDialog } from "../flashcards/FlashcardDeleteDialog.tsx";
@@ -10,7 +10,7 @@ import { SuspendedStrip } from "./SuspendedStrip.tsx";
 
 /**
  * A flashcard made from a library item, shown as it is reviewed, since the server fills it and refuses changes.
- * It can be closed, brought back into the review while suspended, or deleted after confirming in a dialog.
+ * It can be closed, suspended, brought back into the review while suspended, or deleted after confirming in a dialog.
  */
 export function LibraryFlashcardView({
   content,
@@ -21,6 +21,7 @@ export function LibraryFlashcardView({
   isConfirmingDelete,
   onPlayAudio,
   onUnsuspend = null,
+  onSuspend,
   onAskDelete,
   onCancelDelete,
   onDelete,
@@ -40,6 +41,8 @@ export function LibraryFlashcardView({
   onPlayAudio?: () => void;
   /** Brings the suspended flashcard back into the review. Null, the default, for a flashcard that is not suspended. */
   onUnsuspend?: (() => void) | null;
+  /** Leaves the flashcard out of the review. The button shows only while the flashcard is not suspended. */
+  onSuspend: () => void;
   onAskDelete: () => void;
   onCancelDelete: () => void;
   onDelete: () => void;
@@ -71,7 +74,13 @@ export function LibraryFlashcardView({
         screenshotUrl={screenshotUrl}
         onPlayAudio={onPlayAudio}
       />
-      <div>
+      <div className="flex flex-wrap gap-2">
+        {!onUnsuspend && (
+          <Button variant="subtle" onClick={onSuspend}>
+            <CirclePause className="size-4" aria-hidden />
+            Suspend
+          </Button>
+        )}
         <Button variant="danger" onClick={onAskDelete}>
           Delete flashcard
         </Button>

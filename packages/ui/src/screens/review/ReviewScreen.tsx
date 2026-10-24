@@ -23,7 +23,6 @@ export function ReviewScreen({
   onRate,
   onUndo,
   onEditFlashcard,
-  isFromLibrary = false,
   onBury,
   onSuspend,
   onDeleteFlashcard,
@@ -41,8 +40,6 @@ export function ReviewScreen({
   onUndo: () => void;
   /** Opens the card in the editor. Null leaves the item out of the More menu. */
   onEditFlashcard: (() => void) | null;
-  /** Whether the card was made from the library, which opens read-only rather than in the editor. */
-  isFromLibrary?: boolean;
   onBury: () => void;
   onSuspend: () => void;
   onDeleteFlashcard: () => void;
@@ -58,7 +55,6 @@ export function ReviewScreen({
         onBack={session.onBack}
         onUndo={onUndo}
         onEditFlashcard={onEditFlashcard}
-        isFromLibrary={isFromLibrary}
         onBury={onBury}
         onSuspend={onSuspend}
         onDeleteFlashcard={onDeleteFlashcard}

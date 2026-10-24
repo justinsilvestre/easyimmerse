@@ -32,6 +32,7 @@ const meta = {
     isConfirmingDelete: false,
     onPlayAudio: fn(),
     onUnsuspend: null,
+    onSuspend: fn(),
     onAskDelete: fn(),
     onCancelDelete: fn(),
     onDelete: fn(),

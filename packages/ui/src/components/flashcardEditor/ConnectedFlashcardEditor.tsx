@@ -91,7 +91,7 @@ export function ConnectedFlashcardEditor({
 
 /**
  * A flashcard made from the library, read-only, laid out as the project's settings choose,
- * with its clip, its unsuspension and its confirmed deletion through the store.
+ * with its clip, its suspension and unsuspension and its confirmed deletion through the store.
  */
 function ConnectedLibraryFlashcard({
   flashcard,
@@ -133,6 +133,9 @@ function ConnectedLibraryFlashcard({
                 actions.flashcardUnsuspendRequested(projectId, flashcardId),
               )
           : null
+      }
+      onSuspend={() =>
+        dispatch(actions.flashcardSuspendRequested(projectId, flashcardId))
       }
       onAskDelete={() =>
         dispatch(
