@@ -43,7 +43,7 @@ Before and after can be told apart at a glance:
 - **Before** has an orange label with "Before" on the left and a dashed frame.
 - **After** has a blue label with "After" on the right and a solid frame.
 
-Each label spans its screenshot and stays in view as you scroll. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way. Full screen starts zoomed in on the changes, which **Zoom to changes** turns off, and has the story's Comment and Light/Dark buttons too; the **×** at its top left closes it.
+Each label spans its screenshot and stays in view as you scroll. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way. Full screen starts zoomed in on the changes, which the magnifier button turns off, and has the story's Comment and Light/Dark buttons too; the **×** at its top left closes it.
 
 ## Trying the report page without capturing
 

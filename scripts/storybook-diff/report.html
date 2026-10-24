@@ -443,6 +443,12 @@
         background: var(--side);
       }
       .viewer-bar .side { font-size: 16px; }
+      .icon-pill {
+        display: inline-grid;
+        place-items: center;
+        padding: 4px 9px;
+      }
+      .icon-pill svg { width: 16px; height: 16px; }
       .viewer-bar .close-button { color: #fff; font-size: 24px; margin-left: -6px; }
       .viewer-bar .close-button:hover { background: rgb(255 255 255 / 0.2); }
       .viewer-bar .pill[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgb(255 255 255 / 0.25); }
@@ -521,7 +527,7 @@
         <button type="button" class="close-button viewer-close" title="Close full screen" aria-label="Close full screen">×</button>
         <span class="side-group"><span class="viewer-icon"></span><span class="side"></span></span>
         <span class="viewer-title"></span>
-        <button type="button" class="pill viewer-zoom" aria-pressed="true">Zoom to changes</button>
+        <button type="button" class="pill icon-pill viewer-zoom" aria-pressed="true"></button>
         <button type="button" class="pill comment-toggle viewer-comment-toggle">Comment</button>
         <fieldset class="segmented viewer-themes" aria-label="Theme">
           <button type="button" class="pill" data-viewer-theme="light">Light</button>
@@ -981,7 +987,13 @@
       const maxZoom = 3;
       let viewedFigure = null;
       // Made here rather than in the markup, where a link must have an address before it has one to show.
-      const viewerOriginal = Object.assign(document.createElement("a"), { className: "pill", target: "_blank", textContent: "Open image" });
+      const viewerOriginal = Object.assign(document.createElement("a"), {
+        className: "pill icon-pill",
+        target: "_blank",
+        title: "Open the image in a new tab",
+        innerHTML: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3"/></svg>`,
+      });
+      viewerOriginal.setAttribute("aria-label", "Open image");
       viewer.querySelector(".viewer-zoom").before(viewerOriginal);
       const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
 
@@ -1021,6 +1033,9 @@
         const area = change.changedAreas?.[`${story.dataset.theme}-${variant.dataset.viewport}.png`];
         zoomButton.hidden = !area;
         zoomButton.setAttribute("aria-pressed", String(zoomToChanges));
+        zoomButton.innerHTML = zoomIcon(zoomToChanges);
+        zoomButton.title = zoomToChanges ? "Show the whole screenshot" : "Zoom to the changes";
+        zoomButton.setAttribute("aria-label", "Zoom to changes");
         // The part of the screenshot the frame shows: all of it, or the changed area with some context around it.
         const shown = area && zoomToChanges
           ? clampedArea(area.x - zoomContext, area.y - zoomContext, area.x + area.width + zoomContext, area.y + area.height + zoomContext, width, height)
@@ -1046,6 +1061,10 @@
         viewerOverlay.hidden = !overlay;
         if (overlay) viewerOverlay.src = overlay.getAttribute("src");
       }
+
+      /** A magnifier, with a plus while zoomed to the changes and a minus while showing the whole screenshot. */
+      const zoomIcon = (zoomed) =>
+        `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.75" cy="6.75" r="4.75"/><path d="M10.25 10.25 14.5 14.5M4.5 6.75h4.5${zoomed ? "M6.75 4.5v4.5" : ""}"/></svg>`;
 
       function clampedArea(left, top, right, bottom, width, height) {
         const [x, y] = [Math.max(0, left), Math.max(0, top)];
