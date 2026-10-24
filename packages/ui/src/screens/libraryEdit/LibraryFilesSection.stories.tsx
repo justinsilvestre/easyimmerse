@@ -12,7 +12,6 @@ const meta = {
     item: draft,
     isUploading: false,
     onReplaceFile: fn(),
-    onReplaceSubtitles: fn(),
   },
 } satisfies Meta<typeof LibraryFilesSection>;
 
@@ -25,15 +24,6 @@ export const Draft: Story = {};
 export const ReplacingTheFile: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByText("Replace park.mp4"));
-  },
-};
-
-/** The fold that replaces the subtitles, open. */
-export const ReplacingTheSubtitles: Story = {
-  play: async ({ canvasElement }) => {
-    await userEvent.click(
-      within(canvasElement).getByText("Replace the subtitles"),
-    );
   },
 };
 

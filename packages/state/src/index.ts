@@ -272,12 +272,16 @@ export { libraryTagsOf } from "./screen/libraryBrowse/libraryTagsOf.ts";
 export {
   type LibraryDeletion,
   type LibraryEditState,
-  type LibraryUpload,
   type LibraryWordPlace,
   selectLibraryAddTarget,
   selectLibraryEdit,
   selectLibraryWordPlace,
 } from "./screen/libraryEdit/libraryEditState.ts";
+export { libraryFailureMessage } from "./screen/libraryEdit/libraryFailureMessage.ts";
+export {
+  type NewLibraryItemSettings,
+  selectIsCreatingLibraryItem,
+} from "./screen/libraryManage/libraryCreation.ts";
 export {
   cuesOfLibraryText,
   documentOfLibraryText,

@@ -2,9 +2,6 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { AppRoot } from "../../app/createAppStore.ts";
 import { updated } from "../../app/updated.ts";
 
-/** What a new library item is made from: a video or audio file with its subtitles, or a text file. */
-export type LibraryUpload = "media" | "text";
-
 /** Something the user asked to delete on a library screen, waiting for confirmation. */
 export type LibraryDeletion =
   | { kind: "item"; itemId: string }
@@ -21,13 +18,12 @@ export type LibraryWordPlace = {
   end: number | null;
 };
 
-/** The choices the library screens keep: what waits for deletion, the text chosen to give an entry, the "Add to" project, and the new item's kind of file. */
+/** The choices the library screens keep: what waits for deletion, the text chosen to give an entry, and the "Add to" project. */
 export type LibraryEditState = {
   deletion: LibraryDeletion | null;
   selectedWord: LibraryWordPlace | null;
   /** The project chosen to add an item to, null for a new one; unset while the user has chosen none for the item. */
   addTarget: { itemId: string; projectId: string | null } | null;
-  upload: LibraryUpload;
 };
 
 /** The choices as the app starts. */
@@ -35,7 +31,6 @@ export const initialLibraryEdit: LibraryEditState = {
   deletion: null,
   selectedWord: null,
   addTarget: null,
-  upload: "media",
 };
 
 /**
@@ -55,8 +50,6 @@ export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
         ...state,
         addTarget: { itemId: action.itemId, projectId: action.projectId },
       });
-    case "libraryUploadChosen":
-      return updated({ ...state, upload: action.upload });
     case "navigated":
       return updated({
         ...state,

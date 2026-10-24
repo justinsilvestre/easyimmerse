@@ -13,6 +13,7 @@ import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { updateLibraryBrowse } from "./libraryBrowse/libraryBrowseFilter.ts";
 import { updateLibraryEdit } from "./libraryEdit/libraryEditState.ts";
+import { updateLibraryCreation } from "./libraryManage/libraryCreation.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaScreenActionOf } from "./mediaScreen/mediaScreenActionOf.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
@@ -85,6 +86,10 @@ function updateShownScreen(
       reviewFlashcardsOf(app.backend, route.projectId),
     );
   if (main.kind === "offline") return updateOfflineScreen(main, action);
+  if (main.kind === "libraryManage") {
+    const [creation, effects] = updateLibraryCreation(main.creation, action);
+    return updated({ ...main, creation }, ...effects);
+  }
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));
   return updated(main);

@@ -216,7 +216,14 @@ function BookReader({
       storedWords={storedWords}
       markedSpans={markedSpans}
       headerContent={
-        isEditing && <LibraryEditingBar kind="text" onOpenDetails={close} />
+        isEditing &&
+        library && (
+          <LibraryEditingBar
+            title={library.item.title}
+            kind="text"
+            onOpenDetails={close}
+          />
+        )
       }
       preferences={preferences}
       controls={controls}

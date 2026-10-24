@@ -34,7 +34,6 @@ const meta = {
     onChooseCoverFrame: fn(),
     onResetCover: fn(),
     onReplaceFile: fn(),
-    onReplaceSubtitles: fn(),
     onOpenWords: fn(),
     onProposeWords: fn(),
     onPublish: fn(),
@@ -81,7 +80,8 @@ export const ChangeRefused: Story = {
     item: exampleLibraryItem(),
     activity: {
       ...idle,
-      failure: "Unpublish the item to change its file, subtitles, or words.",
+      failure:
+        "“Im Park” is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
     },
   },
 };

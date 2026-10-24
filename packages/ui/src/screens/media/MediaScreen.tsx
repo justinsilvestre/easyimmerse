@@ -71,7 +71,8 @@ import { useSubtitleLookup } from "./useSubtitleLookup.ts";
  * A file from the library takes its cues from its item's text, where only the stored words are clickable,
  * the pop-up shows each word's stored entry without looking it up, and every flashcard is a library flashcard.
  * Its subtitles cannot change, so the subtitles panel offers no tracks, and its audio tracks are those its library manager prepared.
- * While a library manager prepares the item, every word can be clicked and any text selected, the stored words are underlined,
+ * While a library manager prepares the item, the subtitles panel offers its tracks as for any file, and the item's text follows the tracks chosen;
+ * every word can be clicked and any text selected, the stored words are underlined,
  * the pop-up gives the text an entry for learners, as `useWordLookup` describes, and no flashcard is made;
  * a bar above the stage leads back to the item's details, as does the way back.
  */
@@ -248,8 +249,13 @@ export function MediaScreen({
           source,
         }}
         headerContent={
-          isEditing && (
-            <LibraryEditingBar kind="subtitles" onOpenDetails={openDetails} />
+          isEditing &&
+          library && (
+            <LibraryEditingBar
+              title={library.item.title}
+              kind="subtitles"
+              onOpenDetails={openDetails}
+            />
           )
         }
         stage={<MediaPlayer projectId={projectId} />}
@@ -322,7 +328,7 @@ export function MediaScreen({
           ) : panels.cues ? (
             <SubtitlesSidePanel
               subtitles={subtitles}
-              tracks={library ? null : tracks}
+              tracks={library && !isEditing ? null : tracks}
               languages={languages}
               shownCue={shownCue}
               flashcardCueIndexes={flashcards.cueIndexes}

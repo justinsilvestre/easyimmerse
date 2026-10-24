@@ -189,6 +189,18 @@ export const requestEndpoints = {
       { projectId, mediaFileId, card: flashcard },
       { track: false },
     ),
+  createLibraryItem: ({ draft }) =>
+    backendApi.endpoints.createLibraryItem.initiate(draft, { track: false }),
+  uploadLibraryFile: ({ itemId, file }) =>
+    backendApi.endpoints.uploadLibraryFile.initiate(
+      { itemId, file },
+      { track: false },
+    ),
+  addLibraryItem: ({ itemId, projectId }) =>
+    backendApi.endpoints.addLibraryItem.initiate(
+      { itemId, projectId },
+      { track: false },
+    ),
   deleteFlashcard: ({ projectId, flashcardId }) =>
     backendApi.endpoints.deleteFlashcard.initiate(
       { projectId, flashcardId },

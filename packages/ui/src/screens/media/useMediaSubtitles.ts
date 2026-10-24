@@ -28,7 +28,8 @@ const noSelection: SubtitleSelection = {
 /**
  * The subtitle tracks of a media file, which of them show, their cues, and the ways to change them.
  * For a file from the library, given its item's text, the cues are the text's segments, with the words each stores, and no track can be chosen.
- * While a library manager prepares the item, every word can be clicked, and the stored words are marked instead.
+ * While a library manager prepares the item, its tracks can be chosen and added, and the server makes the item's text from them;
+ * every word can be clicked, and the stored words are marked instead.
  */
 export function useMediaSubtitles(
   projectId: string,
@@ -36,9 +37,12 @@ export function useMediaSubtitles(
   library?: Pick<LibraryItemText, "text" | "isEditing">,
 ) {
   const libraryText = library?.text;
+  const isEditing = library?.isEditing ?? false;
   const dispatch = useAppDispatch();
   const args = { projectId, mediaFileId };
-  const list = useListSubtitleTracksQuery(libraryText ? skipToken : args);
+  const list = useListSubtitleTracksQuery(
+    libraryText && !isEditing ? skipToken : args,
+  );
   const selection = list.data?.selection ?? noSelection;
   const target = useCues(args, selection.target_track_id);
   const translation = useCues(args, selection.translation_track_id);
@@ -50,7 +54,6 @@ export function useMediaSubtitles(
       },
     [libraryText],
   );
-  const isEditing = library?.isEditing ?? false;
   const markedWords = useMemo(
     () => (isEditing && libraryText ? rangesByCue(libraryText) : undefined),
     [isEditing, libraryText],

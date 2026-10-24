@@ -92,7 +92,7 @@ describe("LibraryEditScreen", () => {
       });
       await openInPlayer();
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "The item couldn't be opened for editing. Try again in a moment.",
+        "“Im Park” couldn't be opened in the player or the reader. Try again in a moment.",
       );
     });
   });

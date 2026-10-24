@@ -1,8 +1,4 @@
 import type { BrowserFileRegistry, PickedMediaFile } from "@easyimmerse/state";
-import type { LibrarySubtitles } from "@easyimmerse/types";
-
-/** Subtitle files that replace a video or audio item's text. */
-export type LibrarySubtitleFiles = { target: File; translation: File | null };
 
 /** The failure of an upload on a platform whose files are not held by a browser. */
 export const unreachableFile = {
@@ -32,16 +28,4 @@ export async function uploadFromRegistry<T>(
   } finally {
     if (!wasHeld) registry.unregister(file);
   }
-}
-
-/** Reads subtitle files as text, leaving their format for the server to detect. */
-export async function librarySubtitlesOf({
-  target,
-  translation,
-}: LibrarySubtitleFiles): Promise<LibrarySubtitles> {
-  return {
-    target_text: await target.text(),
-    translation_text: translation ? await translation.text() : null,
-    format: null,
-  };
 }

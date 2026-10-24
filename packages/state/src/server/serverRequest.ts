@@ -15,6 +15,9 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LibraryItem,
+  LibraryItemAdded,
+  LibraryItemDraft,
   LinkRemoteRequest,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
@@ -157,6 +160,12 @@ export type ServerRequest =
       mediaFileId: string;
       flashcard: NewLibraryFlashcard;
     }
+  /** Creates a draft item of the library, as only a library manager may. */
+  | { kind: "createLibraryItem"; draft: LibraryItemDraft }
+  /** Sends the media or text file of a library item, which a browser holds. */
+  | { kind: "uploadLibraryFile"; itemId: string; file: PickedMediaFile }
+  /** Adds a library item to a project, or to a project made for it when `projectId` is null. */
+  | { kind: "addLibraryItem"; itemId: string; projectId: string | null }
   /** Deletes a flashcard. `purpose` comes back with the outcome and is not sent. */
   | {
       kind: "deleteFlashcard";
@@ -336,6 +345,9 @@ export type ServerResponses = {
   setTranslationDocument: MediaFile;
   saveFlashcard: Flashcard;
   createLibraryFlashcard: Flashcard;
+  createLibraryItem: LibraryItem;
+  uploadLibraryFile: LibraryItem;
+  addLibraryItem: LibraryItemAdded;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;

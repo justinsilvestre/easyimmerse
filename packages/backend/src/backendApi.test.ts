@@ -1542,28 +1542,6 @@ describe("the library endpoints", () => {
     ).toEqual([{ method: "DELETE", path: "/library/items/i1" }]);
   });
 
-  it("put the subtitle texts for putLibrarySubtitles", async () => {
-    const subtitles = {
-      target_text: "WEBVTT",
-      translation_text: null,
-      format: null,
-    };
-    expect(
-      await libraryRequests(
-        backendApi.endpoints.putLibrarySubtitles.initiate({
-          itemId: "i1",
-          subtitles,
-        }),
-      ),
-    ).toEqual([
-      {
-        method: "PUT",
-        path: "/library/items/i1/subtitles",
-        body: { kind: "json", value: subtitles },
-      },
-    ]);
-  });
-
   it("send POST .../proposed-words for proposeLibraryWords", async () => {
     expect(
       await libraryRequests(

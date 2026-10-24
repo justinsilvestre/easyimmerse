@@ -4,7 +4,6 @@ import type {
   LibraryText,
 } from "@easyimmerse/types";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
-import type { LibrarySubtitleFiles } from "../../lib/library/libraryUploads.ts";
 import { LibraryFilesSection } from "./LibraryFilesSection.tsx";
 import { LibraryItemForm } from "./LibraryItemForm.tsx";
 import { LibraryPublication } from "./LibraryPublication.tsx";
@@ -36,7 +35,6 @@ export function LibraryEditView({
   onChooseCoverFrame,
   onResetCover,
   onReplaceFile,
-  onReplaceSubtitles,
   onOpenWords,
   onProposeWords,
   onPublish,
@@ -58,7 +56,6 @@ export function LibraryEditView({
   onChooseCoverFrame: (atMs: number) => void;
   onResetCover: () => void;
   onReplaceFile: (file: File) => void;
-  onReplaceSubtitles: (files: LibrarySubtitleFiles) => void;
   /** Opens the item in the player or the reader, where its words are chosen. */
   onOpenWords: () => void;
   onProposeWords: () => void;
@@ -110,7 +107,6 @@ export function LibraryEditView({
         item={item}
         isUploading={activity.isUploading}
         onReplaceFile={onReplaceFile}
-        onReplaceSubtitles={onReplaceSubtitles}
       />
     </ScreenLayout>
   );
