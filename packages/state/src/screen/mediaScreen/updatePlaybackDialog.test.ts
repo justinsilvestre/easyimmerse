@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
-import { withEmptyServerCache } from "../../server/serverCacheWith.ts";
+import { libraryVideo } from "../../flashcards/libraryFlashcardTestSupport.ts";
+import {
+  serverCacheWith,
+  withEmptyServerCache,
+} from "../../server/serverCacheWith.ts";
 import {
   exampleCopyPlayback,
   exampleTracksOneEach,
@@ -48,6 +52,24 @@ describe("updatePlaybackDialog", () => {
     expect(
       dialogAfter(tracksSettled(exampleTracksTwoAudio), mediaFilesListed()),
     ).toEqual({ kind: "trackChoice", selection: null, stage: "choosing" });
+  });
+
+  it("leaves the track choice closed for a file from the library", () => {
+    const app = stateAfter(
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.preferencesLoaded({}),
+      mediaFilesListed(),
+    );
+    const backend = serverCacheWith("listMediaFiles", "p1", {
+      media_files: [libraryVideo],
+    });
+    expect(
+      updatePlaybackDialog(
+        app.screen.dialog,
+        tracksSettled(exampleTracksTwoAudio),
+        { ...app, backend },
+      ),
+    ).toBeNull();
   });
 
   it("leaves the track choice closed when a choice is saved", () => {

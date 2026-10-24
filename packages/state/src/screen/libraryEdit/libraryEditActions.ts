@@ -9,12 +9,9 @@ export const libraryEditActions = {
   /** The user asked to delete a library item or a library flashcard, which waits for confirmation; null takes the request back. */
   libraryDeletionAsked: (deletion: LibraryDeletion | null) =>
     ({ type: "libraryDeletionAsked", deletion }) as const,
-  /** The library manager selected a word of an item's text to edit its entry, or null to close the entry. */
+  /** The library manager clicked a word or selected text of an item in the player or the reader, to give it an entry. */
   libraryWordSelected: (place: LibraryWordPlace | null) =>
     ({ type: "libraryWordSelected", place }) as const,
-  /** The library manager turned on or off showing only the lines that have words without a definition. */
-  libraryUndefinedFilterSet: (isOn: boolean) =>
-    ({ type: "libraryUndefinedFilterSet", isOn }) as const,
   /** The user chose the project to add a library item to, or null for a new project. */
   libraryAddTargetChosen: (itemId: string, projectId: string | null) =>
     ({ type: "libraryAddTargetChosen", itemId, projectId }) as const,

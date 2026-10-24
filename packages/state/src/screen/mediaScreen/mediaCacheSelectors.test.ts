@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { libraryVideo } from "../../flashcards/libraryFlashcardTestSupport.ts";
 import { serverCacheWith } from "../../server/serverCacheWith.ts";
 import {
   exampleTracksOneEach,
@@ -30,6 +31,16 @@ describe("selectCanChooseTracks", () => {
       "getMediaTracks",
       file,
       exampleTracksOneEach,
+    );
+    expect(selectCanChooseTracks({ app: opened, backend })).toBe(false);
+  });
+
+  it("is false for a file from the library, which plays the tracks its library manager prepared", () => {
+    const backend = serverCacheWith(
+      "getMediaTracks",
+      file,
+      exampleTracksTwoAudio,
+      serverCacheWith("listMediaFiles", "p1", { media_files: [libraryVideo] }),
     );
     expect(selectCanChooseTracks({ app: opened, backend })).toBe(false);
   });

@@ -54,6 +54,12 @@ describe("updateMediaScreen", () => {
       expect(lookup.popup).toBeNull();
     });
 
+    it("opens on selected text that begins at the word it shows", () => {
+      const selected = { ...cat, word: { ...cat.word, term: "cat is" } };
+      const [lookup] = apply(actions.lookupTextSelected(selected), clickedCat);
+      expect(lookup.popup?.chosen).toEqual(selected);
+    });
+
     it("moves to another clicked word", () => {
       const [lookup] = apply(
         actions.lookupWordClicked(dog, "touch"),

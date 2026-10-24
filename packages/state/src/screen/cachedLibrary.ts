@@ -14,6 +14,15 @@ export function cachedLibraryItemIdOf(
   return source?.kind === "library" ? source.item_id : null;
 }
 
+/** Tells whether the cache holds a library item as published, which learners can make flashcards from. */
+export function isCachedLibraryItemPublished(
+  backend: ServerCacheSlice,
+  itemId: string,
+): boolean {
+  const item = cacheEntry(backend, "getLibraryItem", itemId)?.data;
+  return item?.status.kind === "published";
+}
+
 /** Returns the cached text of a library item, or null while the cache lacks it. */
 export function cachedLibraryText(
   backend: ServerCacheSlice,

@@ -10,7 +10,7 @@ const editAfter = (...done: Parameters<typeof stateAfter>) =>
   selectLibraryEdit({ app: stateAfter(...done) });
 
 const itemDeletion = { kind: "item", itemId: "i1" } as const;
-const hund = { segmentIndex: 0, start: 4 };
+const hund = { segmentIndex: 0, start: 4, end: 8 };
 
 describe("the library edit choices", () => {
   it("wait for no deletion at first", () => {
@@ -56,10 +56,11 @@ describe("the library edit choices", () => {
     ).toBeNull();
   });
 
-  it("keep the words filter", () => {
+  it("drop the selected word when the dictionary pop-up closes", () => {
     expect(
-      editAfter(actions.libraryUndefinedFilterSet(true)).isOnlyUndefinedShown,
-    ).toBe(true);
+      editAfter(actions.libraryWordSelected(hund), actions.lookupClosed())
+        .selectedWord,
+    ).toBeNull();
   });
 
   it("keep the kind of file chosen for a new item", () => {

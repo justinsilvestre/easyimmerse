@@ -10,14 +10,21 @@ export type LibraryDeletion =
   | { kind: "item"; itemId: string }
   | { kind: "flashcard"; flashcardId: string };
 
-/** A word of a library item's text, by its segment and where it begins there. */
-export type LibraryWordPlace = { segmentIndex: number; start: number };
+/**
+ * The text of a library item's segment that the library manager chose in the player or the reader, to give it an entry:
+ * its segment, and where the text begins and ends there, in UTF-16 code units.
+ * `end` is null for a click in a script written without spaces, where the entry chosen tells how far the word goes.
+ */
+export type LibraryWordPlace = {
+  segmentIndex: number;
+  start: number;
+  end: number | null;
+};
 
-/** The choices the library screens keep: what waits for deletion, the word being edited, the words filter, the "Add to" project, and the new item's kind of file. */
+/** The choices the library screens keep: what waits for deletion, the text chosen to give an entry, the "Add to" project, and the new item's kind of file. */
 export type LibraryEditState = {
   deletion: LibraryDeletion | null;
   selectedWord: LibraryWordPlace | null;
-  isOnlyUndefinedShown: boolean;
   /** The project chosen to add an item to, null for a new one; unset while the user has chosen none for the item. */
   addTarget: { itemId: string; projectId: string | null } | null;
   upload: LibraryUpload;
@@ -27,14 +34,13 @@ export type LibraryEditState = {
 export const initialLibraryEdit: LibraryEditState = {
   deletion: null,
   selectedWord: null,
-  isOnlyUndefinedShown: false,
   addTarget: null,
   upload: "media",
 };
 
 /**
- * Keeps the library screens' choices. Moving to another place drops the pending deletion, the selected word and the "Add to" choice;
- * closing or deleting a flashcard drops a pending deletion of it.
+ * Keeps the library screens' choices. Moving to another place drops the pending deletion, the chosen text and the "Add to" choice;
+ * closing the dictionary pop-up drops the chosen text; closing or deleting a flashcard drops a pending deletion of it.
  */
 export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
   switch (action.type) {
@@ -42,8 +48,8 @@ export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
       return updated({ ...state, deletion: action.deletion });
     case "libraryWordSelected":
       return updated({ ...state, selectedWord: action.place });
-    case "libraryUndefinedFilterSet":
-      return updated({ ...state, isOnlyUndefinedShown: action.isOn });
+    case "lookupClosed":
+      return updated({ ...state, selectedWord: null });
     case "libraryAddTargetChosen":
       return updated({
         ...state,
@@ -69,6 +75,11 @@ export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
 /** Returns the library screens' choices. */
 export function selectLibraryEdit(root: AppRoot): LibraryEditState {
   return root.app.screen.libraryEdit;
+}
+
+/** Returns the text the library manager chose in the player or the reader to give an entry, or null. */
+export function selectLibraryWordPlace(root: AppRoot): LibraryWordPlace | null {
+  return root.app.screen.libraryEdit.selectedWord;
 }
 
 /** Returns the project chosen to add an item to, null for a new project, or undefined while none is chosen for this item. */
