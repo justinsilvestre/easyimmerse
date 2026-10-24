@@ -30,12 +30,13 @@ Every story is screenshotted:
 Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
 - a **Copy** button, for the story's title and name;
+- a **Comment** button, which copies a Markdown link to the story in the report and, in a pull request's report, opens the pull request so you can paste it into a comment;
 - a link to the story in Storybook;
 - a **Light/Dark** switch, which starts on your system's theme and affects only that story.
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it.
+To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it. The label above each screenshot stays in view as you scroll, and before and after are told apart at a glance: before has a dashed purple frame and its label on the left, after a solid teal frame and its label on the right.
 
 ## Automatic reports on pull requests
 

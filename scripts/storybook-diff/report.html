@@ -22,6 +22,8 @@
         --changed: #b45309;
         --added: #15803d;
         --removed: #b91c1c;
+        --before: #7c3aed;
+        --after: #0d9488;
       }
       [data-theme="dark"] {
         color-scheme: dark;
@@ -34,6 +36,8 @@
         --changed: #f59e0b;
         --added: #4ade80;
         --removed: #f87171;
+        --before: #a78bfa;
+        --after: #2dd4bf;
       }
       body {
         margin: 0;
@@ -52,12 +56,8 @@
         margin: 0 0 8px;
       }
       .toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 2;
         padding: 8px 0;
         margin-bottom: 8px;
-        background: var(--bg);
         display: flex;
         gap: 8px 16px;
         flex-wrap: wrap;
@@ -96,12 +96,12 @@
         margin-bottom: 16px;
         background: var(--card);
         color: var(--fg);
-        scroll-margin-top: calc(var(--toolbar-height, 0px) + 8px);
+        scroll-margin-top: 8px;
       }
       details.story > summary {
         position: sticky;
-        top: var(--toolbar-height, 0px);
-        z-index: 1;
+        top: 0;
+        z-index: 2;
         padding: 8px 12px;
         border-radius: 8px;
         background: var(--card);
@@ -127,7 +127,7 @@
         font-size: 15px;
         font-weight: 600;
       }
-      summary .copy {
+      summary :is(.copy, .comment) {
         font-size: 12px;
         padding: 0 8px;
       }
@@ -150,7 +150,7 @@
       }
       .meta a { color: var(--accent); }
       .story-body { padding: 0 12px 12px; }
-      .full-size { margin-left: 6px; color: var(--accent); }
+      .full-size { color: var(--accent); }
       .variants {
         display: flex;
         flex-wrap: wrap;
@@ -183,11 +183,33 @@
         margin: 0;
         min-width: 0;
       }
+      /* Stays under the story's header while the screenshot below it scrolls by. */
       figcaption {
+        position: sticky;
+        top: var(--summary-height, 0px);
+        z-index: 1;
         font-size: 12px;
         color: var(--muted);
-        margin-bottom: 4px;
+        padding: 4px 0 8px;
+        background: var(--card);
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
       }
+      /* Before and after differ in colour, frame style, and label position, so a flip is noticeable without looking at the label. */
+      .side {
+        display: inline-block;
+        padding: 1px 10px;
+        border-radius: 4px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #fff;
+        background: var(--side-color);
+      }
+      figure[data-showing="before"] { --side-color: var(--before); }
+      figure[data-showing="after"] { --side-color: var(--after); }
+      figure[data-showing="after"] figcaption { flex-direction: row-reverse; }
       .frame {
         position: relative;
         display: inline-block;
@@ -195,8 +217,10 @@
         overflow: hidden;
         vertical-align: top;
         border: 1px solid var(--line);
+        outline: 4px solid var(--side-color);
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
+      figure[data-showing="before"] .frame { outline-style: dashed; }
       .frame .overlay {
         position: absolute;
         top: 0;
@@ -232,7 +256,7 @@
   <body>
     <h1>Storybook changes</h1>
     <p class="summary" id="summary"></p>
-    <header class="toolbar" id="toolbar">
+    <header class="toolbar">
       <div id="filters"></div>
       <div>
         <button type="button" id="collapse-all">Collapse all</button>
@@ -247,14 +271,14 @@
       const themeNames = ["light", "dark"];
       const state = { kind: "all", collapsed: new Set(), themes: new Map() };
       const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
-      const toolbar = document.getElementById("toolbar");
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
       document.getElementById("summary").textContent =
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
         (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
-        ". Each story has a switch between its light and dark screenshots. Click a screenshot to flip between before and after.";
+        ". Each story has a switch between its light and dark screenshots. Click a screenshot to flip between before and after." +
+        (report.pullRequestUrl ? " A story's Comment button copies a link to it and opens the pull request, so you can paste it into a comment." : "");
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
@@ -274,14 +298,27 @@
         layoutStory(story);
       }
 
-      async function copyTitle(button) {
+      async function copyText(button, text) {
+        // Kept on the button, so a second click while it reads "Copied" still restores the original label.
+        const label = (button.dataset.label ??= button.textContent);
         try {
-          await navigator.clipboard.writeText(button.dataset.copy);
+          await navigator.clipboard.writeText(text);
           button.textContent = "Copied";
         } catch {
           button.textContent = "Copy failed";
         }
-        setTimeout(() => { button.textContent = "Copy"; }, 1500);
+        setTimeout(() => { button.textContent = label; }, 1500);
+      }
+
+      // Copies a Markdown link to the story, in the theme on screen, for pasting into a pull request comment.
+      // The window opens before the copy is awaited, because a browser blocks a popup that does not come straight from the click.
+      function commentOn(button) {
+        const story = button.closest("details.story");
+        const url = new URL(location.href);
+        url.hash = story.id;
+        const theme = story.dataset.theme;
+        if (report.pullRequestUrl) open(report.pullRequestUrl, "_blank");
+        copyText(button, `**[${button.dataset.title}](${url.href})** (${theme})\n\n`);
       }
 
       // Buttons in a story's header act on their own instead of also opening or closing the story.
@@ -290,7 +327,8 @@
         if (!button) return;
         event.preventDefault();
         if (button.dataset.themeChoice) switchTheme(button.closest("details.story"), button.dataset.themeChoice);
-        else copyTitle(button);
+        else if (button.classList.contains("comment")) commentOn(button);
+        else copyText(button, button.dataset.copy);
       });
 
       // Stories left on the system's theme follow it when it changes.
@@ -306,9 +344,10 @@
         for (const story of document.querySelectorAll("details.story")) story.open = true;
       });
 
-      new ResizeObserver(([entry]) => {
-        document.documentElement.style.setProperty("--toolbar-height", `${entry.borderBoxSize[0].blockSize}px`);
-      }).observe(toolbar);
+      // Each story's header wraps to its own height, under which that story's screenshot labels stick.
+      const summaryHeights = new ResizeObserver((entries) => {
+        for (const entry of entries) entry.target.parentElement.style.setProperty("--summary-height", `${entry.borderBoxSize[0].blockSize}px`);
+      });
 
       function storyLink(change) {
         if (!report.storybookUrl) return change.importPath;
@@ -336,7 +375,7 @@
           ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${sizeOf(change, other, fileName)?.width}"` : "";
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
-        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
+        return `<figure data-showing="${side}"><figcaption><span class="side">${side}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
           <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
       }
 
@@ -364,9 +403,11 @@
       function card(change) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
         const title = `${change.title} / ${change.name}`;
-        return `<details class="story" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
+        const quotedTitle = title.replaceAll('"', "&quot;");
+        return `<details class="story" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${title}</span>
-            <button type="button" class="copy" data-copy="${title.replaceAll('"', "&quot;")}">Copy</button>
+            <button type="button" class="copy" data-copy="${quotedTitle}">Copy</button>
+            <button type="button" class="comment" data-title="${quotedTitle}">Comment</button>
             <span class="meta">${storyLink(change)}</span>${themeSwitch(change)}</summary>
           <div class="story-body">
             ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
@@ -384,6 +425,8 @@
           ? shown.map(card).join("")
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
         document.querySelectorAll("details.story[open]").forEach(layoutStory);
+        summaryHeights.disconnect();
+        for (const summary of document.querySelectorAll("details.story > summary")) summaryHeights.observe(summary);
       }
 
       // Keeps a collapsed story's header in view, since collapsing a long story while its header is stuck to the top would scroll it out of sight.
@@ -395,7 +438,7 @@
           layoutStory(story);
         } else {
           state.collapsed.add(story.dataset.id);
-          if (story.getBoundingClientRect().top < toolbar.offsetHeight) story.scrollIntoView({ block: "start" });
+          if (story.getBoundingClientRect().top < 0) story.scrollIntoView({ block: "start" });
         }
       }, true);
 
@@ -409,8 +452,11 @@
         img.style.width = `${img.dataset.width * img.closest(".variant").dataset.scale}px`;
         img.parentElement.classList.add("flash");
         setTimeout(() => img.parentElement.classList.remove("flash"), 200);
-        const caption = img.closest("figure").querySelector("figcaption span");
-        caption.textContent = flipped.includes("/before-") ? "Before" : "After";
+        const side = flipped.includes("/before-") ? "before" : "after";
+        const figure = img.closest("figure");
+        figure.dataset.showing = side;
+        figure.querySelector(".side").textContent = side;
+        figure.querySelector(".full-size").href = flipped;
       });
 
       let resizeFrame = 0;
@@ -489,6 +535,11 @@
       }
 
       render();
+      // The stories are drawn after the browser looks for the address's fragment, so a link to one story scrolls to it here.
+      if (location.hash) {
+        const linked = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (linked) { linked.open = true; linked.scrollIntoView({ block: "start" }); }
+      }
     </script>
   </body>
 </html>
