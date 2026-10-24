@@ -34,7 +34,7 @@ function InteractiveStrip(props: WaveformStripProps) {
 }
 
 const meta = {
-  title: "Components/WaveformStrip",
+  title: "Components/Waveform/WaveformStrip",
   component: WaveformStrip,
   render: (args) => <InteractiveStrip {...args} />,
   decorators: [

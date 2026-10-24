@@ -1,0 +1,60 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Pencil, Trash2 } from "lucide-react";
+import { fn } from "storybook/test";
+import { MenuButton } from "./MenuButton.tsx";
+
+const meta = {
+  title: "Components/Common/MenuButton",
+  component: MenuButton,
+  decorators: [
+    (Story) => (
+      <div className="flex h-40 w-64 justify-end">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    label: "Actions",
+    items: [
+      { label: "Rename", icon: <Pencil className="size-4" />, onSelect: fn() },
+      {
+        label: "Delete",
+        icon: <Trash2 className="size-4" />,
+        isDestructive: true,
+        onSelect: fn(),
+      },
+    ],
+  },
+} satisfies Meta<typeof MenuButton>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Closed: Story = {};
+
+export const WithText: Story = {
+  args: { label: "More fields", children: "More fields" },
+};
+
+export const WithBadgeAndOneChoice: Story = {
+  args: {
+    label: "Zoom: 100%",
+    badge: "100%",
+    items: ["50%", "100%", "200%"].map((label) => ({
+      label,
+      isSelected: label === "100%",
+      onSelect: fn(),
+    })),
+  },
+};
+
+export const WithCheckboxes: Story = {
+  args: {
+    label: "More fields",
+    children: "More fields",
+    items: [
+      { label: "Word pronunciation", isChecked: true, onSelect: fn() },
+      { label: "Definition (de)", isChecked: false, onSelect: fn() },
+    ],
+  },
+};

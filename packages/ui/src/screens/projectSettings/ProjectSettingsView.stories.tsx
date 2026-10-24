@@ -1,0 +1,73 @@
+import type { ProjectSettings } from "@easyimmerse/types";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
+import { withAppStore } from "../../storybook/withAppStore.tsx";
+import { fieldsOfPreset, frontFieldsOfPreset } from "./flashcardPresets.ts";
+import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
+
+const meta = {
+  title: "Screens/Project Settings/ProjectSettingsView",
+  component: ProjectSettingsView,
+  decorators: [withAppStore],
+  parameters: { layout: "fullscreen" },
+  args: {
+    mode: "create",
+    initialValues: {
+      name: "",
+      target_language: "de",
+      translation_language: "en",
+      flashcard_fields: fieldsOfPreset("beginner"),
+      flashcard_front_fields: frontFieldsOfPreset("beginner"),
+      lists_anki_deletions: true,
+      default_tags: [],
+      tags_media_name: true,
+      fills_audio_with_tts: false,
+    },
+    onSubmit: fn(),
+    onCancel: fn(),
+  },
+} satisfies Meta<typeof ProjectSettingsView>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const NewProject: Story = {};
+
+export const NewProjectPrefilledFromLast: Story = {
+  args: {
+    initialValues: {
+      name: "",
+      target_language: "ja",
+      translation_language: "en",
+      flashcard_fields: fieldsOfPreset("intermediate"),
+      flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+      lists_anki_deletions: true,
+      default_tags: ["tv"],
+      tags_media_name: true,
+      fills_audio_with_tts: true,
+    },
+  },
+};
+
+const editedSettings: ProjectSettings = {
+  name: "German",
+  target_language: "de",
+  translation_language: "en",
+  flashcard_fields: fieldsOfPreset("advanced"),
+  flashcard_front_fields: frontFieldsOfPreset("advanced"),
+  lists_anki_deletions: true,
+  default_tags: ["tv"],
+  tags_media_name: false,
+  fills_audio_with_tts: false,
+};
+
+export const EditingSettings: Story = {
+  args: { mode: "edit", initialValues: editedSettings },
+};
+
+export const EditingSettingsWithoutTheDeletionList: Story = {
+  args: {
+    mode: "edit",
+    initialValues: { ...editedSettings, lists_anki_deletions: false },
+  },
+};

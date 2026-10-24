@@ -3,7 +3,7 @@ import type { BrowserFileRegistry, ServerConfig } from "@easyimmerse/state";
 import { createRecordingEffects } from "@easyimmerse/state";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { definitionMarkdown } from "../lookup/definitionMarkdown.ts";
+import { definitionMarkdown } from "../components/dictionaryPopup/definitionMarkdown.ts";
 import { AppStoreProviders } from "./AppStoreProviders.tsx";
 import { createFakeFrameCapturer } from "./createFakeFrameCapturer.ts";
 import { createTestAppStore } from "./createTestAppStore.ts";

@@ -1,5 +1,5 @@
 import type { WaveformViewName } from "@easyimmerse/state";
-import { useAppSelector } from "../../hooks/useAppSelector.ts";
+import { useAppSelector } from "../../useAppSelector.ts";
 import type { WaveformWindows } from "./selectWaveformWindows.ts";
 import {
   haveSameWindows,
