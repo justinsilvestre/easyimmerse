@@ -443,6 +443,12 @@
         background: var(--side);
       }
       .viewer-bar .side { font-size: 16px; }
+      .viewer-bar .close-button { color: #fff; font-size: 24px; margin-left: -6px; }
+      .viewer-bar .close-button:hover { background: rgb(255 255 255 / 0.2); }
+      .viewer-bar .pill[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgb(255 255 255 / 0.25); }
+      #viewer.has-comment .viewer-comment-toggle::before { content: "● "; }
+      .viewer-comment { flex: none; padding: 8px 16px 0; }
+      .viewer-comment .hide-comment { right: 26px; top: 15px; }
       .viewer-bar .viewport-icon { width: 18px; height: 18px; display: block; }
       .viewer-title { flex: 1 1 200px; min-width: 0; }
       .viewer-bar a, .viewer-bar button { color: #fff; }
@@ -457,10 +463,13 @@
         position: relative;
         overflow: hidden;
         margin: 0 auto;
-        outline: 4px solid var(--side);
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
-      #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
+      /* The viewer's background takes the tone of the dimmed area around the changes, so that area blends into it. */
+      #viewer[data-shot-theme="light"] .viewer-body { background: #aeaeae; }
+      #viewer[data-shot-theme="dark"] .viewer-body { background: #2a2c31; }
+      /* Holds the whole screenshot; zooming moves and enlarges it so that the frame shows only the changed area. */
+      .viewer-canvas { position: absolute; }
 
       #comment-dock {
         position: fixed;
@@ -508,12 +517,22 @@
     </aside>
     <dialog id="viewer" aria-label="Screenshot">
       <div class="viewer-bar">
+        <button type="button" class="close-button viewer-close" title="Close full screen" aria-label="Close full screen">×</button>
         <span class="side-group"><span class="viewer-icon"></span><span class="side"></span></span>
         <span class="viewer-title"></span>
-        <button type="button" class="pill viewer-close">Close</button>
+        <button type="button" class="pill viewer-zoom" aria-pressed="true">Zoom to changes</button>
+        <button type="button" class="pill comment-toggle viewer-comment-toggle">Comment</button>
+        <fieldset class="segmented viewer-themes" aria-label="Theme">
+          <button type="button" class="pill" data-viewer-theme="light">Light</button>
+          <button type="button" class="pill" data-viewer-theme="dark">Dark</button>
+        </fieldset>
+      </div>
+      <div class="comment-box viewer-comment" hidden>
+        <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on this story"></textarea>
+        <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
       </div>
       <div class="viewer-body" tabindex="-1">
-        <div class="viewer-frame"><img alt="" /><img class="overlay" alt="" /></div>
+        <div class="viewer-frame"><div class="viewer-canvas"><img alt="" /><img class="overlay" alt="" /></div></div>
       </div>
     </dialog>
     <script id="report" type="application/json">"__REPORT__"</script>
@@ -679,11 +698,16 @@
       document.addEventListener("input", (event) => {
         const textarea = event.target.closest(".comment-box textarea");
         if (!textarea) return;
-        const story = textarea.closest("details.story");
-        const change = report.changes.find((candidate) => candidate.id === story.dataset.id);
-        if (textarea.value.trim()) comments[change.id] = { title: storyTitle(change), text: textarea.value };
-        else delete comments[change.id];
-        story.classList.toggle("has-comment", Boolean(comments[change.id]));
+        // The story's own box and the full-screen viewer's edit the same comment, so each keeps the other up to date.
+        const id = textarea.closest("[data-id]").dataset.id;
+        const change = report.changes.find((candidate) => candidate.id === id);
+        if (textarea.value.trim()) comments[id] = { title: storyTitle(change), text: textarea.value };
+        else delete comments[id];
+        for (const element of document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`)) {
+          element.classList.toggle("has-comment", Boolean(comments[id]));
+          const other = element.querySelector(".comment-box textarea");
+          if (other && other !== textarea) other.value = textarea.value;
+        }
         writeComments();
       });
 
@@ -697,7 +721,8 @@
       // was open is noted as the press starts, and the click closes it rather than opening it again.
       document.addEventListener("pointerdown", (event) => {
         const toggle = event.target.closest(".comment-toggle");
-        if (toggle) toggle.dataset.boxWasOpen = String(!toggle.closest("details.story").querySelector(".comment-box").hidden);
+        const box = toggle?.closest("[data-id]")?.querySelector(".comment-box");
+        if (box) toggle.dataset.boxWasOpen = String(!box.hidden);
       }, true);
 
       /** Hides a story's comment box, keeping what is in it; the Comment button opens it again. */
@@ -944,17 +969,31 @@
       // and otherwise, as on a phone, fills the window.
       const viewer = document.getElementById("viewer");
       const viewerFrame = viewer.querySelector(".viewer-frame");
+      const viewerCanvas = viewerFrame.querySelector(".viewer-canvas");
       const [viewerImage, viewerOverlay] = viewerFrame.querySelectorAll("img");
+      const zoomButton = viewer.querySelector(".viewer-zoom");
+      // Zooming starts on, and stays as it was left for the next screenshot opened.
+      let zoomToChanges = true;
+      /** How much of the screenshot around the changed area a zoomed view keeps, in its pixels. */
+      const zoomContext = 40;
+      /** The most a zoomed view enlarges a screenshot, so a tiny change does not turn into a blur. */
+      const maxZoom = 3;
       let viewedFigure = null;
       // Made here rather than in the markup, where a link must have an address before it has one to show.
       const viewerOriginal = Object.assign(document.createElement("a"), { target: "_blank", textContent: "Open image" });
-      viewer.querySelector(".viewer-close").before(viewerOriginal);
+      viewer.querySelector(".viewer-zoom").before(viewerOriginal);
       const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
 
       function showFullScreen(figure) {
         viewedFigure = figure;
-        syncViewer();
+        const id = figure.closest("details.story").dataset.id;
+        viewer.dataset.id = id;
+        viewer.classList.toggle("has-comment", Boolean(comments[id]));
+        viewerComment.querySelector("textarea").value = comments[id]?.text ?? "";
+        viewerComment.hidden = !comments[id];
+        // Opened before it is filled, since a zoomed view is fitted to the room the open viewer has.
         viewer.showModal();
+        syncViewer();
         // Focus starts on the screenshot rather than the bar's link, so the space bar flips instead of following it.
         viewer.querySelector(".viewer-body").focus();
         viewer.requestFullscreen?.().catch(() => {});
@@ -969,22 +1008,53 @@
         const width = Math.max(img.dataset.width, img.dataset.flipWidth || 0);
         const height = Math.max(img.dataset.height, img.dataset.flipHeight || 0);
         viewer.dataset.showing = side;
+        viewer.dataset.shotTheme = story.dataset.theme;
+        for (const button of viewer.querySelectorAll("[data-viewer-theme]")) button.setAttribute("aria-pressed", String(button.dataset.viewerTheme === story.dataset.theme));
         viewer.classList.toggle("highlighted", Boolean(variant.querySelector(".highlight:checked")));
         viewer.querySelector(".side").textContent = side;
         viewer.querySelector(".viewer-icon").innerHTML = viewportIcons[variant.dataset.viewport] ?? "";
         viewer.querySelector(".viewer-title").textContent =
           `${storyTitle(report.changes.find((change) => change.id === story.dataset.id))} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
         viewerOriginal.href = img.getAttribute("src");
-        Object.assign(viewerFrame.style, { width: `min(100%, ${width}px)`, aspectRatio: `${width} / ${height}` });
+        const change = report.changes.find((candidate) => candidate.id === story.dataset.id);
+        const area = change.changedAreas?.[`${story.dataset.theme}-${variant.dataset.viewport}.png`];
+        zoomButton.hidden = !area;
+        zoomButton.setAttribute("aria-pressed", String(zoomToChanges));
+        // The part of the screenshot the frame shows: all of it, or the changed area with some context around it.
+        const shown = area && zoomToChanges
+          ? clampedArea(area.x - zoomContext, area.y - zoomContext, area.x + area.width + zoomContext, area.y + area.height + zoomContext, width, height)
+          : { x: 0, y: 0, width, height };
+        // A zoomed view fits the screen's height as well as its width, so the whole changed area is in view at once.
+        const zoomed = shown.width !== width || shown.height !== height;
+        const roomHeight = viewer.querySelector(".viewer-body").clientHeight - 16;
+        const widths = [`${shown.width * (zoomed ? maxZoom : 1)}px`, ...(zoomed ? [`${(roomHeight * shown.width) / shown.height}px`] : [])];
+        Object.assign(viewerFrame.style, { width: `min(100%, ${widths.join(", ")})`, aspectRatio: `${shown.width} / ${shown.height}` });
+        const percent = (value, total) => `${(value / total) * 100}%`;
+        Object.assign(viewerCanvas.style, {
+          left: `-${percent(shown.x, shown.width)}`,
+          top: `-${percent(shown.y, shown.height)}`,
+          width: percent(width, shown.width),
+          height: percent(height, shown.height),
+        });
         viewerImage.src = img.getAttribute("src");
         viewerImage.style.width = `${(img.dataset.width / width) * 100}%`;
         viewerImage.style.cursor = img.dataset.flip ? "pointer" : "auto";
-        viewerFrame.querySelector(".focus")?.remove();
+        viewerCanvas.querySelector(".focus")?.remove();
         const focusArea = viewedFigure.querySelector(".focus");
-        if (focusArea) viewerFrame.append(focusArea.cloneNode());
+        if (focusArea) viewerCanvas.append(focusArea.cloneNode());
         viewerOverlay.hidden = !overlay;
         if (overlay) viewerOverlay.src = overlay.getAttribute("src");
       }
+
+      function clampedArea(left, top, right, bottom, width, height) {
+        const [x, y] = [Math.max(0, left), Math.max(0, top)];
+        return { x, y, width: Math.min(width, right) - x, height: Math.min(height, bottom) - y };
+      }
+
+      zoomButton.addEventListener("click", () => {
+        zoomToChanges = !zoomToChanges;
+        syncViewer();
+      });
 
       function flipInViewer() {
         const img = viewedFigure.querySelector("img[data-flip]");
@@ -996,17 +1066,50 @@
 
       viewerImage.addEventListener("click", flipInViewer);
       viewer.addEventListener("keydown", (event) => {
-        if (![" ", "ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("a, button")) return;
+        if (![" ", "ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("a, button, textarea")) return;
         event.preventDefault();
         flipInViewer();
       });
       viewer.querySelector(".viewer-close").addEventListener("click", () => viewer.close());
+
+      // The viewer's Comment and theme buttons act on the story it shows, as the story's own do.
+      const viewerComment = viewer.querySelector(".viewer-comment");
+      viewer.querySelector(".viewer-comment-toggle").addEventListener("click", (event) => {
+        const textarea = viewerComment.querySelector("textarea");
+        const button = event.currentTarget;
+        const wasOpen = button.dataset.boxWasOpen ? button.dataset.boxWasOpen === "true" : !viewerComment.hidden;
+        delete button.dataset.boxWasOpen;
+        if (wasOpen) {
+          viewerComment.hidden = true;
+          return;
+        }
+        viewerComment.hidden = false;
+        textarea.focus();
+      });
+      viewerComment.querySelector(".hide-comment").addEventListener("click", () => { viewerComment.hidden = true; });
+
+      // Switching theme shows the same viewport and side in the other theme.
+      for (const button of viewer.querySelectorAll("[data-viewer-theme]")) {
+        button.addEventListener("click", () => {
+          const story = viewedFigure.closest("details.story");
+          const viewport = viewedFigure.closest(".variant").dataset.viewport;
+          const position = [...viewedFigure.parentElement.children].indexOf(viewedFigure);
+          switchTheme(story, button.dataset.viewerTheme);
+          const figures = story.querySelector(`.variants[data-variants="${story.dataset.theme}"] .variant[data-viewport="${viewport}"] .images`)?.children;
+          if (figures?.[position]) viewedFigure = figures[position];
+          syncViewer();
+        });
+      }
       viewer.addEventListener("close", () => {
         if (document.fullscreenElement) document.exitFullscreen();
       });
       // Escape leaves the browser's full screen before the dialog sees it, so leaving full screen closes the viewer too.
       document.addEventListener("fullscreenchange", () => {
         if (!document.fullscreenElement && viewer.open) viewer.close();
+        else if (viewer.open) syncViewer();
+      });
+      addEventListener("resize", () => {
+        if (viewer.open) syncViewer();
       });
 
       let resizeFrame = 0;
