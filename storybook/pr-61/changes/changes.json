@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 681,
+  "storyCount": 680,
   "changes": [
     {
       "id": "components-common-menubutton--with-a-disabled-checkbox",
@@ -204,10 +204,10 @@
       "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 48534,
-        "light-desktop.png": 627165,
-        "dark-phone.png": 49092,
-        "dark-desktop.png": 674806
+        "light-phone.png": 48742,
+        "light-desktop.png": 626899,
+        "dark-phone.png": 49307,
+        "dark-desktop.png": 674547
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -277,10 +277,10 @@
       "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 48465,
-        "light-desktop.png": 627426,
-        "dark-phone.png": 49038,
-        "dark-desktop.png": 661657
+        "light-phone.png": 48718,
+        "light-desktop.png": 627151,
+        "dark-phone.png": 49286,
+        "dark-desktop.png": 661392
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -1187,7 +1187,7 @@
           "height": 112
         },
         "after-light-desktop.png": {
-          "width": 1083,
+          "width": 1088,
           "height": 58
         },
         "after-dark-phone.png": {
@@ -1195,7 +1195,7 @@
           "height": 112
         },
         "after-dark-desktop.png": {
-          "width": 1083,
+          "width": 1088,
           "height": 58
         }
       },
@@ -1214,7 +1214,7 @@
           "height": 112
         },
         "after-light-desktop.png": {
-          "width": 1054,
+          "width": 1071,
           "height": 58
         },
         "after-dark-phone.png": {
@@ -1222,7 +1222,7 @@
           "height": 112
         },
         "after-dark-desktop.png": {
-          "width": 1054,
+          "width": 1071,
           "height": 58
         }
       },
@@ -3462,7 +3462,7 @@
       "changedVariants": {
         "light-phone.png": 23823,
         "light-desktop.png": 32852,
-        "dark-phone.png": 25073,
+        "dark-phone.png": 25074,
         "dark-desktop.png": 34253
       },
       "imageSizes": {
@@ -4941,6 +4941,79 @@
       }
     },
     {
+      "id": "screens-library-libraryview--nothing-matches",
+      "title": "Screens/Library/LibraryView",
+      "name": "Nothing Matches",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 2317,
+        "light-desktop.png": 2841,
+        "dark-phone.png": 2402,
+        "dark-desktop.png": 2918
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 428,
+          "width": 358,
+          "height": 77
+        },
+        "light-desktop.png": {
+          "x": 144,
+          "y": 428,
+          "width": 992,
+          "height": 77
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 428,
+          "width": 358,
+          "height": 77
+        },
+        "dark-desktop.png": {
+          "x": 144,
+          "y": 428,
+          "width": 992,
+          "height": 77
+        }
+      }
+    },
+    {
       "id": "screens-library-libraryview--manager",
       "title": "Screens/Library/LibraryView",
       "name": "Manager",
@@ -5126,16 +5199,16 @@
           "height": 492
         },
         "after-light-desktop.png": {
-          "width": 435,
-          "height": 451
+          "width": 464,
+          "height": 467
         },
         "after-dark-phone.png": {
           "width": 390,
           "height": 492
         },
         "after-dark-desktop.png": {
-          "width": 435,
-          "height": 451
+          "width": 464,
+          "height": 467
         }
       },
       "changedAreas": {}
@@ -5339,18 +5412,18 @@
       "imageSizes": {
         "after-light-phone.png": {
           "width": 390,
-          "height": 332
+          "height": 352
         },
         "after-light-desktop.png": {
-          "width": 435,
+          "width": 503,
           "height": 312
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 332
+          "height": 352
         },
         "after-dark-desktop.png": {
-          "width": 435,
+          "width": 503,
           "height": 312
         }
       },
@@ -5363,10 +5436,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 89737,
-        "light-desktop.png": 167240,
-        "dark-phone.png": 99508,
-        "dark-desktop.png": 178209
+        "light-phone.png": 90275,
+        "light-desktop.png": 191274,
+        "dark-phone.png": 99279,
+        "dark-desktop.png": 200296
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5375,7 +5448,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5383,7 +5456,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -5391,7 +5464,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5399,7 +5472,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         }
       },
       "changedAreas": {
@@ -5413,7 +5486,7 @@
           "x": 144,
           "y": 189,
           "width": 992,
-          "height": 1113
+          "height": 1105
         },
         "dark-phone.png": {
           "x": 16,
@@ -5425,7 +5498,7 @@
           "x": 144,
           "y": 189,
           "width": 992,
-          "height": 1113
+          "height": 1105
         }
       }
     },
@@ -5436,10 +5509,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 143411,
-        "light-desktop.png": 240343,
-        "dark-phone.png": 151608,
-        "dark-desktop.png": 245508
+        "light-phone.png": 143365,
+        "light-desktop.png": 240324,
+        "dark-phone.png": 151590,
+        "dark-desktop.png": 245463
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5509,10 +5582,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 81941,
-        "light-desktop.png": 187552,
-        "dark-phone.png": 89066,
-        "dark-desktop.png": 192387
+        "light-phone.png": 75897,
+        "light-desktop.png": 189444,
+        "dark-phone.png": 82956,
+        "dark-desktop.png": 194284
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5521,7 +5594,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1408
+          "height": 1428
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5537,7 +5610,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1408
+          "height": 1428
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5582,10 +5655,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 80005,
-        "light-desktop.png": 170107,
-        "dark-phone.png": 88239,
-        "dark-desktop.png": 182748
+        "light-phone.png": 80632,
+        "light-desktop.png": 194138,
+        "dark-phone.png": 88195,
+        "dark-desktop.png": 204834
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5594,7 +5667,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1684
+          "height": 1686
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5602,7 +5675,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1344
+          "height": 1326
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -5610,7 +5683,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1684
+          "height": 1686
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5618,7 +5691,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1344
+          "height": 1326
         }
       },
       "changedAreas": {
@@ -5632,7 +5705,7 @@
           "x": 144,
           "y": 189,
           "width": 992,
-          "height": 1145
+          "height": 1137
         },
         "dark-phone.png": {
           "x": 16,
@@ -5644,7 +5717,7 @@
           "x": 144,
           "y": 189,
           "width": 992,
-          "height": 1145
+          "height": 1137
         }
       }
     },
@@ -5655,10 +5728,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 58402,
-        "light-desktop.png": 113724,
-        "dark-phone.png": 66532,
-        "dark-desktop.png": 119754
+        "light-phone.png": 58715,
+        "light-desktop.png": 114061,
+        "dark-phone.png": 66851,
+        "dark-desktop.png": 120108
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5728,10 +5801,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 57236,
-        "light-desktop.png": 111490,
-        "dark-phone.png": 63590,
-        "dark-desktop.png": 118359
+        "light-phone.png": 79545,
+        "light-desktop.png": 115534,
+        "dark-phone.png": 87995,
+        "dark-desktop.png": 122819
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5740,7 +5813,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1558
+          "height": 1598
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5756,7 +5829,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1558
+          "height": 1598
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5770,27 +5843,27 @@
       "changedAreas": {
         "light-phone.png": {
           "x": 16,
-          "y": 241,
+          "y": 153,
           "width": 358,
-          "height": 1246
+          "height": 1374
         },
         "light-desktop.png": {
           "x": 144,
-          "y": 241,
+          "y": 153,
           "width": 992,
-          "height": 1013
+          "height": 1101
         },
         "dark-phone.png": {
           "x": 16,
-          "y": 241,
+          "y": 153,
           "width": 358,
-          "height": 1246
+          "height": 1374
         },
         "dark-desktop.png": {
           "x": 144,
-          "y": 241,
+          "y": 153,
           "width": 992,
-          "height": 1013
+          "height": 1101
         }
       }
     },
@@ -5801,10 +5874,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 352948,
-        "light-desktop.png": 1110412,
-        "dark-phone.png": 156221,
-        "dark-desktop.png": 291801
+        "light-phone.png": 353754,
+        "light-desktop.png": 1134654,
+        "dark-phone.png": 156497,
+        "dark-desktop.png": 313199
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5813,7 +5886,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5821,7 +5894,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -5829,7 +5902,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5837,7 +5910,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         }
       },
       "changedAreas": {
@@ -5845,7 +5918,7 @@
           "x": 0,
           "y": 0,
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "light-desktop.png": {
           "x": 0,
@@ -5857,13 +5930,13 @@
           "x": 0,
           "y": 22,
           "width": 390,
-          "height": 1590
+          "height": 1592
         },
         "dark-desktop.png": {
           "x": 0,
           "y": 22,
           "width": 1280,
-          "height": 1284
+          "height": 1271
         }
       }
     },
@@ -5877,19 +5950,19 @@
       "imageSizes": {
         "after-light-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1612
+          "height": 1614
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1312
+          "height": 1294
         }
       },
       "changedAreas": {}
@@ -5901,10 +5974,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 114854,
-        "light-desktop.png": 238690,
-        "dark-phone.png": 119767,
-        "dark-desktop.png": 245443
+        "light-phone.png": 115408,
+        "light-desktop.png": 218011,
+        "dark-phone.png": 120311,
+        "dark-desktop.png": 223870
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5913,7 +5986,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 1580
+          "height": 1582
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -5921,7 +5994,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1280
+          "height": 1262
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -5929,7 +6002,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 1580
+          "height": 1582
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -5937,7 +6010,7 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1280
+          "height": 1262
         }
       },
       "changedAreas": {
@@ -5974,10 +6047,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 112448,
-        "light-desktop.png": 146222,
-        "dark-phone.png": 113405,
-        "dark-desktop.png": 147157
+        "light-phone.png": 82889,
+        "light-desktop.png": 107126,
+        "dark-phone.png": 83842,
+        "dark-desktop.png": 108312
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -5985,58 +6058,58 @@
           "height": 396
         },
         "after-light-phone.png": {
-          "width": 229,
-          "height": 188
+          "width": 390,
+          "height": 190
         },
         "before-light-desktop.png": {
           "width": 724,
           "height": 260
         },
         "after-light-desktop.png": {
-          "width": 229,
-          "height": 188
+          "width": 490,
+          "height": 170
         },
         "before-dark-phone.png": {
           "width": 390,
           "height": 396
         },
         "after-dark-phone.png": {
-          "width": 229,
-          "height": 188
+          "width": 390,
+          "height": 190
         },
         "before-dark-desktop.png": {
           "width": 724,
           "height": 260
         },
         "after-dark-desktop.png": {
-          "width": 229,
-          "height": 188
+          "width": 490,
+          "height": 170
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 159
+          "y": 56,
+          "width": 347,
+          "height": 125
         },
         "light-desktop.png": {
           "x": 16,
-          "y": 21,
-          "width": 201,
-          "height": 160
+          "y": 25,
+          "width": 456,
+          "height": 125
         },
         "dark-phone.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 159
+          "y": 56,
+          "width": 358,
+          "height": 125
         },
         "dark-desktop.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 159
+          "y": 25,
+          "width": 458,
+          "height": 129
         }
       }
     },
@@ -6050,46 +6123,19 @@
       "imageSizes": {
         "after-light-phone.png": {
           "width": 390,
-          "height": 324
+          "height": 326
         },
         "after-light-desktop.png": {
-          "width": 406,
-          "height": 278
+          "width": 490,
+          "height": 260
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 324
+          "height": 326
         },
         "after-dark-desktop.png": {
-          "width": 406,
-          "height": 278
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "screens-library-edit-libraryfilessection--replacing-the-subtitles",
-      "title": "Screens/Library Edit/LibraryFilesSection",
-      "name": "Replacing The Subtitles",
-      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 414
-        },
-        "after-light-desktop.png": {
-          "width": 750,
-          "height": 278
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 414
-        },
-        "after-dark-desktop.png": {
-          "width": 750,
-          "height": 278
+          "width": 490,
+          "height": 260
         }
       },
       "changedAreas": {}
@@ -6101,10 +6147,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 116761,
-        "light-desktop.png": 150461,
-        "dark-phone.png": 117591,
-        "dark-desktop.png": 151323
+        "light-phone.png": 129256,
+        "light-desktop.png": 163271,
+        "dark-phone.png": 129718,
+        "dark-desktop.png": 163717
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6112,58 +6158,58 @@
           "height": 396
         },
         "after-light-phone.png": {
-          "width": 203,
-          "height": 188
+          "width": 174,
+          "height": 138
         },
         "before-light-desktop.png": {
           "width": 724,
           "height": 260
         },
         "after-light-desktop.png": {
-          "width": 203,
-          "height": 188
+          "width": 174,
+          "height": 138
         },
         "before-dark-phone.png": {
           "width": 390,
           "height": 396
         },
         "after-dark-phone.png": {
-          "width": 203,
-          "height": 188
+          "width": 174,
+          "height": 138
         },
         "before-dark-desktop.png": {
           "width": 724,
           "height": 260
         },
         "after-dark-desktop.png": {
-          "width": 203,
-          "height": 188
+          "width": 174,
+          "height": 138
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 16,
           "y": 21,
-          "width": 187,
-          "height": 160
+          "width": 158,
+          "height": 117
         },
         "light-desktop.png": {
           "x": 16,
           "y": 22,
-          "width": 187,
-          "height": 159
+          "width": 158,
+          "height": 116
         },
         "dark-phone.png": {
           "x": 16,
           "y": 22,
-          "width": 187,
-          "height": 159
+          "width": 158,
+          "height": 116
         },
         "dark-desktop.png": {
           "x": 16,
           "y": 22,
-          "width": 187,
-          "height": 159
+          "width": 158,
+          "height": 116
         }
       }
     },
@@ -6174,10 +6220,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 29515,
-        "light-desktop.png": 29515,
-        "dark-phone.png": 30092,
-        "dark-desktop.png": 30092
+        "light-phone.png": 27787,
+        "light-desktop.png": 27787,
+        "dark-phone.png": 28402,
+        "dark-desktop.png": 28402
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6185,7 +6231,7 @@
           "height": 166
         },
         "after-light-phone.png": {
-          "width": 260,
+          "width": 274,
           "height": 138
         },
         "before-light-desktop.png": {
@@ -6193,7 +6239,7 @@
           "height": 166
         },
         "after-light-desktop.png": {
-          "width": 260,
+          "width": 274,
           "height": 138
         },
         "before-dark-phone.png": {
@@ -6201,7 +6247,7 @@
           "height": 166
         },
         "after-dark-phone.png": {
-          "width": 260,
+          "width": 274,
           "height": 138
         },
         "before-dark-desktop.png": {
@@ -6209,7 +6255,7 @@
           "height": 166
         },
         "after-dark-desktop.png": {
-          "width": 260,
+          "width": 274,
           "height": 138
         }
       },
@@ -6217,25 +6263,25 @@
         "light-phone.png": {
           "x": 16,
           "y": 22,
-          "width": 227,
+          "width": 241,
           "height": 116
         },
         "light-desktop.png": {
           "x": 16,
           "y": 22,
-          "width": 227,
+          "width": 241,
           "height": 116
         },
         "dark-phone.png": {
           "x": 16,
           "y": 22,
-          "width": 228,
+          "width": 242,
           "height": 116
         },
         "dark-desktop.png": {
           "x": 16,
           "y": 22,
-          "width": 228,
+          "width": 242,
           "height": 116
         }
       }
@@ -6247,10 +6293,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 120372,
-        "light-desktop.png": 166205,
-        "dark-phone.png": 121381,
-        "dark-desktop.png": 167218
+        "light-phone.png": 85648,
+        "light-desktop.png": 119179,
+        "dark-phone.png": 86690,
+        "dark-desktop.png": 120462
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6258,58 +6304,58 @@
           "height": 432
         },
         "after-light-phone.png": {
-          "width": 229,
-          "height": 220
+          "width": 390,
+          "height": 222
         },
         "before-light-desktop.png": {
           "width": 724,
           "height": 296
         },
         "after-light-desktop.png": {
-          "width": 229,
-          "height": 220
+          "width": 490,
+          "height": 202
         },
         "before-dark-phone.png": {
           "width": 390,
           "height": 432
         },
         "after-dark-phone.png": {
-          "width": 229,
-          "height": 220
+          "width": 390,
+          "height": 222
         },
         "before-dark-desktop.png": {
           "width": 724,
           "height": 296
         },
         "after-dark-desktop.png": {
-          "width": 229,
-          "height": 220
+          "width": 490,
+          "height": 202
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 196
+          "y": 56,
+          "width": 347,
+          "height": 162
         },
         "light-desktop.png": {
           "x": 16,
-          "y": 21,
-          "width": 201,
-          "height": 197
+          "y": 25,
+          "width": 456,
+          "height": 177
         },
         "dark-phone.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 196
+          "y": 56,
+          "width": 358,
+          "height": 162
         },
         "dark-desktop.png": {
           "x": 16,
-          "y": 22,
-          "width": 201,
-          "height": 196
+          "y": 25,
+          "width": 458,
+          "height": 177
         }
       }
     },
@@ -6320,10 +6366,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 19558,
-        "light-desktop.png": 19558,
-        "dark-phone.png": 19675,
-        "dark-desktop.png": 19675
+        "light-phone.png": 19748,
+        "light-desktop.png": 19748,
+        "dark-phone.png": 19869,
+        "dark-desktop.png": 19869
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6331,7 +6377,7 @@
           "height": 128
         },
         "after-light-phone.png": {
-          "width": 264,
+          "width": 265,
           "height": 120
         },
         "before-light-desktop.png": {
@@ -6339,7 +6385,7 @@
           "height": 128
         },
         "after-light-desktop.png": {
-          "width": 264,
+          "width": 265,
           "height": 120
         },
         "before-dark-phone.png": {
@@ -6347,7 +6393,7 @@
           "height": 128
         },
         "after-dark-phone.png": {
-          "width": 264,
+          "width": 265,
           "height": 120
         },
         "before-dark-desktop.png": {
@@ -6355,33 +6401,33 @@
           "height": 128
         },
         "after-dark-desktop.png": {
-          "width": 264,
+          "width": 265,
           "height": 120
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 17,
-          "y": 21,
-          "width": 247,
-          "height": 89
+          "y": 22,
+          "width": 248,
+          "height": 88
         },
         "light-desktop.png": {
           "x": 17,
-          "y": 21,
-          "width": 247,
-          "height": 89
+          "y": 22,
+          "width": 248,
+          "height": 88
         },
         "dark-phone.png": {
           "x": 17,
           "y": 22,
-          "width": 247,
+          "width": 248,
           "height": 88
         },
         "dark-desktop.png": {
           "x": 17,
           "y": 22,
-          "width": 247,
+          "width": 248,
           "height": 88
         }
       }
@@ -6393,10 +6439,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 7693,
-        "light-desktop.png": 22529,
-        "dark-phone.png": 7922,
-        "dark-desktop.png": 22700
+        "light-phone.png": 8586,
+        "light-desktop.png": 15028,
+        "dark-phone.png": 8848,
+        "dark-desktop.png": 15254
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6412,7 +6458,7 @@
           "height": 128
         },
         "after-light-desktop.png": {
-          "width": 443,
+          "width": 597,
           "height": 120
         },
         "before-dark-phone.png": {
@@ -6428,7 +6474,7 @@
           "height": 128
         },
         "after-dark-desktop.png": {
-          "width": 443,
+          "width": 597,
           "height": 120
         }
       },
@@ -6436,25 +6482,25 @@
         "light-phone.png": {
           "x": 17,
           "y": 56,
-          "width": 308,
+          "width": 347,
           "height": 74
         },
         "light-desktop.png": {
           "x": 17,
           "y": 21,
-          "width": 426,
+          "width": 538,
           "height": 89
         },
         "dark-phone.png": {
           "x": 17,
           "y": 56,
-          "width": 308,
+          "width": 347,
           "height": 74
         },
         "dark-desktop.png": {
           "x": 17,
           "y": 22,
-          "width": 426,
+          "width": 538,
           "height": 88
         }
       }
@@ -6466,10 +6512,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 160856,
-        "light-desktop.png": 856837,
-        "dark-phone.png": 165532,
-        "dark-desktop.png": 862047
+        "light-phone.png": 160807,
+        "light-desktop.png": 856787,
+        "dark-phone.png": 165481,
+        "dark-desktop.png": 861996
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -6612,10 +6658,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 160171,
-        "light-desktop.png": 855749,
-        "dark-phone.png": 164847,
-        "dark-desktop.png": 860952
+        "light-phone.png": 160122,
+        "light-desktop.png": 855699,
+        "dark-phone.png": 164796,
+        "dark-desktop.png": 860901
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -7229,7 +7275,7 @@
           "height": 200
         },
         "after-light-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         },
         "after-dark-phone.png": {
@@ -7237,7 +7283,7 @@
           "height": 200
         },
         "after-dark-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         }
       },
@@ -7256,7 +7302,7 @@
           "height": 200
         },
         "after-light-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         },
         "after-dark-phone.png": {
@@ -7264,7 +7310,7 @@
           "height": 200
         },
         "after-dark-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         }
       },
@@ -7283,7 +7329,7 @@
           "height": 200
         },
         "after-light-desktop.png": {
-          "width": 769,
+          "width": 777,
           "height": 160
         },
         "after-dark-phone.png": {
@@ -7291,7 +7337,7 @@
           "height": 200
         },
         "after-dark-desktop.png": {
-          "width": 769,
+          "width": 777,
           "height": 160
         }
       },
@@ -7310,7 +7356,7 @@
           "height": 200
         },
         "after-light-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         },
         "after-dark-phone.png": {
@@ -7318,7 +7364,7 @@
           "height": 200
         },
         "after-dark-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 160
         }
       },
@@ -7333,19 +7379,19 @@
       "changedVariants": {},
       "imageSizes": {
         "after-light-phone.png": {
-          "width": 292,
+          "width": 315,
           "height": 164
         },
         "after-light-desktop.png": {
-          "width": 292,
+          "width": 315,
           "height": 164
         },
         "after-dark-phone.png": {
-          "width": 292,
+          "width": 315,
           "height": 164
         },
         "after-dark-desktop.png": {
-          "width": 292,
+          "width": 315,
           "height": 164
         }
       },
@@ -7364,7 +7410,7 @@
           "height": 168
         },
         "after-light-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 128
         },
         "after-dark-phone.png": {
@@ -7372,7 +7418,7 @@
           "height": 168
         },
         "after-dark-desktop.png": {
-          "width": 798,
+          "width": 806,
           "height": 128
         }
       },
@@ -7604,10 +7650,10 @@
       "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 710,
-        "light-desktop.png": 1016,
-        "dark-phone.png": 1570,
-        "dark-desktop.png": 2333
+        "light-phone.png": 1739,
+        "light-desktop.png": 2045,
+        "dark-phone.png": 2584,
+        "dark-desktop.png": 3347
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -7645,28 +7691,28 @@
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 174,
+          "x": 83,
           "y": 140,
-          "width": 168,
-          "height": 12
+          "width": 259,
+          "height": 190
         },
         "light-desktop.png": {
-          "x": 430,
+          "x": 339,
           "y": 140,
-          "width": 245,
-          "height": 12
+          "width": 336,
+          "height": 142
         },
         "dark-phone.png": {
-          "x": 174,
+          "x": 83,
           "y": 135,
-          "width": 176,
-          "height": 20
+          "width": 267,
+          "height": 195
         },
         "dark-desktop.png": {
-          "x": 430,
+          "x": 339,
           "y": 135,
-          "width": 253,
-          "height": 20
+          "width": 344,
+          "height": 147
         }
       }
     },
@@ -7896,10 +7942,10 @@
       "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 2130,
-        "light-desktop.png": 2134,
-        "dark-phone.png": 2259,
-        "dark-desktop.png": 2259
+        "light-phone.png": 196590,
+        "light-desktop.png": 550711,
+        "dark-phone.png": 232272,
+        "dark-desktop.png": 575447
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -7908,7 +7954,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 2666
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -7916,7 +7962,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 1090
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -7924,7 +7970,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 2666
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -7932,106 +7978,206 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 1090
         }
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 155,
-          "y": 1055,
-          "width": 128,
-          "height": 1824
+          "x": 33,
+          "y": 171,
+          "width": 324,
+          "height": 2413
         },
         "light-desktop.png": {
-          "x": 283,
-          "y": 966,
-          "width": 750,
-          "height": 361
+          "x": 161,
+          "y": 170,
+          "width": 958,
+          "height": 884
         },
         "dark-phone.png": {
-          "x": 155,
-          "y": 1055,
-          "width": 128,
-          "height": 1824
+          "x": 16,
+          "y": 171,
+          "width": 358,
+          "height": 2495
         },
         "dark-desktop.png": {
-          "x": 283,
-          "y": 966,
-          "width": 750,
-          "height": 361
+          "x": 144,
+          "y": 170,
+          "width": 992,
+          "height": 920
         }
       }
     },
     {
-      "id": "screens-library-manage-librarymanagementview--creating",
+      "id": "screens-library-manage-librarymanagementview--empty",
       "title": "Screens/Library Manage/LibraryManagementView",
-      "name": "Creating",
+      "name": "Empty",
       "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 2130,
-        "light-desktop.png": 2134,
-        "dark-phone.png": 2259,
-        "dark-desktop.png": 2259
+        "light-phone.png": 43282,
+        "light-desktop.png": 59431,
+        "dark-phone.png": 45790,
+        "dark-desktop.png": 62823
       },
       "imageSizes": {
         "before-light-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 894
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 844
         },
         "before-light-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 826
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 800
         },
         "before-dark-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 894
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 3040
+          "height": 844
         },
         "before-dark-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 826
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 1488
+          "height": 800
         }
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 155,
-          "y": 1055,
-          "width": 128,
-          "height": 1824
+          "x": 17,
+          "y": 171,
+          "width": 340,
+          "height": 585
         },
         "light-desktop.png": {
-          "x": 283,
-          "y": 966,
-          "width": 750,
-          "height": 361
+          "x": 145,
+          "y": 170,
+          "width": 974,
+          "height": 585
         },
         "dark-phone.png": {
-          "x": 155,
-          "y": 1055,
-          "width": 128,
-          "height": 1824
+          "x": 16,
+          "y": 171,
+          "width": 358,
+          "height": 602
         },
         "dark-desktop.png": {
-          "x": 283,
-          "y": 966,
-          "width": 750,
-          "height": 361
+          "x": 144,
+          "y": 170,
+          "width": 992,
+          "height": 585
+        }
+      }
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--adding",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Adding",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 2666
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1090
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 2666
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1090
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--loading",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Loading",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 43252,
+        "light-desktop.png": 59165,
+        "dark-phone.png": 45768,
+        "dark-desktop.png": 62559
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 826
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 826
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 17,
+          "y": 171,
+          "width": 340,
+          "height": 585
+        },
+        "light-desktop.png": {
+          "x": 145,
+          "y": 170,
+          "width": 974,
+          "height": 585
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 171,
+          "width": 358,
+          "height": 602
+        },
+        "dark-desktop.png": {
+          "x": 144,
+          "y": 170,
+          "width": 992,
+          "height": 585
         }
       }
     },
@@ -8042,10 +8188,10 @@
       "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 9386,
-        "light-desktop.png": 1899,
-        "dark-phone.png": 9408,
-        "dark-desktop.png": 2100
+        "light-phone.png": 45019,
+        "light-desktop.png": 65196,
+        "dark-phone.png": 47650,
+        "dark-desktop.png": 68822
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -8054,7 +8200,7 @@
         },
         "after-light-phone.png": {
           "width": 390,
-          "height": 922
+          "height": 844
         },
         "before-light-desktop.png": {
           "width": 1280,
@@ -8062,7 +8208,7 @@
         },
         "after-light-desktop.png": {
           "width": 1280,
-          "height": 830
+          "height": 800
         },
         "before-dark-phone.png": {
           "width": 390,
@@ -8070,7 +8216,7 @@
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 922
+          "height": 844
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -8078,108 +8224,143 @@
         },
         "after-dark-desktop.png": {
           "width": 1280,
-          "height": 830
+          "height": 800
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 17,
-          "y": 844,
-          "width": 60,
-          "height": 2
+          "y": 171,
+          "width": 340,
+          "height": 585
         },
         "light-desktop.png": {
           "x": 145,
-          "y": 742,
-          "width": 378,
-          "height": 15
+          "y": 170,
+          "width": 974,
+          "height": 587
         },
         "dark-phone.png": {
-          "x": 17,
-          "y": 844,
-          "width": 60,
-          "height": 2
+          "x": 16,
+          "y": 171,
+          "width": 358,
+          "height": 602
         },
         "dark-desktop.png": {
-          "x": 145,
-          "y": 742,
-          "width": 378,
-          "height": 15
+          "x": 144,
+          "y": 170,
+          "width": 992,
+          "height": 587
         }
       }
     },
     {
-      "id": "screens-library-manage-newlibraryitemform--upload-failed",
-      "title": "Screens/Library Manage/NewLibraryItemForm",
-      "name": "Upload Failed",
-      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 95,
-        "light-desktop.png": 15948,
-        "dark-phone.png": 100,
-        "dark-desktop.png": 17425
-      },
+      "id": "screens-library-manage-newlibrarymediaform--ready",
+      "title": "Screens/Library Manage/NewLibraryMediaForm",
+      "name": "Ready",
+      "importPath": "./src/screens/libraryManage/NewLibraryMediaForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
       "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 712
-        },
         "after-light-phone.png": {
-          "width": 390,
-          "height": 712
-        },
-        "before-light-desktop.png": {
-          "width": 696,
-          "height": 624
+          "width": 303,
+          "height": 282
         },
         "after-light-desktop.png": {
-          "width": 687,
-          "height": 624
+          "width": 555,
+          "height": 190
         },
-        "before-dark-phone.png": {
+        "after-dark-phone.png": {
+          "width": 303,
+          "height": 282
+        },
+        "after-dark-desktop.png": {
+          "width": 555,
+          "height": 190
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibrarymediaform--adding",
+      "title": "Screens/Library Manage/NewLibraryMediaForm",
+      "name": "Adding",
+      "importPath": "./src/screens/libraryManage/NewLibraryMediaForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 303,
+          "height": 282
+        },
+        "after-light-desktop.png": {
+          "width": 555,
+          "height": 190
+        },
+        "after-dark-phone.png": {
+          "width": 303,
+          "height": 282
+        },
+        "after-dark-desktop.png": {
+          "width": 555,
+          "height": 190
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibrarymediaform--waiting",
+      "title": "Screens/Library Manage/NewLibraryMediaForm",
+      "name": "Waiting",
+      "importPath": "./src/screens/libraryManage/NewLibraryMediaForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 303,
+          "height": 282
+        },
+        "after-light-desktop.png": {
+          "width": 555,
+          "height": 190
+        },
+        "after-dark-phone.png": {
+          "width": 303,
+          "height": 282
+        },
+        "after-dark-desktop.png": {
+          "width": 555,
+          "height": 190
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-media-mediaview--preparing-a-new-library-item",
+      "title": "Screens/Media/MediaView",
+      "name": "Preparing A New Library Item",
+      "importPath": "./src/screens/media/MediaView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
           "width": 390,
-          "height": 712
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
         },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 712
-        },
-        "before-dark-desktop.png": {
-          "width": 696,
-          "height": 624
+          "height": 844
         },
         "after-dark-desktop.png": {
-          "width": 687,
-          "height": 624
+          "width": 1280,
+          "height": 800
         }
       },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 327,
-          "y": 596,
-          "width": 22,
-          "height": 10
-        },
-        "light-desktop.png": {
-          "x": 33,
-          "y": 39,
-          "width": 630,
-          "height": 546
-        },
-        "dark-phone.png": {
-          "x": 327,
-          "y": 596,
-          "width": 22,
-          "height": 10
-        },
-        "dark-desktop.png": {
-          "x": 16,
-          "y": 16,
-          "width": 664,
-          "height": 592
-        }
-      }
+      "changedAreas": {}
     },
     {
       "id": "screens-media-mediaview--preparing-a-library-item",
@@ -8891,6 +9072,79 @@
         }
       },
       "changedAreas": {}
+    },
+    {
+      "id": "screens-review-reviewcontrolrow--library-card-menu-open",
+      "title": "Screens/Review/ReviewControlRow",
+      "name": "Library Card Menu Open",
+      "importPath": "./src/screens/review/ReviewControlRow.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 15099,
+        "light-desktop.png": 28219,
+        "dark-phone.png": 15499,
+        "dark-desktop.png": 28618
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 261
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 229
+        },
+        "before-light-desktop.png": {
+          "width": 800,
+          "height": 261
+        },
+        "after-light-desktop.png": {
+          "width": 800,
+          "height": 229
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 261
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 229
+        },
+        "before-dark-desktop.png": {
+          "width": 800,
+          "height": 261
+        },
+        "after-dark-desktop.png": {
+          "width": 800,
+          "height": 229
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 121,
+          "y": 105,
+          "width": 231,
+          "height": 110
+        },
+        "light-desktop.png": {
+          "x": 527,
+          "y": 105,
+          "width": 231,
+          "height": 110
+        },
+        "dark-phone.png": {
+          "x": 107,
+          "y": 105,
+          "width": 259,
+          "height": 124
+        },
+        "dark-desktop.png": {
+          "x": 513,
+          "y": 105,
+          "width": 259,
+          "height": 124
+        }
+      }
     },
     {
       "id": "screens-server-serverscreen--running-with-accounts",
@@ -10176,6 +10430,141 @@
         "before-dark-desktop.png": {
           "width": 1280,
           "height": 556
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--creating",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Creating",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "before-light-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "before-dark-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--empty",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Empty",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "before-light-desktop.png": {
+          "width": 339,
+          "height": 588
+        },
+        "before-dark-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "before-dark-desktop.png": {
+          "width": 339,
+          "height": 588
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--text-file",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Text File",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 532
+        },
+        "before-light-desktop.png": {
+          "width": 479,
+          "height": 448
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 532
+        },
+        "before-dark-desktop.png": {
+          "width": 479,
+          "height": 448
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--uploading",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Uploading",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "before-light-desktop.png": {
+          "width": 339,
+          "height": 588
+        },
+        "before-dark-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "before-dark-desktop.png": {
+          "width": 339,
+          "height": 588
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--upload-failed",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Upload Failed",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 712
+        },
+        "before-light-desktop.png": {
+          "width": 696,
+          "height": 624
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 712
+        },
+        "before-dark-desktop.png": {
+          "width": 696,
+          "height": 624
         }
       },
       "changedAreas": {}
