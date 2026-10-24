@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { exampleLibraryItem } from "../../testSupport/exampleLibrary.ts";
 import { LibraryPublication } from "./LibraryPublication.tsx";
 
 const meta = {
   title: "Screens/Library Edit/LibraryPublication",
   component: LibraryPublication,
+  decorators: [withAppStore],
   args: {
     item: exampleLibraryItem({ status: { kind: "draft" } }),
     isBusy: false,
@@ -34,10 +36,19 @@ export const Preparing: Story = {
   args: { item: exampleLibraryItem({ status: { kind: "processing" } }) },
 };
 
+export const PreparingAText: Story = {
+  args: {
+    item: exampleLibraryItem({
+      kind: "document",
+      status: { kind: "processing" },
+    }),
+  },
+};
+
 export const Failed: Story = {
   args: {
     item: exampleLibraryItem({
-      status: { kind: "failed", message: "The video file could not be read." },
+      status: { kind: "failed", message: "ffmpeg exited with status 1 while rendering the clip of cue 3" },
     }),
   },
 };
