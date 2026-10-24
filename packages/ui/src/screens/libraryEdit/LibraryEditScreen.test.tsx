@@ -115,7 +115,7 @@ describe("LibraryEditScreen", () => {
     });
   });
   describe("when the file is replaced", () => {
-    it("opens the file picker for media and text files", async () => {
+    it("opens the file picker for the kind of file the item has", async () => {
       const { effects } = renderEditor();
       fireEvent.click(
         await screen.findByRole("button", { name: "Replace the file" }),
@@ -123,7 +123,7 @@ describe("LibraryEditScreen", () => {
       expect(effects.calls).toContainEqual(
         expect.objectContaining({
           type: "pickMediaFile",
-          accept: expect.arrayContaining([".mp4", ".mp3", ".epub", ".txt"]),
+          accept: expect.arrayContaining([".mp4", ".mp3"]),
         }),
       );
     });

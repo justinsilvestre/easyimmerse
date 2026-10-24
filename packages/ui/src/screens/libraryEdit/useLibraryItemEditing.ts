@@ -15,7 +15,7 @@ import {
   libraryFailureMessage,
   selectLibraryFileReplacement,
 } from "@easyimmerse/state";
-import type { LibraryItemDraft } from "@easyimmerse/types";
+import type { LibraryItemDraft, LibraryItemKind } from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
 import {
@@ -81,8 +81,8 @@ export function useLibraryItemEditing(
         update({ itemId, draft }).unwrap(),
       ),
     /** Opens the file picker, then uploads the file picked in place of the item's file. */
-    replaceFile: () =>
-      dispatch(actions.libraryFileReplacePickRequested(itemId)),
+    replaceFile: (kind: LibraryItemKind) =>
+      dispatch(actions.libraryFileReplacePickRequested(itemId, kind)),
     uploadCover: (file: File) =>
       run(`The cover picture of ${title} couldn't be uploaded.`, () =>
         registry === null

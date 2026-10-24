@@ -3,7 +3,10 @@ import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { RequestFailure } from "../../server/serverRequest.ts";
-import { mediaFileExtensions } from "../mediaFileExtensions.ts";
+import {
+  documentFileExtensions,
+  videoAndAudioFileExtensions,
+} from "../mediaFileExtensions.ts";
 
 /** A library item's file on its way to being replaced: being picked, then uploaded, or the failure that ended the upload. */
 export type LibraryFileReplacement = { itemId: string } & (
@@ -28,7 +31,13 @@ export function updateLibraryFileReplacement(
         itemId: action.itemId,
         stage: "picking",
       } satisfies LibraryFileReplacement,
-      { type: "pickMediaFile", accept: mediaFileExtensions } satisfies Effect,
+      {
+        type: "pickMediaFile",
+        accept:
+          action.kind === "document"
+            ? documentFileExtensions
+            : videoAndAudioFileExtensions,
+      } satisfies Effect,
     );
   if (replacement === null) return updated(replacement);
   if (replacement.stage === "picking")

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { type AppAction, actions } from "../../app/appAction.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
 import type { RequestFailure } from "../../server/serverRequest.ts";
+import { videoAndAudioFileExtensions } from "../mediaFileExtensions.ts";
 import { exampleLibraryItem } from "../libraryBrowse/exampleLibraryItem.ts";
 import {
   type LibraryFileReplacement,
@@ -39,17 +40,37 @@ describe("updateLibraryFileReplacement", () => {
   describe("when a replacement is asked for", () => {
     const asked = replacementAfter(
       null,
-      actions.libraryFileReplacePickRequested("i1"),
+      actions.libraryFileReplacePickRequested("i1", "video"),
     );
 
     it("waits for the file to be picked", () => {
       expect(asked.replacement).toEqual(picking);
     });
 
-    it("opens the picker for media and text files", () => {
-      expect(asked.effects).toContainEqual(
-        expect.objectContaining({ type: "pickMediaFile" }),
-      );
+    it("opens the picker for video and audio files when the item is a video", () => {
+      expect(asked.effects).toEqual([
+        { type: "pickMediaFile", accept: videoAndAudioFileExtensions },
+      ]);
+    });
+
+    it("opens the picker for video and audio files when the item is audio", () => {
+      expect(
+        replacementAfter(
+          null,
+          actions.libraryFileReplacePickRequested("i1", "audio"),
+        ).effects,
+      ).toEqual([
+        { type: "pickMediaFile", accept: videoAndAudioFileExtensions },
+      ]);
+    });
+
+    it("opens the picker for ebooks and text files only when the item is a document", () => {
+      expect(
+        replacementAfter(
+          null,
+          actions.libraryFileReplacePickRequested("i1", "document"),
+        ).effects,
+      ).toEqual([{ type: "pickMediaFile", accept: [".epub", ".txt"] }]);
     });
   });
 
@@ -60,8 +81,10 @@ describe("updateLibraryFileReplacement", () => {
       error: serverError,
     } as const;
     expect(
-      replacementAfter(failed, actions.libraryFileReplacePickRequested("i1"))
-        .replacement,
+      replacementAfter(
+        failed,
+        actions.libraryFileReplacePickRequested("i1", "video"),
+      ).replacement,
     ).toEqual(picking);
   });
 

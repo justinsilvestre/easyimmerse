@@ -73,7 +73,7 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
       onUploadCover={editing.uploadCover}
       onChooseCoverFrame={editing.chooseCoverFrame}
       onResetCover={editing.resetCover}
-      onReplaceFile={editing.replaceFile}
+      onReplaceFile={() => editing.replaceFile(shown.kind)}
       onOpenWords={() =>
         projectList &&
         editing.openWords(libraryProjectOf(projectList.projects, shown))

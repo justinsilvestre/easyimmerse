@@ -97,7 +97,7 @@ describe("selectLibraryFileReplacement", () => {
   it("returns the replacement asked for the item", () => {
     expect(
       selectLibraryFileReplacement(
-        rootAfter(actions.libraryFileReplacePickRequested("i1")),
+        rootAfter(actions.libraryFileReplacePickRequested("i1", "video")),
         "i1",
       ),
     ).toEqual({ itemId: "i1", stage: "picking" });
@@ -106,7 +106,7 @@ describe("selectLibraryFileReplacement", () => {
   it("returns null for another item", () => {
     expect(
       selectLibraryFileReplacement(
-        rootAfter(actions.libraryFileReplacePickRequested("i1")),
+        rootAfter(actions.libraryFileReplacePickRequested("i1", "video")),
         "i2",
       ),
     ).toBeNull();
