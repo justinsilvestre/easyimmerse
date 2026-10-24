@@ -1,16 +1,20 @@
 import type { Project, ReviewCounts } from "@easyimmerse/types";
-import { FolderOpen, Library, Plus } from "lucide-react";
+import { FolderOpen, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
 import { LoadingStatus } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
+import { HomeLibrarySection } from "./HomeLibrarySection.tsx";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
 
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 
-/** The home screen: a suggestion above all else, if there is one, then the recent projects, most recently opened first, the way to a new one, and the way to the server's library. */
+/**
+ * The home screen: a suggestion above all else, if there is one, then the server's library, then the recent projects, most recently opened first, with the way to a new one.
+ * The library is left out while no server answers.
+ */
 export function HomeView({
   status,
   projects,
@@ -20,6 +24,7 @@ export function HomeView({
   onCreateProject,
   onContinueOffline,
   onOpenLibrary,
+  onManageLibrary,
   suggestion,
 }: {
   status: ProjectListStatus;
@@ -32,26 +37,29 @@ export function HomeView({
   onCreateProject: () => void;
   onContinueOffline: () => void;
   onOpenLibrary: () => void;
+  /** Opens the library management screen. Null for someone who cannot manage the library. */
+  onManageLibrary: (() => void) | null;
   /** A card suggesting another easyImmerse component, such as a way to back up the work. */
   suggestion?: ReactNode;
 }) {
   return (
     <ScreenLayout>
+      <h1 className="sr-only">Home</h1>
       {suggestion}
+      {status !== "offline" && (
+        <HomeLibrarySection
+          onOpenLibrary={onOpenLibrary}
+          onManageLibrary={onManageLibrary}
+        />
+      )}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Projects</h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={onOpenLibrary}>
-            <Library className="size-4" aria-hidden />
-            Library
+        <h2 className="text-xl font-semibold">Projects</h2>
+        {projects.length > 0 && (
+          <Button variant="primary" onClick={onCreateProject}>
+            <Plus className="size-4" aria-hidden />
+            New project
           </Button>
-          {projects.length > 0 && (
-            <Button variant="primary" onClick={onCreateProject}>
-              <Plus className="size-4" aria-hidden />
-              New project
-            </Button>
-          )}
-        </div>
+        )}
       </div>
       <Projects
         status={status}
