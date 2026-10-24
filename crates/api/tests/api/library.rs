@@ -539,7 +539,7 @@ async fn adding_an_item_to_a_project_twice_yields_one_media_file() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn adding_an_item_without_a_project_names_the_new_project_library() {
+async fn adding_an_item_without_a_project_names_a_learners_new_project_after_the_language() {
     let (server, _dir) = library_server().await;
     let (token, project_id, _) = learner_media(&server).await;
     let project = send_as(
@@ -550,7 +550,17 @@ async fn adding_an_item_without_a_project_names_the_new_project_library() {
         None,
     )
     .await;
-    assert_eq!(project.json()["settings"]["name"], "Library");
+    assert_eq!(project.json()["settings"]["name"], "German library");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adding_an_item_without_a_project_names_a_managers_new_project_library() {
+    let (server, _dir) = library_server().await;
+    let item_id = document_item(&server).await;
+    let added = add_item(&server, TOKEN, &item_id, Value::Null).await.json();
+    let path = format!("/projects/{}", added["project_id"].as_str().unwrap());
+    let project = server.get(&path).await.json();
+    assert_eq!(project["settings"]["name"], "Library");
 }
 
 #[tokio::test(flavor = "multi_thread")]

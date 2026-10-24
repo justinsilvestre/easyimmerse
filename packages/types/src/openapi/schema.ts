@@ -575,8 +575,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Adds an item to one of the principal's projects, or to a new project named "Library"
-         *     for the library's language and the item's translation language.
+         * Adds an item to one of the principal's projects, or to a new project for the library's language
+         *     and the item's translation language: named "Library" for a library manager, who prepares items there,
+         *     and after the language, as in "German library", for anyone else.
          *     A project that already has the item keeps its media file, which is returned.
          *     Anyone may add a published item; a library manager may also add an unpublished one,
          *     to prepare its words in the player or the reader that learners use.

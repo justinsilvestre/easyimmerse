@@ -10,7 +10,7 @@ use easyimmerse_core::library::{
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
-use easyimmerse_storage::{OwnedPath, OwnerId, Storage, StorageError};
+use easyimmerse_storage::{OwnedPath, Storage, StorageError};
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::auth::principal::Principal;
@@ -18,8 +18,9 @@ use crate::routes::library_support::{load_published_item, load_visible_item};
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
 
-/// Adds an item to one of the principal's projects, or to a new project named "Library"
-/// for the library's language and the item's translation language.
+/// Adds an item to one of the principal's projects, or to a new project for the library's language
+/// and the item's translation language: named "Library" for a library manager, who prepares items there,
+/// and after the language, as in "German library", for anyone else.
 /// A project that already has the item keeps its media file, which is returned.
 /// Anyone may add a published item; a library manager may also add an unpublished one,
 /// to prepare its words in the player or the reader that learners use.
@@ -46,19 +47,19 @@ pub async fn add_library_item(
     Json(request): Json<AddLibraryItem>,
 ) -> Result<Json<LibraryItemAdded>, ApiFailure> {
     let item = load_visible_item(&state, &principal, &item_id).await?;
-    let owner = principal.owner_id();
     let added = state
-        .with_storage(move |storage| add_to_project(storage, &owner, &item, request.project_id))
+        .with_storage(move |storage| add_to_project(storage, &principal, &item, request.project_id))
         .await?;
     Ok(Json(added))
 }
 
 fn add_to_project(
     storage: &Storage,
-    owner: &OwnerId,
+    principal: &Principal,
     item: &LibraryItem,
     project_id: Option<ProjectId>,
 ) -> Result<LibraryItemAdded, StorageError> {
+    let owner = &principal.owner_id();
     let project_id = match project_id {
         Some(project_id) => {
             let path = OwnedPath {
@@ -71,7 +72,8 @@ fn add_to_project(
         None => {
             let language = (storage.get_library_settings()?.language)
                 .ok_or(StorageError::LibraryLanguageUnset)?;
-            let settings = library_project_settings(language, item);
+            let name = library_project_name(principal, &language);
+            let settings = library_project_settings(name, language, item);
             storage.create_project(owner, &settings)?.id
         }
     };
@@ -90,12 +92,22 @@ fn add_to_project(
     })
 }
 
-/// The settings of a project made for a library item: the library's language, the item's translation language,
-/// the beginner's flashcard fields, and the name "Library".
-fn library_project_settings(language: String, item: &LibraryItem) -> ProjectSettings {
+/// The name of a project made for a library item: "Library" for a library manager, whose app opens items there
+/// to prepare them, and the library's language followed by "library", such as "German library", for anyone else.
+fn library_project_name(principal: &Principal, language: &str) -> String {
+    if principal.can_manage_library() {
+        "Library".to_string()
+    } else {
+        format!("{} library", language_name(language))
+    }
+}
+
+/// The settings of a project made for a library item: its name, the library's language, the item's translation language,
+/// and the beginner's flashcard fields.
+fn library_project_settings(name: String, language: String, item: &LibraryItem) -> ProjectSettings {
     use FlashcardFieldKey::*;
     ProjectSettings {
-        name: "Library".to_string(),
+        name,
         target_language: language,
         translation_language: item.translation_language.clone(),
         flashcard_fields: vec![
@@ -115,6 +127,30 @@ fn library_project_settings(language: String, item: &LibraryItem) -> ProjectSett
         flashcard_front_fields: vec![AudioContext, Screenshot],
         lists_anki_deletions: true,
     }
+}
+
+/// The English name of the languages the project form offers, else the code itself.
+fn language_name(code: &str) -> String {
+    let names = [
+        ("de", "German"),
+        ("en", "English"),
+        ("es", "Spanish"),
+        ("fr", "French"),
+        ("it", "Italian"),
+        ("ja", "Japanese"),
+        ("ko", "Korean"),
+        ("pt", "Portuguese"),
+        ("ru", "Russian"),
+        ("zh", "Chinese"),
+    ];
+    let primary = code
+        .split(['-', '_'])
+        .next()
+        .unwrap_or(code)
+        .to_ascii_lowercase();
+    (names.iter())
+        .find(|(known, _)| *known == primary)
+        .map_or_else(|| code.to_string(), |(_, name)| name.to_string())
 }
 
 /// Saves a flashcard built by the server from a segment of a library media file, and from one of its words when
@@ -234,6 +270,16 @@ fn not_library_media() -> ApiFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn names_a_known_language_in_english() {
+        assert_eq!(language_name("de-AT"), "German");
+    }
+
+    #[test]
+    fn names_an_unknown_language_by_its_code() {
+        assert_eq!(language_name("tlh"), "tlh");
+    }
 
     #[test]
     fn makes_a_tag_of_a_media_name_without_its_extension() {
