@@ -215,7 +215,7 @@ describe("selectDesktopPairingServer", () => {
     expect(selectDesktopPairingServer(state)).toEqual({ kind: "noNetwork" });
   });
 
-  it("returns the pairing address and whether the server has accounts", () => {
+  it("returns the pairing address, whether the server has accounts and the device name", () => {
     const state = {
       app: stateAfter(
         actions.desktopServerStatusReceived(runningOnLan),
@@ -226,6 +226,7 @@ describe("selectDesktopPairingServer", () => {
       kind: "running",
       url: "http://192.168.1.5:8787",
       hasAccounts: true,
+      deviceName: "Studio iMac",
     });
   });
 });

@@ -1,4 +1,8 @@
-import { actions } from "@easyimmerse/state";
+import {
+  actions,
+  selectIsSuggestionDismissed,
+  selectRoute,
+} from "@easyimmerse/state";
 import {
   act,
   cleanup,
@@ -11,6 +15,22 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { SettingsScreen } from "./SettingsScreen.tsx";
 
 afterEach(cleanup);
+
+function renderSettings() {
+  return renderWithAppStore(
+    <SettingsScreen
+      onBack={() => undefined}
+      onOpenAccount={() => undefined}
+      onOpenDictionaries={() => undefined}
+    />,
+  );
+}
+
+const showAgainName = "Show dismissed suggestions again";
+
+function getGroup(name: string) {
+  return within(screen.getByRole("region", { name }));
+}
 
 describe("SettingsScreen", () => {
   it("calls onBack when Back is clicked", () => {
@@ -69,7 +89,7 @@ describe("SettingsScreen", () => {
     expect(screen.getByText(/You are not logged in/)).toBeDefined();
   });
 
-  it("marks the footer's Settings control as the page already open", () => {
+  it("marks the Profile menu's Settings row as the page already open", () => {
     const { store } = renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -80,6 +100,7 @@ describe("SettingsScreen", () => {
     act(() => {
       store.dispatch(actions.navigated({ type: "openSettings" }));
     });
+    fireEvent.click(screen.getByRole("button", { name: "Profile" }));
     expect(
       screen
         .getByRole("button", { name: "Settings" })
@@ -133,7 +154,7 @@ describe("SettingsScreen", () => {
     ).toBeDefined();
   });
 
-  it("shows the server settings on the desktop app", () => {
+  it("shows the Server row on the desktop app", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -149,10 +170,10 @@ describe("SettingsScreen", () => {
         },
       },
     );
-    expect(screen.getByRole("region", { name: "Server" })).toBeDefined();
+    expect(screen.getByRole("button", { name: /^Server/ })).toBeDefined();
   });
 
-  it("shows no server settings elsewhere", () => {
+  it("shows no Server row elsewhere", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
@@ -160,6 +181,140 @@ describe("SettingsScreen", () => {
         onOpenDictionaries={() => undefined}
       />,
     );
-    expect(screen.queryByRole("region", { name: "Server" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Server/ })).toBeNull();
+  });
+
+  it.each(["Sync", "This device", "About"])(
+    "groups settings under a %s heading",
+    (name) => {
+      renderSettings();
+      expect(screen.getByRole("heading", { name, level: 2 })).toBeDefined();
+    },
+  );
+
+  it.each([
+    ["Sync", /^Account/],
+    ["Sync", /^Local network sync/],
+    ["This device", /^Dictionaries/],
+    ["About", /^Help/],
+  ])("puts in the %s group the %s row", (group, name) => {
+    renderSettings();
+    expect(getGroup(group).getByRole("button", { name })).toBeDefined();
+  });
+
+  it.each([
+    ["This device", "Display"],
+    ["This device", "Subtitles"],
+    ["This device", "Media conversion"],
+    ["About", "Open-source licenses"],
+  ])("puts in the %s group the %s section", (group, name) => {
+    renderSettings();
+    expect(getGroup(group).getByRole("region", { name })).toBeDefined();
+  });
+
+  it("puts the desktop app's Server row in the Sync group", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+      undefined,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:5000",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    expect(
+      getGroup("Sync").getByRole("button", { name: /^Server/ }),
+    ).toBeDefined();
+  });
+
+  it("opens the Local network sync page from its row", () => {
+    const { store } = renderSettings();
+    act(() => {
+      store.dispatch(actions.navigated({ type: "openSettings" }));
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Local network sync/ }),
+    );
+    expect(selectRoute(store.getState())).toMatchObject({
+      pages: ["general", "pairing"],
+    });
+  });
+
+  it("opens the Server page from its row on the desktop app", () => {
+    const { store } = renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenAccount={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+      undefined,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:5000",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    act(() => {
+      store.dispatch(actions.navigated({ type: "openSettings" }));
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Server/ }));
+    expect(selectRoute(store.getState())).toMatchObject({
+      pages: ["general", "server"],
+    });
+  });
+
+  it("requests the help link when Help is clicked", () => {
+    const { effects } = renderSettings();
+    fireEvent.click(screen.getByRole("button", { name: /^Help/ }));
+    expect(effects.calls).toContainEqual({
+      type: "openExternalUrl",
+      url: "https://github.com/justinsilvestre/easyimmerse",
+    });
+  });
+
+  it("shows the theme control in the Display section", () => {
+    renderSettings();
+    expect(
+      within(screen.getByRole("region", { name: "Display" })).getByRole(
+        "group",
+        { name: "Theme" },
+      ),
+    ).toBeDefined();
+  });
+
+  describe("in its Suggestions section", () => {
+    it("disables showing suggestions again while none is dismissed", () => {
+      renderSettings();
+      expect(
+        screen.getByRole<HTMLButtonElement>("button", { name: showAgainName })
+          .disabled,
+      ).toBe(true);
+    });
+
+    it("shows a dismissed suggestion again", () => {
+      const { store } = renderSettings();
+      act(() => {
+        store.dispatch(actions.suggestionDismissed("backup"));
+      });
+      fireEvent.click(screen.getByRole("button", { name: showAgainName }));
+      expect(selectIsSuggestionDismissed("backup")(store.getState())).toBe(
+        false,
+      );
+    });
+
+    it("sits in the This device group", () => {
+      renderSettings();
+      expect(
+        getGroup("This device").getByRole("region", { name: "Suggestions" }),
+      ).toBeDefined();
+    });
   });
 });

@@ -16,7 +16,7 @@ export function ProjectSettingsScreen({
   const { data: project, error } = useGetProjectQuery(projectId);
   if (error)
     return (
-      <ScreenLayout>
+      <ScreenLayout onBack={onCancel} backLabel="Project">
         <p role="alert">Could not load the project.</p>
       </ScreenLayout>
     );

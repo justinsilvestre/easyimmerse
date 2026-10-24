@@ -32,9 +32,9 @@ export function ConversionCacheSection(controls: ConversionCacheControls) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2 id={headingId} className="text-base font-semibold">
+      <h3 id={headingId} className="text-base font-semibold">
         Media cache
-      </h2>
+      </h3>
       <p className="text-sm text-fg-muted">
         When the app processes media (video, audio, subtitles, and so on) for
         compatibility reasons, the processed files are kept in a cache on disk,

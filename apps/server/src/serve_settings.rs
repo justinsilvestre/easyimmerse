@@ -43,6 +43,8 @@ pub struct ServeSettings {
     pub mail_from: Option<String>,
     pub public_url: Option<String>,
     pub mail_to_stderr: bool,
+    /// The name paired devices show for the desktop app's computer. Only the desktop app sets it.
+    pub device_name: Option<String>,
 }
 
 /// Merges the command line, whose values already include the environment variables, over
@@ -84,6 +86,7 @@ pub fn resolve_serve_settings(args: &ServeArgs, file: &ServerFileConfig) -> Serv
         mail_from: args.mail_from.clone().or_else(|| file.mail_from.clone()),
         public_url: args.public_url.clone().or_else(|| file.public_url.clone()),
         mail_to_stderr: flag_or_file(args.mail_to_stderr, file.mail_to_stderr),
+        device_name: None,
     }
 }
 

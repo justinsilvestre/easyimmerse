@@ -92,9 +92,15 @@ export type {
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
 export {
+  type BackupFault,
+  backupFaultNoticeKey,
+  isBackupFault,
+} from "./backup/backupFaultNotice.ts";
+export {
   type BackupSign,
   selectBackupSign,
 } from "./backup/selectBackupSign.ts";
+export { type SyncPlace, selectSyncPlace } from "./backup/selectSyncPlace.ts";
 export { readBindAddress } from "./desktopServer/bindAddress.ts";
 export {
   type DesktopPairingServer,
@@ -190,6 +196,11 @@ export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
 export type { Appearance } from "./preferences/appearance.ts";
+export {
+  type SuggestionId,
+  selectHasDismissedSuggestions,
+  selectIsSuggestionDismissed,
+} from "./preferences/dismissedSuggestions.ts";
 export {
   isPersonBoundPreferenceKey,
   personBoundPreferenceKeys,

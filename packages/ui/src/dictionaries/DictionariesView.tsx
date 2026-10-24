@@ -36,6 +36,7 @@ export function DictionariesView({
   importFailure = null,
   pendingTable,
   onBack,
+  backLabel,
   onAddFromRegistry,
   onAddFromFile,
   onToggle,
@@ -74,8 +75,10 @@ export function DictionariesView({
     layout: TableLayout;
     hint: string | null;
   } | null;
-  /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up, so its button says only Back. */
+  /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up. */
   onBack: () => void;
+  /** Names where Back leads, such as "Settings"; "Back" when it is left out. */
+  backLabel?: string;
   onAddFromRegistry?: () => void;
   onAddFromFile: () => void;
   onToggle?: (dictionaryId: string) => void;
@@ -119,7 +122,7 @@ export function DictionariesView({
     </>
   );
   return (
-    <ScreenLayout onBack={onBack}>
+    <ScreenLayout onBack={onBack} backLabel={backLabel}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1
           ref={headingRef}

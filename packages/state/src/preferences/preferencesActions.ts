@@ -1,3 +1,4 @@
+import type { SuggestionId } from "./dismissedSuggestions.ts";
 import type { PreferenceKey, PreferenceValues } from "./preferencesState.ts";
 import type { Theme } from "./theme.ts";
 
@@ -9,6 +10,10 @@ export const preferencesActions = {
     ({ type: "preferenceSet", key, value }) as const,
   preferencesLoaded: (preferences: PreferenceValues) =>
     ({ type: "preferencesLoaded", preferences }) as const,
+  suggestionDismissed: (id: SuggestionId) =>
+    ({ type: "suggestionDismissed", id }) as const,
+  dismissedSuggestionsRestored: () =>
+    ({ type: "dismissedSuggestionsRestored" }) as const,
   systemThemeChanged: (theme: Theme) =>
     ({ type: "systemThemeChanged", theme }) as const,
   textScaleChosen: (scale: number) =>

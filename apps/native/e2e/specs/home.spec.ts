@@ -6,12 +6,12 @@ describe("the app's home screen", () => {
   });
 
   // The app starts in the system's theme, which differs between machines and times of day.
-  it("switches to the other theme from the footer's menu", async () => {
+  it("switches to the other theme from the Profile menu", async () => {
     const themeBefore = await $("html").getAttribute("data-theme");
     const themeAfter = themeBefore === "dark" ? "light" : "dark";
-    await $('button[aria-label^="Theme:"]').click();
-    await $('[role="menu"]')
-      .$(`button=${themeAfter === "dark" ? "Dark" : "Light"}`)
+    await $('button[aria-label="Profile"]').click();
+    await $('[role="dialog"][aria-label="Profile"]')
+      .$(`label=${themeAfter === "dark" ? "Dark" : "Light"}`)
       .click();
     await expect($("html")).toHaveAttribute("data-theme", themeAfter);
   });

@@ -19,7 +19,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import {
@@ -73,6 +73,23 @@ const pathsOf = (requests: BackendRequest[], method: string) =>
     .map((request) => request.path);
 
 describe("ProjectScreen", () => {
+  it("offers the way back while the project loads", () => {
+    const onBack = vi.fn();
+    renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={onBack}
+        onEditSettings={() => undefined}
+      />,
+      createFakeBackendClient({
+        ...fixtureResponses,
+        "GET /projects/p1": () => new Promise(() => undefined),
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
+    expect(onBack).toHaveBeenCalled();
+  });
+
   it("shows the project's name", async () => {
     renderProject();
     expect(await screen.findByRole("heading", { name: "Alpha" })).toBeDefined();

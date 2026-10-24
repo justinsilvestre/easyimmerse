@@ -24,19 +24,25 @@ As a user:
 - when I am using the app:
   - [ ] I can resize the app window, and the app's layout adjusts accordingly
   - [x] the app follows my system's light or dark theme
-  - [x] from the theme menu at the bottom of the screen, I can choose to follow the system or to always use the light or the dark theme; the menu's icon shows the choice, which is kept on the device
-  - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
+  - [ ] I can pick a theme in the Profile menu: the system theme, light, or dark
+  - [ ] I can change the size of the app's text under "Text size" in the Profile menu, in steps from 75% to 175%, and go back to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
     - File menu: New project, Open project, Export flashcards, Import/export project, Exit
     - Edit menu: Undo, Redo, Cut, Copy, Paste
     - View menu: Toggle fullscreen, Toggle subtitles panel, Toggle waveform visualization
     - Window menu: Minimize, Zoom, Bring all to front
+- when I am on the home screen:
+  - [ ] the easyImmerse logo is on the left of the header
+- when I am on any other screen with a header (project, new project, project settings, settings):
+  - [ ] a Back button is on the left of the header, and says where it goes, e.g. "Projects"
+- when I am on a screen with a header:
+  - [ ] a thin footer runs along the bottom of the screen
 - when I open the app for the first time:
   - [ ] I am prompted to select a language for the app's interface
   - [ ] I see a short, human-written introduction to immersion and review, which I can skip
   - [ ] I am invited to open a library item or add my own media, without being asked to create an account
-- when I first reach a point where another easyImmerse component would help:
+- when I first reach a point where another easyImmerse component would help, e.g. the card on the home screen about backing up my work (see "Sync menu"):
   - [ ] I am told about that component at that point, e.g. the desktop app when a media format is unsupported in the browser, cloud or LAN sync when I import/export a project, etc.
   - [ ] I can dismiss the suggestion, and it is not shown again unless I choose to see it again in the settings
 
@@ -160,6 +166,7 @@ As a user:
     - toggling the visibility of the translation track (disabled if absent)
     - opening the subtitles appearance dialog
   - [x] the footer shows a button for toggling fullscreen mode
+  - [ ] the Sync button is on the left of the footer
   - [x] I can toggle fullscreen mode with the F key or by double-clicking on the video
   - [ ] the footer shows a button for toggling the visibility of the subtitles panel
   - [ ] the footer shows a button for toggling the visibility of the waveform visualization
@@ -703,7 +710,7 @@ As a user:
 - when I choose to export a project:
   - [ ] I am prompted to choose where to save a project file containing the project's settings, flashcards, and media files registry
   - [ ] I can choose whether to include the media files and dictionaries in the project file
-  - [ ] the project counts as backed up until I next change it, so on its own it no longer keeps the footer's sign that my work is not backed up
+  - [ ] the project counts as backed up until I next change it, so the Sync menu no longer says that my work is saved only on this device
 - when I choose to import a project:
   - [ ] I am prompted to select a project file
   - [ ] the imported project appears in my list of projects
@@ -864,21 +871,62 @@ As a web/mobile app user who is not logged in:
 
 ---
 
-### Cloud button
+### Sync menu
 
 As a user:
-- while some of my work, such as flashcards, is kept only on this device and not backed up anywhere else, in any of the apps (web, browser extension, desktop or mobile):
-  - [x] the cloud button in the footer shows a small sign that my work is not backed up, which stays out of the way of what I am doing
-- while all my work is backed up:
-  - [x] the cloud button in the footer shows a plain cloud
-- when I click the cloud button in the footer while some of my work is not backed up:
-  - [x] its menu tells me where my work is kept and how it could be lost
-  - [x] its menu offers the ways of backing up my work that this app has, such as a "Log in or sign up" button
-- when I click the cloud button in the footer:
-  - [x] I can open the "Local network sync" page with the "Local network sync" item
-  - [x] I can open the account settings screen with the "Account settings" item
-- when I click "Log in or sign up" in the cloud button's menu, or any other button that asks me to log in:
-  - [x] I'm taken to the log-in/signup screen
+- when I am on a screen with a footer:
+  - [ ] the Sync button is on the left of the footer
+- while my work is saved only on this device:
+  - [ ] the Sync button shows a computer (in the desktop app) or a phone (in the web and mobile apps)
+- while I am logged in to a server:
+  - [ ] the Sync button shows a cloud
+- while this app is paired with a desktop app on the local network:
+  - [ ] the Sync button shows a laptop
+- when my work can't be backed up, e.g. because the server can't be reached, a save failed, or I was logged out:
+  - [ ] the Sync button turns the warning colour
+  - [ ] a notice tells me what happened
+- when I click the Sync button:
+  - [ ] I see where my work is saved and whether it is backed up, e.g. "Saved only on this computer" or "Backed up to the easyImmerse cloud 2 minutes ago"
+- when I click the Sync button while paired with a desktop app:
+  - [x] I see the name of the desktop app's computer, e.g. "Paired with X's MacBook Pro"
+- when I click the Sync button while my work can't be backed up:
+  - [ ] I see what went wrong
+  - [ ] I see a button to fix it, e.g. "Try again" or "Log in again"
+- when I click the Sync button while my work is saved only on this device:
+  - [ ] I see a "Log in or sign up" button
+  - [ ] in the web and mobile apps, I see a "Pair with your desktop app" button, which opens the "Local network sync" page
+  - [ ] in the desktop app, I see a "Let other devices connect" button, which opens the "Local network sync" page
+- when I click the Sync button while paired with a desktop app whose server uses accounts:
+  - [ ] I see a "Log in" button
+- when I make my first flashcard while my work is saved only on this device:
+  - [ ] a card appears at the top of the home screen, warning me that my work is saved only on this device and could be lost
+  - [ ] the card has the same buttons as the Sync menu, plus a "Not now" button
+- when I click "Not now" on that card:
+  - [ ] the card goes away for good, unless I turn such suggestions back on in the settings
+- when I click "Log in or sign up" anywhere:
+  - [x] the log-in/signup screen opens
+
+---
+
+### Profile menu
+
+As a user:
+- when I am on a screen with a header:
+  - [ ] the Profile button is on the right of the header, and nothing else is
+- when I am on the media screen:
+  - [ ] the Profile button is on the right of the bar over the video, and hides along with the player controls
+- while I am not logged in:
+  - [ ] the Profile button shows a person icon
+- while I am logged in:
+  - [ ] the Profile button shows the first letter of my email address
+- when I click the Profile button:
+  - [ ] I see my email address and the server I am logged in to, or "Not logged in"
+  - [ ] I can pick a theme: follow the system, light, or dark
+  - [ ] I can open the settings screen with the "Settings" item
+- when I click the Profile button while logged in:
+  - [ ] I can open the account settings screen with the "Account" item
+- when I click the Profile button while not logged in:
+  - [ ] I can open the log-in/signup screen with the "Log in or sign up" item
 
 ---
 
@@ -963,11 +1011,11 @@ As a user:
 - when I log in from the desktop app or the mobile app, which keep my work on this device with their own built-in server:
   - [x] the easyImmerse cloud or my own server keeps a copy of my work, while the app goes on keeping it on this device
 - when a project is kept on a server I am logged in to (in the web app, the browser extension or the mobile app):
-  - [x] the project counts as backed up, and the cloud button in the footer reflects it
+  - [ ] the project counts as backed up, and the Sync button shows it
 - when I have exported a project to a project file since I last changed it (in any app):
-  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
+  - [ ] the project counts as backed up, and the Sync button shows it
 - when I have synchronized a project over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it:
-  - [ ] the project counts as backed up, and the cloud button in the footer reflects it
+  - [ ] the project counts as backed up, and the Sync button shows it
 
 As a privileged user (a subscriber or a self-hosted server account holder):
 - while I am logged in on a device:
@@ -985,6 +1033,7 @@ As a privileged user (a subscriber or a self-hosted server account holder):
 As a desktop app user:
 - when I open the "Local network sync" page while the server is running on the local network:
   - [x] I see a QR code and an address for pairing with another easyImmerse app on the same local network
+  - [x] I see the name that paired devices show for this computer, which is its device name from the Server page of Settings
 - when I open the "Local network sync" page while the server is running on the local network with "Launch token only" authentication:
   - [x] I also see a six-digit pairing code
   - [x] I see the time until which the pairing code is valid
@@ -1008,7 +1057,7 @@ As a web/mobile app user:
   - [x] the two devices are paired, and this app connects to the desktop app's server
   - [ ] my projects, flashcards, and dictionaries are synchronized between them
   - [x] media files on the desktop can be played on the paired device without copying them
-  - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so on their own they no longer keep the footer's sign that my work is not backed up
+  - [ ] the projects synchronized with the desktop app count as backed up until I next change them, so the Sync menu no longer says that my work is saved only on this device
 - when I scan the QR code or enter the address of a desktop app whose server uses accounts for authentication:
   - [x] the log-in/signup screen opens with the server's address filled in
   - [x] I log in with an account on that server instead of entering a pairing code
@@ -1028,10 +1077,13 @@ As a web/mobile app user:
 ### Desktop app, local server, and self-hosting
 
 As a desktop app user:
-- when I open the Server section of Settings:
+- when I am on the settings screen:
+  - [x] I can open the Server page from the "Sync" group
+- when I open the Server page of Settings:
   - [x] I see whether the server is stopped, starting, running, or has failed
   - [x] I can start the server with a button
   - [x] I can stop the server with a button
+  - [x] I can set the name that paired devices show for this computer in the "Device name" field, which starts as the computer's own name, e.g. "Xs MacBook Pro"
   - [x] I can set the IP address and port the server listens on, such as 0.0.0.0:8787, in the "Address and port" field
   - [x] I can set up authentication for the server, by switching "Authentication" between "Launch token only" and "Accounts"
   - [x] I can choose whether the server serves the complete web app or only the API, by switching "What the server serves" between those two options
@@ -1039,13 +1091,13 @@ As a desktop app user:
   - [x] I can save my changes to these settings with a button
   - [x] I can see the server's log, including any errors or warnings
   - [x] I can copy the server's log with a button
-- when I open the Server section of Settings while the server is running:
+- when I open the Server page of Settings while the server is running:
   - [x] I see the addresses that other devices use to reach the server
   - [x] I see whether other devices on the local network can reach the server, or only this computer
 - when I switch "Authentication" to "Accounts":
   - [x] I can choose whether anyone who can reach the server may sign up for an account, with the "Let anyone who can reach the server sign up" checkbox
 - when the server has failed:
-  - [x] the Server section of Settings tells me why
+  - [x] the Server page of Settings tells me why
 - when I change a server setting that takes effect only after a restart:
   - [x] I am told that saving the change restarts the server
 - when I close the app with the server running:
@@ -1077,7 +1129,7 @@ As a desktop app user:
 - when I am running an unauthenticated local server:
   - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [x] the Server section of Settings describes the roles I can give user accounts, and links to the account settings screen
+  - [x] the Server page of Settings describes the roles I can give user accounts, and links to the account settings screen
   - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
     - library user: can access my library, sync projects, and sync their flashcards
     - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
@@ -1191,12 +1243,14 @@ As a user:
 
 As a user:
 - when I am on the settings screen:
+  - [ ] the settings are grouped under "Sync", "This device" and "About"
   - [x] I see whether I am logged in, and can open the account settings screen with the "Account" button
+  - [ ] I can open the "Local network sync" page from the "Sync" group
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
   - [x] I can open the subtitles appearance dialog
   - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
-  - [ ] I can change the app's theme between light and dark
-  - [ ] I can set whether to honor the system's light/dark theme preference
+  - [ ] under "Display", I can pick the theme and the text size, as in the Profile menu
+  - [ ] under "About", I can open the help
   - [ ] I can change the language of the app's interface
   - [ ] I can view and change keyboard shortcuts
   - [ ] I can enable AnkiConnect

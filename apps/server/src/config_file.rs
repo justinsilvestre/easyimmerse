@@ -64,6 +64,18 @@ pub struct ServerFileConfig {
 pub struct DesktopFileConfig {
     /// Whether the app starts the server that other devices reach when the app starts.
     pub autostart: Option<bool>,
+    /// The name paired devices show for this computer.
+    pub device_name: Option<String>,
+}
+
+impl DesktopFileConfig {
+    /// Fills each key this table leaves out from `defaults`.
+    pub fn with_defaults(self, defaults: Self) -> Self {
+        Self {
+            autostart: self.autostart.or(defaults.autostart),
+            device_name: self.device_name.or(defaults.device_name),
+        }
+    }
 }
 
 /// The name that stands for a database living only in memory instead of in a file.
@@ -144,7 +156,10 @@ impl ServerFileConfig {
             mail_from: self.mail_from.or(defaults.mail_from),
             public_url: self.public_url.or(defaults.public_url),
             mail_to_stderr: self.mail_to_stderr.or(defaults.mail_to_stderr),
-            desktop: self.desktop.or(defaults.desktop),
+            desktop: match (self.desktop, defaults.desktop) {
+                (Some(desktop), Some(defaults)) => Some(desktop.with_defaults(defaults)),
+                (desktop, defaults) => desktop.or(defaults),
+            },
         }
     }
 
@@ -154,6 +169,13 @@ impl ServerFileConfig {
             .as_ref()
             .and_then(|desktop| desktop.autostart)
             .unwrap_or(false)
+    }
+
+    /// The name paired devices show for the desktop app's computer, when the file or the defaults give one.
+    pub fn device_name(&self) -> Option<&str> {
+        self.desktop
+            .as_ref()
+            .and_then(|desktop| desktop.device_name.as_deref())
     }
 }
 
@@ -228,6 +250,21 @@ mod tests {
     fn reads_autostart_from_the_desktop_table() {
         let config = parse("[desktop]\nautostart = true").unwrap();
         assert!(config.should_autostart());
+    }
+
+    #[test]
+    fn fills_the_desktop_keys_a_file_leaves_out() {
+        let defaults = ServerFileConfig {
+            desktop: Some(DesktopFileConfig {
+                autostart: Some(false),
+                device_name: Some("studio".to_string()),
+            }),
+            ..ServerFileConfig::default()
+        };
+        let config = parse("[desktop]\nautostart = true")
+            .unwrap()
+            .with_defaults(defaults);
+        assert_eq!(config.device_name(), Some("studio"));
     }
 
     #[test]

@@ -72,8 +72,36 @@ describe("updatePreferences", () => {
           "readerPreferences",
           "subtitleAppearance",
           "theme",
+          "dismissedSuggestions",
         ],
       },
+    ]);
+  });
+
+  it("saves the dismissed suggestion for suggestionDismissed", () => {
+    const [, effects] = apply(actions.suggestionDismissed("backup"));
+    expect(effects).toEqual([
+      {
+        type: "savePreference",
+        key: "dismissedSuggestions",
+        value: '["backup"]',
+      },
+    ]);
+  });
+
+  it("keeps a suggestion dismissed twice only once", () => {
+    const dismissBackup = actions.suggestionDismissed("backup");
+    const [preferences] = apply(dismissBackup, dismissBackup);
+    expect(preferences.values.dismissedSuggestions).toBe('["backup"]');
+  });
+
+  it("saves an empty list for dismissedSuggestionsRestored", () => {
+    const [, effects] = apply(
+      actions.dismissedSuggestionsRestored(),
+      actions.suggestionDismissed("backup"),
+    );
+    expect(effects).toEqual([
+      { type: "savePreference", key: "dismissedSuggestions", value: "[]" },
     ]);
   });
 

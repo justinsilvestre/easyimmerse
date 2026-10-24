@@ -1,9 +1,11 @@
 import type { BackendClient } from "@easyimmerse/backend";
-import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import {
+  fixtureProject,
+  fixtureResponses,
+} from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreen } from "./HomeScreen.tsx";
 
@@ -95,22 +97,35 @@ describe("HomeScreen", () => {
     ).toBeDefined();
   });
 
-  it("opens the dictionaries when Dictionaries is clicked", () => {
-    const { store } = renderHome();
-    fireEvent.click(screen.getByRole("button", { name: "Dictionaries" }));
-    expect(selectRoute(store.getState())).toEqual({
-      screen: "settings",
-      beneath: { screen: "home" },
-      pages: ["dictionaries"],
+  it("shows the card about backing up above the projects once a flashcard is kept only on this computer", async () => {
+    const client = createFakeBackendClient({
+      ...fixtureResponses,
+      "GET /projects": {
+        projects: [{ ...fixtureProject, flashcard_count: 1 }],
+      },
     });
-  });
-
-  it("requests an external link when Help is clicked", () => {
-    const { effects } = renderHome();
-    fireEvent.click(screen.getByRole("button", { name: "Help" }));
-    expect(effects.calls).toContainEqual({
-      type: "openExternalUrl",
-      url: "https://github.com/justinsilvestre/easyimmerse",
+    renderWithAppStore(
+      <HomeScreen
+        onOpenProject={() => undefined}
+        onReviewProject={() => undefined}
+        onCreateProject={() => undefined}
+        onContinueOffline={() => undefined}
+      />,
+      client,
+      {
+        server: {
+          serverUrl: "http://127.0.0.1:1",
+          token: "t",
+          bundledIn: "desktop",
+        },
+      },
+    );
+    const card = await screen.findByRole("region", {
+      name: "Saved only on this computer",
     });
+    const title = screen.getByRole("heading", { name: "Projects" });
+    expect(
+      card.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

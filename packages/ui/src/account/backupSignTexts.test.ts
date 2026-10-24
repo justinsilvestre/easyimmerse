@@ -49,10 +49,8 @@ describe("backupSignTexts", () => {
     );
   });
 
-  it("offers to log in while flashcards are kept only in this browser", () => {
-    expect(backupSignTexts({ kind: "browserOnly" })?.options).toEqual([
-      { label: "Log in or sign up", actions: [openAccountSettings] },
-    ]);
+  it("offers no fix while flashcards are kept only in this browser", () => {
+    expect(backupSignTexts({ kind: "browserOnly" })?.fix).toBeNull();
   });
 
   it("explains that failed saves are kept in this browser until they're saved", () => {
@@ -61,8 +59,8 @@ describe("backupSignTexts", () => {
     );
   });
 
-  it("offers no way to log in for failed saves", () => {
-    expect(backupSignTexts({ kind: "failedSaves" })?.options).toEqual([]);
+  it("offers no fix for failed saves", () => {
+    expect(backupSignTexts({ kind: "failedSaves" })?.fix).toBeNull();
   });
 
   it("explains that work is stored only on this computer", () => {
@@ -83,10 +81,8 @@ describe("backupSignTexts", () => {
     );
   });
 
-  it("offers to log in while work is kept only on the device", () => {
-    expect(backupSignTexts(deviceOnly("mobile"))?.options[0]?.label).toBe(
-      "Log in or sign up",
-    );
+  it("offers no fix while work is kept only on the device", () => {
+    expect(backupSignTexts(deviceOnly("mobile"))?.fix).toBeNull();
   });
 
   describe("while the remote cannot be reached", () => {
@@ -100,9 +96,9 @@ describe("backupSignTexts", () => {
     });
 
     it("offers to try again", () => {
-      expect(
-        backupSignTexts(linkUnreachable("desktop", 0), now)?.options,
-      ).toEqual([tryAgain]);
+      expect(backupSignTexts(linkUnreachable("desktop", 0), now)?.fix).toEqual(
+        tryAgain,
+      );
     });
   });
 
@@ -114,7 +110,7 @@ describe("backupSignTexts", () => {
     });
 
     it("offers to try again", () => {
-      expect(backupSignTexts(linkFailed)?.options).toEqual([tryAgain]);
+      expect(backupSignTexts(linkFailed)?.fix).toEqual(tryAgain);
     });
   });
 
@@ -132,18 +128,16 @@ describe("backupSignTexts", () => {
     });
 
     it("offers to log in again to the remote as the same account", () => {
-      expect(backupSignTexts(loggedOut("desktop"))?.options).toEqual([
-        {
-          label: "Log in again",
-          actions: [
-            actions.relinkRequested(
-              "https://cloud.example.org",
-              "someone@example.org",
-            ),
-            openAccountSettings,
-          ],
-        },
-      ]);
+      expect(backupSignTexts(loggedOut("desktop"))?.fix).toEqual({
+        label: "Log in again",
+        actions: [
+          actions.relinkRequested(
+            "https://cloud.example.org",
+            "someone@example.org",
+          ),
+          openAccountSettings,
+        ],
+      });
     });
   });
 });

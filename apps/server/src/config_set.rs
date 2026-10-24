@@ -36,7 +36,7 @@ enum ValueKind {
 }
 
 /// The settings `config set` writes, by the names the config file gives them.
-const KEYS: [(&str, ValueKind); 24] = [
+const KEYS: [(&str, ValueKind); 25] = [
     ("bind", ValueKind::Text),
     ("token", ValueKind::Text),
     ("accounts", ValueKind::Switch),
@@ -61,6 +61,7 @@ const KEYS: [(&str, ValueKind); 24] = [
     ("public_url", ValueKind::Text),
     ("mail_to_stderr", ValueKind::Switch),
     ("desktop.autostart", ValueKind::Switch),
+    ("desktop.device_name", ValueKind::Text),
 ];
 
 pub fn set(args: &ConfigSetArgs) -> anyhow::Result<()> {
