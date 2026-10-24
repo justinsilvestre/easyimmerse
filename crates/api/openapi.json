@@ -2519,7 +2519,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Adds a published item to one of the principal's projects, or to a new project for the item's languages\nnamed after its language. A project that already has the item keeps its media file, which is returned.",
+        "summary": "Adds an item to one of the principal's projects, or to a new project for the item's languages\nnamed after its language. A project that already has the item keeps its media file, which is returned.\nAnyone may add a published item; a library manager may also add an unpublished one,\nto prepare its words in the player or the reader that learners use.",
         "operationId": "addLibraryItem",
         "parameters": [
           {
@@ -2565,16 +2565,6 @@
           },
           "404": {
             "description": "No such item, one the principal may not see, or no such project of the principal's",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "`item_not_published`: the item is not published",
             "content": {
               "application/json": {
                 "schema": {

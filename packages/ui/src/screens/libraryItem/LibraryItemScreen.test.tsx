@@ -76,13 +76,13 @@ describe("LibraryItemScreen", () => {
     renderItem({
       "POST /library/items/i1/add": fakeFailure({
         status: 409,
-        code: "item_not_published",
+        code: "uploads_unavailable",
         message: "",
       }),
     });
     await addToProject();
     expect((await screen.findByRole("alert")).textContent).toBe(
-      "The item is not published, so it can't be added to a project yet.",
+      "This server keeps no uploaded files, so it has no library.",
     );
   });
 

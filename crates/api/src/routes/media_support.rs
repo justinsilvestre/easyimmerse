@@ -20,7 +20,7 @@ use tokio::process::Command;
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_file;
-use crate::routes::library_files::published_source_path;
+use crate::routes::library_files::visible_source_path;
 use crate::routes::stored_copies::stored_copy_path;
 use crate::state::AppState;
 
@@ -46,7 +46,8 @@ pub async fn resolve_source_path(
 }
 
 /// The media file's own path, once the token may read it and the file exists, without falling back to a copy.
-/// A media file from the library resolves to its item's uploaded file for anyone, while the item is published.
+/// A media file from the library resolves to its item's uploaded file for anyone while the item is published,
+/// and for a library manager at any time.
 pub async fn resolve_own_path(
     state: &AppState,
     principal: &Principal,
@@ -56,7 +57,7 @@ pub async fn resolve_own_path(
         MediaFileSource::Path { path } => path.clone(),
         MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
         MediaFileSource::Library { item_id } => {
-            return published_source_path(state, item_id).await;
+            return visible_source_path(state, principal, item_id).await;
         }
     };
     resolve_local_file(principal, &state.config, &path).await?;
