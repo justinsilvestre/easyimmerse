@@ -48,7 +48,11 @@ export const PreparingAText: Story = {
 export const Failed: Story = {
   args: {
     item: exampleLibraryItem({
-      status: { kind: "failed", message: "ffmpeg exited with status 1 while rendering the clip of cue 3" },
+      status: {
+        kind: "failed",
+        message:
+          "ffmpeg exited with status 1 while rendering the clip of cue 3",
+      },
     }),
   },
 };

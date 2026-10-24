@@ -31,10 +31,7 @@ const statusTexts = {
     document:
       "The server couldn't get this text ready, so it isn't published. Publish again, or replace the file if that doesn't help.",
   },
-} satisfies Record<
-  LibraryItemStatus["kind"],
-  Record<LibraryItemKind, string>
->;
+} satisfies Record<LibraryItemStatus["kind"], Record<LibraryItemKind, string>>;
 
 /** Tells the library manager what an item's status means for learners, and what to do next when publishing failed. */
 export function libraryStatusText(

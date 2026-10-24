@@ -24,6 +24,8 @@ describe("libraryStatusText", () => {
 
 describe("libraryDeletionText", () => {
   it("says learners can no longer listen to a deleted recording", () => {
-    expect(libraryDeletionText("audio")).toContain("can no longer listen to it");
+    expect(libraryDeletionText("audio")).toContain(
+      "can no longer listen to it",
+    );
   });
 });

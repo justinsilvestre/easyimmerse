@@ -145,9 +145,7 @@ describe("HomeScreen", () => {
 
   it("opens the library when Browse the library is clicked", () => {
     const { store } = renderHome();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Browse the library" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Browse the library" }));
     expect(selectRoute(store.getState())).toEqual({ screen: "library" });
   });
 
