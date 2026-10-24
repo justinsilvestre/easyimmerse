@@ -1,26 +1,28 @@
-//! The files of library items: uploading an item's file, serving it and the cover,
+//! The files of library items: uploading an item's file and serving it,
 //! and the clips and screenshots that a publish rendered for the item's cues.
 
 use std::fs::File;
 
+use axum::Json;
 use axum::body::Body;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::Response;
-use axum::{Extension, Json};
 use easyimmerse_core::document::parse_document;
-use easyimmerse_core::library::{LibraryItem, LibraryItemId, LibraryItemKind, LibrarySegment};
+use easyimmerse_core::library::{
+    LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibrarySegment,
+};
 use serde::Deserialize;
 use utoipa::IntoParams;
 
-use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal};
 use crate::auth::library_manager::LibraryManager;
-use crate::auth::principal::Principal;
 use crate::body_files::{BodyFileError, write_body_to_file};
+use crate::library_covers::{refresh_cover, remove_cover};
 use crate::library_paths::LibraryItemPaths;
 use crate::library_segments::text_of_document;
 use crate::routes::library_support::{
-    item_paths, load_editable_item, load_item, load_published_item, load_visible_item, source_path,
+    item_paths, load_editable_item, load_item, load_published_item, source_path,
 };
 use crate::routes::media_stream::serve_file;
 use crate::routes::stored_copies::{content_length, length_required};
@@ -28,8 +30,6 @@ use crate::state::AppState;
 
 /// The matched path of the file route, which the bearer middleware lets authenticate with a `token` query parameter.
 pub const LIBRARY_FILE_ROUTE_PATH: &str = "/library/items/{item_id}/file";
-/// The matched path of the cover route, which the bearer middleware lets authenticate with a `token` query parameter.
-pub const LIBRARY_COVER_ROUTE_PATH: &str = "/library/items/{item_id}/cover";
 
 #[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
@@ -48,6 +48,7 @@ pub struct LibraryMediaQuery {
 
 /// Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.
 /// A document item's file is parsed at once into one segment per paragraph, which replace the item's text.
+/// Unless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.
 #[utoipa::path(
     put,
     path = "/library/items/{item_id}/file",
@@ -106,14 +107,19 @@ async fn store_upload(
     };
     replace_source(paths, item, file_name).await?;
     let (item_id, file_name) = (item.id.clone(), file_name.to_string());
-    state
+    let stored = state
         .with_storage(move |storage| {
             if let Some(text) = &text {
                 storage.replace_library_segments(&item_id, text)?;
             }
             storage.set_library_file(&item_id, &file_name, length)
         })
-        .await
+        .await?;
+    match (stored.cover, stored.kind) {
+        (LibraryCover::Uploaded, _) => Ok(stored),
+        (_, LibraryItemKind::Document) => refresh_cover(state, &stored).await,
+        (_, LibraryItemKind::Video | LibraryItemKind::Audio) => remove_cover(state, &stored).await,
+    }
 }
 
 async fn create_upload_file(paths: &LibraryItemPaths) -> Result<File, ApiFailure> {
@@ -148,8 +154,7 @@ async fn read_document(
     Ok(text_of_document(&parse_document(&bytes, None)?))
 }
 
-/// Moves the upload into the place of the source, removing an earlier source of another extension
-/// and the cover rendered from it.
+/// Moves the upload into the place of the source, removing an earlier source of another extension.
 async fn replace_source(
     paths: &LibraryItemPaths,
     item: &LibraryItem,
@@ -158,7 +163,6 @@ async fn replace_source(
     if let Some(previous) = &item.file_name {
         let _ = tokio::fs::remove_file(paths.source(previous)).await;
     }
-    let _ = tokio::fs::remove_file(paths.cover()).await;
     tokio::fs::rename(paths.upload(), paths.source(file_name))
         .await
         .map_err(|error| internal(format!("the file could not be stored: {error}")))
@@ -192,36 +196,6 @@ pub async fn get_library_file(
     let item = load_item(&state, &item_id).await?;
     let path = source_path(&item_paths(&state, &item_id)?, &item)?;
     Ok(serve_file(&path, request).await)
-}
-
-/// Serves the cover of a published video item, a frame of the video.
-#[utoipa::path(
-    get,
-    path = "/library/items/{item_id}/cover",
-    tag = "library",
-    operation_id = "getLibraryCover",
-    security(("bearer_token" = [])),
-    params(("item_id" = String, Path, description = "The library item id"), LibraryMediaQuery),
-    responses(
-        (status = 200, description = "The cover", body = Vec<u8>, content_type = "image/jpeg"),
-        (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No such item, one the principal may not see, or an item without a cover", body = ApiError),
-        (status = 409, description = "`uploads_unavailable`: this server keeps no library files", body = ApiError),
-        (status = 421, description = "Unexpected Host header", body = ApiError),
-    ),
-)]
-pub async fn get_library_cover(
-    State(state): State<AppState>,
-    Extension(principal): Extension<Principal>,
-    Path(item_id): Path<LibraryItemId>,
-    request: Request,
-) -> Result<Response, ApiFailure> {
-    let item = load_visible_item(&state, &principal, &item_id).await?;
-    if !item.has_cover {
-        return Err(not_found("the library item has no cover"));
-    }
-    let path = item_paths(&state, &item_id)?.cover();
-    Ok(serve_file(&path.to_string_lossy(), request).await)
 }
 
 /// The uploaded file of a published item, which learners' media files of the item play.

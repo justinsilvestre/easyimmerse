@@ -1,5 +1,5 @@
 -- Media that library managers prepare for everyone on the server. Server-local; does not sync.
--- `kind` and `status` are the snake_case names of the core library enums;
+-- `kind`, `status` and `cover_kind` are the snake_case names of the core library enums;
 -- `difficulty` is a level of the Common European Framework of Reference for Languages, A1 to C2.
 CREATE TABLE library_items (
     id TEXT PRIMARY KEY,
@@ -14,8 +14,9 @@ CREATE TABLE library_items (
     file_name TEXT,                    -- the uploaded file's original name, null until uploaded
     size_bytes INTEGER,
     duration_ms INTEGER,               -- probed at publish, null for documents
-    cover_at_ms INTEGER,               -- the video time of the cover frame
-    has_cover INTEGER NOT NULL DEFAULT 0, -- whether a cover image was rendered for the current file
+    cover_kind TEXT NOT NULL DEFAULT 'automatic' CHECK (cover_kind IN ('automatic', 'frame', 'uploaded')),
+    cover_at_ms INTEGER,               -- the video time of a chosen cover frame
+    cover_media_type TEXT,             -- the type of the cover picture kept in the item's files, null when there is none
     status TEXT NOT NULL CHECK (status IN ('draft', 'processing', 'published', 'failed')),
     failure TEXT,                      -- why the last publish failed
     created_at_ms INTEGER NOT NULL,

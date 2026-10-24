@@ -51,6 +51,26 @@ pub enum LibraryDifficulty {
     C2,
 }
 
+/// Where the cover picture of an item comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+#[ts(export)]
+pub enum LibraryCover {
+    /// The screenshot of a video's first cue, or the cover image of an EPUB file. Other items have no automatic cover.
+    Automatic,
+    /// The frame of a video at the given time.
+    Frame { at_ms: u64 },
+    /// A picture a library manager uploaded.
+    Uploaded,
+}
+
+/// What a manager sends to take a video item's cover from one of its frames.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct LibraryCoverFrame {
+    pub at_ms: u64,
+}
+
 /// Whether learners can see an item. Only a published item is shown to people who cannot manage the library.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -82,8 +102,9 @@ pub struct LibraryItem {
     pub file_name: Option<String>,
     /// The length of a video or audio item, known once it is published.
     pub duration_ms: Option<u64>,
-    /// The time of the video frame the cover is taken from. Null for the first cue's screenshot time.
-    pub cover_at_ms: Option<u64>,
+    pub cover: LibraryCover,
+    /// Whether the item has a cover picture to show now. A video's automatic cover and a chosen frame
+    /// that is not rendered yet are rendered when the item is published.
     pub has_cover: bool,
     pub segment_count: u32,
     pub status: LibraryItemStatus,
@@ -104,7 +125,6 @@ pub struct LibraryItemDraft {
     pub kind: LibraryItemKind,
     pub difficulty: Option<LibraryDifficulty>,
     pub tags: Vec<String>,
-    pub cover_at_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
@@ -203,7 +223,7 @@ pub struct NewLibraryFlashcard {
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum LibraryError {
-    #[error("{0:?} is not a library item kind, difficulty or status")]
+    #[error("{0:?} is not a library item kind, difficulty, cover or status")]
     UnknownName(String),
     #[error("the word from {start} to {end} is empty or runs past the end of the text")]
     WordOutOfRange { start: u32, end: u32 },
@@ -363,6 +383,34 @@ impl LibraryDifficulty {
             .into_iter()
             .find(|difficulty| difficulty.as_str() == name)
             .ok_or_else(|| LibraryError::UnknownName(name.to_string()))
+    }
+}
+
+impl LibraryCover {
+    /// The name of the cover's kind as it is serialized and stored, without a frame's time.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            LibraryCover::Automatic => "automatic",
+            LibraryCover::Frame { .. } => "frame",
+            LibraryCover::Uploaded => "uploaded",
+        }
+    }
+
+    pub fn frame_at_ms(self) -> Option<u64> {
+        match self {
+            LibraryCover::Frame { at_ms } => Some(at_ms),
+            LibraryCover::Automatic | LibraryCover::Uploaded => None,
+        }
+    }
+
+    /// Reads a stored kind name, taking the time of a frame from `at_ms`.
+    pub fn parse(name: &str, at_ms: Option<u64>) -> Result<Self, LibraryError> {
+        match (name, at_ms) {
+            ("automatic", _) => Ok(Self::Automatic),
+            ("frame", Some(at_ms)) => Ok(Self::Frame { at_ms }),
+            ("uploaded", _) => Ok(Self::Uploaded),
+            (other, _) => Err(LibraryError::UnknownName(other.to_string())),
+        }
     }
 }
 
@@ -585,6 +633,20 @@ mod tests {
             LibraryDifficulty::parse(json.as_str().unwrap()),
             Ok(LibraryDifficulty::B2)
         );
+    }
+
+    #[test]
+    fn parses_the_cover_it_stores() {
+        let cover = LibraryCover::Frame { at_ms: 12_000 };
+        assert_eq!(
+            LibraryCover::parse(cover.as_str(), cover.frame_at_ms()),
+            Ok(cover)
+        );
+    }
+
+    #[test]
+    fn refuses_a_stored_frame_without_a_time() {
+        assert!(LibraryCover::parse("frame", None).is_err());
     }
 
     #[test]

@@ -17,6 +17,7 @@ pub mod file_download;
 pub mod found_subtitle_tracks;
 pub mod import_jobs;
 pub mod import_progress_sink;
+mod library_covers;
 pub mod library_paths;
 mod library_proposals;
 mod library_publish;

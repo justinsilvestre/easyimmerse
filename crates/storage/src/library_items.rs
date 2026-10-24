@@ -1,8 +1,8 @@
 //! The items of the server's library, without their text. The table is server-local and does not sync.
 
 use easyimmerse_core::library::{
-    LibraryDifficulty, LibraryError, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemKind,
-    LibraryItemStatus,
+    LibraryCover, LibraryDifficulty, LibraryError, LibraryItem, LibraryItemDraft, LibraryItemId,
+    LibraryItemKind, LibraryItemStatus,
 };
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
@@ -13,7 +13,8 @@ use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to
 const SELECTED_COLUMNS: &str = "id, title, description, language, translation_language, kind, \
      difficulty, tags_json, file_name, duration_ms, cover_at_ms, status, failure, \
      created_at_ms, updated_at_ms, \
-     (SELECT COUNT(*) FROM library_segments s WHERE s.item_id = library_items.id), has_cover";
+     (SELECT COUNT(*) FROM library_segments s WHERE s.item_id = library_items.id), \
+     cover_media_type IS NOT NULL, cover_kind";
 
 /// Creates a draft item with no file and no text.
 pub fn create_library_item(
@@ -23,8 +24,8 @@ pub fn create_library_item(
     let id = LibraryItemId(generate_id());
     conn.execute(
         "INSERT INTO library_items (id, title, description, language, translation_language, kind, \
-         difficulty, tags_json, cover_at_ms, status, created_at_ms, updated_at_ms) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'draft', ?10, ?10)",
+         difficulty, tags_json, status, created_at_ms, updated_at_ms) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'draft', ?9, ?9)",
         params![
             id.0,
             draft.title,
@@ -34,7 +35,6 @@ pub fn create_library_item(
             draft.kind.as_str(),
             draft.difficulty.map(LibraryDifficulty::as_str),
             serde_json::to_string(&draft.tags)?,
-            draft.cover_at_ms.map(to_stored_integer),
             to_stored_integer(now_ms()),
         ],
     )?;
@@ -49,8 +49,8 @@ pub fn update_library_item(
 ) -> Result<LibraryItem, StorageError> {
     let updated = conn.execute(
         "UPDATE library_items SET title = ?2, description = ?3, language = ?4, \
-         translation_language = ?5, kind = ?6, difficulty = ?7, tags_json = ?8, cover_at_ms = ?9, \
-         updated_at_ms = ?10 WHERE id = ?1",
+         translation_language = ?5, kind = ?6, difficulty = ?7, tags_json = ?8, \
+         updated_at_ms = ?9 WHERE id = ?1",
         params![
             id.0,
             draft.title,
@@ -60,7 +60,6 @@ pub fn update_library_item(
             draft.kind.as_str(),
             draft.difficulty.map(LibraryDifficulty::as_str),
             serde_json::to_string(&draft.tags)?,
-            draft.cover_at_ms.map(to_stored_integer),
             to_stored_integer(now_ms()),
         ],
     )?;
@@ -102,7 +101,8 @@ pub fn delete_library_item(conn: &Connection, id: &LibraryItemId) -> Result<(), 
     ensure_one_row_changed(deleted, id)
 }
 
-/// Records the name and size of the file uploaded for an item. The cover of an earlier file no longer counts.
+/// Records the name and size of the file uploaded for an item.
+/// A cover taken from an earlier file no longer counts; an uploaded cover stays.
 pub fn set_library_file(
     conn: &Connection,
     id: &LibraryItemId,
@@ -110,8 +110,9 @@ pub fn set_library_file(
     size_bytes: u64,
 ) -> Result<LibraryItem, StorageError> {
     let updated = conn.execute(
-        "UPDATE library_items SET file_name = ?2, size_bytes = ?3, has_cover = 0, updated_at_ms = ?4 \
-         WHERE id = ?1",
+        "UPDATE library_items SET file_name = ?2, size_bytes = ?3, \
+         cover_media_type = CASE WHEN cover_kind = 'uploaded' THEN cover_media_type END, \
+         updated_at_ms = ?4 WHERE id = ?1",
         params![
             id.0,
             file_name,
@@ -172,14 +173,35 @@ pub fn fail_interrupted_library_publishes(
     )?)
 }
 
-/// Records that a cover image was rendered for the item's current file.
+/// Records the type of the cover picture now kept for the item, or that it has none.
 pub fn set_library_cover(
     conn: &Connection,
     id: &LibraryItemId,
+    media_type: Option<&str>,
 ) -> Result<LibraryItem, StorageError> {
     let updated = conn.execute(
-        "UPDATE library_items SET has_cover = 1, updated_at_ms = ?2 WHERE id = ?1",
-        params![id.0, to_stored_integer(now_ms())],
+        "UPDATE library_items SET cover_media_type = ?2, updated_at_ms = ?3 WHERE id = ?1",
+        params![id.0, media_type, to_stored_integer(now_ms())],
+    )?;
+    ensure_one_row_changed(updated, id)?;
+    get_library_item(conn, id)
+}
+
+/// Records where the item's cover picture comes from, leaving the picture itself as it is.
+pub fn set_library_cover_choice(
+    conn: &Connection,
+    id: &LibraryItemId,
+    cover: LibraryCover,
+) -> Result<LibraryItem, StorageError> {
+    let updated = conn.execute(
+        "UPDATE library_items SET cover_kind = ?2, cover_at_ms = ?3, updated_at_ms = ?4 \
+         WHERE id = ?1",
+        params![
+            id.0,
+            cover.as_str(),
+            cover.frame_at_ms().map(to_stored_integer),
+            to_stored_integer(now_ms())
+        ],
     )?;
     ensure_one_row_changed(updated, id)?;
     get_library_item(conn, id)
@@ -244,13 +266,19 @@ fn read_library_item(row: &Row) -> rusqlite::Result<LibraryItem> {
         tags: read_json(row, 7)?,
         file_name: row.get(8)?,
         duration_ms: read_optional_unsigned(row, 9)?,
-        cover_at_ms: read_optional_unsigned(row, 10)?,
+        cover: read_cover(row)?,
         has_cover: row.get(16)?,
         segment_count: row.get(15)?,
         status,
         created_at_ms: read_unsigned(row, 13)?,
         updated_at_ms: read_unsigned(row, 14)?,
     })
+}
+
+fn read_cover(row: &Row) -> rusqlite::Result<LibraryCover> {
+    let name: String = row.get(17)?;
+    LibraryCover::parse(&name, read_optional_unsigned(row, 10)?)
+        .map_err(|error| conversion_failure(17, error))
 }
 
 fn parse_column<T>(
@@ -280,7 +308,6 @@ mod tests {
             kind: LibraryItemKind::Video,
             difficulty: Some(LibraryDifficulty::A2),
             tags: vec!["film".to_string()],
-            cover_at_ms: Some(3_000),
         }
     }
 
@@ -305,7 +332,6 @@ mod tests {
                 kind: read.kind,
                 difficulty: read.difficulty,
                 tags: read.tags,
-                cover_at_ms: read.cover_at_ms,
             },
             draft("Film")
         );
@@ -351,19 +377,53 @@ mod tests {
     }
 
     #[test]
-    fn records_a_rendered_cover() {
+    fn records_a_cover_picture() {
         let storage = Storage::open_in_memory().unwrap();
         let item = storage.create_library_item(&draft("Film")).unwrap();
-        assert!(storage.set_library_cover(&item.id).unwrap().has_cover);
+        let updated = storage
+            .set_library_cover(&item.id, Some("image/jpeg"))
+            .unwrap();
+        assert!(updated.has_cover);
     }
 
     #[test]
-    fn a_new_file_drops_the_cover() {
+    fn a_new_item_takes_the_automatic_cover() {
         let storage = Storage::open_in_memory().unwrap();
         let item = storage.create_library_item(&draft("Film")).unwrap();
-        storage.set_library_cover(&item.id).unwrap();
+        assert_eq!(item.cover, LibraryCover::Automatic);
+    }
+
+    #[test]
+    fn round_trips_a_chosen_frame() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        let frame = LibraryCover::Frame { at_ms: 3_000 };
+        storage.set_library_cover_choice(&item.id, frame).unwrap();
+        assert_eq!(storage.get_library_item(&item.id).unwrap().cover, frame);
+    }
+
+    fn item_with_cover(storage: &Storage, cover: LibraryCover) -> LibraryItem {
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        storage.set_library_cover_choice(&item.id, cover).unwrap();
+        storage
+            .set_library_cover(&item.id, Some("image/png"))
+            .unwrap()
+    }
+
+    #[test]
+    fn a_new_file_drops_a_cover_taken_from_the_old_one() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = item_with_cover(&storage, LibraryCover::Automatic);
         let updated = storage.set_library_file(&item.id, "film.mp4", 10).unwrap();
         assert!(!updated.has_cover);
+    }
+
+    #[test]
+    fn a_new_file_keeps_an_uploaded_cover() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = item_with_cover(&storage, LibraryCover::Uploaded);
+        let updated = storage.set_library_file(&item.id, "film.mp4", 10).unwrap();
+        assert!(updated.has_cover);
     }
 
     #[test]

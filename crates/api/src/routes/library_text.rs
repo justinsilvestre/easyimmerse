@@ -3,8 +3,8 @@
 use axum::extract::{Path, State};
 use axum::{Extension, Json};
 use easyimmerse_core::library::{
-    ApplyLibraryEntry, LibraryItemId, LibraryItemKind, LibrarySegment, LibrarySubtitles,
-    LibraryText, LibraryWord, validate_words,
+    ApplyLibraryEntry, LibraryCover, LibraryItemId, LibraryItemKind, LibrarySegment,
+    LibrarySubtitles, LibraryText, LibraryWord, validate_words,
 };
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
@@ -44,6 +44,7 @@ pub async fn get_library_text(
 
 /// Replaces the segments of a video or audio item with the cues of the subtitles, without words.
 /// Each cue of the translation subtitles is joined to the target cue it overlaps most.
+/// An automatic cover goes, to be rendered again from the new first cue when the item is published.
 #[utoipa::path(
     put,
     path = "/library/items/{item_id}/subtitles",
@@ -80,8 +81,15 @@ pub async fn put_library_subtitles(
         None => Vec::new(),
     };
     let text = text_of_subtitles(&target.cues, &translation);
+    // The automatic cover of a video is taken at its first cue, which the new subtitles may move.
+    let drops_cover = item.cover == LibraryCover::Automatic;
     let stored = state
-        .with_storage(move |storage| storage.replace_library_segments(&item_id, &text))
+        .with_storage(move |storage| {
+            if drops_cover {
+                storage.set_library_cover(&item_id, None)?;
+            }
+            storage.replace_library_segments(&item_id, &text)
+        })
         .await?;
     Ok(Json(stored))
 }

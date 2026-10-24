@@ -18,7 +18,7 @@ use crate::sync::send_as;
 const DOCUMENT_TEXT: &str = "Der Hund schläft.\n\nDie Katze frisst.\n";
 
 /// A server with open sign-up that keeps library files in a new directory, which lives as long as the `TempDir`.
-async fn library_server() -> (TestServer, TempDir) {
+pub(crate) async fn library_server() -> (TestServer, TempDir) {
     let dir = tempfile::tempdir().unwrap();
     let server = library_server_on(Storage::open_in_memory().unwrap(), &dir).await;
     (server, dir)
@@ -48,18 +48,17 @@ fn draft(kind: &str) -> Value {
         "kind": kind,
         "difficulty": "A1",
         "tags": ["animals"],
-        "cover_at_ms": null,
     })
 }
 
 /// Creates an item with the launch token and returns its id.
-async fn create_item(server: &TestServer, kind: &str) -> String {
+pub(crate) async fn create_item(server: &TestServer, kind: &str) -> String {
     let response = server.post_json("/library/items", &draft(kind)).await;
     assert_eq!(response.status, 201, "{}", response.text());
     response.json()["id"].as_str().unwrap().to_string()
 }
 
-async fn upload(
+pub(crate) async fn upload(
     server: &TestServer,
     item_id: &str,
     file_name: &str,
@@ -77,7 +76,7 @@ async fn upload(
 }
 
 /// A document item with its file uploaded; its id.
-async fn document_item(server: &TestServer) -> String {
+pub(crate) async fn document_item(server: &TestServer) -> String {
     let item_id = create_item(server, "document").await;
     let response = upload(
         server,
@@ -104,7 +103,7 @@ async fn put_words(server: &TestServer, item_id: &str, words: Value) -> TestResp
 }
 
 /// Publishes the item and waits until the server is done with it; the item as it then stands.
-async fn publish(server: &TestServer, item_id: &str) -> Value {
+pub(crate) async fn publish(server: &TestServer, item_id: &str) -> Value {
     let started = server
         .post_json(&format!("/library/items/{item_id}/publish"), &json!({}))
         .await;
@@ -123,7 +122,7 @@ async fn publish(server: &TestServer, item_id: &str) -> Value {
 }
 
 /// A published document item whose first segment has the word "Hund"; its id.
-async fn published_document(server: &TestServer) -> String {
+pub(crate) async fn published_document(server: &TestServer) -> String {
     let item_id = document_item(server).await;
     let response = put_words(server, &item_id, json!([word(4, 8, "Hund")])).await;
     assert_eq!(response.status, 200, "{}", response.text());
@@ -194,6 +193,12 @@ async fn manager_route_statuses(server: &TestServer, token: &str, item_id: &str)
                 json!({ "word_text": "Hund", "entry": { "term": "Hund", "reading": null, "l1_definition": "", "l2_definition": "" } }),
             ),
         ),
+        (
+            "PUT",
+            format!("{item}/cover/frame"),
+            Some(json!({ "at_ms": 0 })),
+        ),
+        ("DELETE", format!("{item}/cover"), None),
         ("POST", format!("{item}/publish"), None),
         ("POST", format!("{item}/unpublish"), None),
         ("DELETE", item.clone(), None),
@@ -222,7 +227,7 @@ async fn a_library_user_is_forbidden_every_manager_route() {
     let item_id = document_item(&server).await;
     let token = sign_up(&server, "learner@example.com").await;
     let statuses = manager_route_statuses(&server, &token, &item_id).await;
-    assert_eq!(statuses, vec![403; 11]);
+    assert_eq!(statuses, vec![403; 13]);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -692,13 +697,13 @@ async fn deleting_an_item_removes_its_files() {
     assert!(!item_dir(dir.path(), &item_id).exists());
 }
 
-fn item_dir(dir: &Path, item_id: &str) -> PathBuf {
+pub(crate) fn item_dir(dir: &Path, item_id: &str) -> PathBuf {
     dir.join("uploads/library").join(item_id)
 }
 
 /// A published video item made from the sample video and its subtitles, as the launch token's holder:
 /// the item, and the learner's token, project id and media file id.
-async fn published_video(server: &TestServer) -> (Value, (String, String, String)) {
+pub(crate) async fn published_video(server: &TestServer) -> (Value, (String, String, String)) {
     let item_id = create_item(server, "video").await;
     let uploaded = upload(server, &item_id, "sample.mp4", read_fixture("sample.mp4")).await;
     assert_eq!(uploaded.status, 200, "{}", uploaded.text());

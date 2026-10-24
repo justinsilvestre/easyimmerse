@@ -18,6 +18,7 @@ pub mod documents;
 pub mod email_confirmation;
 pub mod flashcards;
 pub mod health;
+pub mod library_cover;
 pub mod library_files;
 pub mod library_items;
 pub mod library_learning;

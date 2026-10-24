@@ -101,6 +101,8 @@ export type * from "./IpaTranscription";
 export type * from "./KanjiEntry";
 export type * from "./KanjiMeta";
 export type * from "./KanjiResult";
+export type * from "./LibraryCover";
+export type * from "./LibraryCoverFrame";
 export type * from "./LibraryDifficulty";
 export type * from "./LibraryEntry";
 export type * from "./LibraryItem";
