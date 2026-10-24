@@ -26,12 +26,15 @@ export function LibraryItemCard({
   item,
   coverUrl,
   showsStatus = false,
+  showsLanguage = true,
   onOpen,
 }: {
   item: LibraryItem;
   /** The image of the item's cover, or null when it has none to show. */
   coverUrl: string | null;
   showsStatus?: boolean;
+  /** Whether to name the item's language, which a list of items in one language leaves out. */
+  showsLanguage?: boolean;
   onOpen: (itemId: string) => void;
 }) {
   const KindIcon = kindIcons[item.kind];
@@ -62,7 +65,7 @@ export function LibraryItemCard({
             <KindIcon className="size-3" aria-hidden />
             {libraryKindLabels[item.kind]}
           </span>
-          <span>{languageName(item.language)}</span>
+          {showsLanguage && <span>{languageName(item.language)}</span>}
           {item.duration_ms !== null && (
             <span>{formatLibraryDuration(item.duration_ms)}</span>
           )}

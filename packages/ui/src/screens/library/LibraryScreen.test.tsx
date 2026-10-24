@@ -1,5 +1,11 @@
 import type { AccountUser, CurrentPrincipal } from "@easyimmerse/types";
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import { exampleLibraryItems } from "../../testSupport/exampleLibrary.ts";
@@ -58,6 +64,22 @@ describe("LibraryScreen", () => {
       target: { value: "ja" },
     });
     expect(await itemTitles()).toEqual(["桃太郎"]);
+  });
+
+  it("names each item's language while every language is listed", async () => {
+    renderLibrary({ kind: "account", user: learner });
+    const list = await screen.findByRole("list", { name: "Library items" });
+    expect(within(list).getAllByText("German")).toHaveLength(2);
+  });
+
+  it("leaves out the items' language once a language is chosen", async () => {
+    renderLibrary({ kind: "account", user: learner });
+    fireEvent.change(await screen.findByLabelText("Language"), {
+      target: { value: "de" },
+    });
+    await waitFor(async () => expect(await itemTitles()).toHaveLength(2));
+    const list = screen.getByRole("list", { name: "Library items" });
+    expect(within(list).queryByText("German")).toBeNull();
   });
 
   describe("for someone who cannot manage the library", () => {
