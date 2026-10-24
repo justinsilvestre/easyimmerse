@@ -980,7 +980,7 @@
       const maxZoom = 3;
       let viewedFigure = null;
       // Made here rather than in the markup, where a link must have an address before it has one to show.
-      const viewerOriginal = Object.assign(document.createElement("a"), { target: "_blank", textContent: "Open image" });
+      const viewerOriginal = Object.assign(document.createElement("a"), { className: "pill", target: "_blank", textContent: "Open image" });
       viewer.querySelector(".viewer-zoom").before(viewerOriginal);
       const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
 
@@ -1014,7 +1014,7 @@
         viewer.querySelector(".side").textContent = side;
         viewer.querySelector(".viewer-icon").innerHTML = viewportIcons[variant.dataset.viewport] ?? "";
         viewer.querySelector(".viewer-title").textContent =
-          `${storyTitle(report.changes.find((change) => change.id === story.dataset.id))} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
+          `${storyTitle(report.changes.find((change) => change.id === story.dataset.id))}${img.dataset.flip ? flipHint : ""}`;
         viewerOriginal.href = img.getAttribute("src");
         const change = report.changes.find((candidate) => candidate.id === story.dataset.id);
         const area = change.changedAreas?.[`${story.dataset.theme}-${variant.dataset.viewport}.png`];
