@@ -209,8 +209,28 @@
       .story-body { padding: 0 4px 4px; }
       /* Sits in the sticky header, across its full width, so it stays in view beside the screenshots it is about. */
       .comment-box {
+        position: relative;
         flex-basis: 100%;
         cursor: auto;
+      }
+      .close-button {
+        font: inherit;
+        font-size: 18px;
+        line-height: 1;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .close-button:hover { color: var(--fg); background: var(--line); }
+      .comment-box .close-button {
+        position: absolute;
+        top: 4px;
+        right: 4px;
       }
       .comment-box textarea {
         box-sizing: border-box;
@@ -218,7 +238,7 @@
         width: 100%;
         min-height: 3.2em;
         resize: vertical;
-        padding: 8px 10px;
+        padding: 8px 34px 8px 10px;
         font: inherit;
         color: var(--fg);
         background: var(--raised);
@@ -453,6 +473,7 @@
       <span><span id="comment-count"></span> <span class="meta">saved in this browser</span></span>
       <button type="button" class="pill" id="copy-comments">Copy as Markdown</button>
       <button type="button" class="text-button" id="clear-comments">Clear all</button>
+      <button type="button" class="close-button" id="hide-dock" title="Hide until you scroll to the top or bottom" aria-label="Hide">×</button>
     </aside>
     <dialog id="viewer" aria-label="Screenshot">
       <div class="viewer-bar">
@@ -470,7 +491,7 @@
       const kinds = ["changed", "added", "removed", "errored"];
       const themeNames = ["light", "dark"];
       // Highlighting starts on, so only the variants it was turned off for are remembered.
-      const state = { kind: "all", collapsed: new Set(), themes: new Map(), unhighlighted: new Set() };
+      const state = { kind: "all", collapsed: new Set(), themes: new Map(), unhighlighted: new Set(), closedComments: new Set() };
       const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
@@ -565,11 +586,33 @@
         document.getElementById("copy-comments").after(pullRequestLink);
       }
 
+      // The bar can be hidden, and comes back when a comment box is closed, or when the page is scrolled to its top or
+      // bottom after being scrolled away from both, so hiding it at the top does not bring it straight back.
+      const dockState = { dismissed: false, leftEdge: false };
+
       function updateDock() {
         const total = commentedIds().length;
-        dock.hidden = total === 0;
+        dock.hidden = total === 0 || dockState.dismissed;
         document.getElementById("comment-count").textContent = `${total} ${total === 1 ? "comment" : "comments"}`;
       }
+
+      function showDock() {
+        dockState.dismissed = false;
+        updateDock();
+      }
+
+      document.getElementById("hide-dock").addEventListener("click", () => {
+        Object.assign(dockState, { dismissed: true, leftEdge: false });
+        updateDock();
+      });
+
+      const edgeDistance = 80;
+      addEventListener("scroll", () => {
+        if (!dockState.dismissed) return;
+        const atEdge = scrollY < edgeDistance || innerHeight + scrollY > document.documentElement.scrollHeight - edgeDistance;
+        if (!atEdge) dockState.leftEdge = true;
+        else if (dockState.leftEdge) showDock();
+      }, { passive: true });
 
       document.getElementById("copy-comments").addEventListener("click", (event) => copyText(event.currentTarget, commentsMarkdown()));
       document.getElementById("clear-comments").addEventListener("click", () => {
@@ -603,6 +646,13 @@
         if (textarea && !textarea.value.trim()) textarea.parentElement.hidden = true;
       });
 
+      /** Hides a story's comment box, keeping what is in it; the Comment button opens it again. */
+      function closeComment(story) {
+        story.querySelector(".comment-box").hidden = true;
+        state.closedComments.add(story.dataset.id);
+        showDock();
+      }
+
       function toggleComment(story) {
         const box = story.querySelector(".comment-box");
         const textarea = box.querySelector("textarea");
@@ -612,6 +662,7 @@
         }
         story.open = true;
         box.hidden = false;
+        state.closedComments.delete(story.dataset.id);
         textarea.focus();
       }
 
@@ -638,6 +689,7 @@
         const story = button.closest("details.story");
         if (button.dataset.themeChoice) switchTheme(story, button.dataset.themeChoice);
         else if (button.classList.contains("comment-toggle")) toggleComment(story);
+        else if (button.classList.contains("close-button")) closeComment(story);
         else copyText(button, button.dataset.copy);
       });
 
@@ -741,6 +793,7 @@
       function card(change) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
         const commented = Boolean(comments[change.id]);
+        const commentShown = commented && !state.closedComments.has(change.id);
         const pixels = pixelsOf(change);
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
@@ -752,8 +805,9 @@
               <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}</span>
             </span>
             <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
-            <div class="comment-box" ${commented ? "" : "hidden"}>
+            <div class="comment-box" ${commentShown ? "" : "hidden"}>
               <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
+              <button type="button" class="close-button" title="Close; the comment is kept" aria-label="Close comment">×</button>
             </div>
           </summary>
           <div class="story-body">
