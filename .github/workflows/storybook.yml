@@ -212,6 +212,26 @@ jobs:
           path: changes
           if-no-files-found: error
 
+  # Fails the run when a story of the pull request's head throws while rendering.
+  # It is a job of its own so that the report of the changes is still published, broken story included.
+  renders:
+    needs: [gate, capture]
+    if: needs.gate.outputs.passed != 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          rust-cache: "false"
+
+      - uses: actions/download-artifact@v4.1.3
+        with:
+          name: storybook-capture-head
+          path: capture-head
+
+      - name: Check that every story rendered
+        run: node scripts/storybook-diff/checkRenders.ts --capture capture-head
+
   # This job does not run the setup action: it only moves files onto the gh-pages branch
   # with git and needs no toolchain, and it does not check out the source branch either.
   deploy:
@@ -329,7 +349,7 @@ jobs:
   # The screenshot jobs run only on pull requests, so a skipped one must not skip the record.
   # Deploy is still required to have passed, as it was before those jobs existed.
   record:
-    needs: [gate, build, deploy, capture, compare, deploy-changes]
+    needs: [gate, build, deploy, capture, compare, renders, deploy-changes]
     if: >-
       ${{ !cancelled() && !failure() &&
           needs.gate.result == 'success' && needs.gate.outputs.passed != 'true' &&

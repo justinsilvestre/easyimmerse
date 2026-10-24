@@ -8,6 +8,7 @@ import { buildStorybook } from "./buildStorybook.ts";
 import { captureStories, defaultConcurrency } from "./captureStories.ts";
 import { compareCaptures } from "./compareCaptures.ts";
 import { describeChanges } from "./describeChanges.ts";
+import { renderErrors } from "./renderErrors.ts";
 import { repositoryRoot } from "./repositoryRoot.ts";
 import { writeReport } from "./writeReport.ts";
 
@@ -38,7 +39,7 @@ await captureCommitOnce(repositoryRoot, baseCommit, workDir, baseCapture);
 const workingCapture = join(capturesDir, "working");
 await rm(workingCapture, { recursive: true, force: true });
 const storybookDir = await buildStorybook(repositoryRoot);
-await captureStories({
+const workingManifest = await captureStories({
   storybookDir,
   outputDir: workingCapture,
   concurrency: defaultConcurrency(),
@@ -57,6 +58,13 @@ await writeReport(reportDir, report, {
 const reportPath = join(reportDir, "index.html");
 console.log(`${describeChanges(report)}\nReport: ${reportPath}`);
 if (values.open) openInBrowser(reportPath);
+
+const errors = renderErrors(workingManifest);
+if (errors.length > 0) {
+  console.error(`Stories that failed to render (${errors.length}):`);
+  for (const error of errors) console.error(`  ${error}`);
+  process.exitCode = 1;
+}
 
 const openers: Partial<Record<NodeJS.Platform, string>> = {
   darwin: "open",

@@ -37,10 +37,10 @@ function classifyStory(
   after: CaptureManifest,
   pixelDiff: PixelDiff,
 ): StoryChange[] {
-  if (previous === undefined) return [change(story, "added")];
   if (story.error !== undefined) {
-    return [change(story, "errored", {}, previous.error)];
+    return [change(story, "errored", {}, previous?.error)];
   }
+  if (previous === undefined) return [change(story, "added")];
   const changedVariants = findChangedVariants(story, after, pixelDiff);
   const fixed = previous.error !== undefined;
   if (!fixed && Object.keys(changedVariants).length === 0) return [];
