@@ -225,6 +225,33 @@ pub fn set_library_duration(
     get_library_item(conn, id)
 }
 
+/// Returns the tracks that learners of the item play, as the JSON of a `TrackSelection`, or None for the default tracks.
+pub fn get_library_track_selection_json(
+    conn: &Connection,
+    id: &LibraryItemId,
+) -> Result<Option<String>, StorageError> {
+    conn.query_row(
+        "SELECT track_selection_json FROM library_items WHERE id = ?1",
+        params![id.0],
+        |row| row.get(0),
+    )
+    .optional()?
+    .ok_or_else(|| StorageError::LibraryItemNotFound(id.0.clone()))
+}
+
+/// Records the tracks that learners of the item play; None leaves the choice to the default tracks.
+pub fn set_library_track_selection_json(
+    conn: &Connection,
+    id: &LibraryItemId,
+    track_selection_json: Option<&str>,
+) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE library_items SET track_selection_json = ?2 WHERE id = ?1",
+        params![id.0, track_selection_json],
+    )?;
+    ensure_one_row_changed(updated, id)
+}
+
 pub fn ensure_library_item_exists(
     conn: &Connection,
     id: &LibraryItemId,
@@ -511,6 +538,30 @@ mod tests {
             storage.get_library_item(&item.id),
             Err(StorageError::LibraryItemNotFound(_))
         ));
+    }
+
+    #[test]
+    fn a_new_item_plays_the_default_tracks() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        assert_eq!(
+            storage.get_library_track_selection_json(&item.id).unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn round_trips_a_track_selection() {
+        let storage = Storage::open_in_memory().unwrap();
+        let item = storage.create_library_item(&draft("Film")).unwrap();
+        let json = r#"{"video":0,"audio":2}"#;
+        storage
+            .set_library_track_selection_json(&item.id, Some(json))
+            .unwrap();
+        assert_eq!(
+            storage.get_library_track_selection_json(&item.id).unwrap(),
+            Some(json.to_string())
+        );
     }
 
     #[test]

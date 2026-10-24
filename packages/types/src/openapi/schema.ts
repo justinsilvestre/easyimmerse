@@ -577,6 +577,7 @@ export interface paths {
         /**
          * Adds an item to one of the principal's projects, or to a new project for the item's languages
          *     named after its language. A project that already has the item keeps its media file, which is returned.
+         *     A new media file plays the tracks the library manager chose when the item was published.
          *     Anyone may add a published item; a library manager may also add an unpublished one,
          *     to prepare its words in the player or the reader that learners use.
          */
@@ -696,6 +697,7 @@ export interface paths {
         /**
          * Starts preparing the clip and screenshot of every cue, and the cover, in the background.
          *     The item is shown to learners once that is done; until then its status is `processing`.
+         *     Learners play the audio and video tracks the manager chose in their own media file of the item.
          *     The item needs a file and at least one segment.
          */
         post: operations["publishLibraryItem"];
@@ -10324,8 +10326,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description The media file is from the library and the principal does not manage it */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No such media file in the project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10374,8 +10394,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description The media file is from the library and the principal does not manage it */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No such media file in the project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

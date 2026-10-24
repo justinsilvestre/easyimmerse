@@ -7,6 +7,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   libraryFailureMessage,
   selectLibraryAddTarget,
   selectServerConfig,
@@ -14,7 +15,6 @@ import {
 import type { Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";

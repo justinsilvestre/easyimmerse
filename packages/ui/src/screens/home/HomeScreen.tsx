@@ -3,7 +3,7 @@ import {
   useListProjectsQuery,
   useListReviewCountsQuery,
 } from "@easyimmerse/backend";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
+import { canManageLibrary } from "@easyimmerse/state";
 import { useNavigate } from "../../useNavigate.ts";
 import { ConnectedBackupNudgeCard } from "./ConnectedBackupNudgeCard.tsx";
 import { ConnectedEncoderNotice } from "./ConnectedEncoderNotice.tsx";

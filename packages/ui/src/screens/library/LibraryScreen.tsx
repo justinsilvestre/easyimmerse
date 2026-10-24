@@ -5,6 +5,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   libraryItemsShown,
   libraryLanguagesOf,
   libraryTagsOf,
@@ -12,7 +13,6 @@ import {
   selectServerConfig,
 } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";

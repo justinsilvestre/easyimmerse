@@ -20,6 +20,7 @@ use crate::state::AppState;
 
 /// Adds an item to one of the principal's projects, or to a new project for the item's languages
 /// named after its language. A project that already has the item keeps its media file, which is returned.
+/// A new media file plays the tracks the library manager chose when the item was published.
 /// Anyone may add a published item; a library manager may also add an unpublished one,
 /// to prepare its words in the player or the reader that learners use.
 #[utoipa::path(
@@ -78,7 +79,10 @@ fn add_to_project(
             let source = MediaFileSource::Library {
                 item_id: item.id.clone(),
             };
-            storage.add_media_file(&project_id, &item.title, &source)?
+            let added = storage.add_media_file(&project_id, &item.title, &source)?;
+            let selection = storage.get_library_track_selection_json(&item.id)?;
+            storage.set_track_selection_json(&added.id, selection.as_deref())?;
+            added
         }
     };
     Ok(LibraryItemAdded {

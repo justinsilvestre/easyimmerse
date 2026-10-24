@@ -13,8 +13,9 @@ use crate::routes::library_text::store_library_text;
 use crate::routes::subtitles::read_text;
 use crate::state::AppState;
 
-/// The library item a media file comes from, once the principal may change its text, or None for a media file from anywhere else.
-/// Only a library manager may change the subtitles of a library media file, and only while its item is neither published nor being published.
+/// The library item a media file comes from, once the principal may change its tracks, or None for a media file from anywhere else.
+/// Only a library manager may change the subtitles or the track choice of a library media file,
+/// and only while its item is neither published nor being published.
 pub async fn editable_library_item_of(
     state: &AppState,
     principal: &Principal,
@@ -25,7 +26,7 @@ pub async fn editable_library_item_of(
     };
     if !principal.can_manage_library() {
         return Err(forbidden(
-            "only a library manager may change the subtitles of a library item",
+            "only a library manager may change the tracks of a library item",
         ));
     }
     load_editable_item(state, item_id).await.map(Some)

@@ -1,18 +1,20 @@
 //! Publishing a library item to learners, and taking it back.
 
-use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
+use axum::{Extension, Json};
 use easyimmerse_core::library::{LibraryItem, LibraryItemId, LibraryItemStatus};
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::auth::library_manager::LibraryManager;
+use crate::auth::principal::Principal;
 use crate::library_publish::start_library_publish;
 use crate::routes::library_support::{item_processing, load_editable_item, load_item};
 use crate::state::AppState;
 
 /// Starts preparing the clip and screenshot of every cue, and the cover, in the background.
 /// The item is shown to learners once that is done; until then its status is `processing`.
+/// Learners play the audio and video tracks the manager chose in their own media file of the item.
 /// The item needs a file and at least one segment.
 #[utoipa::path(
     post,
@@ -35,6 +37,7 @@ use crate::state::AppState;
 pub async fn publish_library_item(
     _: LibraryManager,
     State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
     Path(item_id): Path<LibraryItemId>,
 ) -> Result<(StatusCode, Json<LibraryItem>), ApiFailure> {
     let item = load_editable_item(&state, &item_id).await?;
@@ -46,7 +49,7 @@ pub async fn publish_library_item(
             "the item needs some text before it is published",
         ));
     }
-    let item = start_library_publish(&state, item).await?;
+    let item = start_library_publish(&state, &principal, item).await?;
     Ok((StatusCode::ACCEPTED, Json(item)))
 }
 
