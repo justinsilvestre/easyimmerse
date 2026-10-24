@@ -8,7 +8,7 @@ import { writeReport } from "./writeReport.ts";
  * Compares two capture directories and writes a report directory: `changes.json`,
  * the before, after, and diff images of every changed story, and an `index.html` that shows them.
  *
- * Usage: `node scripts/storybook-diff/compare.ts --before <dir> --after <dir> --out <dir> [--storybook-url <url>] [--base-label <text>]`
+ * Usage: `node scripts/storybook-diff/compare.ts --before <dir> --after <dir> --out <dir> [--storybook-url <url>] [--base-label <text>] [--pull-request-url <url>]`
  */
 const { values } = parseArgs({
   options: {
@@ -17,12 +17,13 @@ const { values } = parseArgs({
     out: { type: "string" },
     "storybook-url": { type: "string" },
     "base-label": { type: "string" },
+    "pull-request-url": { type: "string" },
   },
 });
 
 if (!values.before || !values.after || !values.out) {
   console.error(
-    "Usage: node scripts/storybook-diff/compare.ts --before <dir> --after <dir> --out <dir> [--storybook-url <url>] [--base-label <text>]",
+    "Usage: node scripts/storybook-diff/compare.ts --before <dir> --after <dir> --out <dir> [--storybook-url <url>] [--base-label <text>] [--pull-request-url <url>]",
   );
   process.exit(2);
 }
@@ -35,5 +36,6 @@ const report = await compareCaptures({
 await writeReport(values.out, report, {
   storybookUrl: values["storybook-url"],
   baseLabel: values["base-label"],
+  pullRequestUrl: values["pull-request-url"],
 });
 console.log(describeChanges(report));

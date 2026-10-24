@@ -27,15 +27,50 @@ Every story is screenshotted:
 - at a **phone width** (390 × 844) and a **desktop width** (1280 × 800);
 - **cropped to the story's content**, including dialogs and menus and anything that runs past the viewport, so a small component isn't lost in a mostly empty page.
 
-Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
+Stories are grouped by component, in the order Storybook's sidebar lists them; **Most changed** at the top sorts them by changed pixels instead. Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
-- a **Copy** button, for the story's title and name;
-- a link to the story in Storybook;
+- a button beside the story's name that copies its title and name;
+- below the name, a link to the story in Storybook;
+- a **Comment** button, described below;
 - a **Light/Dark** switch, which starts on your system's theme and affects only that story.
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it.
+To see what changed, **click a screenshot to flip it** between before and after. The rectangle around the changes is **highlighted** by darkening everything outside it, or lightening it on a dark screenshot, and bordered in the side's colour; the **Highlight changes** checkbox above a screenshot turns this off. The changed pixels themselves flash red as the screenshot flips.
+
+Before and after can be told apart at a glance:
+
+- **Before** has a brown label with "Before" on the left and a dashed frame.
+- **After** has a blue label with "After" on the right and a solid frame.
+
+Each label also has a phone or desktop icon for its viewport.
+
+Each label spans its screenshot and stays in view as you scroll. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way. Full screen starts zoomed in on the changes, which the magnifier button turns off, and has the story's Comment and Light/Dark buttons too; the **×** at its top left closes it.
+
+## Trying the report page without capturing
+
+To try the report page, or to work on `report.html`, re-render a published report with the current template. This takes seconds:
+
+```sh
+git fetch origin gh-pages
+mkdir -p .dev/storybook-diff/demo
+git archive origin/gh-pages storybook/pr-58/changes | tar -x --strip-components=3 -C .dev/storybook-diff/demo
+node scripts/storybook-diff/rerender.ts --report .dev/storybook-diff/demo
+```
+
+Then open `.dev/storybook-diff/demo/index.html`. Any `pr-<number>` directory on the `gh-pages` branch that has a `changes/` directory works.
+
+## Comments
+
+The **Comment** button opens a box in the story's header, which stays in view as you scroll through the story and stays shown when it is collapsed. What you type is saved in your browser's local storage as you type, keyed by the report's address. It survives a closed tab and a redeployed report, but not a different browser or device.
+
+While there are comments, a bar at the bottom of the page counts them and offers:
+
+- **Copy as Markdown**, which copies every comment, each under a link to its story in the report, ready to paste into the pull request;
+- **Open pull request**, in a pull request's report;
+- **Clear all**.
+
+**Hide** in a comment box closes it and keeps the comment; the story's Comment button opens it again. The bar hides itself once you scroll a little way, and its **×** hides it straight away. Either way it comes back when you close a comment box or scroll to the top or bottom of the page.
 
 ## Automatic reports on pull requests
 
@@ -61,7 +96,8 @@ If a story still renders differently from run to run, **treat it as a bug** in t
 
 - `index.ts` is the local task. It finds where your branch left the base branch, checks that commit out into a temporary worktree, and runs `capture.ts` and `compare.ts`.
 - `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
-- `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`.
+- `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`. `changes.json` also records the rectangle around each variant's changes, as `changedAreas`, for the highlight and the full-screen zoom.
 - `report.html` is the report page's template.
+- `rerender.ts` rewrites an existing report's page with the current template.
 - `captureVariants.ts` defines the themes and viewports. **Add one there to add it to every capture and report.**
 - `storyPage.ts` drives Storybook. It loads Storybook once per worker and switches between stories through Storybook's own messaging, which is several times faster than reloading the page for each story.
