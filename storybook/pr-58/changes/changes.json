@@ -80,6 +80,32 @@
           "width": 1280,
           "height": 778
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 460,
+          "width": 358,
+          "height": 335
+        },
+        "light-desktop.png": {
+          "x": 332,
+          "y": 416,
+          "width": 384,
+          "height": 335
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 458,
+          "width": 358,
+          "height": 337
+        },
+        "dark-desktop.png": {
+          "x": 332,
+          "y": 414,
+          "width": 384,
+          "height": 337
+        }
       }
     },
     {
@@ -127,6 +153,32 @@
           "width": 1280,
           "height": 908
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 405
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 405
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 409
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 409
+        }
       }
     },
     {
@@ -153,7 +205,8 @@
           "width": 1280,
           "height": 908
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "account-usermanagement--creating",
@@ -199,6 +252,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 908
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 405
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 405
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 409
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 409
         }
       }
     },
@@ -247,6 +326,32 @@
           "width": 1280,
           "height": 940
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 440
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 440
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 444
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 444
+        }
       }
     },
     {
@@ -293,6 +398,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 974
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 511
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 471
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 515
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 475
         }
       }
     },
@@ -341,6 +472,32 @@
           "width": 1280,
           "height": 908
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 417
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 405
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 421
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 409
+        }
       }
     },
     {
@@ -387,6 +544,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 908
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 416,
+          "width": 358,
+          "height": 417
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 400,
+          "width": 512,
+          "height": 405
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 412,
+          "width": 358,
+          "height": 421
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 396,
+          "width": 512,
+          "height": 409
         }
       }
     },
@@ -435,6 +618,32 @@
           "width": 1280,
           "height": 940
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 488,
+          "width": 358,
+          "height": 405
+        },
+        "light-desktop.png": {
+          "x": 317,
+          "y": 432,
+          "width": 512,
+          "height": 405
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 484,
+          "width": 358,
+          "height": 409
+        },
+        "dark-desktop.png": {
+          "x": 317,
+          "y": 428,
+          "width": 512,
+          "height": 409
+        }
       }
     },
     {
@@ -461,7 +670,8 @@
           "width": 416,
           "height": 608
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "flashcards-libraryflashcardview--from-a-text",
@@ -487,7 +697,8 @@
           "width": 416,
           "height": 608
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "flashcards-libraryflashcardview--suspended",
@@ -513,7 +724,8 @@
           "width": 416,
           "height": 608
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "flashcards-libraryflashcardview--confirming-delete",
@@ -523,7 +735,8 @@
       "error": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
       "kind": "added",
       "changedVariants": {},
-      "imageSizes": {}
+      "imageSizes": {},
+      "changedAreas": {}
     },
     {
       "id": "library-dictionaryresults--results",
@@ -549,7 +762,8 @@
           "width": 1280,
           "height": 494
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-dictionaryresults--looking-up",
@@ -575,7 +789,8 @@
           "width": 1280,
           "height": 410
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-dictionaryresults--no-entry",
@@ -601,7 +816,8 @@
           "width": 1280,
           "height": 410
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-dictionaryresults--no-dictionary-for-the-language",
@@ -627,7 +843,8 @@
           "width": 1280,
           "height": 410
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-dictionaryresults--lookup-failed",
@@ -653,7 +870,8 @@
           "width": 1280,
           "height": 410
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--draft",
@@ -679,7 +897,8 @@
           "width": 1280,
           "height": 1392
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--text",
@@ -705,7 +924,8 @@
           "width": 1280,
           "height": 1116
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--preparing",
@@ -731,7 +951,8 @@
           "width": 1280,
           "height": 1258
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--failed",
@@ -757,7 +978,8 @@
           "width": 1280,
           "height": 1424
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--published",
@@ -783,7 +1005,8 @@
           "width": 1280,
           "height": 1292
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--change-refused",
@@ -809,7 +1032,8 @@
           "width": 1280,
           "height": 1344
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--confirming-delete",
@@ -835,7 +1059,8 @@
           "width": 1280,
           "height": 1448
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--word-selected",
@@ -861,7 +1086,8 @@
           "width": 1280,
           "height": 1712
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryeditview--loading-text",
@@ -887,7 +1113,8 @@
           "width": 1280,
           "height": 1138
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--draft",
@@ -913,7 +1140,8 @@
           "width": 724,
           "height": 260
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--without-a-file",
@@ -939,7 +1167,8 @@
           "width": 724,
           "height": 260
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--text",
@@ -965,7 +1194,8 @@
           "width": 380,
           "height": 166
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--uploading",
@@ -991,7 +1221,8 @@
           "width": 724,
           "height": 296
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--published",
@@ -1017,7 +1248,8 @@
           "width": 378,
           "height": 128
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryfilessection--preparing",
@@ -1043,7 +1275,8 @@
           "width": 556,
           "height": 128
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--video",
@@ -1069,7 +1302,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--with-cover",
@@ -1095,7 +1329,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--text",
@@ -1121,7 +1356,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--without-difficulty-or-tags",
@@ -1147,7 +1383,8 @@
           "width": 352,
           "height": 333
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--draft",
@@ -1173,7 +1410,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--preparing",
@@ -1199,7 +1437,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemcard--failed",
@@ -1225,7 +1464,8 @@
           "width": 352,
           "height": 365
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemform--video",
@@ -1251,7 +1491,8 @@
           "width": 447,
           "height": 506
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemform--cover-chosen",
@@ -1277,7 +1518,8 @@
           "width": 447,
           "height": 530
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemform--text",
@@ -1303,7 +1545,8 @@
           "width": 447,
           "height": 438
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemform--saving",
@@ -1329,7 +1572,8 @@
           "width": 447,
           "height": 506
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--with-a-project",
@@ -1355,7 +1599,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--without-projects-in-its-language",
@@ -1381,7 +1626,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--new-project-chosen",
@@ -1407,7 +1653,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--not-published",
@@ -1433,7 +1680,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--adding",
@@ -1459,7 +1707,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--could-not-add",
@@ -1485,7 +1734,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryitemview--manager",
@@ -1511,7 +1761,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarymanagementview--every-status",
@@ -1537,7 +1788,8 @@
           "width": 1280,
           "height": 1488
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarymanagementview--empty",
@@ -1563,7 +1815,8 @@
           "width": 1280,
           "height": 826
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarymanagementview--creating",
@@ -1589,7 +1842,8 @@
           "width": 1280,
           "height": 1488
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarymanagementview--loading",
@@ -1615,7 +1869,8 @@
           "width": 1280,
           "height": 826
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarymanagementview--could-not-load",
@@ -1641,7 +1896,8 @@
           "width": 1280,
           "height": 830
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--draft",
@@ -1667,7 +1923,8 @@
           "width": 323,
           "height": 134
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--draft-without-a-file",
@@ -1693,7 +1950,8 @@
           "width": 323,
           "height": 134
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--preparing",
@@ -1719,7 +1977,8 @@
           "width": 713,
           "height": 100
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--failed",
@@ -1745,7 +2004,8 @@
           "width": 318,
           "height": 166
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--published",
@@ -1771,7 +2031,8 @@
           "width": 556,
           "height": 134
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--busy",
@@ -1797,7 +2058,8 @@
           "width": 323,
           "height": 134
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-librarypublication--confirming-delete",
@@ -1823,7 +2085,8 @@
           "width": 881,
           "height": 190
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--browsing",
@@ -1849,7 +2112,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--filtered",
@@ -1875,7 +2139,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--nothing-matches",
@@ -1901,7 +2166,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--empty",
@@ -1927,7 +2193,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--manager",
@@ -1953,7 +2220,8 @@
           "width": 1280,
           "height": 1060
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--loading",
@@ -1979,7 +2247,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-libraryview--could-not-load",
@@ -2005,7 +2274,8 @@
           "width": 1280,
           "height": 800
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-newlibraryitemform--empty",
@@ -2031,7 +2301,8 @@
           "width": 339,
           "height": 588
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-newlibraryitemform--text-file",
@@ -2057,7 +2328,8 @@
           "width": 479,
           "height": 448
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-newlibraryitemform--uploading",
@@ -2083,7 +2355,8 @@
           "width": 339,
           "height": 588
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-newlibraryitemform--upload-failed",
@@ -2109,7 +2382,8 @@
           "width": 696,
           "height": 624
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--cues",
@@ -2135,7 +2409,8 @@
           "width": 1280,
           "height": 537
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--paragraphs",
@@ -2161,7 +2436,8 @@
           "width": 1280,
           "height": 480
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--word-selected",
@@ -2187,7 +2463,8 @@
           "width": 1280,
           "height": 697
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--only-lines-with-undefined-words",
@@ -2213,7 +2490,8 @@
           "width": 1280,
           "height": 462
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--every-word-defined",
@@ -2239,7 +2517,8 @@
           "width": 1280,
           "height": 440
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--preparing",
@@ -2265,7 +2544,8 @@
           "width": 1280,
           "height": 553
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--published",
@@ -2291,7 +2571,8 @@
           "width": 1280,
           "height": 553
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-segmentwordseditor--no-text",
@@ -2317,7 +2598,8 @@
           "width": 1280,
           "height": 440
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-wordentryeditor--defined",
@@ -2343,7 +2625,8 @@
           "width": 1280,
           "height": 556
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-wordentryeditor--without-definition",
@@ -2369,7 +2652,8 @@
           "width": 1280,
           "height": 556
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "library-wordentryeditor--last-word",
@@ -2395,7 +2679,8 @@
           "width": 1280,
           "height": 556
         }
-      }
+      },
+      "changedAreas": {}
     },
     {
       "id": "projects-homeview--recent-projects",
@@ -2441,6 +2726,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 800
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 18,
+          "y": 89,
+          "width": 350,
+          "height": 424
+        },
+        "light-desktop.png": {
+          "x": 274,
+          "y": 89,
+          "width": 728,
+          "height": 288
+        },
+        "dark-phone.png": {
+          "x": 17,
+          "y": 89,
+          "width": 356,
+          "height": 438
+        },
+        "dark-desktop.png": {
+          "x": 273,
+          "y": 89,
+          "width": 734,
+          "height": 304
         }
       }
     },
@@ -2489,6 +2800,32 @@
           "width": 1280,
           "height": 800
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 89,
+          "width": 358,
+          "height": 336
+        },
+        "light-desktop.png": {
+          "x": 272,
+          "y": 89,
+          "width": 736,
+          "height": 316
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 89,
+          "width": 358,
+          "height": 336
+        },
+        "dark-desktop.png": {
+          "x": 272,
+          "y": 89,
+          "width": 736,
+          "height": 316
+        }
       }
     },
     {
@@ -2535,6 +2872,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 800
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 17,
+          "y": 89,
+          "width": 357,
+          "height": 34
+        },
+        "light-desktop.png": {
+          "x": 273,
+          "y": 89,
+          "width": 735,
+          "height": 34
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 89,
+          "width": 358,
+          "height": 280
+        },
+        "dark-desktop.png": {
+          "x": 272,
+          "y": 89,
+          "width": 736,
+          "height": 280
         }
       }
     },
@@ -2583,6 +2946,32 @@
           "width": 1280,
           "height": 800
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 17,
+          "y": 89,
+          "width": 357,
+          "height": 86
+        },
+        "light-desktop.png": {
+          "x": 273,
+          "y": 89,
+          "width": 735,
+          "height": 86
+        },
+        "dark-phone.png": {
+          "x": 17,
+          "y": 89,
+          "width": 357,
+          "height": 86
+        },
+        "dark-desktop.png": {
+          "x": 273,
+          "y": 89,
+          "width": 735,
+          "height": 86
+        }
       }
     },
     {
@@ -2629,6 +3018,32 @@
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 800
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 16,
+          "y": 89,
+          "width": 358,
+          "height": 274
+        },
+        "light-desktop.png": {
+          "x": 272,
+          "y": 89,
+          "width": 736,
+          "height": 254
+        },
+        "dark-phone.png": {
+          "x": 16,
+          "y": 89,
+          "width": 358,
+          "height": 274
+        },
+        "dark-desktop.png": {
+          "x": 272,
+          "y": 89,
+          "width": 736,
+          "height": 254
         }
       }
     },
@@ -2677,18 +3092,53 @@
           "width": 1280,
           "height": 800
         }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 18,
+          "y": 341,
+          "width": 350,
+          "height": 424
+        },
+        "light-desktop.png": {
+          "x": 274,
+          "y": 269,
+          "width": 728,
+          "height": 288
+        },
+        "dark-phone.png": {
+          "x": 17,
+          "y": 341,
+          "width": 356,
+          "height": 438
+        },
+        "dark-desktop.png": {
+          "x": 273,
+          "y": 269,
+          "width": 734,
+          "height": 304
+        }
       }
     },
     {
-      "id": "reader-readerview--pages",
+      "id": "reader-readerview--sepia",
       "title": "Reader/ReaderView",
-      "name": "Pages",
+      "name": "Sepia",
       "importPath": "./src/reader/ReaderView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-desktop.png": 27
+        "light-phone.png": 31,
+        "light-desktop.png": 26
       },
       "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
         "before-light-desktop.png": {
           "width": 1280,
           "height": 800
@@ -2696,6 +3146,14 @@
         "after-light-desktop.png": {
           "width": 1280,
           "height": 800
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
         },
         "before-dark-desktop.png": {
           "width": 1280,
@@ -2705,33 +3163,19 @@
           "width": 1280,
           "height": 800
         }
-      }
-    },
-    {
-      "id": "reader-readerview--dark",
-      "title": "Reader/ReaderView",
-      "name": "Dark",
-      "importPath": "./src/reader/ReaderView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-desktop.png": 27
       },
-      "imageSizes": {
-        "before-light-desktop.png": {
-          "width": 1280,
-          "height": 800
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 82,
+          "y": 824,
+          "width": 6,
+          "height": 7
         },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "before-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
+        "light-desktop.png": {
+          "x": 126,
+          "y": 780,
+          "width": 5,
+          "height": 8
         }
       }
     },
@@ -2759,7 +3203,8 @@
           "width": 800,
           "height": 261
         }
-      }
+      },
+      "changedAreas": {}
     }
   ]
 }
