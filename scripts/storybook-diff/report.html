@@ -443,6 +443,15 @@
         background: var(--side);
       }
       .viewer-bar .side { font-size: 16px; }
+      /* The viewer's buttons keep to the right, also when they wrap below the title. */
+      .viewer-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-left: auto;
+      }
       .icon-pill {
         display: inline-grid;
         place-items: center;
@@ -527,12 +536,14 @@
         <button type="button" class="close-button viewer-close" title="Close full screen" aria-label="Close full screen">×</button>
         <span class="side-group"><span class="viewer-icon"></span><span class="side"></span></span>
         <span class="viewer-title"></span>
+        <span class="viewer-actions">
         <button type="button" class="pill icon-pill viewer-zoom" aria-pressed="true"></button>
         <button type="button" class="pill comment-toggle viewer-comment-toggle">Comment</button>
         <fieldset class="segmented viewer-themes" aria-label="Theme">
-          <button type="button" class="pill" data-viewer-theme="light">Light</button>
-          <button type="button" class="pill" data-viewer-theme="dark">Dark</button>
+          <button type="button" class="pill icon-pill" data-viewer-theme="light" title="Light" aria-label="Light"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06"/></svg></button>
+          <button type="button" class="pill icon-pill" data-viewer-theme="dark" title="Dark" aria-label="Dark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 1 1 6.5 2.5a4.5 4.5 0 0 0 7 7Z"/></svg></button>
         </fieldset>
+        </span>
       </div>
       <div class="comment-box viewer-comment" hidden>
         <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on this story"></textarea>
