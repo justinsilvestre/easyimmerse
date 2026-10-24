@@ -10,6 +10,7 @@ import { LibraryEditView } from "./LibraryEditView.tsx";
 
 const idle = {
   isSaving: false,
+  isChangingCover: false,
   isUploading: false,
   isPublishing: false,
   failure: null,
@@ -23,12 +24,16 @@ const meta = {
   args: {
     item: exampleLibraryItem({ status: { kind: "draft" } }),
     text: exampleLibraryVideoText,
+    coverUrl: null,
     previewUrl: null,
     activity: idle,
     isConfirmingDelete: false,
     selectedWord: null,
     isOnlyUndefinedShown: false,
     onSave: fn(),
+    onUploadCover: fn(),
+    onChooseCoverFrame: fn(),
+    onResetCover: fn(),
     onReplaceFile: fn(),
     onReplaceSubtitles: fn(),
     onSelectWord: fn(),

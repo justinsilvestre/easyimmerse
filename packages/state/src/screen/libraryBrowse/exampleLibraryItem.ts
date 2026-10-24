@@ -13,7 +13,7 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     tags: [],
     file_name: "park.mp4",
     duration_ms: 60_000,
-    cover_at_ms: null,
+    cover: { kind: "automatic" },
     has_cover: true,
     segment_count: 2,
     status: { kind: "published" },

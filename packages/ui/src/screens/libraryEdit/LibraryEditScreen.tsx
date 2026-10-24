@@ -1,4 +1,5 @@
 import {
+  buildLibraryCoverUrl,
   buildLibraryFileUrl,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,
@@ -41,6 +42,7 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
     <LibraryEditView
       item={item.data}
       text={text.data ?? null}
+      coverUrl={buildLibraryCoverUrl(server, item.data)}
       previewUrl={
         server && item.data.file_name !== null
           ? buildLibraryFileUrl(server, itemId)
@@ -53,6 +55,9 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
       selectedWord={choices.selectedWord}
       isOnlyUndefinedShown={choices.isOnlyUndefinedShown}
       onSave={editing.save}
+      onUploadCover={editing.uploadCover}
+      onChooseCoverFrame={editing.chooseCoverFrame}
+      onResetCover={editing.resetCover}
       onReplaceFile={editing.replaceFile}
       onReplaceSubtitles={editing.replaceSubtitles}
       onSelectWord={(place) => dispatch(actions.libraryWordSelected(place))}

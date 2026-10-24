@@ -21,7 +21,7 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     tags: ["conversation", "everyday"],
     file_name: "park.mp4",
     duration_ms: 95_000,
-    cover_at_ms: null,
+    cover: { kind: "automatic" },
     has_cover: false,
     segment_count: 2,
     status: { kind: "published" },
@@ -30,6 +30,13 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     ...changes,
   } satisfies LibraryItem;
 }
+
+/** A picture of a sunny park, for stories that show a cover. */
+export const exampleCoverUrl =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><rect width='16' height='9' fill='%2359a14f'/><circle cx='12' cy='3' r='1.5' fill='%23f2d16b'/></svg>";
+
+/** The sample video among the fixtures that Storybook serves, for stories that preview a video item's file. */
+export const exampleVideoUrl = "/fixtures/sample.mp4";
 
 /** Items of several languages, kinds and tags, as the library lists them to a learner. */
 export const exampleLibraryItems: readonly LibraryItem[] = [

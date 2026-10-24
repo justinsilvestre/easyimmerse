@@ -5,8 +5,11 @@ import {
   usePublishLibraryItemMutation,
   usePutLibrarySubtitlesMutation,
   usePutLibraryWordsMutation,
+  useResetLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
   useUnpublishLibraryItemMutation,
   useUpdateLibraryItemMutation,
+  useUploadLibraryCoverMutation,
   useUploadLibraryFileMutation,
 } from "@easyimmerse/backend";
 import type {
@@ -35,6 +38,10 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
   const registry = useBrowserFileRegistry();
   const [update, updated] = useUpdateLibraryItemMutation();
   const [upload, uploaded] = useUploadLibraryFileMutation();
+  const [uploadCover, coverUploaded] = useUploadLibraryCoverMutation();
+  const [chooseCoverFrame, coverFrameChosen] =
+    useSetLibraryCoverFrameMutation();
+  const [resetCover, coverReset] = useResetLibraryCoverMutation();
   const [putSubtitles, subtitlesPut] = usePutLibrarySubtitlesMutation();
   const [putWords] = usePutLibraryWordsMutation();
   const [applyEntry] = useApplyLibraryEntryMutation();
@@ -56,6 +63,10 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
   };
   const activity: LibraryEditActivity = {
     isSaving: updated.isLoading,
+    isChangingCover:
+      coverUploaded.isLoading ||
+      coverFrameChosen.isLoading ||
+      coverReset.isLoading,
     isUploading: uploaded.isLoading || subtitlesPut.isLoading,
     isPublishing:
       proposed.isLoading || published.isLoading || unpublished.isLoading,
@@ -75,6 +86,20 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
               upload({ itemId, file: picked }).unwrap(),
             ),
       ),
+    uploadCover: (file: File) =>
+      run("Could not upload the cover.", () =>
+        registry === null
+          ? Promise.reject(unreachableFile)
+          : uploadFromRegistry(registry, file, (picked) =>
+              uploadCover({ itemId, file: picked }).unwrap(),
+            ),
+      ),
+    chooseCoverFrame: (atMs: number) =>
+      run("Could not take the cover from that frame.", () =>
+        chooseCoverFrame({ itemId, atMs }).unwrap(),
+      ),
+    resetCover: () =>
+      run("Could not change the cover.", () => resetCover(itemId).unwrap()),
     replaceSubtitles: (files: LibrarySubtitleFiles) =>
       run("Could not upload the subtitles.", async () =>
         putSubtitles({

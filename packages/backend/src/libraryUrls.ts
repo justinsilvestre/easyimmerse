@@ -1,14 +1,19 @@
 import type { ServerConfig } from "@easyimmerse/state";
+import type { LibraryItem } from "@easyimmerse/types";
 
 /**
- * Builds the URL of a library item's cover image, for image elements.
+ * Builds the URL of a library item's cover picture, for image elements, or returns null when there is no server or no cover.
  * The token travels in the query string because image elements cannot send headers.
+ * The URL changes whenever the item does, so that a browser does not show a cover it cached before the cover changed.
  */
 export function buildLibraryCoverUrl(
-  server: ServerConfig,
-  itemId: string,
-): string {
-  return libraryItemUrl(server, itemId, "cover");
+  server: ServerConfig | null,
+  item: Pick<LibraryItem, "id" | "has_cover" | "updated_at_ms">,
+): string | null {
+  if (server === null || !item.has_cover) return null;
+  const url = new URL(libraryItemUrl(server, item.id, "cover"));
+  url.searchParams.set("v", String(item.updated_at_ms));
+  return url.toString();
 }
 
 /**
