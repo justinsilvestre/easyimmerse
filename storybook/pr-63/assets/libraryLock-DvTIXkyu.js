@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){return e.kind===`processing`||e.kind===`published`?e.kind:null}function n(e,t,n){return e===`processing`?`Wait until the server has prepared “${n}” for learners, then unpublish it to ${t}.`:`Unpublish “${n}” to ${t}.`}function r(){return(r=e((()=>{})))()}export{t as n,n as r,r as t};
