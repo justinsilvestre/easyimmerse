@@ -1,5 +1,5 @@
-//! The audio and video tracks of a library item: the library manager chooses them in their own media file of the item,
-//! and learners play them. The test that publishes a video skips when ffmpeg and ffprobe are not found.
+//! The audio and video tracks of a library item: the library manager chooses them in their own media file of the item
+//! while the item is a draft, and learners play them without choosing others. The test that publishes a video skips when ffmpeg and ffprobe are not found.
 
 use serde_json::{Value, json};
 
@@ -126,5 +126,67 @@ async fn the_clips_of_a_published_video_come_from_the_audio_track_the_manager_ch
     assert!(
         clip == expected,
         "the clip differs from the second audio track's"
+    );
+}
+
+fn track_selection_path(project_id: &str, media_id: &str) -> String {
+    format!("/projects/{project_id}/media/{media_id}/track-selection")
+}
+
+/// A learner's project and media file of a published document item: the learner's token, project id and media file id.
+async fn learner_media(server: &TestServer) -> (String, String, String) {
+    let item_id = document_item(server).await;
+    publish(server, &item_id).await;
+    let token = sign_up(server, "learner@example.com").await;
+    let path = format!("/library/items/{item_id}/add");
+    let body = json!({ "project_id": null });
+    let added = send_as(server, &token, "POST", &path, Some(&body))
+        .await
+        .json();
+    let id = |key: &str| added[key].as_str().unwrap().to_string();
+    (token, id("project_id"), id("media_file_id"))
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_learner_may_not_choose_the_tracks_of_a_library_media_file() {
+    let (server, _dir) = library_server().await;
+    let (token, project_id, media_id) = learner_media(&server).await;
+    let body: Value = serde_json::from_str(SECOND_AUDIO).unwrap();
+    let path = track_selection_path(&project_id, &media_id);
+    let response = send_as(&server, &token, "PUT", &path, Some(&body)).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_learner_may_not_clear_the_track_choice_of_a_library_media_file() {
+    let (server, _dir) = library_server().await;
+    let (token, project_id, media_id) = learner_media(&server).await;
+    let path = track_selection_path(&project_id, &media_id);
+    let response = send_as(&server, &token, "DELETE", &path, None).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_library_manager_chooses_the_tracks_of_a_draft() {
+    let (server, _dir) = library_server().await;
+    let item_id = document_item(&server).await;
+    let (project_id, media_id) = add_as_manager(&server, &item_id).await;
+    let body: Value = serde_json::from_str(SECOND_AUDIO).unwrap();
+    let path = track_selection_path(&project_id, &media_id);
+    assert_eq!(server.put_json(&path, &body).await.status, 204);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_library_manager_may_not_choose_the_tracks_of_a_published_item() {
+    let (server, _dir) = library_server().await;
+    let item_id = document_item(&server).await;
+    let (project_id, media_id) = add_as_manager(&server, &item_id).await;
+    publish(&server, &item_id).await;
+    let body: Value = serde_json::from_str(SECOND_AUDIO).unwrap();
+    let path = track_selection_path(&project_id, &media_id);
+    let response = server.put_json(&path, &body).await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (409, json!("item_published"))
     );
 }

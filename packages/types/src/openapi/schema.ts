@@ -10326,8 +10326,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description The media file is from the library and the principal does not manage it */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No such media file in the project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10376,8 +10394,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description The media file is from the library and the principal does not manage it */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No such media file in the project */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

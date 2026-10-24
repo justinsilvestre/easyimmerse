@@ -8183,8 +8183,28 @@
               }
             }
           },
+          "403": {
+            "description": "The media file is from the library and the principal does not manage it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8249,8 +8269,28 @@
               }
             }
           },
+          "403": {
+            "description": "The media file is from the library and the principal does not manage it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
             "content": {
               "application/json": {
                 "schema": {
