@@ -14,6 +14,7 @@ import { TagList } from "./TagList.tsx";
  * One result in the dictionary pop-up: the term and its reading, each equally good chain of inflections that leads to the looked-up text,
  * its tags, frequencies and pronunciations, and then each dictionary's definitions.
  * Double-clicked words go to `onWordLookup`, held words to `onWordHold`; links to other headwords go to `onLookup`.
+ * The header's button, labelled `flashcardLabel`, makes a flashcard from the result; without `onCreateFlashcard` there is none.
  */
 export function LookupResultCard({
   result,
@@ -22,13 +23,15 @@ export function LookupResultCard({
   onWordHold,
   onLookup,
   onCreateFlashcard,
+  flashcardLabel = "Flashcard from this entry",
 }: {
   result: LookupResult;
   resolveMediaUrl: ResolveMediaUrl;
   onWordLookup: (word: string) => void;
   onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
-  onCreateFlashcard: () => void;
+  onCreateFlashcard?: () => void;
+  flashcardLabel?: string;
 }) {
   const inflectionLines = formatInflectionChains(result.inflectionChains);
   return (
@@ -41,13 +44,15 @@ export function LookupResultCard({
           </span>
         )}
         <TagList tags={termTags(result)} />
-        <IconButton
-          label="Flashcard from this entry"
-          className="ml-auto size-6"
-          onClick={onCreateFlashcard}
-        >
-          <NewFlashcardIcon className="size-4" />
-        </IconButton>
+        {onCreateFlashcard && (
+          <IconButton
+            label={flashcardLabel}
+            className="ml-auto size-6"
+            onClick={onCreateFlashcard}
+          >
+            <NewFlashcardIcon className="size-4" />
+          </IconButton>
+        )}
       </header>
       {inflectionLines.length > 0 && (
         <div className="text-xs text-fg-muted">

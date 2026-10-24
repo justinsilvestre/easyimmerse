@@ -1,3 +1,5 @@
+import { libraryLookupResponse } from "@easyimmerse/state";
+import type { LookupResult } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
@@ -133,4 +135,46 @@ export const SentenceWithTranslationOnly: Story = {
   args: {
     sentence: { translation: { ...sentenceTranslation, isShown: true } },
   },
+};
+
+/** The stored entry of “Hund”, as learners see it, for the stories of a library manager preparing an item. */
+const storedHund = {
+  text: "Hund",
+  result: libraryLookupResponse(
+    {
+      start: 4,
+      end: 8,
+      entry: {
+        term: "Hund",
+        reading: null,
+        l1_definition: "dog",
+        l2_definition: "ein Haustier",
+      },
+    },
+    "Der Hund schläft.",
+    "Im Park",
+  ).results[0] as LookupResult,
+};
+
+/** A library manager preparing an item, on a word that already has an entry for learners, with their dictionaries' entries below it. */
+export const PreparingAStoredWord: Story = {
+  args: {
+    forLearners: {
+      stored: storedHund,
+      onRemove: fn(),
+      onApplyEverywhere: fn(),
+    },
+  },
+};
+
+/** A library manager preparing an item, on text that has no entry for learners yet. */
+export const PreparingNewText: Story = {
+  args: {
+    forLearners: { stored: null, onRemove: fn(), onApplyEverywhere: fn() },
+  },
+};
+
+/** A library manager preparing an item, searching a word that is not part of the item's text, which makes no flashcard. */
+export const PreparingASearch: Story = {
+  args: { mode: "search", forLearners: null },
 };

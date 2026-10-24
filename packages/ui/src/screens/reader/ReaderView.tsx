@@ -40,7 +40,10 @@ import {
   lineHeights,
   lineLengthsEm,
 } from "./readerPreferences.ts";
-import { translatedHighlightName } from "./readerTextHighlights.ts";
+import {
+  libraryWordHighlightName,
+  translatedHighlightName,
+} from "./readerTextHighlights.ts";
 import type { ReaderTranslation } from "./readerTranslation.ts";
 import {
   chapterStartProgresses,
@@ -122,6 +125,8 @@ type ReaderViewProps = {
   highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
   /** The text whose translation the dictionary pop-up's sentence row shows, highlighted as the sentence the translation covers. */
   highlightedSentence?: readonly TextSpan[];
+  /** The words a library manager gave entries, underlined while they prepare a library document. */
+  markedSpans?: readonly TextSpan[];
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. */
@@ -279,6 +284,12 @@ export function ReaderView(props: ReaderViewProps) {
     shown.isTranslationShown ? noSpans : (props.highlightedSentence ?? noSpans),
     shownText,
   );
+  useTextHighlight(
+    textContainer,
+    libraryWordHighlightName,
+    props.markedSpans ?? noSpans,
+    shownText,
+  );
   const { playAt } = props.audio ?? {};
   const playWord = playAt && ((word: ReaderWord) => playAt(word.location));
   const turn = (direction: "next" | "previous") => {
@@ -330,6 +341,7 @@ export function ReaderView(props: ReaderViewProps) {
       onWordHover: callbacks.onWordHover,
       onWordCommandClick: playWord,
       onWordHold: callbacks.onWordHold,
+      onTextSelect: callbacks.onTextSelect,
       onBlankClick,
     },
     chapterWords,

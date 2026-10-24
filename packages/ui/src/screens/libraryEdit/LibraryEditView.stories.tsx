@@ -12,6 +12,7 @@ const idle = {
   isSaving: false,
   isUploading: false,
   isPublishing: false,
+  isOpening: false,
   failure: null,
 };
 
@@ -26,15 +27,10 @@ const meta = {
     previewUrl: null,
     activity: idle,
     isConfirmingDelete: false,
-    selectedWord: null,
-    isOnlyUndefinedShown: false,
     onSave: fn(),
     onReplaceFile: fn(),
     onReplaceSubtitles: fn(),
-    onSelectWord: fn(),
-    onShowOnlyUndefined: fn(),
-    onSaveWords: fn(async () => true),
-    onApplyEverywhere: fn(async () => true),
+    onOpenWords: fn(),
     onProposeWords: fn(),
     onPublish: fn(),
     onUnpublish: fn(),
@@ -87,8 +83,8 @@ export const ChangeRefused: Story = {
 
 export const ConfirmingDelete: Story = { args: { isConfirmingDelete: true } };
 
-export const WordSelected: Story = {
-  args: { selectedWord: { segmentIndex: 1, start: 13 } },
+export const Opening: Story = {
+  args: { activity: { ...idle, isOpening: true } },
 };
 
 export const LoadingText: Story = { args: { text: null } };

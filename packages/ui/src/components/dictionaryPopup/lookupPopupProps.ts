@@ -14,7 +14,12 @@ type Display = {
 /** The pop-up's handlers, each dispatching to the lookup. */
 type LookupPopupHandlers = Pick<
   ComponentProps<typeof DictionaryPopup>,
-  "onSearch" | "onWordHold" | "onCreateFlashcard" | "onClose" | "sentence"
+  | "onSearch"
+  | "onWordHold"
+  | "onCreateFlashcard"
+  | "onClose"
+  | "sentence"
+  | "forLearners"
 > & {
   onToggleSize: () => void;
   onPointerInsideChange: (isInside: boolean) => void;

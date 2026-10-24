@@ -1,19 +1,15 @@
 import {
-  useApplyLibraryEntryMutation,
+  useAddLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useProposeLibraryWordsMutation,
   usePublishLibraryItemMutation,
   usePutLibrarySubtitlesMutation,
-  usePutLibraryWordsMutation,
   useUnpublishLibraryItemMutation,
   useUpdateLibraryItemMutation,
   useUploadLibraryFileMutation,
 } from "@easyimmerse/backend";
-import type {
-  LibraryEntry,
-  LibraryItemDraft,
-  LibraryWord,
-} from "@easyimmerse/types";
+import { actions } from "@easyimmerse/state";
+import type { LibraryItemDraft } from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
 import { libraryFailureMessage } from "../../lib/library/libraryFailureMessage.ts";
@@ -23,27 +19,25 @@ import {
   unreachableFile,
   uploadFromRegistry,
 } from "../../lib/library/libraryUploads.ts";
+import { useAppDispatch } from "../../useAppDispatch.ts";
 import type { LibraryEditActivity } from "./LibraryEditView.tsx";
-import { createSaveQueue } from "./saveQueue.ts";
 
 /**
  * The changes the library edit screen makes to an item through the server, with what is under way and why the last one failed.
- * Each change resolves to whether it was made. Saves of one segment's words go one after another.
- * `onDeleted` is called once the item is deleted.
+ * Each change resolves to whether it was made. `onDeleted` is called once the item is deleted.
  */
 export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
+  const dispatch = useAppDispatch();
   const registry = useBrowserFileRegistry();
   const [update, updated] = useUpdateLibraryItemMutation();
   const [upload, uploaded] = useUploadLibraryFileMutation();
   const [putSubtitles, subtitlesPut] = usePutLibrarySubtitlesMutation();
-  const [putWords] = usePutLibraryWordsMutation();
-  const [applyEntry] = useApplyLibraryEntryMutation();
+  const [add, added] = useAddLibraryItemMutation();
   const [propose, proposed] = useProposeLibraryWordsMutation();
   const [publish, published] = usePublishLibraryItemMutation();
   const [unpublish, unpublished] = useUnpublishLibraryItemMutation();
   const [remove] = useDeleteLibraryItemMutation();
   const [failure, setFailure] = useState<string | null>(null);
-  const [wordSaves] = useState(createSaveQueue);
   const run = (fallback: string, change: () => Promise<unknown>) => {
     setFailure(null);
     return change().then(
@@ -59,6 +53,7 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
     isUploading: uploaded.isLoading || subtitlesPut.isLoading,
     isPublishing:
       proposed.isLoading || published.isLoading || unpublished.isLoading,
+    isOpening: added.isLoading,
     failure,
   };
   return {
@@ -82,16 +77,17 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
           subtitles: await librarySubtitlesOf(files),
         }).unwrap(),
       ),
-    saveWords: (segmentIndex: number, words: LibraryWord[]) =>
-      run("Could not save the words.", () =>
-        wordSaves.run(segmentIndex, () =>
-          putWords({ itemId, segmentIndex, words }).unwrap(),
-        ),
-      ),
-    applyEverywhere: (text: string, entry: LibraryEntry) =>
-      run("Could not save the entry.", () =>
-        applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
-      ),
+    /** Adds the item to the project given, or to a new one when null, and opens it there in the player or the reader. */
+    openWords: (projectId: string | null) =>
+      run("Could not open the item.", async () => {
+        const opened = await add({ itemId, projectId }).unwrap();
+        dispatch(
+          actions.openMediaFileRequested(
+            opened.project_id,
+            opened.media_file_id,
+          ),
+        );
+      }),
     proposeWords: () =>
       run("Could not propose words.", () => propose(itemId).unwrap()),
     publish: () =>

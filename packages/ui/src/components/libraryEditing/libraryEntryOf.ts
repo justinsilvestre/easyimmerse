@@ -3,12 +3,12 @@ import {
   type LookupFieldsContext,
 } from "@easyimmerse/state";
 import type { LibraryEntry, LookupResult } from "@easyimmerse/types";
-import { definitionMarkdown } from "../../components/dictionaryPopup/definitionMarkdown.ts";
+import { definitionMarkdown } from "../dictionaryPopup/definitionMarkdown.ts";
 
-/** Returns the entry a dictionary result gives a library word, with its definitions sorted into the two languages as a flashcard's are. */
+/** Returns the entry a dictionary result, or every result for a null index, gives a library word, with its definitions sorted into the two languages as a flashcard's are. */
 export function libraryEntryOf(
   results: readonly LookupResult[],
-  resultIndex: number,
+  resultIndex: number | null,
   context: LookupFieldsContext,
 ): LibraryEntry | null {
   const fields = flashcardFieldsFromLookup(
