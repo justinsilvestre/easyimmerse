@@ -27,7 +27,7 @@ Every story is screenshotted:
 - at a **phone width** (390 × 844) and a **desktop width** (1280 × 800);
 - **cropped to the story's content**, including dialogs and menus and anything that runs past the viewport, so a small component isn't lost in a mostly empty page.
 
-Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
+Stories are grouped by component, in the order Storybook's sidebar lists them; **Most changed** at the top sorts them by changed pixels instead. Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
 - a button beside the story's name that copies its title and name;
 - below the name, a link to the story in Storybook;

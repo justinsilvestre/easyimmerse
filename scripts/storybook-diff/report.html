@@ -162,11 +162,22 @@
         text-transform: uppercase;
         padding: 5px 10px;
         border-radius: 6px;
+        /* Wide enough for the longest kind, so the names beside the badges line up. */
+        min-width: 7.5em;
+        box-sizing: border-box;
+        text-align: center;
         color: var(--kind);
         background: color-mix(in srgb, var(--kind) 14%, transparent);
       }
       .title { font-size: 15px; }
       .title .group { color: var(--muted); }
+      h2.component {
+        margin: 16px 8px 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      h2.component:first-child { margin-top: 4px; }
       .title .name { font-weight: 600; }
       .nowrap { white-space: nowrap; }
       .icon-button {
@@ -474,6 +485,10 @@
     <header class="toolbar">
       <div id="filters"></div>
       <div>
+        <fieldset class="segmented" aria-label="Sort">
+          <button type="button" class="pill" data-sort="storybook" title="By component, as in Storybook's sidebar">Storybook order</button>
+          <button type="button" class="pill" data-sort="pixels" title="The stories with the most changed pixels first">Most changed</button>
+        </fieldset>
         <button type="button" class="pill" id="collapse-all">Collapse all</button>
         <button type="button" class="pill" id="expand-all">Expand all</button>
       </div>
@@ -501,7 +516,7 @@
       const kinds = ["changed", "added", "removed", "errored"];
       const themeNames = ["light", "dark"];
       // Highlighting starts on, so only the variants it was turned off for are remembered.
-      const state = { kind: "all", collapsed: new Set(), themes: new Map(), unhighlighted: new Set(), closedComments: new Set() };
+      const state = { kind: "all", sort: "storybook", collapsed: new Set(), themes: new Map(), unhighlighted: new Set(), closedComments: new Set() };
       const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
@@ -521,6 +536,11 @@
         button.addEventListener("click", () => { state.kind = kind; render(); });
         button.dataset.kind = kind;
         filters.append(button);
+      }
+
+      const sortButtons = document.querySelectorAll("[data-sort]");
+      for (const button of sortButtons) {
+        button.addEventListener("click", () => { state.sort = button.dataset.sort; render(); });
       }
 
       // Both themes are already in the story, so switching only changes which one is visible.
@@ -821,23 +841,23 @@
         `<span class="segmented" role="group" aria-label="Theme">${themeNames.map((name) =>
           `<button type="button" class="pill" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
 
-      function card(change) {
+      /** A story's card; when it sits under its component's heading, its header leaves the component's name out. */
+      function card(change, grouped) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
         const commented = Boolean(comments[change.id]);
         const commentShown = commented && !state.closedComments.has(change.id);
-        const pixels = pixelsOf(change);
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
             <span class="header-row">
             <span class="chevron" aria-hidden="true"></span>
             <span class="kind">${change.kind}</span>
             <span class="heading">
-              <span class="title-line"><span class="title"><span class="group">${change.title} /</span> <span class="nowrap"><span class="name">${change.name}</span>
+              <span class="title-line"><span class="title">${grouped ? "" : `<span class="group">${change.title} /</span> `}<span class="nowrap"><span class="name">${change.name}</span>
                 <button type="button" class="icon-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}" title="Copy name" aria-label="Copy name">${copyIcon}</button></span></span></span>
               <span class="meta">${storyLink(change)}</span>
             </span>
             </span>
-            <span class="header-row controls">${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}<button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
+            <span class="header-row controls"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
             <div class="comment-box" ${commentShown ? "" : "hidden"}>
               <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
               <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
@@ -850,13 +870,21 @@
         </details>`;
       }
 
+      const sortByPixels = (changes) => [...changes].sort((a, b) => pixelsOf(b) - pixelsOf(a));
+
+      // Storybook's sidebar lists components by title, and each component's stories in the order it declares them,
+      // which is the order the capture lists them in. The sort is stable, so that order holds within each title.
+      function componentGroups(changes) {
+        const sorted = [...changes].sort((a, b) => a.title.localeCompare(b.title));
+        return sorted.map((change, index) => (sorted[index - 1]?.title === change.title ? "" : `<h2 class="component">${change.title}</h2>`) + card(change, true)).join("");
+      }
+
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        const shown = report.changes
-          .filter((change) => state.kind === "all" || change.kind === state.kind)
-          .sort((a, b) => pixelsOf(b) - pixelsOf(a));
+        for (const button of sortButtons) button.setAttribute("aria-pressed", String(button.dataset.sort === state.sort));
+        const shown = report.changes.filter((change) => state.kind === "all" || change.kind === state.kind);
         document.getElementById("changes").innerHTML = shown.length
-          ? shown.map(card).join("")
+          ? state.sort === "pixels" ? sortByPixels(shown).map((change) => card(change, false)).join("") : componentGroups(shown)
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
         // Set as a value rather than written into the markup, so a comment's text is never read as HTML.
         for (const story of document.querySelectorAll("details.story")) story.querySelector(".comment-box textarea").value = comments[story.dataset.id]?.text ?? "";
@@ -939,7 +967,7 @@
         viewer.querySelector(".side").textContent = side;
         viewer.querySelector(".viewer-icon").innerHTML = viewportIcons[variant.dataset.viewport] ?? "";
         viewer.querySelector(".viewer-title").textContent =
-          `${story.querySelector(".title").textContent.replace(/\s+/g, " ")} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
+          `${storyTitle(report.changes.find((change) => change.id === story.dataset.id))} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
         viewerOriginal.href = img.getAttribute("src");
         Object.assign(viewerFrame.style, { width: `min(100%, ${width}px)`, aspectRatio: `${width} / ${height}` });
         viewerImage.src = img.getAttribute("src");
