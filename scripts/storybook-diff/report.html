@@ -39,7 +39,7 @@
       }
       /* The same in both themes, and far apart in hue, so the side shows from the corner of the eye. */
       :root {
-        --before: #9c6a4f;
+        --before: #85583f;
         --after: #5a8fd8;
       }
       body {
@@ -312,25 +312,13 @@
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
       figure[data-showing="before"] .frame { border-style: dashed; }
-      /* Shades the plain margins beside a narrow layout, so the eye goes to the content between them. */
-      .margin-shade {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        pointer-events: none;
-        background:
-          repeating-linear-gradient(-45deg, rgb(110 110 110 / 0.45) 0 1.5px, transparent 1.5px 7px),
-          rgb(110 110 110 / 0.28);
-      }
-      .margin-shade:first-of-type { border-right: 1.5px dashed rgb(110 110 110 / 0.9); }
-      .margin-shade:last-of-type { border-left: 1.5px dashed rgb(110 110 110 / 0.9); }
+      /* Darkens what did not change, so the changed pixels, in red, stand out. */
       .overlay {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        background: none;
-        opacity: 0.8;
+        opacity: 0.9;
         pointer-events: none;
         visibility: hidden;
       }
@@ -342,6 +330,7 @@
         height: auto;
         background: #fff;
       }
+      :is(figure, #viewer) img.overlay { background: rgb(24 24 24 / 0.62); }
       img[data-flip] { cursor: pointer; }
       pre.error {
         white-space: pre-wrap;
@@ -450,7 +439,8 @@
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
       const themeNames = ["light", "dark"];
-      const state = { kind: "all", collapsed: new Set(), themes: new Map() };
+      // Highlighting starts on, so only the variants it was turned off for are remembered.
+      const state = { kind: "all", collapsed: new Set(), themes: new Map(), unhighlighted: new Set() };
       const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
@@ -559,6 +549,13 @@
         render();
       });
 
+      document.addEventListener("change", (event) => {
+        const checkbox = event.target.closest?.(".highlight");
+        if (!checkbox) return;
+        if (checkbox.checked) state.unhighlighted.delete(checkbox.dataset.key);
+        else state.unhighlighted.add(checkbox.dataset.key);
+      });
+
       document.addEventListener("input", (event) => {
         const textarea = event.target.closest(".comment-box textarea");
         if (!textarea) return;
@@ -648,16 +645,6 @@
           .filter((variant) => variant.theme === themeName)
           .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
 
-      /** Shades the margins beside a variant's content, in percentages of its widest screenshot so they fit any scale. */
-      function marginShades(change, fileName) {
-        const content = change.contentColumns?.[fileName];
-        if (!content) return "";
-        const width = Math.max(...["before", "after"].map((side) => sizeOf(change, side, fileName)?.width ?? 0));
-        const percent = (x) => `${(x / width) * 100}%`;
-        return `<div class="margin-shade" style="left: 0; width: ${percent(content.x)}"></div>` +
-          `<div class="margin-shade" style="left: ${percent(content.x + content.width)}; right: 0"></div>`;
-      }
-
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
         const size = sizeOf(change, side, fileName);
@@ -668,7 +655,7 @@
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
         return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side">${side}</span><span class="expand">⤢ Full screen</span></button>
-          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${marginShades(change, fileName)}${overlay}</div></figure>`;
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
       }
 
       function variantSection(change, variant) {
@@ -676,7 +663,7 @@
         const pixels = change.changedVariants[fileName];
         const sides = ["before", "after"].filter((side) => sizeOf(change, side, fileName));
         const status = pixels
-          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels.toLocaleString("en-US")} changed px</label>`
+          ? `<label><input type="checkbox" class="highlight" data-key="${change.id}/${fileName}" ${state.unhighlighted.has(`${change.id}/${fileName}`) ? "" : "checked"} /> Highlight ${pixels.toLocaleString("en-US")} changed px</label>`
           : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
         const resized = describeResize(sizeOf(change, "before", fileName), sizeOf(change, "after", fileName));
         return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span class="viewport">${variant.viewport.name}</span>${status}${resized}</h3>
@@ -811,8 +798,6 @@
         viewerImage.src = img.getAttribute("src");
         viewerImage.style.width = `${(img.dataset.width / width) * 100}%`;
         viewerImage.style.cursor = img.dataset.flip ? "pointer" : "auto";
-        for (const shade of viewerFrame.querySelectorAll(".margin-shade")) shade.remove();
-        viewerOverlay.before(...[...viewedFigure.querySelectorAll(".margin-shade")].map((shade) => shade.cloneNode()));
         viewerOverlay.hidden = !overlay;
         if (overlay) viewerOverlay.src = overlay.getAttribute("src");
       }

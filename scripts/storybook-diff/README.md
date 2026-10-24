@@ -36,14 +36,14 @@ Each story is a collapsible section. Its header stays at the top of the screen w
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it.
+To see what changed, **click a screenshot to flip it** between before and after. The changed pixels are **highlighted** in red, with everything that did not change darkened; the checkbox above a screenshot turns this off.
 
 Before and after can be told apart at a glance:
 
 - **Before** has an orange label with "Before" on the left and a dashed frame.
 - **After** has a blue label with "After" on the right and a solid frame.
 
-Each label spans its screenshot and stays in view as you scroll. When a layout is much narrower than its viewport, as in most desktop screenshots, the plain margins on either side are shaded so your eye goes to the content. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
+Each label spans its screenshot and stays in view as you scroll. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
 
 ## Trying the report page without capturing
 
@@ -94,7 +94,6 @@ If a story still renders differently from run to run, **treat it as a bug** in t
 - `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
 - `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`.
 - `report.html` is the report page's template.
-- `contentColumns.ts` finds where a screenshot's content lies between plain margins, for the shading.
 - `rerender.ts` rewrites an existing report's page with the current template.
 - `captureVariants.ts` defines the themes and viewports. **Add one there to add it to every capture and report.**
 - `storyPage.ts` drives Storybook. It loads Storybook once per worker and switches between stories through Storybook's own messaging, which is several times faster than reloading the page for each story.
