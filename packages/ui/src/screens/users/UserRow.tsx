@@ -1,107 +1,111 @@
-import { useSetLibraryManagerMutation } from "@easyimmerse/backend";
 import {
+  type AccountVia,
   actions,
   selectDeletionToConfirm,
   selectUserChangeInFlight,
+  type UserAccess,
 } from "@easyimmerse/state";
-import type { AccountRole, AccountUser } from "@easyimmerse/types";
-import { Button } from "../../../components/common/Button.tsx";
-import { CheckboxField } from "../../../components/common/CheckboxField.tsx";
-import { useAppDispatch } from "../../../useAppDispatch.ts";
-import { useAppSelector } from "../../../useAppSelector.ts";
-import { roleOptions } from "./roleOptions.ts";
+import type { AccountUser } from "@easyimmerse/types";
+import { Trash2 } from "lucide-react";
+import { Button } from "../../components/common/Button.tsx";
+import { MenuButton } from "../../components/common/MenuButton.tsx";
+import type { MenuItem } from "../../components/common/MenuItemButton.tsx";
+import { accountAccessSummary } from "../../lib/accountAccessSummary.ts";
+import { useAppDispatch } from "../../useAppDispatch.ts";
+import { useAppSelector } from "../../useAppSelector.ts";
 
 /**
- * One account, with a select that changes its role, a checkbox that lets it manage the library,
- * and a Delete button that asks for confirmation first.
+ * One account: its email address, a summary of what it may do, and a menu of checkboxes for Server admin, Library admin and Full access,
+ * with a Delete item that asks for confirmation first.
  */
-export function UserRow({ user }: { user: AccountUser }) {
-  const dispatch = useAppDispatch();
+export function UserRow({ via, user }: { via: AccountVia; user: AccountUser }) {
   const change = useAppSelector((state) =>
     selectUserChangeInFlight(state, user.id),
   );
-  const isChanging = change !== null;
   const isConfirming = useAppSelector(selectDeletionToConfirm) === user.id;
   return (
     <li className="flex flex-col gap-2 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="flex-1 break-all text-sm">
-          {user.email}
-          {change === "setUserRole" && (
-            <span className="text-fg-muted"> (changing its role…)</span>
-          )}
-        </span>
-        <select
-          aria-label={`Role of ${user.email}`}
-          value={user.role}
-          disabled={isChanging}
-          onChange={(event) =>
-            dispatch(
-              actions.userRoleChosen(
-                user.id,
-                event.target.value as AccountRole,
-              ),
-            )
-          }
-          className="rounded-md border border-line-strong bg-surface px-2 py-1 text-sm text-fg focus:border-accent focus:outline-2 focus:outline-accent/30 disabled:opacity-50"
-        >
-          {roleOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <Button
-          size="sm"
-          variant="danger"
-          aria-label={`${change === "deleteUser" ? "Deleting" : "Delete"} ${user.email}`}
-          aria-disabled={isChanging || isConfirming || undefined}
-          onClick={() => {
-            if (!isChanging) dispatch(actions.userDeletionAsked(user.id));
-          }}
-        >
-          {change === "deleteUser" ? "Deleting…" : "Delete"}
-        </Button>
+      <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="break-all text-sm">{user.email}</span>
+          <span className="text-xs text-fg-muted">
+            {accountAccessSummary(user)}
+            {change !== null &&
+              (change === "deleteUser" ? " · Deleting…" : " · Saving…")}
+          </span>
+        </div>
+        <UserMenu
+          via={via}
+          user={user}
+          isBusy={change !== null || isConfirming}
+        />
       </div>
-      <LibraryManagerCheckbox user={user} />
-      {isConfirming && <DeletionConfirmation email={user.email} />}
+      {isConfirming && <DeletionConfirmation via={via} email={user.email} />}
     </li>
   );
 }
 
-/** Lets an account manage the library, or stops it. An administrator always manages it, so its box stays checked. */
-function LibraryManagerCheckbox({ user }: { user: AccountUser }) {
-  const [setLibraryManager, setting] = useSetLibraryManagerMutation();
+/** The menu of an account's access. A server admin always has the other two, so their boxes stay checked while Server admin is. */
+function UserMenu({
+  via,
+  user,
+  isBusy,
+}: {
+  via: AccountVia;
+  user: AccountUser;
+  isBusy: boolean;
+}) {
+  const dispatch = useAppDispatch();
   const isAdministrator = user.role === "administrator";
+  const toggle = (access: UserAccess) => () =>
+    dispatch(actions.userAccessToggled(via, user, access));
+  const items: MenuItem[] = [
+    {
+      label: "Server admin",
+      isChecked: isAdministrator,
+      isDisabled: isBusy,
+      onSelect: toggle("serverAdmin"),
+    },
+    {
+      label: "Library admin",
+      isChecked: isAdministrator || user.manages_library,
+      isDisabled: isBusy || isAdministrator,
+      onSelect: toggle("libraryAdmin"),
+    },
+    {
+      label: "Full access",
+      isChecked: isAdministrator || user.role === "privileged",
+      isDisabled: isBusy || isAdministrator,
+      onSelect: toggle("fullAccess"),
+    },
+    {
+      label: "Delete",
+      icon: <Trash2 className="size-4" aria-hidden />,
+      isDestructive: true,
+      isDisabled: isBusy,
+      onSelect: () => dispatch(actions.userDeletionAsked(user.id)),
+    },
+  ];
   return (
-    <div className="flex flex-col gap-1">
-      <CheckboxField
-        label="Manages library"
-        aria-label={`Manages library (${user.email})`}
-        hint={
-          isAdministrator
-            ? "Administrators always manage the library."
-            : undefined
-        }
-        checked={isAdministrator || user.manages_library}
-        disabled={isAdministrator || setting.isLoading}
-        onChange={(event) =>
-          setLibraryManager({
-            userId: user.id,
-            managesLibrary: event.target.checked,
-          })
-        }
-      />
-      {setting.isError && (
-        <p role="alert" className="text-sm text-danger-fg">
-          {`Could not change whether ${user.email} manages the library.`}
-        </p>
-      )}
-    </div>
+    <MenuButton
+      label={`Manage ${user.email}`}
+      items={items}
+      heading={
+        isAdministrator
+          ? "A server admin is always a library admin and has full access."
+          : undefined
+      }
+    />
   );
 }
 
-function DeletionConfirmation({ email }: { email: string }) {
+function DeletionConfirmation({
+  via,
+  email,
+}: {
+  via: AccountVia;
+  email: string;
+}) {
   const dispatch = useAppDispatch();
   return (
     <fieldset
@@ -114,7 +118,7 @@ function DeletionConfirmation({ email }: { email: string }) {
       <Button
         size="sm"
         variant="danger"
-        onClick={() => dispatch(actions.userDeletionConfirmed())}
+        onClick={() => dispatch(actions.userDeletionConfirmed(via))}
       >
         Delete account
       </Button>

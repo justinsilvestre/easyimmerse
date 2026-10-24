@@ -221,6 +221,13 @@ export type ServerRequest =
   | { kind: "createUser"; via: AccountVia; request: CreateUserRequest }
   /** Gives an account on the server that `via` names another role, as only an administrator may. */
   | { kind: "setUserRole"; via: AccountVia; userId: string; role: AccountRole }
+  /** Lets an account on the server that `via` names manage the library, or stops it, as only an administrator may. */
+  | {
+      kind: "setLibraryManager";
+      via: AccountVia;
+      userId: string;
+      managesLibrary: boolean;
+    }
   /** Deletes an account on the server that `via` names, and its sessions, as only an administrator may. */
   | { kind: "deleteUser"; via: AccountVia; userId: string }
   /** Fetches anew who the token used on the server that `via` names belongs to, as after the account's email address is confirmed. */
@@ -345,6 +352,7 @@ export type ServerResponses = {
   logOut: void;
   createUser: AccountUser;
   setUserRole: AccountUser;
+  setLibraryManager: AccountUser;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteUser: void;
   getCurrentPrincipal: CurrentPrincipal;

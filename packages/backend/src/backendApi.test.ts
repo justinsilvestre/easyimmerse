@@ -1629,6 +1629,7 @@ describe("the library endpoints", () => {
     expect(
       await libraryRequests(
         backendApi.endpoints.setLibraryManager.initiate({
+          via: "self",
           userId: "u1",
           managesLibrary: true,
         }),
@@ -1640,6 +1641,17 @@ describe("the library endpoints", () => {
         body: { kind: "json", value: { manages_library: true } },
       },
     ]);
+  });
+
+  it("put the flag for setLibraryManager through the built-in server to the linked remote", async () => {
+    const [request] = await libraryRequests(
+      backendApi.endpoints.setLibraryManager.initiate({
+        via: "linkedRemote",
+        userId: "u1",
+        managesLibrary: true,
+      }),
+    );
+    expect(request?.path).toBe("/sync/remote/users/u1/library-manager");
   });
 
   it("fetch an item being prepared again every two seconds until it is published", async () => {

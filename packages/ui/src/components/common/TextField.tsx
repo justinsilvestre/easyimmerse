@@ -13,7 +13,7 @@ export function TextField({
   hint?: string;
   multiline?: boolean;
   className?: string;
-  type?: "text" | "email" | "password" | "url";
+  type?: "text" | "email" | "password" | "url" | "search";
   /** The name the field's value has in its form's data. */
   name?: string;
   autoComplete?: string;

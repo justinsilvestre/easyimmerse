@@ -41,12 +41,14 @@ export type {
   SignInMode,
   SignInServerChoice,
 } from "./account/signInForm.ts";
+export type { UserAccess } from "./account/userManagement.ts";
 export {
   type NewUserFormView,
   selectDeletionToConfirm,
   selectNewUserForm,
   selectUserChangeFailureMessage,
   selectUserChangeInFlight,
+  selectUserSearch,
 } from "./account/userManagementSelectors.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";

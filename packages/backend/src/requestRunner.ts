@@ -245,6 +245,11 @@ export const requestEndpoints = {
       { via, userId, body: { role } },
       { track: false },
     ),
+  setLibraryManager: ({ via, userId, managesLibrary }) =>
+    backendApi.endpoints.setLibraryManager.initiate(
+      { via, userId, managesLibrary },
+      { track: false },
+    ),
   deleteUser: ({ via, userId }) =>
     backendApi.endpoints.deleteUser.initiate({ via, userId }, { track: false }),
   getCurrentPrincipal: ({ via }) =>

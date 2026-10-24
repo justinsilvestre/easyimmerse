@@ -51,7 +51,6 @@ export {
   usePutLibrarySubtitlesMutation,
   usePutLibraryWordsMutation,
   useRemoveAlignmentMutation,
-  useSetLibraryManagerMutation,
   useSetTranslationDocumentMutation,
   useUnpublishLibraryItemMutation,
   useUpdateFlashcardMutation,

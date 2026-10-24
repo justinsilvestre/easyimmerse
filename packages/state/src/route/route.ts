@@ -1,3 +1,5 @@
+import type { AccountVia } from "../server/serverSelectors.ts";
+
 /** A screen that fills the window on its own. */
 export type MainRoute =
   | { screen: "home" }
@@ -27,7 +29,11 @@ export type SettingsPage =
   | "account"
   | "dictionaries"
   | "pairing"
-  | "server";
+  | "server"
+  /** The accounts of the app's own server, for its administrator to manage. */
+  | "users"
+  /** The accounts of the server the native app's built-in server keeps a copy of the work on, for an administrator there to manage. */
+  | "linkedRemoteUsers";
 
 /** A section of the general settings page that the page scrolls to when it opens. */
 export type SettingsSection = "mediaConversion";
@@ -65,6 +71,8 @@ export type NavigationStep =
   | { type: "openPairing" }
   /** Opens the page of the desktop app's server settings. */
   | { type: "openServerSettings" }
+  /** Opens the page that manages the accounts of the server that `via` names. */
+  | { type: "openUsers"; via: AccountVia }
   | { type: "closeSettings" }
   | { type: "openLibrary" }
   | { type: "openLibraryItem"; itemId: string }
@@ -120,6 +128,8 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return openSettingsPage(current, "pairing");
     case "openServerSettings":
       return openSettingsPage(current, "server");
+    case "openUsers":
+      return openSettingsPage(current, usersPages[step.via]);
     case "closeSettings":
       return closeSettingsPage(current);
     case "openLibrary":
@@ -132,6 +142,11 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return { screen: "libraryEdit", itemId: step.itemId };
   }
 }
+
+const usersPages = {
+  self: "users",
+  linkedRemote: "linkedRemoteUsers",
+} as const satisfies Record<AccountVia, SettingsPage>;
 
 /** Returns the settings page on top of the stack, which is the one shown. */
 export function settingsPageOf(

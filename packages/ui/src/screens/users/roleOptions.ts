@@ -1,5 +1,5 @@
 import type { AccountRole } from "@easyimmerse/types";
-import { accountRoleName } from "../accountRoleName.ts";
+import { accountAccessSummary } from "../../lib/accountAccessSummary.ts";
 
 const roles = [
   "library_user",
@@ -7,8 +7,8 @@ const roles = [
   "administrator",
 ] satisfies AccountRole[];
 
-/** Every role an account may have, named in words, for a role select. */
+/** The access a new account may start with, named as the account list names it, for a select. */
 export const roleOptions = roles.map((role) => ({
   value: role,
-  label: accountRoleName(role),
+  label: accountAccessSummary({ role, manages_library: false }),
 }));

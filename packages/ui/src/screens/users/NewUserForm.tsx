@@ -1,14 +1,18 @@
-import { actions, selectNewUserForm } from "@easyimmerse/state";
+import {
+  type AccountVia,
+  actions,
+  selectNewUserForm,
+} from "@easyimmerse/state";
 import type { AccountRole } from "@easyimmerse/types";
-import { Button } from "../../../components/common/Button.tsx";
-import { SelectField } from "../../../components/common/SelectField.tsx";
-import { TextField } from "../../../components/common/TextField.tsx";
-import { useAppDispatch } from "../../../useAppDispatch.ts";
-import { useAppSelector } from "../../../useAppSelector.ts";
+import { Button } from "../../components/common/Button.tsx";
+import { SelectField } from "../../components/common/SelectField.tsx";
+import { TextField } from "../../components/common/TextField.tsx";
+import { useAppDispatch } from "../../useAppDispatch.ts";
+import { useAppSelector } from "../../useAppSelector.ts";
 import { roleOptions } from "./roleOptions.ts";
 
-/** The form through which an administrator creates an account with an email address, a password and a role. */
-export function NewUserForm() {
+/** The form through which an administrator creates an account on the server that `via` names, with an email address, a password and the access it starts with. */
+export function NewUserForm({ via }: { via: AccountVia }) {
   const dispatch = useAppDispatch();
   const form = useAppSelector(selectNewUserForm);
   const change = (changes: Parameters<typeof actions.newUserFormChanged>[0]) =>
@@ -20,10 +24,10 @@ export function NewUserForm() {
       className="flex max-w-sm flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault();
-        dispatch(actions.newUserSubmitted());
+        dispatch(actions.newUserSubmitted(via));
       }}
     >
-      <h4 className="text-sm font-medium">New account</h4>
+      <h2 className="text-sm font-semibold">New account</h2>
       <TextField
         label="Email"
         type="email"
@@ -42,7 +46,8 @@ export function NewUserForm() {
         onChange={(event) => change({ password: event.target.value })}
       />
       <SelectField
-        label="Role"
+        label="Access"
+        hint="Once the account is listed, its menu can also make it a library admin."
         options={roleOptions}
         value={form.role}
         disabled={form.isCreating}

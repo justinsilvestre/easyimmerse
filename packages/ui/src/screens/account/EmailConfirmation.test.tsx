@@ -59,7 +59,7 @@ describe("EmailConfirmation", () => {
 
   it("tells nothing of confirmation on a server that sends no email", async () => {
     renderAccount(unconfirmed, false);
-    await screen.findByText("library user");
+    await screen.findByText("Learner");
     await act(async () => undefined);
     expect(screen.queryByText(/confirmed/i)).toBeNull();
   });

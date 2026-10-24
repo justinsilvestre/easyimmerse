@@ -245,7 +245,11 @@ type LibraryWordsArgs = {
 
 type ApplyLibraryEntryArgs = { itemId: string; apply: ApplyLibraryEntry };
 
-type LibraryManagerArgs = { userId: string; managesLibrary: boolean };
+type LibraryManagerArgs = {
+  via: AccountVia;
+  userId: string;
+  managesLibrary: boolean;
+};
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -1522,11 +1526,14 @@ export const backendApi = createApi({
       // The account may be the app's own, whose role the account settings screen shows.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
-    /** Lets an account manage the library, or stops it, as only an administrator may. */
+    /** Lets an account on the server that `via` names manage the library, or stops it, as only an administrator may. */
     setLibraryManager: build.mutation<AccountUser, LibraryManagerArgs>({
-      query: ({ userId, managesLibrary }) => ({
+      query: ({ via, userId, managesLibrary }) => ({
         method: "PUT",
-        path: `/users/${encodeURIComponent(userId)}/library-manager`,
+        path: accountPath(
+          via,
+          `/users/${encodeURIComponent(userId)}/library-manager`,
+        ),
         body: {
           kind: "json",
           value: {
@@ -1697,7 +1704,6 @@ export const {
   usePutLibraryWordsMutation,
   usePublishLibraryItemMutation,
   useUnpublishLibraryItemMutation,
-  useSetLibraryManagerMutation,
 } = backendApi;
 
 type BackendState = Parameters<
