@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { type AppAction, actions } from "../../app/appAction.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
 import type { RequestFailure } from "../../server/serverRequest.ts";
-import { videoAndAudioFileExtensions } from "../mediaFileExtensions.ts";
 import { exampleLibraryItem } from "../libraryBrowse/exampleLibraryItem.ts";
+import { videoAndAudioFileExtensions } from "../mediaFileExtensions.ts";
 import {
   type LibraryFileReplacement,
   updateLibraryFileReplacement,

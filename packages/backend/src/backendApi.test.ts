@@ -1314,7 +1314,6 @@ const parkItem = (status: LibraryItemStatus): LibraryItem => ({
   id: "i1",
   title: "Im Park",
   description: "",
-  language: "de",
   translation_language: "en",
   kind: "video",
   difficulty: null,
@@ -1332,7 +1331,6 @@ const parkItem = (status: LibraryItemStatus): LibraryItem => ({
 const parkDraft = {
   title: "Im Park",
   description: "",
-  language: "de",
   translation_language: "en",
   kind: "video",
   difficulty: null,

@@ -13,6 +13,12 @@ export const libraryEditActions = {
   /** The user chose the project to add a library item to, or null for a new project. */
   libraryAddTargetChosen: (itemId: string, projectId: string | null) =>
     ({ type: "libraryAddTargetChosen", itemId, projectId }) as const,
+  /** The library manager asked to change the library's language, or took the request back. */
+  libraryLanguageChangeAsked: (asks: boolean) =>
+    ({ type: "libraryLanguageChangeAsked", asks }) as const,
+  /** The library manager chose the language of the library, to be saved. */
+  libraryLanguageSubmitted: (language: string) =>
+    ({ type: "libraryLanguageSubmitted", language }) as const,
   /** The library manager asked to pick the media file or text of a new library item, which is made with these settings. */
   libraryMediaPickRequested: (settings: NewLibraryItemSettings) =>
     ({ type: "libraryMediaPickRequested", settings }) as const,

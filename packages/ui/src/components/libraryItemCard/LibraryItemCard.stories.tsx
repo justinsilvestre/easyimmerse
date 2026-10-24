@@ -38,15 +38,12 @@ export const Text: Story = {
   args: {
     item: exampleLibraryItem({
       kind: "document",
-      title: "桃太郎",
-      language: "ja",
+      title: "Rotkäppchen",
       duration_ms: null,
       difficulty: "C1",
     }),
   },
 };
-
-export const InAListOfOneLanguage: Story = { args: { showsLanguage: false } };
 
 export const WithoutDifficultyOrTags: Story = {
   args: { item: exampleLibraryItem({ difficulty: null, tags: [] }) },

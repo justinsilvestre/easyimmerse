@@ -93,7 +93,6 @@ pub struct LibraryItem {
     pub id: LibraryItemId,
     pub title: String,
     pub description: String,
-    pub language: String,
     pub translation_language: String,
     pub kind: LibraryItemKind,
     pub difficulty: Option<LibraryDifficulty>,
@@ -120,11 +119,18 @@ pub struct LibraryItem {
 pub struct LibraryItemDraft {
     pub title: String,
     pub description: String,
-    pub language: String,
     pub translation_language: String,
     pub kind: LibraryItemKind,
     pub difficulty: Option<LibraryDifficulty>,
     pub tags: Vec<String>,
+}
+
+/// What holds for the whole library. A library manager sets its language while the library has no items.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct LibrarySettings {
+    /// The language the library's media are in, which its learners study. Null until a library manager sets it.
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
@@ -200,7 +206,7 @@ pub struct ApplyLibraryEntry {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct AddLibraryItem {
-    /// The project to add the item to. Null to create a project for the item's language.
+    /// The project to add the item to. Null to create a project for the library's language.
     pub project_id: Option<ProjectId>,
 }
 

@@ -13,7 +13,7 @@ import {
   updateLibraryCreation,
 } from "./libraryCreation.ts";
 
-const settings = { language: "de", translationLanguage: "en", projectId: "p1" };
+const settings = { translationLanguage: "en", projectId: "p1" };
 
 const video: PickedMediaFile = {
   name: "park.mp4",
@@ -25,7 +25,6 @@ const createRequest = {
   draft: {
     title: "park.mp4",
     description: "",
-    language: "de",
     translation_language: "en",
     kind: "video",
     difficulty: null,

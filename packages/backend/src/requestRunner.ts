@@ -201,6 +201,10 @@ export const requestEndpoints = {
       { itemId, projectId },
       { track: false },
     ),
+  putLibrarySettings: ({ settings }) =>
+    backendApi.endpoints.putLibrarySettings.initiate(settings, {
+      track: false,
+    }),
   deleteFlashcard: ({ projectId, flashcardId }) =>
     backendApi.endpoints.deleteFlashcard.initiate(
       { projectId, flashcardId },

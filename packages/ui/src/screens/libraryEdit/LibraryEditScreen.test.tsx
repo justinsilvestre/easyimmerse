@@ -26,10 +26,10 @@ import { LibraryEditScreen } from "./LibraryEditScreen.tsx";
 
 afterEach(cleanup);
 
-const germanLibrary = {
+const libraryProject = {
   ...fixtureProject,
   id: "p5",
-  settings: { ...fixtureProject.settings, name: "German library" },
+  settings: { ...fixtureProject.settings, name: "Library" },
 };
 
 /** Renders the details page of the draft item i1, with a server that answers as given. */
@@ -74,9 +74,9 @@ const addedProject = (client: ReturnType<typeof renderEditor>["client"]) =>
 
 describe("LibraryEditScreen", () => {
   describe("when the item is opened in the player", () => {
-    it("adds it to the library project of its language", async () => {
+    it("adds it to the library project of the library's language", async () => {
       const { client } = renderEditor({
-        "GET /projects": { projects: [fixtureProject, germanLibrary] },
+        "GET /projects": { projects: [fixtureProject, libraryProject] },
       });
       await openInPlayer();
       await waitFor(() =>

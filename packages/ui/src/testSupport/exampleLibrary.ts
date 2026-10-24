@@ -14,7 +14,6 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     title: "Im Park",
     description:
       "Two friends meet in a park on a sunny afternoon and talk about their dogs, their work, and their plans for the weekend.",
-    language: "de",
     translation_language: "en",
     kind: "video",
     difficulty: "A1",
@@ -38,7 +37,7 @@ export const exampleCoverUrl =
 /** The sample video among the fixtures that Storybook serves, for stories that preview a video item's file. */
 export const exampleVideoUrl = "/fixtures/sample.mp4";
 
-/** Items of several languages, kinds and tags, as the library lists them to a learner. */
+/** Items of several kinds and tags, as the library lists them to a learner. */
 export const exampleLibraryItems: readonly LibraryItem[] = [
   exampleLibraryItem(),
   exampleLibraryItem({
@@ -53,13 +52,12 @@ export const exampleLibraryItems: readonly LibraryItem[] = [
   }),
   exampleLibraryItem({
     id: "i3",
-    title: "桃太郎",
-    description: "The folk tale of the boy born from a peach.",
-    language: "ja",
+    title: "Rotkäppchen",
+    description: "The folk tale of the girl in the red cap and the wolf.",
     kind: "document",
     difficulty: "C1",
     tags: ["stories"],
-    file_name: "momotaro.txt",
+    file_name: "rotkaeppchen.txt",
     duration_ms: null,
   }),
 ];

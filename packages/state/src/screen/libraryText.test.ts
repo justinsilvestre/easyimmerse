@@ -33,7 +33,7 @@ const book: LibraryText = {
   chapter_titles: ["Anfang", null],
 };
 
-const item = { title: "Zahlen", language: "de" };
+const item = { title: "Zahlen" };
 
 /** The word "Hund" chosen in the first cue of the example video, at the given offset. */
 const chosenAt = (start: number): ChosenWord => ({
@@ -96,9 +96,8 @@ describe("documentOfLibraryText", () => {
     ]);
   });
 
-  it("takes the item's title and language", () => {
-    const { title, language } = documentOfLibraryText(book, item);
-    expect({ title, language }).toEqual(item);
+  it("takes the item's title", () => {
+    expect(documentOfLibraryText(book, item).title).toBe("Zahlen");
   });
 });
 

@@ -113,6 +113,7 @@ export type * from "./LibraryItemKind";
 export type * from "./LibraryItemStatus";
 export type * from "./LibraryListing";
 export type * from "./LibrarySegment";
+export type * from "./LibrarySettings";
 export type * from "./LibrarySubtitles";
 export type * from "./LibraryText";
 export type * from "./LibraryWord";

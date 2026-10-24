@@ -6,6 +6,6 @@ import type { ProjectId } from "./ProjectId";
  */
 export type AddLibraryItem = { 
 /**
- * The project to add the item to. Null to create a project for the item's language.
+ * The project to add the item to. Null to create a project for the library's language.
  */
 project_id: ProjectId | null, };
