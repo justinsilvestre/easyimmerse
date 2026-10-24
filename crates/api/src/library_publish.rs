@@ -4,10 +4,12 @@
 use std::path::Path;
 
 use easyimmerse_core::library::{
-    LibraryItem, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
+    LibraryItem, LibraryItemId, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
 };
+use easyimmerse_storage::{OwnerId, Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
+use crate::auth::principal::Principal;
 use crate::library_covers::{midpoint, refresh_cover};
 use crate::library_paths::LibraryItemPaths;
 use crate::routes::library_support::{
@@ -19,10 +21,12 @@ use crate::routes::media_support::{conversion_unavailable, locate_ffmpeg, probe_
 use crate::state::AppState;
 
 /// Marks the item as being published and starts the task that publishes it, returning the item as it now stands.
+/// Learners play the tracks the principal chose in their own media file of the item, as `keep_managers_tracks` describes.
 /// A video or audio item needs ffmpeg, which is checked before the task starts.
 /// Answers 409 when the item is already published or being published, so that two publishes never run at once.
 pub async fn start_library_publish(
     state: &AppState,
+    principal: &Principal,
     item: LibraryItem,
 ) -> Result<LibraryItem, ApiFailure> {
     let paths = item_paths(state, &item.id)?;
@@ -31,9 +35,15 @@ pub async fn start_library_publish(
         state.probes.as_ref().ok_or_else(conversion_unavailable)?;
         locate_ffmpeg(state)?;
     }
-    let id = item.id.clone();
+    let (id, owner) = (item.id.clone(), principal.owner_id());
     let begun = state
-        .with_storage(move |storage| storage.begin_library_publish(&id))
+        .with_storage(move |storage| {
+            let begun = storage.begin_library_publish(&id)?;
+            if begun.is_some() {
+                keep_managers_tracks(storage, &owner, &id)?;
+            }
+            Ok(begun)
+        })
         .await?;
     let Some(processing) = begun else {
         require_editable(&load_item(state, &item.id).await?)?;
@@ -45,6 +55,22 @@ pub async fn start_library_publish(
         record_outcome(&task_state, &item, outcome).await;
     });
     Ok(processing)
+}
+
+/// Records the track choice of the owner's media file of the item as the tracks learners play,
+/// and gives it to every media file of the item, so that learners who added the item before play them too.
+/// An owner without such a media file leaves the choice recorded before.
+fn keep_managers_tracks(
+    storage: &Storage,
+    owner: &OwnerId,
+    item_id: &LibraryItemId,
+) -> Result<(), StorageError> {
+    let Some(media_file) = storage.find_owners_library_media_file(owner, item_id)? else {
+        return Ok(());
+    };
+    let selection = media_file.track_selection_json.as_deref();
+    storage.set_library_track_selection_json(item_id, selection)?;
+    storage.set_library_media_track_selection_json(item_id, selection)
 }
 
 /// Runs the publish in a task of its own, so that a panic inside it still ends in a recorded failure.
@@ -90,29 +116,43 @@ async fn publish(
     }
     let duration_ms = probe_media(state, source).await?.duration_ms;
     let id = item.id.clone();
-    let text = state
+    let (text, selection) = state
         .with_storage(move |storage| {
             storage.set_library_duration(&id, duration_ms)?;
-            storage.get_library_text(&id)
+            Ok((
+                storage.get_library_text(&id)?,
+                storage.get_library_track_selection_json(&id)?,
+            ))
         })
         .await?;
+    let source = TrackedSource {
+        path: source,
+        selection: selection.as_deref(),
+    };
     create_dir(&paths.cues_dir()).await?;
-    render_clips(state, paths, source, &text.segments).await?;
+    render_clips(state, paths, &source, &text.segments).await?;
     if item.kind == LibraryItemKind::Video {
-        render_screenshots(state, item, paths, source, text).await?;
+        render_screenshots(state, item, paths, &source, text).await?;
     }
     Ok(())
+}
+
+/// The item's file, with the tracks its learners play as the JSON of a `TrackSelection`.
+struct TrackedSource<'a> {
+    path: &'a str,
+    selection: Option<&'a str>,
 }
 
 async fn render_clips(
     state: &AppState,
     paths: &LibraryItemPaths,
-    source: &str,
+    source: &TrackedSource<'_>,
     segments: &[LibrarySegment],
 ) -> Result<(), ApiFailure> {
     for segment in segments {
         if let (Some(start_ms), Some(end_ms)) = (segment.start_ms, segment.end_ms) {
-            let clip = render_clip_at(state, source, None, start_ms, end_ms).await?;
+            let clip =
+                render_clip_at(state, source.path, source.selection, start_ms, end_ms).await?;
             write_file(&paths.clip(segment.index), &clip).await?;
         }
     }
@@ -124,7 +164,7 @@ async fn render_screenshots(
     state: &AppState,
     item: &LibraryItem,
     paths: &LibraryItemPaths,
-    source: &str,
+    source: &TrackedSource<'_>,
     text: LibraryText,
 ) -> Result<(), ApiFailure> {
     let segments = with_screenshot_times(text.segments);
@@ -132,7 +172,7 @@ async fn render_screenshots(
         .filter_map(|segment| Some((segment.index, segment.screenshot_at_ms?)))
         .collect();
     for &(index, at_ms) in &times {
-        let frame = render_frame_at(state, source, None, at_ms).await?;
+        let frame = render_frame_at(state, source.path, source.selection, at_ms).await?;
         write_file(&paths.screenshot(index), &frame).await?;
     }
     let id = item.id.clone();

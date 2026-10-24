@@ -20,7 +20,8 @@ CREATE TABLE library_items (
     status TEXT NOT NULL CHECK (status IN ('draft', 'processing', 'published', 'failed')),
     failure TEXT,                      -- why the last publish failed
     created_at_ms INTEGER NOT NULL,
-    updated_at_ms INTEGER NOT NULL
+    updated_at_ms INTEGER NOT NULL,
+    track_selection_json TEXT          -- the tracks learners play, a `TrackSelection` taken from the manager's media file at publish
 );
 
 -- A subtitle cue of a video or audio item, or a paragraph of a document, with the words the manager set.
