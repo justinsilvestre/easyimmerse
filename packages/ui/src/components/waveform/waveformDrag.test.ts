@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shortestClipMs } from "../../flashcards/clipView.ts";
+import { shortestClipMs } from "../flashcardEditor/clipView.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { applyDrag, constrainDrag } from "./waveformDrag.ts";
 

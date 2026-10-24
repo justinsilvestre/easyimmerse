@@ -3,10 +3,10 @@ import {
   useLookupTextQuery,
 } from "@easyimmerse/backend";
 import type { LibraryEntry, LookupResult } from "@easyimmerse/types";
-import { Button } from "../components/Button.tsx";
-import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
-import { lookupQueryOf } from "../lookup/lookupQueryOf.ts";
-import { languageName } from "../projects/languages.ts";
+import { Button } from "../components/common/Button.tsx";
+import { coversLanguage } from "../components/wordLookup/dictionaryLanguages.ts";
+import { lookupQueryOf } from "../components/wordLookup/lookupQueryOf.ts";
+import { languageName } from "../lib/formatting/languages.ts";
 import { libraryEntryOf } from "./libraryEntryOf.ts";
 
 /**

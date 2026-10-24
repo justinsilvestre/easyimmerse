@@ -1,0 +1,175 @@
+import { actions } from "@easyimmerse/state";
+import type { AccountRole, AccountUser, SessionList } from "@easyimmerse/types";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { withAppStore } from "../../../storybook/withAppStore.tsx";
+import { withDispatchedActions } from "../../../storybook/withDispatchedActions.tsx";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+  fakeFailure,
+} from "../../../testSupport/createFakeBackendClient.ts";
+import { fixtureResponses } from "../../../testSupport/fixtureResponses.ts";
+import { AccountSection } from "../AccountSection.tsx";
+
+const user = (id: string, email: string, role: AccountRole): AccountUser => ({
+  id,
+  email,
+  role,
+  created_at_ms: 0,
+  email_confirmed_at_ms: null,
+  manages_library: false,
+});
+
+const administrator = user("u1", "admin@example.com", "administrator");
+
+const severalUsers = [
+  administrator,
+  user("u2", "someone@example.com", "library_user"),
+  user("u3", "reader@example.com", "privileged"),
+];
+
+/** The one device the account is logged in on: this one. */
+const thisDeviceOnly: SessionList = {
+  sessions: [
+    {
+      id: "s1",
+      created_at_ms: Date.now(),
+      last_used_at_ms: Date.now(),
+      user_agent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      is_current: true,
+    },
+  ],
+};
+
+/** Answers an account creation with the account the form asked for. */
+const createdAccount = (request: { body?: { value: unknown } }) => ({
+  id: "u9",
+  created_at_ms: 0,
+  ...(request.body?.value as object),
+});
+
+/** Never answers, so that the request stays under way. */
+const neverAnswered = () => new Promise(() => undefined);
+
+/** A server where the app is logged in as the given account, on this device only, which lists the given accounts and answers the other routes as given. */
+const serverWith = (
+  me: AccountUser,
+  users: FakeResponse,
+  responses: Record<string, FakeResponse> = {},
+) => ({
+  appStore: {
+    server: { serverUrl: "https://books.example.org", token: "session-token" },
+    client: createFakeBackendClient({
+      ...fixtureResponses,
+      "GET /auth/me": { kind: "account", user: me },
+      "GET /auth/sessions": thisDeviceOnly,
+      "GET /users": users,
+      "POST /users": createdAccount,
+      ...responses,
+    }),
+  },
+});
+
+const filledIn = actions.newUserFormChanged({
+  email: "new@example.com",
+  password: "correct horse",
+  role: "privileged",
+});
+
+const meta = {
+  title: "Screens/Account/Users/UserManagement",
+  component: AccountSection,
+  decorators: [withAppStore],
+  parameters: serverWith(administrator, severalUsers),
+} satisfies Meta<typeof AccountSection>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const SeveralUsers: Story = {};
+
+export const WithALibraryManager: Story = {
+  parameters: serverWith(administrator, [
+    administrator,
+    {
+      ...user("u2", "someone@example.com", "library_user"),
+      manages_library: true,
+    },
+    user("u3", "reader@example.com", "privileged"),
+  ]),
+};
+
+export const EmptyList: Story = {
+  parameters: serverWith(administrator, []),
+};
+
+export const Creating: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "POST /users": neverAnswered,
+  }),
+  decorators: [withDispatchedActions(filledIn, actions.newUserSubmitted())],
+};
+
+export const CreationFailed: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "POST /users": fakeFailure({
+      status: 409,
+      code: "email_taken",
+      message: "The email is taken.",
+    }),
+  }),
+  decorators: [withDispatchedActions(filledIn, actions.newUserSubmitted())],
+};
+
+export const ConfirmingDeletion: Story = {
+  decorators: [withDispatchedActions(actions.userDeletionAsked("u2"))],
+};
+
+export const ListFailed: Story = {
+  parameters: serverWith(
+    administrator,
+    fakeFailure({ status: 500, message: "The database is locked." }),
+  ),
+};
+
+export const RoleChanging: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "PUT /users/u2/role": neverAnswered,
+  }),
+  decorators: [
+    withDispatchedActions(actions.userRoleChosen("u2", "privileged")),
+  ],
+};
+
+export const Deleting: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "DELETE /users/u2": neverAnswered,
+  }),
+  decorators: [
+    withDispatchedActions(
+      actions.userDeletionAsked("u2"),
+      actions.userDeletionConfirmed(),
+    ),
+  ],
+};
+
+export const LastAdministrator: Story = {
+  parameters: serverWith(administrator, severalUsers, {
+    "PUT /users/u1/role": fakeFailure({
+      status: 409,
+      code: "last_administrator",
+      message: "The server needs an administrator.",
+    }),
+  }),
+  decorators: [
+    withDispatchedActions(actions.userRoleChosen("u1", "library_user")),
+  ],
+};
+
+export const NotAnAdministrator: Story = {
+  parameters: serverWith(
+    user("u2", "someone@example.com", "library_user"),
+    severalUsers,
+  ),
+};

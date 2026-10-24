@@ -12,9 +12,9 @@ import type {
 } from "@easyimmerse/types";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { Profiler } from "react";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
-import { exampleResults } from "../lookup/exampleLookup.ts";
-import { MediaScreen } from "../screens/MediaScreen.tsx";
+import { exampleResults } from "../components/dictionaryPopup/exampleLookup.ts";
+import { exampleFlashcard } from "../components/flashcards/exampleFlashcard.ts";
+import { MediaScreen } from "../screens/media/MediaScreen.tsx";
 import {
   createFakeBackendClient,
   type FakeResponse,

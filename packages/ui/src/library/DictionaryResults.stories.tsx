@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleResults } from "../lookup/exampleLookup.ts";
+import { exampleResults } from "../components/dictionaryPopup/exampleLookup.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import {
   createFakeBackendClient,

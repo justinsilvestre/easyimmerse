@@ -8,13 +8,12 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import { exampleFlashcard } from "../components/flashcards/exampleFlashcard.ts";
 import {
   exampleLibraryDocumentText,
   exampleLibraryItem,
   exampleLibraryMediaFile,
 } from "../library/exampleLibrary.ts";
-import { paragraphAttribute } from "../reader/textOffsets.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
   fixtureProject,
@@ -26,7 +25,8 @@ import {
   requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
-import { ReaderScreen } from "./ReaderScreen.tsx";
+import { ReaderScreen } from "./reader/ReaderScreen.tsx";
+import { paragraphAttribute } from "./reader/textOffsets.ts";
 
 const library = {
   item: exampleLibraryItem({ kind: "document", file_name: "story.txt" }),

@@ -5,8 +5,8 @@ import type {
   LibraryWord,
 } from "@easyimmerse/types";
 import { useId } from "react";
-import { CheckboxField } from "../components/CheckboxField.tsx";
-import { pluralize } from "../components/pluralize.ts";
+import { CheckboxField } from "../components/common/CheckboxField.tsx";
+import { pluralize } from "../lib/formatting/pluralize.ts";
 import { type LibraryLock, libraryLockText } from "./libraryLock.ts";
 import { SegmentWordsRow } from "./SegmentWordsRow.tsx";
 import { addWord, isWithoutDefinition } from "./segmentWordEdits.ts";

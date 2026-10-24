@@ -10,14 +10,14 @@ import {
   selectLibraryAddTarget,
   selectServerConfig,
 } from "@easyimmerse/state";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useNavigate } from "../hooks/useNavigate.ts";
+import { LoadingStatus, Skeleton } from "../components/common/Skeleton.tsx";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
 import { canManageLibrary } from "../library/canManageLibrary.ts";
 import { LibraryItemView } from "../library/LibraryItemView.tsx";
 import { libraryFailureMessage } from "../library/libraryFailureMessage.ts";
+import { useAppDispatch } from "../useAppDispatch.ts";
+import { useAppSelector } from "../useAppSelector.ts";
+import { useNavigate } from "../useNavigate.ts";
 
 /**
  * One item of the library, which the person adds to one of their projects in its language, or to a new project made for it.

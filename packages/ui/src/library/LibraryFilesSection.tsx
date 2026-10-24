@@ -1,5 +1,5 @@
 import type { LibraryItem } from "@easyimmerse/types";
-import { Button } from "../components/Button.tsx";
+import { Button } from "../components/common/Button.tsx";
 import { FileField } from "./FileField.tsx";
 import {
   mediaFileTypes,

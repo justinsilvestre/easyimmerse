@@ -12,11 +12,11 @@ import {
   selectServerConfig,
 } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useNavigate } from "../hooks/useNavigate.ts";
 import { canManageLibrary } from "../library/canManageLibrary.ts";
 import { LibraryView } from "../library/LibraryView.tsx";
+import { useAppDispatch } from "../useAppDispatch.ts";
+import { useAppSelector } from "../useAppSelector.ts";
+import { useNavigate } from "../useNavigate.ts";
 
 const noItems: readonly LibraryItem[] = [];
 

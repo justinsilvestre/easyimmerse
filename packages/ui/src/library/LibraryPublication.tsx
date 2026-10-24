@@ -1,6 +1,6 @@
 import type { LibraryItem } from "@easyimmerse/types";
-import { Badge } from "../components/Badge.tsx";
-import { Button } from "../components/Button.tsx";
+import { Badge } from "../components/common/Badge.tsx";
+import { Button } from "../components/common/Button.tsx";
 import { libraryStatusLabels } from "./libraryLabels.ts";
 
 const statusTones = {

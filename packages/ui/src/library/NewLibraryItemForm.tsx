@@ -1,10 +1,10 @@
 import type { LibraryUpload } from "@easyimmerse/state";
 import { Upload } from "lucide-react";
-import { Button } from "../components/Button.tsx";
-import { SegmentedControl } from "../components/SegmentedControl.tsx";
-import { SelectField } from "../components/SelectField.tsx";
-import { TextField } from "../components/TextField.tsx";
-import { languageOptions } from "../projects/languages.ts";
+import { Button } from "../components/common/Button.tsx";
+import { SegmentedControl } from "../components/common/SegmentedControl.tsx";
+import { SelectField } from "../components/common/SelectField.tsx";
+import { TextField } from "../components/common/TextField.tsx";
+import { languageOptions } from "../lib/formatting/languages.ts";
 import { FileField } from "./FileField.tsx";
 import {
   mediaFileTypes,

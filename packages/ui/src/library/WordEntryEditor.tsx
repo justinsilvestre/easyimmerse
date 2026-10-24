@@ -4,9 +4,9 @@ import type {
   LibraryWord,
 } from "@easyimmerse/types";
 import { useState } from "react";
-import { Button } from "../components/Button.tsx";
-import { TextField } from "../components/TextField.tsx";
-import { languageName } from "../projects/languages.ts";
+import { Button } from "../components/common/Button.tsx";
+import { TextField } from "../components/common/TextField.tsx";
+import { languageName } from "../lib/formatting/languages.ts";
 import { DictionaryResults } from "./DictionaryResults.tsx";
 import {
   mergeWithNext,

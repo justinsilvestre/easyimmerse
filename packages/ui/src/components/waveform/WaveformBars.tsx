@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useElementSize } from "../../hooks/useElementSize.ts";
+import { useElementSize } from "../../lib/useElementSize.ts";
 import { drawBars } from "./drawBars.ts";
 import { fitCanvas } from "./fitCanvas.ts";
 import { layOutBars } from "./layOutBars.ts";

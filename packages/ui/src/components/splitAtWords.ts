@@ -1,4 +1,4 @@
-import type { TextPart } from "./ClickableText.tsx";
+import type { TextPart } from "./wordLookup/ClickableText.tsx";
 
 /** A word of a text by its offsets, in UTF-16 code units, as a library item's text stores it. */
 export type WordSpan = { start: number; end: number };

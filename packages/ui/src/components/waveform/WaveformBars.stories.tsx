@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { ClipEditor } from "../../flashcards/ClipEditor.tsx";
-import { peaksFromWindows } from "../../flashcards/peaksFromWindows.ts";
-import { generateExamplePeaks } from "../../media/examplePeaks.ts";
+import { generateExamplePeaks } from "../../screens/media/examplePeaks.ts";
+import { peaksFromWindows } from "../../screens/media/peaksFromWindows.ts";
+import { ClipEditor } from "../flashcardEditor/ClipEditor.tsx";
 import {
   exampleWaveformWindows,
   windowStartsUpTo,
@@ -11,7 +11,7 @@ import { WaveformBars } from "./WaveformBars.tsx";
 import { WaveformStrip } from "./WaveformStrip.tsx";
 
 const meta = {
-  title: "Components/WaveformBars",
+  title: "Components/Waveform/WaveformBars",
   component: WaveformBars,
   decorators: [
     (Story) => (

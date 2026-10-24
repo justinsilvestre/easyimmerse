@@ -1,4 +1,4 @@
-import { shortestClipMs } from "../../flashcards/clipView.ts";
+import { shortestClipMs } from "../flashcardEditor/clipView.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import type { WaveformHit } from "./waveformHitTest.ts";
 

@@ -1,7 +1,7 @@
 import type { LibraryItem } from "@easyimmerse/types";
 import { FileText, Film, Music } from "lucide-react";
-import { Badge } from "../components/Badge.tsx";
-import { languageName } from "../projects/languages.ts";
+import { Badge } from "../components/common/Badge.tsx";
+import { languageName } from "../lib/formatting/languages.ts";
 import {
   formatLibraryDuration,
   libraryDifficultyLabels,

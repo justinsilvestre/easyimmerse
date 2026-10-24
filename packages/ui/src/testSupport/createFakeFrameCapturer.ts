@@ -1,6 +1,6 @@
 import type { FrameCapturer } from "@easyimmerse/backend";
-import { createFrameCapturer } from "../player/browserFrameCapturer.ts";
-import type { FrameSource } from "../player/captureVideoFrame.ts";
+import { createFrameCapturer } from "../components/player/browserFrameCapturer.ts";
+import type { FrameSource } from "../components/player/captureVideoFrame.ts";
 
 /** A capturer whose files all show pictures or all show none, and whose frames are named after their time in seconds. */
 export function createFakeFrameCapturer(hasPictures: boolean): FrameCapturer {

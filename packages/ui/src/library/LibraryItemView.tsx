@@ -1,10 +1,10 @@
 import type { LibraryItem, Project } from "@easyimmerse/types";
 import { Pencil, Plus } from "lucide-react";
-import { Badge } from "../components/Badge.tsx";
-import { Button } from "../components/Button.tsx";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { SelectField } from "../components/SelectField.tsx";
-import { languageName } from "../projects/languages.ts";
+import { Badge } from "../components/common/Badge.tsx";
+import { Button } from "../components/common/Button.tsx";
+import { SelectField } from "../components/common/SelectField.tsx";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
+import { languageName } from "../lib/formatting/languages.ts";
 import {
   formatLibraryDuration,
   libraryDifficultyLabels,

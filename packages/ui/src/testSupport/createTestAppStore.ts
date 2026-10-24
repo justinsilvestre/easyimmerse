@@ -6,7 +6,7 @@ import {
   createPlayerRegistry,
   createRecordingEffects,
 } from "@easyimmerse/state";
-import { definitionMarkdown } from "../lookup/definitionMarkdown.ts";
+import { definitionMarkdown } from "../components/dictionaryPopup/definitionMarkdown.ts";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
 import { fixtureResponses } from "./fixtureResponses.ts";
 

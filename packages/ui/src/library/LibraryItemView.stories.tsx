@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleProjects } from "../projects/exampleProjects.ts";
+import { exampleProjects } from "../screens/home/exampleProjects.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { exampleLibraryItem } from "./exampleLibrary.ts";
 import { LibraryItemView } from "./LibraryItemView.tsx";

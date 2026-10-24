@@ -1,6 +1,6 @@
 import type { LibraryUpload } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
 import { LibraryItemCard } from "./LibraryItemCard.tsx";
 import type { LibraryListStatus } from "./LibraryView.tsx";
 import { NewLibraryItemForm } from "./NewLibraryItemForm.tsx";

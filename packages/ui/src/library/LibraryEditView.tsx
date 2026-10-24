@@ -6,7 +6,7 @@ import type {
   LibraryText,
   LibraryWord,
 } from "@easyimmerse/types";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
 import {
   LibraryFilesSection,
   type LibrarySubtitleFiles,

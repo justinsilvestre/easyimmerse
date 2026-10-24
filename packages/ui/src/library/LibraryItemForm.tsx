@@ -4,11 +4,11 @@ import type {
   LibraryItemDraft,
 } from "@easyimmerse/types";
 import { useReducer, useState } from "react";
-import { Button } from "../components/Button.tsx";
-import { SelectField } from "../components/SelectField.tsx";
-import { TagsField } from "../components/TagsField.tsx";
-import { TextField } from "../components/TextField.tsx";
-import { languageOptions } from "../projects/languages.ts";
+import { Button } from "../components/common/Button.tsx";
+import { SelectField } from "../components/common/SelectField.tsx";
+import { TagsField } from "../components/common/TagsField.tsx";
+import { TextField } from "../components/common/TextField.tsx";
+import { languageOptions } from "../lib/formatting/languages.ts";
 import { libraryDraftOf } from "./libraryDraftOf.ts";
 import {
   formatLibraryDuration,

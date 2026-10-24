@@ -2,12 +2,12 @@ import type { LibraryBrowseFilter } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Library, Settings2 } from "lucide-react";
-import { Button } from "../components/Button.tsx";
-import { EmptyState } from "../components/EmptyState.tsx";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { SelectField } from "../components/SelectField.tsx";
-import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
-import { languageName } from "../projects/languages.ts";
+import { Button } from "../components/common/Button.tsx";
+import { EmptyState } from "../components/common/EmptyState.tsx";
+import { SelectField } from "../components/common/SelectField.tsx";
+import { LoadingStatus, Skeleton } from "../components/common/Skeleton.tsx";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
+import { languageName } from "../lib/formatting/languages.ts";
 import { LibraryItemCard } from "./LibraryItemCard.tsx";
 
 /** How the library's listing is coming along. */

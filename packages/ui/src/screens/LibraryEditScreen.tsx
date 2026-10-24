@@ -8,12 +8,12 @@ import {
   selectLibraryEdit,
   selectServerConfig,
 } from "@easyimmerse/state";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useNavigate } from "../hooks/useNavigate.ts";
+import { ScreenLayout } from "../layout/ScreenLayout.tsx";
 import { LibraryEditView } from "../library/LibraryEditView.tsx";
 import { useLibraryItemEditing } from "../library/useLibraryItemEditing.ts";
+import { useAppDispatch } from "../useAppDispatch.ts";
+import { useAppSelector } from "../useAppSelector.ts";
+import { useNavigate } from "../useNavigate.ts";
 
 /** The library management screen for one item, which only library managers reach: its status, details, files and words. */
 export function LibraryEditScreen({ itemId }: { itemId: string }) {

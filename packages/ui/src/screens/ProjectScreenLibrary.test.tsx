@@ -9,7 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import { exampleFlashcard } from "../components/flashcards/exampleFlashcard.ts";
 import {
   exampleLibraryItem,
   exampleLibraryMediaFile,
@@ -32,7 +32,7 @@ import {
   requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
-import { ProjectScreen } from "./ProjectScreen.tsx";
+import { ProjectScreen } from "./project/ProjectScreen.tsx";
 
 afterEach(cleanup);
 

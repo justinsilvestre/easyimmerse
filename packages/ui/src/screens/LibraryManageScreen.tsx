@@ -7,11 +7,11 @@ import {
   selectLibraryEdit,
   selectServerConfig,
 } from "@easyimmerse/state";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useNavigate } from "../hooks/useNavigate.ts";
 import { LibraryManagementView } from "../library/LibraryManagementView.tsx";
 import { useLibraryItemCreation } from "../library/useLibraryItemCreation.ts";
+import { useAppDispatch } from "../useAppDispatch.ts";
+import { useAppSelector } from "../useAppSelector.ts";
+import { useNavigate } from "../useNavigate.ts";
 
 /** The library management screen, which only library managers reach: every item, published or not, and the form for a new one. */
 export function LibraryManageScreen() {
