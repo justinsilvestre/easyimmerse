@@ -33,7 +33,7 @@
       }
     }
   ],
-  "storyCount": 680,
+  "storyCount": 678,
   "changes": [
     {
       "id": "components-common-menubutton--with-a-disabled-checkbox",
@@ -58,6 +58,33 @@
         "after-dark-desktop.png": {
           "width": 288,
           "height": 192
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-cue-panel-cuepanel--with-library-flashcard-menu-open",
+      "title": "Components/Cue Panel/CuePanel",
+      "name": "With Library Flashcard Menu Open",
+      "importPath": "./src/components/cuePanel/CuePanel.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 414,
+          "height": 694
+        },
+        "after-light-desktop.png": {
+          "width": 416,
+          "height": 672
+        },
+        "after-dark-phone.png": {
+          "width": 414,
+          "height": 694
+        },
+        "after-dark-desktop.png": {
+          "width": 416,
+          "height": 672
         }
       },
       "changedAreas": {}
@@ -193,253 +220,6 @@
         "after-dark-desktop.png": {
           "width": 416,
           "height": 113
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "components-flashcard-editor-libraryflashcardview--from-a-video",
-      "title": "Components/Flashcard Editor/LibraryFlashcardView",
-      "name": "From A Video",
-      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 48742,
-        "light-desktop.png": 626899,
-        "dark-phone.png": 49307,
-        "dark-desktop.png": 674547
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 688
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 688
-        }
-      },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "light-desktop.png": {
-          "x": 33,
-          "y": 34,
-          "width": 349,
-          "height": 549
-        },
-        "dark-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "dark-desktop.png": {
-          "x": 16,
-          "y": 16,
-          "width": 384,
-          "height": 576
-        }
-      }
-    },
-    {
-      "id": "components-flashcard-editor-libraryflashcardview--from-a-text",
-      "title": "Components/Flashcard Editor/LibraryFlashcardView",
-      "name": "From A Text",
-      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 48718,
-        "light-desktop.png": 627151,
-        "dark-phone.png": 49286,
-        "dark-desktop.png": 661392
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 688
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 688
-        }
-      },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "light-desktop.png": {
-          "x": 33,
-          "y": 34,
-          "width": 349,
-          "height": 549
-        },
-        "dark-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "dark-desktop.png": {
-          "x": 16,
-          "y": 16,
-          "width": 384,
-          "height": 576
-        }
-      }
-    },
-    {
-      "id": "components-flashcard-editor-libraryflashcardview--suspended",
-      "title": "Components/Flashcard Editor/LibraryFlashcardView",
-      "name": "Suspended",
-      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 51359,
-        "light-desktop.png": 627446,
-        "dark-phone.png": 51792,
-        "dark-desktop.png": 690805
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 688
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "before-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 688
-        }
-      },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "light-desktop.png": {
-          "x": 33,
-          "y": 34,
-          "width": 349,
-          "height": 549
-        },
-        "dark-phone.png": {
-          "x": 33,
-          "y": 34,
-          "width": 323,
-          "height": 549
-        },
-        "dark-desktop.png": {
-          "x": 16,
-          "y": 16,
-          "width": 384,
-          "height": 576
-        }
-      }
-    },
-    {
-      "id": "components-flashcard-editor-libraryflashcardview--confirming-delete",
-      "title": "Components/Flashcard Editor/LibraryFlashcardView",
-      "name": "Confirming Delete",
-      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {},
-      "errorBefore": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 688
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 710
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 688
         }
       },
       "changedAreas": {}
@@ -1171,6 +951,42 @@
           "y": 61,
           "width": 511,
           "height": 191
+        }
+      }
+    },
+    {
+      "id": "components-flashcards-flashcardpreview--beginner",
+      "title": "Components/Flashcards/FlashcardPreview",
+      "name": "Beginner",
+      "importPath": "./src/components/flashcards/FlashcardPreview.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "dark-phone.png": 45194
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 352,
+          "height": 508
+        },
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 508
+        },
+        "before-dark-phone.png": {
+          "width": 320,
+          "height": 476
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 508
+        }
+      },
+      "changedAreas": {
+        "dark-phone.png": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 476
         }
       }
     },
@@ -3460,8 +3276,8 @@
       "importPath": "./src/screens/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 23823,
-        "light-desktop.png": 32852,
+        "light-phone.png": 23821,
+        "light-desktop.png": 32850,
         "dark-phone.png": 25074,
         "dark-desktop.png": 34253
       },
@@ -8336,6 +8152,33 @@
       "changedAreas": {}
     },
     {
+      "id": "screens-media-libraryflashcarddeletedialog--asking-to-delete",
+      "title": "Screens/Media/LibraryFlashcardDeleteDialog",
+      "name": "Asking To Delete",
+      "importPath": "./src/screens/media/LibraryFlashcardDeleteDialog.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 502
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 480
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 502
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 480
+        }
+      },
+      "changedAreas": {}
+    },
+    {
       "id": "screens-media-mediaview--preparing-a-new-library-item",
       "title": "Screens/Media/MediaView",
       "name": "Preparing A New Library Item",
@@ -9649,6 +9492,98 @@
           "height": 945
         }
       },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--from-a-video",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "From A Video",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--from-a-text",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "From A Text",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--suspended",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "Suspended",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "before-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--confirming-delete",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "Confirming Delete",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "error": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
+      "kind": "removed",
+      "changedVariants": {},
+      "imageSizes": {},
       "changedAreas": {}
     },
     {
