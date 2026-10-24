@@ -8,9 +8,13 @@ import {
   useUnpublishLibraryItemMutation,
   useUpdateLibraryItemMutation,
   useUploadLibraryCoverMutation,
-  useUploadLibraryFileMutation,
 } from "@easyimmerse/backend";
-import { actions, libraryFailureMessage } from "@easyimmerse/state";
+import {
+  actions,
+  type LibraryFileReplacement,
+  libraryFailureMessage,
+  selectLibraryFileReplacement,
+} from "@easyimmerse/state";
 import type { LibraryItemDraft } from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
@@ -19,6 +23,7 @@ import {
   uploadFromRegistry,
 } from "../../lib/library/libraryUploads.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
+import { useAppSelector } from "../../useAppSelector.ts";
 import type { LibraryEditActivity } from "./LibraryEditView.tsx";
 
 /**
@@ -34,7 +39,9 @@ export function useLibraryItemEditing(
   const dispatch = useAppDispatch();
   const registry = useBrowserFileRegistry();
   const [update, updated] = useUpdateLibraryItemMutation();
-  const [upload, uploaded] = useUploadLibraryFileMutation();
+  const replacement = useAppSelector((state) =>
+    selectLibraryFileReplacement(state, itemId),
+  );
   const [uploadCover, coverUploaded] = useUploadLibraryCoverMutation();
   const [chooseCoverFrame, coverFrameChosen] =
     useSetLibraryCoverFrameMutation();
@@ -61,11 +68,11 @@ export function useLibraryItemEditing(
       coverUploaded.isLoading ||
       coverFrameChosen.isLoading ||
       coverReset.isLoading,
-    isUploading: uploaded.isLoading,
+    isUploading: replacement?.stage === "uploading",
     isPublishing:
       proposed.isLoading || published.isLoading || unpublished.isLoading,
     isOpening: added.isLoading,
-    failure,
+    failure: failure ?? failureOfReplacement(replacement, title),
   };
   return {
     activity,
@@ -73,14 +80,9 @@ export function useLibraryItemEditing(
       run(`The details of ${title} couldn't be saved.`, () =>
         update({ itemId, draft }).unwrap(),
       ),
-    replaceFile: (file: File) =>
-      run(`The file of ${title} couldn't be uploaded.`, () =>
-        registry === null
-          ? Promise.reject(unreachableFile)
-          : uploadFromRegistry(registry, file, (picked) =>
-              upload({ itemId, file: picked }).unwrap(),
-            ),
-      ),
+    /** Opens the file picker, then uploads the file picked in place of the item's file. */
+    replaceFile: () =>
+      dispatch(actions.libraryFileReplacePickRequested(itemId)),
     uploadCover: (file: File) =>
       run(`The cover picture of ${title} couldn't be uploaded.`, () =>
         registry === null
@@ -127,4 +129,16 @@ export function useLibraryItemEditing(
         remove(itemId).unwrap().then(onDeleted),
       ),
   };
+}
+
+function failureOfReplacement(
+  replacement: LibraryFileReplacement | null,
+  title: string,
+) {
+  if (replacement?.stage !== "failed") return null;
+  return libraryFailureMessage(
+    replacement.error,
+    `The file of ${title} couldn't be replaced.`,
+    title,
+  );
 }

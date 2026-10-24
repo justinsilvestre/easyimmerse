@@ -275,8 +275,10 @@ export {
   type LibraryWordPlace,
   selectLibraryAddTarget,
   selectLibraryEdit,
+  selectLibraryFileReplacement,
   selectLibraryWordPlace,
 } from "./screen/libraryEdit/libraryEditState.ts";
+export type { LibraryFileReplacement } from "./screen/libraryEdit/libraryFileReplacement.ts";
 export { libraryFailureMessage } from "./screen/libraryEdit/libraryFailureMessage.ts";
 export {
   type NewLibraryItemSettings,

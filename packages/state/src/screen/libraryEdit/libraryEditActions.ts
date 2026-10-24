@@ -15,6 +15,9 @@ export const libraryEditActions = {
   /** The library manager asked to pick the media file or text of a new library item, which is made with these settings. */
   libraryMediaPickRequested: (settings: NewLibraryItemSettings) =>
     ({ type: "libraryMediaPickRequested", settings }) as const,
+  /** The library manager asked to pick a device file to replace the file of a library item. */
+  libraryFileReplacePickRequested: (itemId: string) =>
+    ({ type: "libraryFileReplacePickRequested", itemId }) as const,
 };
 
 /** An action of the library screens' own choices. */

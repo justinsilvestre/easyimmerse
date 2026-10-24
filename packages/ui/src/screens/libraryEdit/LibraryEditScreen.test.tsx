@@ -1,5 +1,11 @@
-import { selectRoute } from "@easyimmerse/state";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { createBrowserFileRegistry, selectRoute } from "@easyimmerse/state";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakeBackendClient,
@@ -35,11 +41,13 @@ function renderEditor(responses: Record<string, FakeResponse> = {}) {
     "POST /library/items/i1/add": { project_id: "p5", media_file_id: "m9" },
     ...responses,
   });
+  const registry = createBrowserFileRegistry<File>();
   const rendered = renderWithAppStore(
     <LibraryEditScreen itemId="i1" />,
     client,
+    { browserFileRegistry: registry },
   );
-  return { client, store: rendered.store };
+  return { client, store: rendered.store, effects: rendered.effects, registry };
 }
 
 /** Presses "Open in the player" once the projects are known. */
@@ -49,6 +57,16 @@ async function openInPlayer() {
   });
   await waitFor(() => expect(button.getAttribute("aria-disabled")).toBeNull());
   fireEvent.click(button);
+}
+
+/** Presses "Replace the file" and picks park.mp4 in the file picker. */
+async function replaceWithPark(rendered: ReturnType<typeof renderEditor>) {
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Replace the file" }),
+  );
+  const file = new File(["video"], "park.mp4", { type: "video/mp4" });
+  const source = rendered.registry.register(file);
+  act(() => rendered.effects.resolvePickMediaFile({ name: file.name, source }));
 }
 
 const addedProject = (client: ReturnType<typeof renderEditor>["client"]) =>
@@ -94,6 +112,48 @@ describe("LibraryEditScreen", () => {
       expect((await screen.findByRole("alert")).textContent).toBe(
         "“Im Park” couldn't be opened in the player or the reader. Try again in a moment.",
       );
+    });
+  });
+  describe("when the file is replaced", () => {
+    it("opens the file picker for media and text files", async () => {
+      const { effects } = renderEditor();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Replace the file" }),
+      );
+      expect(effects.calls).toContainEqual(
+        expect.objectContaining({
+          type: "pickMediaFile",
+          accept: expect.arrayContaining([".mp4", ".mp3", ".epub", ".txt"]),
+        }),
+      );
+    });
+
+    it("uploads the picked file to the item", async () => {
+      const rendered = renderEditor({
+        "PUT /library/items/i1/file": exampleLibraryItem(),
+      });
+      await replaceWithPark(rendered);
+      await waitFor(() =>
+        expect(
+          requestsTo(rendered.client.requests, "PUT", "/library/items/i1/file"),
+        ).toHaveLength(1),
+      );
+    });
+
+    it("names the item when the upload fails", async () => {
+      const rendered = renderEditor({
+        "PUT /library/items/i1/file": fakeFailure({ status: 500, message: "" }),
+      });
+      await replaceWithPark(rendered);
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "The file of “Im Park” couldn't be replaced. Try again in a moment.",
+      );
+    });
+
+    it("shows no native file input", async () => {
+      renderEditor();
+      await screen.findByRole("button", { name: "Replace the file" });
+      expect(screen.queryByLabelText("Video or audio file")).toBeNull();
     });
   });
 });

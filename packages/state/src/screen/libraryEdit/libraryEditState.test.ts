@@ -4,6 +4,7 @@ import { stateAfter } from "../../app/stateAfter.ts";
 import {
   selectLibraryAddTarget,
   selectLibraryEdit,
+  selectLibraryFileReplacement,
 } from "./libraryEditState.ts";
 
 const editAfter = (...done: Parameters<typeof stateAfter>) =>
@@ -85,5 +86,29 @@ describe("selectLibraryAddTarget", () => {
         "i2",
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("selectLibraryFileReplacement", () => {
+  const rootAfter = (...done: Parameters<typeof stateAfter>) => ({
+    app: stateAfter(...done),
+  });
+
+  it("returns the replacement asked for the item", () => {
+    expect(
+      selectLibraryFileReplacement(
+        rootAfter(actions.libraryFileReplacePickRequested("i1")),
+        "i1",
+      ),
+    ).toEqual({ itemId: "i1", stage: "picking" });
+  });
+
+  it("returns null for another item", () => {
+    expect(
+      selectLibraryFileReplacement(
+        rootAfter(actions.libraryFileReplacePickRequested("i1")),
+        "i2",
+      ),
+    ).toBeNull();
   });
 });
