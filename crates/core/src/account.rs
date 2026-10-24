@@ -36,6 +36,15 @@ pub struct AccountUser {
     pub manages_library: bool,
 }
 
+/// One page of the accounts whose email address contains a search, oldest first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct UsersPage {
+    pub users: Vec<AccountUser>,
+    /// How many accounts match the search on every page together.
+    pub total: u64,
+}
+
 /// What an administrator sends to let an account manage the library, or to stop it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]

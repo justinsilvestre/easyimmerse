@@ -52,6 +52,7 @@ export {
   usePutLibraryWordsMutation,
   useRemoveAlignmentMutation,
   useResetLibraryCoverMutation,
+  usersPageSize,
   useSetLibraryCoverFrameMutation,
   useSetTranslationDocumentMutation,
   useUnpublishLibraryItemMutation,

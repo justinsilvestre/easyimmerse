@@ -1,12 +1,12 @@
 //! Account management. Only the launch token and administrators may use these routes.
 
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use easyimmerse_core::account::{AccountRole, AccountUser, SetLibraryManager};
+use easyimmerse_core::account::{AccountRole, AccountUser, SetLibraryManager, UsersPage};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::accounts::create_account;
 use crate::auth::administrator::Administrator;
@@ -28,15 +28,32 @@ pub struct SetUserRoleRequest {
     pub role: AccountRole,
 }
 
-/// Lists every account, oldest first.
+/// How many accounts a page holds when the request does not say.
+const DEFAULT_PAGE_SIZE: u64 = 50;
+/// The most accounts a page may hold.
+const MAX_PAGE_SIZE: u64 = 200;
+
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct ListUsersQuery {
+    /// Text that the email addresses of the listed accounts contain, in any letter case. Every account matches when it is missing or blank.
+    pub search: Option<String>,
+    /// How many of the matching accounts to skip. Zero when missing.
+    pub offset: Option<u64>,
+    /// How many accounts the page holds at most: 50 when missing, and never more than 200.
+    pub limit: Option<u64>,
+}
+
+/// Lists a page of the accounts whose email address contains a search, oldest first.
 #[utoipa::path(
     get,
     path = "/users",
     tag = "users",
     operation_id = "listUsers",
     security(("bearer_token" = [])),
+    params(ListUsersQuery),
     responses(
-        (status = 200, description = "Every account", body = Vec<AccountUser>),
+        (status = 200, description = "A page of the matching accounts and how many match in all", body = UsersPage),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the token is not an administrator's", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
@@ -45,9 +62,19 @@ pub struct SetUserRoleRequest {
 pub async fn list_users(
     _: Administrator,
     State(state): State<AppState>,
-) -> Result<Json<Vec<AccountUser>>, ApiFailure> {
-    let users = state.with_storage(|storage| storage.list_users()).await?;
-    Ok(Json(users))
+    Query(query): Query<ListUsersQuery>,
+) -> Result<Json<UsersPage>, ApiFailure> {
+    let search = query.search.unwrap_or_default().trim().to_string();
+    let offset = query.offset.unwrap_or(0);
+    let limit = page_size(query.limit);
+    let page = state
+        .with_storage(move |storage| storage.list_users_page(&search, offset, limit))
+        .await?;
+    Ok(Json(page))
+}
+
+fn page_size(limit: Option<u64>) -> u64 {
+    limit.unwrap_or(DEFAULT_PAGE_SIZE).clamp(1, MAX_PAGE_SIZE)
 }
 
 /// Creates an account with the given role.
@@ -165,4 +192,24 @@ pub async fn delete_user(
         .with_storage(move |storage| storage.delete_user(&id))
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_page_holds_fifty_accounts_when_the_request_does_not_say() {
+        assert_eq!(page_size(None), 50);
+    }
+
+    #[test]
+    fn a_page_holds_at_most_two_hundred_accounts() {
+        assert_eq!(page_size(Some(10_000)), 200);
+    }
+
+    #[test]
+    fn a_page_holds_at_least_one_account() {
+        assert_eq!(page_size(Some(0)), 1);
+    }
 }

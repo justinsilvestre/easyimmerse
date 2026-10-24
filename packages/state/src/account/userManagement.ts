@@ -28,6 +28,8 @@ export type UserManagementState = {
   changeFailure: { change: UserChange; failure: RequestFailure } | null;
   /** What the administrator typed to filter the accounts by email address. */
   search: string;
+  /** Which page of the matching accounts shows, counting from zero. */
+  page: number;
 };
 
 export const initialNewUserForm: NewUserForm = {
@@ -42,6 +44,7 @@ export const initialUserManagement: UserManagementState = {
   deletionToConfirm: null,
   changeFailure: null,
   search: "",
+  page: 0,
 };
 
 /** Whether the form that creates an account can be sent: both fields are filled in and no creation is under way. */

@@ -12,6 +12,7 @@ import {
   type FakeResponse,
   fakeFailure,
 } from "../../testSupport/createFakeBackendClient.ts";
+import { fakeUsersPages } from "../../testSupport/fakeUsersPages.ts";
 import { fixtureResponses } from "../../testSupport/fixtureResponses.ts";
 import { requestsTo } from "../../testSupport/renderMediaScreen.tsx";
 import { renderWithAppStore } from "../../testSupport/renderWithAppStore.tsx";
@@ -44,7 +45,7 @@ function renderWith(responses: Record<string, FakeResponse>) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
     "GET /auth/me": { kind: "account", user: administrator },
-    "GET /users": [administrator, reader, librarian],
+    "GET /users": fakeUsersPages([administrator, reader, librarian]),
     ...responses,
   });
   renderWithAppStore(
@@ -56,6 +57,12 @@ function renderWith(responses: Record<string, FakeResponse>) {
   );
   return client;
 }
+
+/** Accounts whose email addresses are `user0@example.com` and so on. */
+const manyUsers = (count: number) =>
+  Array.from({ length: count }, (_, index) =>
+    user(`m${index}`, `user${index}@example.com`, "library_user"),
+  );
 
 /** Opens the menu of the account with the given email address, once the list shows. */
 async function openMenuOf(email: string) {
@@ -203,20 +210,74 @@ describe("UsersScreen", () => {
       expect(screen.queryByText("admin@example.com")).toBeNull();
     });
 
-    it("tells how many of the accounts it shows", async () => {
+    it("tells how many accounts match", async () => {
       renderWith({});
       await search("someone");
-      expect(screen.getByText("Showing 1 of 3 accounts.")).toBeDefined();
+      expect(await screen.findByText("1 account matches.")).toBeDefined();
     });
 
     it("tells when no account matches", async () => {
       renderWith({});
       await search("nobody");
       expect(
-        screen.getByText(
-          "No email address among the 3 accounts contains “nobody”.",
+        await screen.findByText(
+          "No account's email address contains “nobody”.",
         ),
       ).toBeDefined();
+    });
+
+    it("asks the server for the accounts matching the search", async () => {
+      const client = renderWith({});
+      await search(" someone ");
+      await waitFor(() =>
+        expect(
+          requestsTo(client.requests, "GET", "/users").at(-1)?.query?.search,
+        ).toBe("someone"),
+      );
+    });
+
+    it("finds an account beyond the first page", async () => {
+      renderWith({ "GET /users": fakeUsersPages(manyUsers(120)) });
+      await search("user119@");
+      expect(await screen.findByText("user119@example.com")).toBeDefined();
+    });
+  });
+
+  describe("when the accounts fill more than one page", () => {
+    const renderManyUsers = () =>
+      renderWith({ "GET /users": fakeUsersPages(manyUsers(120)) });
+
+    it("tells which of them the page shows", async () => {
+      renderManyUsers();
+      expect(await screen.findByText("Accounts 1–50 of 120.")).toBeDefined();
+    });
+
+    it("lists the next page's accounts after Next page", async () => {
+      renderManyUsers();
+      fireEvent.click(await screen.findByRole("button", { name: "Next page" }));
+      expect(await screen.findByText("user50@example.com")).toBeDefined();
+    });
+
+    it("asks the server for the next page's accounts after Next page", async () => {
+      const client = renderManyUsers();
+      fireEvent.click(await screen.findByRole("button", { name: "Next page" }));
+      await waitFor(() =>
+        expect(
+          requestsTo(client.requests, "GET", "/users").at(-1)?.query?.offset,
+        ).toBe("50"),
+      );
+    });
+
+    it("keeps Next page unavailable on the last page", async () => {
+      renderManyUsers();
+      fireEvent.click(await screen.findByRole("button", { name: "Next page" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Next page" }));
+      await screen.findByText("Accounts 101–120 of 120.");
+      expect(
+        screen
+          .getByRole("button", { name: "Next page" })
+          .hasAttribute("disabled"),
+      ).toBe(true);
     });
   });
 

@@ -29,6 +29,22 @@ async fn token_of_new_user(server: &TestServer, email: &str, role: &str) -> Stri
         .to_string()
 }
 
+/// Creates accounts whose email addresses are `user0@example.com` and so on, in that order.
+async fn create_users(server: &TestServer, count: usize) {
+    for index in 0..count {
+        create_user(server, &format!("user{index}@example.com"), "library_user").await;
+    }
+}
+
+fn emails_of(page: &Value) -> Vec<&str> {
+    page["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|user| user["email"].as_str().unwrap())
+        .collect()
+}
+
 async fn list_users_as(server: &TestServer, token: &str) -> TestResponse {
     server
         .request("GET", "/users")
@@ -67,14 +83,43 @@ async fn the_launch_token_lists_the_accounts() {
     let server = spawn_test_server_with_accounts(false).await;
     create_user(&server, "first@example.com", "library_user").await;
     create_user(&server, "second@example.com", "privileged").await;
-    let users = server.get("/users").await.json();
-    let emails: Vec<&str> = users
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|user| user["email"].as_str().unwrap())
-        .collect();
-    assert_eq!(emails, ["first@example.com", "second@example.com"]);
+    let page = server.get("/users").await.json();
+    assert_eq!(
+        emails_of(&page),
+        ["first@example.com", "second@example.com"]
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_page_holds_the_accounts_after_the_offset() {
+    let server = spawn_test_server_with_accounts(false).await;
+    create_users(&server, 5).await;
+    let page = server.get("/users?offset=2&limit=2").await.json();
+    assert_eq!(emails_of(&page), ["user2@example.com", "user3@example.com"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_page_tells_how_many_accounts_there_are_in_all() {
+    let server = spawn_test_server_with_accounts(false).await;
+    create_users(&server, 5).await;
+    let page = server.get("/users?offset=2&limit=2").await.json();
+    assert_eq!(page["total"], 5);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_search_finds_accounts_beyond_the_first_page() {
+    let server = spawn_test_server_with_accounts(false).await;
+    create_users(&server, 3).await;
+    let page = server.get("/users?search=%20USER2%20&limit=1").await.json();
+    assert_eq!(emails_of(&page), ["user2@example.com"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_search_counts_only_the_matching_accounts() {
+    let server = spawn_test_server_with_accounts(false).await;
+    create_users(&server, 12).await;
+    let page = server.get("/users?search=user1&limit=1").await.json();
+    assert_eq!(page["total"], 3);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -132,7 +177,7 @@ async fn setting_a_role_returns_the_account_with_it() {
 async fn a_new_role_applies_to_an_existing_session() {
     let server = spawn_test_server_with_accounts(false).await;
     let token = token_of_new_user(&server, "reader@example.com", "library_user").await;
-    let id = server.get("/users").await.json()[0]["id"].clone();
+    let id = server.get("/users").await.json()["users"][0]["id"].clone();
     let path = format!("/users/{}/role", id.as_str().unwrap());
     server
         .put_json(&path, &json!({ "role": "administrator" }))
@@ -161,7 +206,7 @@ async fn deleting_an_account_answers_no_content() {
 async fn deleting_an_account_ends_its_sessions() {
     let server = spawn_test_server_with_accounts(false).await;
     let token = token_of_new_user(&server, "member@example.com", "privileged").await;
-    let id = server.get("/users").await.json()[0]["id"].clone();
+    let id = server.get("/users").await.json()["users"][0]["id"].clone();
     server
         .delete(&format!("/users/{}", id.as_str().unwrap()))
         .await;

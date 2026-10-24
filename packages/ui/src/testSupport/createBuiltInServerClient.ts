@@ -57,6 +57,6 @@ function remoteAccountResponses(link: SyncLink) {
         },
       ],
     },
-    "GET /sync/remote/users": [user],
+    "GET /sync/remote/users": { users: [user], total: 1 },
   };
 }

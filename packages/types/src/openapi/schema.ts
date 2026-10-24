@@ -1961,7 +1961,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lists every account, oldest first. */
+        /** Lists a page of the accounts whose email address contains a search, oldest first. */
         get: operations["listUsers"];
         put?: never;
         /** Creates an account with the given role. */
@@ -4152,6 +4152,15 @@ export interface components {
         /** @description The person's choice whether to keep a copy of a media file's bytes on a server. */
         UploadChoiceRequest: {
             is_upload_chosen: boolean;
+        };
+        /** @description One page of the accounts whose email address contains a search, oldest first. */
+        UsersPage: {
+            /**
+             * Format: int64
+             * @description How many accounts match the search on every page together.
+             */
+            total: number;
+            users: components["schemas"]["AccountUser"][];
         };
         VideoAction: {
             /** @enum {string} */
@@ -11865,20 +11874,27 @@ export interface operations {
     };
     listUsers: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Text that the email addresses of the listed accounts contain, in any letter case. Every account matches when it is missing or blank. */
+                search?: string;
+                /** @description How many of the matching accounts to skip. Zero when missing. */
+                offset?: number;
+                /** @description How many accounts the page holds at most: 50 when missing, and never more than 200. */
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Every account */
+            /** @description A page of the matching accounts and how many match in all */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountUser"][];
+                    "application/json": components["schemas"]["UsersPage"];
                 };
             };
             /** @description Missing or invalid token */
