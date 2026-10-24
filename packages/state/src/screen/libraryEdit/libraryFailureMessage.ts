@@ -1,4 +1,4 @@
-/** What to tell the person for each failure the library's requests can end in, by the failure's code or status, given the quoted title of the item. */
+/** Why, and what to do next, for each failure the library's requests can end in, by the failure's code or status, given the quoted title of the item. */
 const messages: Record<string, (title: string) => string> = {
   item_published: (title) =>
     `${title} is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.`,
@@ -13,18 +13,20 @@ const messages: Record<string, (title: string) => string> = {
 };
 
 /**
- * Says what went wrong with a change to a library item, why when that is known, and what the person can do next.
- * `title` names the item, as in "“Im Park”". A failure with no message of its own gets `fallback`.
+ * Says what went wrong with a change to a library item: `didntHappen`, a sentence naming what did not happen,
+ * then why when the failure is a known one, with what the person can do about it.
+ * `title` names the item, as in "“Im Park”". A failure with no message of its own gets `nextStep`, which tells to try again.
  */
 export function libraryFailureMessage(
   error: unknown,
-  fallback: string,
+  didntHappen: string,
   title: string,
+  nextStep = "Try again in a moment.",
 ): string {
   const key = codeOf(error) ?? statusOf(error);
-  const message =
+  const known =
     key !== undefined && Object.hasOwn(messages, key) ? messages[key] : null;
-  return message ? message(title) : fallback;
+  return `${didntHappen} ${known ? known(title) : nextStep}`;
 }
 
 function codeOf(error: unknown): string | undefined {

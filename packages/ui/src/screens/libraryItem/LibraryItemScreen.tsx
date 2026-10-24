@@ -11,6 +11,7 @@ import {
   selectLibraryAddTarget,
   selectServerConfig,
 } from "@easyimmerse/state";
+import type { Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
@@ -73,7 +74,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         added.isError
           ? libraryFailureMessage(
               added.error,
-              `“${item.data.title}” couldn't be added to the project. Try again in a moment.`,
+              `“${item.data.title}” couldn't be added to ${targetNameOf(added.originalArgs?.projectId ?? null, projects)}.`,
               `“${item.data.title}”`,
             )
           : null
@@ -96,4 +97,14 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
       onBack={back}
     />
   );
+}
+
+/** Names the project an item was being added to, or says it was a new one when none is given. */
+function targetNameOf(
+  projectId: string | null,
+  projects: readonly Project[],
+): string {
+  if (projectId === null) return "a new project";
+  const project = projects.find(({ id }) => id === projectId);
+  return project ? `“${project.settings.name}”` : "that project";
 }

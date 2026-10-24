@@ -48,7 +48,7 @@ export const Adding: Story = { args: { isAdding: true } };
 export const CouldNotAdd: Story = {
   args: {
     addFailure:
-      "“Im Park” couldn't be added to the project. Try again in a moment.",
+      "“Im Park” couldn't be added to “Alpha”. Try again in a moment.",
   },
 };
 

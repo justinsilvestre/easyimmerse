@@ -58,7 +58,7 @@ export function useLibraryWordEditing(
           "danger",
           libraryFailureMessage(
             error,
-            `The word couldn't be saved in “${item.title}”. Try again in a moment.`,
+            `The word couldn't be saved in “${item.title}”.`,
             `“${item.title}”`,
           ),
         ),

@@ -96,7 +96,7 @@ function settle(
       return failed(
         action.outcome.error,
         title,
-        `${title} couldn't be added to the library. Try again in a moment.`,
+        `${title} couldn't be added to the library.`,
       );
     const itemId = action.outcome.data.id;
     return updated(
@@ -116,7 +116,8 @@ function settle(
       return failed(
         action.outcome.error,
         title,
-        `${title} was added to the library as a draft, but the file couldn't be uploaded. Open the draft below to upload the file again.`,
+        `${title} was added to the library as a draft, but the file couldn't be uploaded.`,
+        "Open the draft below to upload the file again.",
       );
     const { itemId, settings, file } = creation;
     return updated(
@@ -140,7 +141,8 @@ function settle(
       return failed(
         action.outcome.error,
         title,
-        `${title} was added to the library, but couldn't be opened in the player or the reader. Open it below to try again.`,
+        `${title} was added to the library, but couldn't be opened in the player or the reader.`,
+        "Open it below to try again.",
       );
     const { project_id, media_file_id } = action.outcome.data;
     return updated(
@@ -151,14 +153,19 @@ function settle(
   return updated(creation);
 }
 
-function failed(error: RequestFailure, title: string, fallback: string) {
+function failed(
+  error: RequestFailure,
+  title: string,
+  didntHappen: string,
+  nextStep?: string,
+) {
   return updated(
     null,
     dispatch(
       actions.noticeRequested(
         transientNotice(
           "danger",
-          libraryFailureMessage(error, fallback, title),
+          libraryFailureMessage(error, didntHappen, title, nextStep),
         ),
       ),
     ),

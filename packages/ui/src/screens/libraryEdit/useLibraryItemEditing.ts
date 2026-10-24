@@ -45,12 +45,12 @@ export function useLibraryItemEditing(
   const [unpublish, unpublished] = useUnpublishLibraryItemMutation();
   const [remove] = useDeleteLibraryItemMutation();
   const [failure, setFailure] = useState<string | null>(null);
-  const run = (fallback: string, change: () => Promise<unknown>) => {
+  const run = (didntHappen: string, change: () => Promise<unknown>) => {
     setFailure(null);
     return change().then(
       () => true,
       (error) => {
-        setFailure(libraryFailureMessage(error, fallback, title));
+        setFailure(libraryFailureMessage(error, didntHappen, title));
         return false;
       },
     );
@@ -70,44 +70,37 @@ export function useLibraryItemEditing(
   return {
     activity,
     save: (draft: LibraryItemDraft) =>
-      run(
-        `The details of ${title} couldn't be saved. Try again in a moment.`,
-        () => update({ itemId, draft }).unwrap(),
+      run(`The details of ${title} couldn't be saved.`, () =>
+        update({ itemId, draft }).unwrap(),
       ),
     replaceFile: (file: File) =>
-      run(
-        `The file of ${title} couldn't be uploaded. Try again in a moment.`,
-        () =>
-          registry === null
-            ? Promise.reject(unreachableFile)
-            : uploadFromRegistry(registry, file, (picked) =>
-                upload({ itemId, file: picked }).unwrap(),
-              ),
+      run(`The file of ${title} couldn't be uploaded.`, () =>
+        registry === null
+          ? Promise.reject(unreachableFile)
+          : uploadFromRegistry(registry, file, (picked) =>
+              upload({ itemId, file: picked }).unwrap(),
+            ),
       ),
     uploadCover: (file: File) =>
-      run(
-        `The cover picture of ${title} couldn't be uploaded. Try again in a moment.`,
-        () =>
-          registry === null
-            ? Promise.reject(unreachableFile)
-            : uploadFromRegistry(registry, file, (picked) =>
-                uploadCover({ itemId, file: picked }).unwrap(),
-              ),
+      run(`The cover picture of ${title} couldn't be uploaded.`, () =>
+        registry === null
+          ? Promise.reject(unreachableFile)
+          : uploadFromRegistry(registry, file, (picked) =>
+              uploadCover({ itemId, file: picked }).unwrap(),
+            ),
       ),
     chooseCoverFrame: (atMs: number) =>
-      run(
-        `The cover of ${title} couldn't be taken from that frame. Try again in a moment.`,
-        () => chooseCoverFrame({ itemId, atMs }).unwrap(),
+      run(`The cover of ${title} couldn't be taken from that frame.`, () =>
+        chooseCoverFrame({ itemId, atMs }).unwrap(),
       ),
     resetCover: () =>
-      run(
-        `The cover of ${title} couldn't be changed. Try again in a moment.`,
-        () => resetCover(itemId).unwrap(),
+      run(`The cover of ${title} couldn't be changed.`, () =>
+        resetCover(itemId).unwrap(),
       ),
     /** Adds the item to the project given, or to a new one when null, and opens it there in the player or the reader. */
     openWords: (projectId: string | null) =>
       run(
-        `${title} couldn't be opened in the player or the reader. Try again in a moment.`,
+        `${title} couldn't be opened in the player or the reader.`,
         async () => {
           const opened = await add({ itemId, projectId }).unwrap();
           dispatch(
@@ -120,19 +113,17 @@ export function useLibraryItemEditing(
       ),
     proposeWords: () =>
       run(
-        `The words of ${title} couldn't be filled in from your dictionaries. Try again in a moment.`,
+        `The words of ${title} couldn't be filled in from your dictionaries.`,
         () => propose(itemId).unwrap(),
       ),
     publish: () =>
-      run(`${title} couldn't be published. Try again in a moment.`, () =>
-        publish(itemId).unwrap(),
-      ),
+      run(`${title} couldn't be published.`, () => publish(itemId).unwrap()),
     unpublish: () =>
-      run(`${title} couldn't be unpublished. Try again in a moment.`, () =>
+      run(`${title} couldn't be unpublished.`, () =>
         unpublish(itemId).unwrap(),
       ),
     remove: () =>
-      run(`${title} couldn't be deleted. Try again in a moment.`, () =>
+      run(`${title} couldn't be deleted.`, () =>
         remove(itemId).unwrap().then(onDeleted),
       ),
   };

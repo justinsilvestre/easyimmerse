@@ -165,6 +165,25 @@ describe("updateLibraryCreation", () => {
     ]);
   });
 
+  it("names the draft and tells to open it when the file can't be uploaded", () => {
+    const failed = actions.requestSettled(
+      "libraryCreation/upload",
+      uploadRequest,
+      { ok: false, error: serverError },
+    );
+    expect(creationAfter(...creating, created, failed).effects).toEqual([
+      {
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice(
+            "danger",
+            "“park.mp4” was added to the library as a draft, but the file couldn't be uploaded. Open the draft below to upload the file again.",
+          ),
+        ),
+      },
+    ]);
+  });
+
   it("ends when the file can't be uploaded", () => {
     const failed = actions.requestSettled(
       "libraryCreation/upload",
