@@ -29,14 +29,30 @@ Every story is screenshotted:
 
 Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
-- a **Copy** button, for the story's title and name;
-- a **Comment** button, which copies a Markdown link to the story in the report and, in a pull request's report, opens the pull request so you can paste it into a comment;
-- a link to the story in Storybook;
+- a link to the story in Storybook, and a **Copy name** button for its title and name;
+- a **Comment** button, described below;
 - a **Light/Dark** switch, which starts on your system's theme and affects only that story.
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it. The label above each screenshot stays in view as you scroll, and before and after are told apart at a glance: before has a dashed purple frame and its label on the left, after a solid teal frame and its label on the right.
+To see what changed, **click a screenshot to flip it** between before and after, or **tick the checkbox** above it to lay the changed pixels over it.
+
+Before and after can be told apart at a glance:
+
+- **Before** has an orange label with its text on the left and a dashed frame.
+- **After** has a blue label with its text on the right and a solid frame.
+
+Each label spans its screenshot and stays in view as you scroll. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
+
+## Comments
+
+The **Comment** button opens a box at the top of the story. What you type is saved in your browser's local storage as you type, keyed by the report's address. It survives a closed tab and a redeployed report, but not a different browser or device.
+
+While there are comments, a bar at the bottom of the page counts them and offers:
+
+- **Copy as Markdown**, which copies every comment, each under a link to its story in the report, ready to paste into the pull request;
+- **Open pull request**, in a pull request's report;
+- **Clear all**.
 
 ## Automatic reports on pull requests
 
