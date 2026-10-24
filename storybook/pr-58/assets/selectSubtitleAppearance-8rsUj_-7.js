@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{Qr as t,Zr as n,t as r}from"./src-DZHCZHyH.js";import{r as i}from"./preferencesSelectors-DF8SMllk.js";import{a,o}from"./subtitleBoxStyles-8AGi-M23.js";var s;function c(){return(c=e((()=>{r(),t(),a(),s=n([i(`subtitleAppearance`)],o)})))()}export{s as n,c as t};

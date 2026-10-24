@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{t}from"./src-DZHCZHyH.js";import{i as n}from"./routeSelectors-CJs9X4_s.js";function r(e){let t=n(e);return t.screen===`settings`&&t.pages.length>1?`Settings`:`Back`}function i(){return(i=e((()=>{t()})))()}export{r as n,i as t};
