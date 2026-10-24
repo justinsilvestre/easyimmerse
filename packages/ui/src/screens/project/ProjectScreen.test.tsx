@@ -3,6 +3,7 @@ import {
   actions,
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
+  selectRoute,
 } from "@easyimmerse/state";
 import type {
   ImportStepRequest,
@@ -202,6 +203,14 @@ describe("ProjectScreen", () => {
     await waitFor(() =>
       expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
     );
+  });
+
+  it("opens the library when From the library is clicked", async () => {
+    const { store } = renderProject();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "From the library" }),
+    );
+    expect(selectRoute(store.getState())).toEqual({ screen: "library" });
   });
 
   it("offers no import button while no media-source plugin is installed", async () => {

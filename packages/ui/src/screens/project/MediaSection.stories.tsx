@@ -29,6 +29,7 @@ const meta = {
     ],
     importSources: [],
     onAddMedia: fn(),
+    onOpenLibrary: fn(),
     onImportMedia: fn(),
     onOpenMedia: fn(),
     onDeleteMedia: fn(),
