@@ -18,12 +18,11 @@
         --muted: #666;
         --line: #ddd;
         --card: #f6f6f6;
+        --raised: #fff;
         --accent: #2563eb;
         --changed: #b45309;
         --added: #15803d;
         --removed: #b91c1c;
-        --before: #7c3aed;
-        --after: #0d9488;
       }
       [data-theme="dark"] {
         color-scheme: dark;
@@ -32,32 +31,39 @@
         --muted: #999;
         --line: #333;
         --card: #1f1f1f;
+        --raised: #2a2a2a;
         --accent: #60a5fa;
         --changed: #f59e0b;
         --added: #4ade80;
         --removed: #f87171;
-        --before: #a78bfa;
-        --after: #2dd4bf;
+      }
+      /* The same in both themes, and far apart in hue, so the side shows from the corner of the eye. */
+      :root {
+        --before: #9c6a4f;
+        --after: #5a8fd8;
       }
       body {
         margin: 0;
-        padding: 0 16px 16px;
+        padding: 0 0 16px;
         font: 14px/1.5 system-ui, sans-serif;
         background: var(--bg);
         color: var(--fg);
       }
+      body:has(#comment-dock:not([hidden])) { padding-bottom: 88px; }
+      body:has(#viewer[open]) { overflow: hidden; }
+      /* Only the page's own header is inset; the stories run to the window's edges. */
+      :is(h1, .summary, .toolbar) { padding-inline: 8px; }
       h1 {
-        font-size: 20px;
-        margin: 0 0 4px;
-        padding-top: 16px;
+        font-size: 18px;
+        margin: 0 0 2px;
+        padding-top: 10px;
       }
       .summary {
         color: var(--muted);
-        margin: 0 0 8px;
+        margin: 0;
       }
       .toolbar {
-        padding: 8px 0;
-        margin-bottom: 8px;
+        padding-block: 8px;
         display: flex;
         gap: 8px 16px;
         flex-wrap: wrap;
@@ -68,160 +74,257 @@
         gap: 8px;
         flex-wrap: wrap;
       }
-      .toolbar button, summary button {
+      .pill {
         font: inherit;
-        padding: 4px 10px;
+        font-size: 13px;
+        padding: 3px 12px;
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: var(--card);
+        background: var(--raised);
         color: var(--fg);
         cursor: pointer;
       }
-      :is(.toolbar, summary) button[aria-pressed="true"] {
+      a.pill { text-decoration: none; }
+      .pill:hover { border-color: var(--muted); }
+      .pill[aria-pressed="true"] {
         border-color: var(--accent);
         color: var(--accent);
       }
+      .text-button {
+        font: inherit;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--accent);
+        cursor: pointer;
+      }
+      .text-button:hover { text-decoration: underline; }
       .segmented {
         display: flex;
         margin: 0;
         padding: 0;
         border: 0;
       }
-      .segmented button:first-child { border-radius: 999px 0 0 999px; }
-      .segmented button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
-      .segmented button[aria-pressed="true"] { position: relative; }
+      .segmented .pill:first-child { border-radius: 999px 0 0 999px; }
+      .segmented .pill:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
+      .segmented .pill[aria-pressed="true"] { position: relative; }
+
       details.story {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        margin-bottom: 16px;
+        --kind: var(--changed);
+        border-block: 1px solid var(--line);
+        border-left: 4px solid var(--kind);
+        margin-bottom: 8px;
         background: var(--card);
         color: var(--fg);
         scroll-margin-top: 8px;
       }
+      details.story.kind-added { --kind: var(--added); }
+      details.story:is(.kind-removed, .kind-errored) { --kind: var(--removed); }
       details.story > summary {
         position: sticky;
         top: 0;
         z-index: 2;
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 6px 8px;
         background: var(--card);
         cursor: pointer;
         list-style: none;
         display: flex;
-        gap: 4px 8px;
-        align-items: baseline;
+        gap: 8px 12px;
+        align-items: center;
         flex-wrap: wrap;
       }
-      details.story[open] > summary {
-        border-radius: 8px 8px 0 0;
-        border-bottom: 1px solid var(--line);
-      }
+      details.story[open] > summary { border-bottom: 1px solid var(--line); }
       details.story > summary::-webkit-details-marker { display: none; }
-      details.story > summary::before {
-        content: "▸";
-        width: 1em;
-        color: var(--muted);
+      .chevron {
+        flex: none;
+        width: 7px;
+        height: 7px;
+        margin: 0 4px;
+        border-right: 2px solid var(--muted);
+        border-bottom: 2px solid var(--muted);
+        transform: rotate(-45deg);
+        transition: transform 0.15s;
       }
-      details.story[open] > summary::before { content: "▾"; }
-      .title {
-        font-size: 15px;
-        font-weight: 600;
+      details.story[open] .chevron { transform: rotate(45deg); }
+      .heading {
+        flex: 1 1 160px;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
       }
-      summary :is(.copy, .comment) {
-        font-size: 12px;
-        padding: 0 8px;
-      }
-      summary .segmented {
-        margin-left: auto;
-        align-self: center;
-      }
+      .title-line { display: block; }
       .kind {
+        flex: none;
         font-size: 12px;
-        padding: 1px 8px;
-        border-radius: 999px;
-        border: 1px solid currentColor;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 6px;
+        color: var(--kind);
+        background: color-mix(in srgb, var(--kind) 14%, transparent);
       }
-      .kind-changed { color: var(--changed); }
-      .kind-added { color: var(--added); }
-      .kind-removed, .kind-errored { color: var(--removed); }
+      .title { font-size: 15px; }
+      .title .group { color: var(--muted); }
+      .title .name { font-weight: 600; }
+      .nowrap { white-space: nowrap; }
+      .icon-button {
+        display: inline-grid;
+        vertical-align: middle;
+        margin-left: 2px;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .icon-button:hover { color: var(--fg); background: var(--line); }
+      .icon-button svg { width: 14px; height: 14px; }
       .meta {
         color: var(--muted);
         font-size: 12px;
+        display: flex;
+        gap: 4px 12px;
+        flex-wrap: wrap;
       }
       .meta a { color: var(--accent); }
-      .story-body { padding: 0 12px 12px; }
-      .full-size { color: var(--accent); }
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-left: auto;
+      }
+      .comment-toggle::before { content: "✎ "; }
+      .story.has-comment .comment-toggle {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .story.has-comment .comment-toggle::before { content: "● "; }
+
+      .story-body { padding: 0 4px 4px; }
+      .comment-box { margin-top: 6px; }
+      .comment-box textarea {
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        min-height: 4.5em;
+        resize: vertical;
+        padding: 8px 10px;
+        font: inherit;
+        color: var(--fg);
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .comment-box textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+      .comment-box p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .variants {
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
-        gap: 12px 16px;
+        gap: 8px;
       }
       .variant {
-        margin-top: 12px;
+        margin-top: 6px;
         min-width: 0;
         max-width: 100%;
       }
       .variant h3 {
         font-size: 13px;
-        margin: 0 0 6px;
+        margin: 0 0 4px;
         color: var(--muted);
         font-weight: normal;
         display: flex;
         gap: 0 12px;
         flex-wrap: wrap;
       }
+      .variant h3 .viewport { color: var(--fg); font-weight: 600; text-transform: capitalize; }
       .variant label { cursor: pointer; }
       .resized { color: var(--changed); }
       .images {
         display: flex;
         align-items: flex-start;
-        gap: 16px;
+        gap: 8px;
       }
       figure {
         flex: 0 1 auto;
         margin: 0;
         min-width: 0;
       }
-      /* Stays under the story's header while the screenshot below it scrolls by. */
-      figcaption {
+      figure[data-showing="before"], #viewer[data-showing="before"] { --side: var(--before); }
+      figure[data-showing="after"], #viewer[data-showing="after"] { --side: var(--after); }
+
+      /*
+       * The label spans its screenshot, sticks under the story's header while the screenshot scrolls by, and opens the full-screen viewer.
+       * Before and after differ in colour, in where the label's text sits, and in the frame's style, so a flip shows without reading the label.
+       * Its zero width keeps it from widening the figure past the screenshot.
+       */
+      .label {
         position: sticky;
         top: var(--summary-height, 0px);
         z-index: 1;
-        font-size: 12px;
-        color: var(--muted);
-        padding: 4px 0 8px;
-        background: var(--card);
+        box-sizing: border-box;
+        width: 0;
+        min-width: 100%;
         display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 8px;
-        align-items: baseline;
-      }
-      /* Before and after differ in colour, frame style, and label position, so a flip is noticeable without looking at the label. */
-      .side {
-        display: inline-block;
-        padding: 1px 10px;
-        border-radius: 4px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        padding: 2px 6px 4px;
+        border: 0;
+        font: inherit;
+        font-size: 12px;
         color: #fff;
-        background: var(--side-color);
+        background: var(--side);
+        cursor: zoom-in;
+        overflow: hidden;
+        white-space: nowrap;
       }
-      figure[data-showing="before"] { --side-color: var(--before); }
-      figure[data-showing="after"] { --side-color: var(--after); }
-      figure[data-showing="after"] figcaption { flex-direction: row-reverse; }
+      figure[data-showing="after"] .label { flex-direction: row-reverse; }
+      .side {
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .expand {
+        opacity: 0.85;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .label:hover .expand { opacity: 1; text-decoration: underline; }
+      /* The label closes the frame's top edge, so the two read as one box. */
       .frame {
         position: relative;
-        display: inline-block;
         max-width: 100%;
         overflow: hidden;
-        vertical-align: top;
-        border: 1px solid var(--line);
-        outline: 4px solid var(--side-color);
+        border: 4px solid var(--side);
+        border-top: 0;
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
-      figure[data-showing="before"] .frame { outline-style: dashed; }
-      .frame .overlay {
+      figure[data-showing="before"] .frame { border-style: dashed; }
+      /* Shades the plain margins beside a narrow layout, so the eye goes to the content between them. */
+      .margin-shade {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        pointer-events: none;
+        background:
+          repeating-linear-gradient(-45deg, rgb(110 110 110 / 0.45) 0 1.5px, transparent 1.5px 7px),
+          rgb(110 110 110 / 0.28);
+      }
+      .margin-shade:first-of-type { border-right: 1.5px dashed rgb(110 110 110 / 0.9); }
+      .margin-shade:last-of-type { border-left: 1.5px dashed rgb(110 110 110 / 0.9); }
+      .overlay {
         position: absolute;
         top: 0;
         left: 0;
@@ -231,26 +334,89 @@
         pointer-events: none;
         visibility: hidden;
       }
-      :is(.variant:has(.highlight:checked), .flash) .overlay { visibility: visible; }
-      figure img {
+      :is(.variant:has(.highlight:checked), .flash, #viewer.highlighted) .overlay { visibility: visible; }
+      :is(figure, #viewer) img {
         display: block;
         max-width: 100%;
         width: auto;
         height: auto;
         background: #fff;
-        cursor: pointer;
       }
+      img[data-flip] { cursor: pointer; }
       pre.error {
         white-space: pre-wrap;
         font-size: 12px;
         color: var(--removed);
-        margin: 12px 0 0;
+        margin: 6px 0 0;
       }
       .empty { color: var(--muted); }
       .story[data-theme="light"] [data-variants="dark"],
       .story[data-theme="dark"] [data-variants="light"] {
         display: none;
       }
+
+      #viewer {
+        box-sizing: border-box;
+        width: 100vw;
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: var(--bg);
+        color: var(--fg);
+        flex-direction: column;
+      }
+      #viewer[open] { display: flex; }
+      .viewer-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px 16px;
+        flex-wrap: wrap;
+        padding: 8px 16px;
+        color: #fff;
+        background: var(--side);
+      }
+      .viewer-bar .side { font-size: 16px; }
+      .viewer-title { flex: 1 1 200px; min-width: 0; }
+      .viewer-bar a, .viewer-bar button { color: #fff; }
+      .viewer-bar .pill { background: transparent; border-color: rgb(255 255 255 / 0.6); }
+      .viewer-body {
+        flex: 1;
+        outline: none;
+        overflow: auto;
+        padding: 8px 0;
+      }
+      .viewer-frame {
+        position: relative;
+        margin: 0 auto;
+        outline: 4px solid var(--side);
+        background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
+      }
+      #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
+
+      #comment-dock {
+        position: fixed;
+        z-index: 3;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        box-sizing: border-box;
+        max-width: calc(100vw - 32px);
+        display: flex;
+        align-items: center;
+        gap: 8px 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 12px 8px 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--raised);
+        box-shadow: 0 4px 24px rgb(0 0 0 / 0.18);
+      }
+      #comment-dock[hidden] { display: none; }
+      #comment-count { font-weight: 600; }
     </style>
   </head>
   <body>
@@ -259,12 +425,27 @@
     <header class="toolbar">
       <div id="filters"></div>
       <div>
-        <button type="button" id="collapse-all">Collapse all</button>
-        <button type="button" id="expand-all">Expand all</button>
+        <button type="button" class="pill" id="collapse-all">Collapse all</button>
+        <button type="button" class="pill" id="expand-all">Expand all</button>
       </div>
     </header>
     <main id="changes"></main>
-    <script id="report" type="application/json">{"variants":[{"theme":"light","viewport":{"name":"phone","width":390,"height":844}},{"theme":"light","viewport":{"name":"desktop","width":1280,"height":800}},{"theme":"dark","viewport":{"name":"phone","width":390,"height":844}},{"theme":"dark","viewport":{"name":"desktop","width":1280,"height":800}}],"storyCount":581,"changes":[{"id":"reader-readerview--pages","title":"Reader/ReaderView","name":"Pages","importPath":"./src/reader/ReaderView.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":33},"imageSizes":{"before-light-phone.png":{"width":390,"height":844},"after-light-phone.png":{"width":390,"height":844},"before-dark-phone.png":{"width":390,"height":844},"after-dark-phone.png":{"width":390,"height":844}}}],"storybookUrl":"../","baseLabel":"main (9070836)","pullRequestUrl":"https://github.com/justinsilvestre/easyimmerse/pull/59"}</script>
+    <aside id="comment-dock" hidden>
+      <span><span id="comment-count"></span> <span class="meta">saved in this browser</span></span>
+      <button type="button" class="pill" id="copy-comments">Copy as Markdown</button>
+      <button type="button" class="text-button" id="clear-comments">Clear all</button>
+    </aside>
+    <dialog id="viewer" aria-label="Screenshot">
+      <div class="viewer-bar">
+        <span class="side"></span>
+        <span class="viewer-title"></span>
+        <button type="button" class="pill viewer-close">Close</button>
+      </div>
+      <div class="viewer-body" tabindex="-1">
+        <div class="viewer-frame"><img alt="" /><img class="overlay" alt="" /></div>
+      </div>
+    </dialog>
+    <script id="report" type="application/json">{"variants":[{"theme":"light","viewport":{"name":"phone","width":390,"height":844}},{"theme":"light","viewport":{"name":"desktop","width":1280,"height":800}},{"theme":"dark","viewport":{"name":"phone","width":390,"height":844}},{"theme":"dark","viewport":{"name":"desktop","width":1280,"height":800}}],"storyCount":581,"changes":[{"id":"reader-readerview--pages","title":"Reader/ReaderView","name":"Pages","importPath":"./src/reader/ReaderView.stories.tsx","kind":"changed","changedVariants":{"light-phone.png":33,"dark-phone.png":28},"imageSizes":{"before-light-phone.png":{"width":390,"height":844},"after-light-phone.png":{"width":390,"height":844},"before-dark-phone.png":{"width":390,"height":844},"after-dark-phone.png":{"width":390,"height":844}},"contentColumns":{}}],"storybookUrl":"../","baseLabel":"main (9070836)","pullRequestUrl":"https://github.com/justinsilvestre/easyimmerse/pull/59"}</script>
     <script>
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
@@ -277,13 +458,14 @@
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
         (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
-        ". Each story has a switch between its light and dark screenshots. Click a screenshot to flip between before and after." +
-        (report.pullRequestUrl ? " A story's Comment button copies a link to it and opens the pull request, so you can paste it into a comment." : "");
+        ". Click a screenshot to flip between before and after, or its label to see it full screen. " +
+        "Comments you write are kept in this browser until you copy them into the pull request.";
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = "pill";
         button.textContent = kind === "all" ? `All (${report.changes.length})` : `${kind} (${count(kind)})`;
         button.addEventListener("click", () => { state.kind = kind; render(); });
         button.dataset.kind = kind;
@@ -298,36 +480,130 @@
         layoutStory(story);
       }
 
+      const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1"/></svg>`;
+      const copiedIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>`;
+
+      /** Copies the text and says so on the button for a moment: in words, or for an icon button, with a tick. */
       async function copyText(button, text) {
-        // Kept on the button, so a second click while it reads "Copied" still restores the original label.
-        const label = (button.dataset.label ??= button.textContent);
+        // Kept on the button, so a second click while it shows the result still restores the original content.
+        button.dataset.content ??= button.innerHTML;
+        const content = button.dataset.content;
+        const icon = button.classList.contains("icon-button");
         try {
           await navigator.clipboard.writeText(text);
-          button.textContent = "Copied";
+          button.innerHTML = icon ? copiedIcon : "Copied";
         } catch {
-          button.textContent = "Copy failed";
+          button.textContent = icon ? "!" : "Copy failed";
         }
-        setTimeout(() => { button.textContent = label; }, 1500);
+        setTimeout(() => { button.innerHTML = content; }, 1500);
       }
 
-      // Copies a Markdown link to the story, in the theme on screen, for pasting into a pull request comment.
-      // The window opens before the copy is awaited, because a browser blocks a popup that does not come straight from the click.
-      function commentOn(button) {
-        const story = button.closest("details.story");
-        const url = new URL(location.href);
-        url.hash = story.id;
-        const theme = story.dataset.theme;
-        if (report.pullRequestUrl) open(report.pullRequestUrl, "_blank");
-        copyText(button, `**[${button.dataset.title}](${url.href})** (${theme})\n\n`);
+      // Comments are kept in the browser's storage under the report's address, so they survive a closed tab and a redeployed report.
+      // Storage can be unavailable, as in some private windows; the comments then last as long as the page.
+      const commentsKey = `storybook-diff-comments:${location.pathname}`;
+      const comments = readComments();
+
+      function readComments() {
+        try {
+          return JSON.parse(localStorage.getItem(commentsKey) ?? "{}");
+        } catch {
+          return {};
+        }
       }
+
+      function writeComments() {
+        try {
+          localStorage.setItem(commentsKey, JSON.stringify(comments));
+        } catch {}
+        updateDock();
+      }
+
+      const commentedIds = () => Object.keys(comments).filter((id) => comments[id].text.trim());
+      const storyTitle = (change) => `${change.title} / ${change.name}`;
+
+      function storyUrl(id) {
+        const url = new URL(location.href);
+        url.hash = id;
+        return url.href;
+      }
+
+      /** The comments in the report's order, then any left from stories this report no longer shows. */
+      function commentsMarkdown() {
+        const order = report.changes.map((change) => change.id);
+        const ids = commentedIds().sort((a, b) => (order.indexOf(a) + 1 || Infinity) - (order.indexOf(b) + 1 || Infinity));
+        return ids.map((id) => `**[${comments[id].title}](${storyUrl(id)})**\n\n${comments[id].text.trim()}`).join("\n\n---\n\n").concat("\n");
+      }
+
+      const dock = document.getElementById("comment-dock");
+      if (report.pullRequestUrl) {
+        const pullRequestLink = Object.assign(document.createElement("a"), {
+          className: "pill",
+          href: report.pullRequestUrl,
+          target: "_blank",
+          textContent: "Open pull request",
+        });
+        document.getElementById("copy-comments").after(pullRequestLink);
+      }
+
+      function updateDock() {
+        const total = commentedIds().length;
+        dock.hidden = total === 0;
+        document.getElementById("comment-count").textContent = `${total} ${total === 1 ? "comment" : "comments"}`;
+      }
+
+      document.getElementById("copy-comments").addEventListener("click", (event) => copyText(event.currentTarget, commentsMarkdown()));
+      document.getElementById("clear-comments").addEventListener("click", () => {
+        if (!confirm("Delete every comment on this report from this browser?")) return;
+        for (const id of Object.keys(comments)) delete comments[id];
+        writeComments();
+        render();
+      });
+
+      document.addEventListener("input", (event) => {
+        const textarea = event.target.closest(".comment-box textarea");
+        if (!textarea) return;
+        const story = textarea.closest("details.story");
+        const change = report.changes.find((candidate) => candidate.id === story.dataset.id);
+        if (textarea.value.trim()) comments[change.id] = { title: storyTitle(change), text: textarea.value };
+        else delete comments[change.id];
+        story.classList.toggle("has-comment", Boolean(comments[change.id]));
+        writeComments();
+      });
+
+      // An emptied comment box closes once it loses focus.
+      document.addEventListener("focusout", (event) => {
+        const textarea = event.target.closest?.(".comment-box textarea");
+        if (textarea && !textarea.value.trim()) textarea.parentElement.hidden = true;
+      });
+
+      function toggleComment(story) {
+        const box = story.querySelector(".comment-box");
+        const textarea = box.querySelector("textarea");
+        if (!box.hidden && !textarea.value.trim()) {
+          box.hidden = true;
+          return;
+        }
+        story.open = true;
+        box.hidden = false;
+        textarea.focus();
+      }
+
+      // Another tab of the same report keeps its comments in step with this one.
+      addEventListener("storage", (event) => {
+        if (event.key !== commentsKey) return;
+        for (const id of Object.keys(comments)) delete comments[id];
+        Object.assign(comments, readComments());
+        render();
+      });
 
       // Buttons in a story's header act on their own instead of also opening or closing the story.
       document.addEventListener("click", (event) => {
         const button = event.target.closest("summary button");
         if (!button) return;
         event.preventDefault();
-        if (button.dataset.themeChoice) switchTheme(button.closest("details.story"), button.dataset.themeChoice);
-        else if (button.classList.contains("comment")) commentOn(button);
+        const story = button.closest("details.story");
+        if (button.dataset.themeChoice) switchTheme(story, button.dataset.themeChoice);
+        else if (button.classList.contains("comment-toggle")) toggleComment(story);
         else copyText(button, button.dataset.copy);
       });
 
@@ -353,13 +629,18 @@
         if (!report.storybookUrl) return change.importPath;
         const url = new URL(report.storybookUrl, location.href);
         url.search = `?path=/story/${change.id}`;
-        return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
+        return `<a href="${url.href}" target="_blank" title="Open in Storybook">${change.importPath}</a>`;
       }
 
       const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
       const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
       const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
-      const describeSize = (size) => size && `${size.width}×${size.height}`;
+      /** Shows both dimensions, striking out the old value of each one that changed, so a change in width alone or height alone stands out. */
+      function describeResize(before, after) {
+        if (!before || !after || (before.width === after.width && before.height === after.height)) return "";
+        const dimension = (from, to) => (from === to ? `${to}` : `<s>${from}</s> → <b>${to}</b>`);
+        return `<span class="resized">Size ${dimension(before.width, after.width)} × ${dimension(before.height, after.height)}</span>`;
+      }
 
       /** Lists a theme's screenshots that the comparison copied for a story. */
       const shownVariants = (change, themeName) =>
@@ -367,16 +648,27 @@
           .filter((variant) => variant.theme === themeName)
           .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
 
+      /** Shades the margins beside a variant's content, in percentages of its widest screenshot so they fit any scale. */
+      function marginShades(change, fileName) {
+        const content = change.contentColumns?.[fileName];
+        if (!content) return "";
+        const width = Math.max(...["before", "after"].map((side) => sizeOf(change, side, fileName)?.width ?? 0));
+        const percent = (x) => `${(x / width) * 100}%`;
+        return `<div class="margin-shade" style="left: 0; width: ${percent(content.x)}"></div>` +
+          `<div class="margin-shade" style="left: ${percent(content.x + content.width)}; right: 0"></div>`;
+      }
+
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
         const size = sizeOf(change, side, fileName);
         const other = side === "before" ? "after" : "before";
+        const otherSize = sizeOf(change, other, fileName);
         const flip = change.kind === "changed"
-          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${sizeOf(change, other, fileName)?.width}"` : "";
+          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${otherSize?.width}" data-flip-height="${otherSize?.height}"` : "";
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
-        return `<figure data-showing="${side}"><figcaption><span class="side">${side}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
-          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
+        return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side">${side}</span><span class="expand">⤢ Full screen</span></button>
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${marginShades(change, fileName)}${overlay}</div></figure>`;
       }
 
       function variantSection(change, variant) {
@@ -384,11 +676,10 @@
         const pixels = change.changedVariants[fileName];
         const sides = ["before", "after"].filter((side) => sizeOf(change, side, fileName));
         const status = pixels
-          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>`
+          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels.toLocaleString("en-US")} changed px</label>`
           : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
-        const [before, after] = ["before", "after"].map((side) => describeSize(sizeOf(change, side, fileName)));
-        const resized = before && after && before !== after ? `<span class="resized">Size changed: ${before} → ${after}</span>` : "";
-        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span>${variant.viewport.name}</span>${status}${resized}</h3>
+        const resized = describeResize(sizeOf(change, "before", fileName), sizeOf(change, "after", fileName));
+        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span class="viewport">${variant.viewport.name}</span>${status}${resized}</h3>
           <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
 
@@ -398,18 +689,28 @@
 
       const themeSwitch = (change) =>
         `<span class="segmented" role="group" aria-label="Theme">${themeNames.map((name) =>
-          `<button type="button" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
+          `<button type="button" class="pill" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
 
       function card(change) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
-        const title = `${change.title} / ${change.name}`;
-        const quotedTitle = title.replaceAll('"', "&quot;");
-        return `<details class="story" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
-          <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${title}</span>
-            <button type="button" class="copy" data-copy="${quotedTitle}">Copy</button>
-            <button type="button" class="comment" data-title="${quotedTitle}">Comment</button>
-            <span class="meta">${storyLink(change)}</span>${themeSwitch(change)}</summary>
+        const commented = Boolean(comments[change.id]);
+        const pixels = pixelsOf(change);
+        return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
+          <summary>
+            <span class="chevron" aria-hidden="true"></span>
+            <span class="kind">${change.kind}</span>
+            <span class="heading">
+              <span class="title-line"><span class="title"><span class="group">${change.title} /</span> <span class="nowrap"><span class="name">${change.name}</span>
+                <button type="button" class="icon-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}" title="Copy name" aria-label="Copy name">${copyIcon}</button></span></span></span>
+              <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}</span>
+            </span>
+            <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
+          </summary>
           <div class="story-body">
+            <div class="comment-box" ${commented ? "" : "hidden"}>
+              <textarea rows="3" placeholder="What should change in this story?" aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
+              <p>Saved in this browser as you type.</p>
+            </div>
             ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
             ${variantsBody(change)}
           </div>
@@ -424,6 +725,8 @@
         document.getElementById("changes").innerHTML = shown.length
           ? shown.map(card).join("")
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
+        // Set as a value rather than written into the markup, so a comment's text is never read as HTML.
+        for (const story of document.querySelectorAll("details.story")) story.querySelector(".comment-box textarea").value = comments[story.dataset.id]?.text ?? "";
         document.querySelectorAll("details.story[open]").forEach(layoutStory);
         summaryHeights.disconnect();
         for (const summary of document.querySelectorAll("details.story > summary")) summaryHeights.observe(summary);
@@ -442,21 +745,99 @@
         }
       }, true);
 
-      document.addEventListener("click", (event) => {
-        const img = event.target.closest("img[data-flip]");
-        if (!img) return;
+      /** Swaps a screenshot for the other side's, and flashes the changed pixels over it. */
+      function flip(img) {
         const flipped = img.dataset.flip;
         img.dataset.flip = img.getAttribute("src");
         img.src = flipped;
         [img.dataset.width, img.dataset.flipWidth] = [img.dataset.flipWidth, img.dataset.width];
+        [img.dataset.height, img.dataset.flipHeight] = [img.dataset.flipHeight, img.dataset.height];
         img.style.width = `${img.dataset.width * img.closest(".variant").dataset.scale}px`;
-        img.parentElement.classList.add("flash");
-        setTimeout(() => img.parentElement.classList.remove("flash"), 200);
+        flash(img.parentElement);
         const side = flipped.includes("/before-") ? "before" : "after";
         const figure = img.closest("figure");
         figure.dataset.showing = side;
         figure.querySelector(".side").textContent = side;
-        figure.querySelector(".full-size").href = flipped;
+      }
+
+      function flash(frame) {
+        frame.classList.add("flash");
+        setTimeout(() => frame.classList.remove("flash"), 200);
+      }
+
+      document.addEventListener("click", (event) => {
+        const img = event.target.closest("figure img[data-flip]");
+        if (img) flip(img);
+        const label = event.target.closest("figure .label");
+        if (label) showFullScreen(label.closest("figure"));
+      });
+
+      // The viewer shows one screenshot at its own size, capped at the screen's width, and flips the same way the story does,
+      // so flipping in either place leaves both on the same side. It asks for the browser's full screen where the browser allows it,
+      // and otherwise, as on a phone, fills the window.
+      const viewer = document.getElementById("viewer");
+      const viewerFrame = viewer.querySelector(".viewer-frame");
+      const [viewerImage, viewerOverlay] = viewerFrame.querySelectorAll("img");
+      let viewedFigure = null;
+      // Made here rather than in the markup, where a link must have an address before it has one to show.
+      const viewerOriginal = Object.assign(document.createElement("a"), { target: "_blank", textContent: "Open image" });
+      viewer.querySelector(".viewer-close").before(viewerOriginal);
+      const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
+
+      function showFullScreen(figure) {
+        viewedFigure = figure;
+        syncViewer();
+        viewer.showModal();
+        // Focus starts on the screenshot rather than the bar's link, so the space bar flips instead of following it.
+        viewer.querySelector(".viewer-body").focus();
+        viewer.requestFullscreen?.().catch(() => {});
+      }
+
+      function syncViewer() {
+        const img = viewedFigure.querySelector(".frame img:not(.overlay)");
+        const overlay = viewedFigure.querySelector(".overlay");
+        const story = viewedFigure.closest("details.story");
+        const variant = viewedFigure.closest(".variant");
+        const side = viewedFigure.dataset.showing;
+        const width = Math.max(img.dataset.width, img.dataset.flipWidth || 0);
+        const height = Math.max(img.dataset.height, img.dataset.flipHeight || 0);
+        viewer.dataset.showing = side;
+        viewer.classList.toggle("highlighted", Boolean(variant.querySelector(".highlight:checked")));
+        viewer.querySelector(".side").textContent = side;
+        viewer.querySelector(".viewer-title").textContent =
+          `${story.querySelector(".title").textContent.replace(/\s+/g, " ")} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
+        viewerOriginal.href = img.getAttribute("src");
+        Object.assign(viewerFrame.style, { width: `min(100%, ${width}px)`, aspectRatio: `${width} / ${height}` });
+        viewerImage.src = img.getAttribute("src");
+        viewerImage.style.width = `${(img.dataset.width / width) * 100}%`;
+        viewerImage.style.cursor = img.dataset.flip ? "pointer" : "auto";
+        for (const shade of viewerFrame.querySelectorAll(".margin-shade")) shade.remove();
+        viewerOverlay.before(...[...viewedFigure.querySelectorAll(".margin-shade")].map((shade) => shade.cloneNode()));
+        viewerOverlay.hidden = !overlay;
+        if (overlay) viewerOverlay.src = overlay.getAttribute("src");
+      }
+
+      function flipInViewer() {
+        const img = viewedFigure.querySelector("img[data-flip]");
+        if (!img) return;
+        flip(img);
+        syncViewer();
+        flash(viewerFrame);
+      }
+
+      viewerImage.addEventListener("click", flipInViewer);
+      viewer.addEventListener("keydown", (event) => {
+        if (![" ", "ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("a, button")) return;
+        event.preventDefault();
+        flipInViewer();
+      });
+      viewer.querySelector(".viewer-close").addEventListener("click", () => viewer.close());
+      viewer.addEventListener("close", () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+      });
+      // Escape leaves the browser's full screen before the dialog sees it, so leaving full screen closes the viewer too.
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && viewer.open) viewer.close();
       });
 
       let resizeFrame = 0;
@@ -465,8 +846,9 @@
         resizeFrame = requestAnimationFrame(() => document.querySelectorAll("details.story[open]").forEach(layoutStory));
       });
 
-      const gap = 16;
-      const border = 2;
+      const gap = 8;
+      /** The frame's border on both sides of a screenshot. */
+      const border = 8;
       const minVariantWidth = 180;
       /** Variants share a row only when none is shown at less than this scale, or than its scale on a row of its own if that is smaller. */
       const minSharedScale = 0.5;
@@ -535,6 +917,7 @@
       }
 
       render();
+      updateDock();
       // The stories are drawn after the browser looks for the address's fragment, so a link to one story scrolls to it here.
       if (location.hash) {
         const linked = document.getElementById(decodeURIComponent(location.hash.slice(1)));

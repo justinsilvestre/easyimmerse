@@ -42,7 +42,8 @@
       "importPath": "./src/reader/ReaderView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 33
+        "light-phone.png": 33,
+        "dark-phone.png": 28
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -61,7 +62,8 @@
           "width": 390,
           "height": 844
         }
-      }
+      },
+      "contentColumns": {}
     }
   ]
 }
