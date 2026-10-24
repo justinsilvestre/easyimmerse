@@ -312,7 +312,16 @@
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
       figure[data-showing="before"] .frame { border-style: dashed; }
-      #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
+      /* Shades the plain margins beside a narrow layout, so the eye goes to the content between them. */
+      .margin-shade {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        pointer-events: none;
+        background:
+          repeating-linear-gradient(-45deg, rgb(128 128 128 / 0.3) 0 1px, transparent 1px 7px),
+          rgb(128 128 128 / 0.14);
+      }
       .overlay {
         position: absolute;
         top: 0;
@@ -383,6 +392,7 @@
         outline: 4px solid var(--side);
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
+      #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
 
       #comment-dock {
         position: fixed;
@@ -421,14 +431,12 @@
     <aside id="comment-dock" hidden>
       <span><span id="comment-count"></span> <span class="meta">saved in this browser</span></span>
       <button type="button" class="pill" id="copy-comments">Copy as Markdown</button>
-      <a class="pill" id="open-pull-request" target="_blank" hidden>Open pull request</a>
       <button type="button" class="text-button" id="clear-comments">Clear all</button>
     </aside>
     <dialog id="viewer" aria-label="Screenshot">
       <div class="viewer-bar">
         <span class="side"></span>
         <span class="viewer-title"></span>
-        <a class="viewer-original" target="_blank">Open image</a>
         <button type="button" class="pill viewer-close">Close</button>
       </div>
       <div class="viewer-body" tabindex="-1">
@@ -476,7 +484,8 @@
       /** Copies the text and says so on the button for a moment: in words, or for an icon button, with a tick. */
       async function copyText(button, text) {
         // Kept on the button, so a second click while it shows the result still restores the original content.
-        const content = (button.dataset.content ??= button.innerHTML);
+        button.dataset.content ??= button.innerHTML;
+        const content = button.dataset.content;
         const icon = button.classList.contains("icon-button");
         try {
           await navigator.clipboard.writeText(text);
@@ -520,14 +529,18 @@
       function commentsMarkdown() {
         const order = report.changes.map((change) => change.id);
         const ids = commentedIds().sort((a, b) => (order.indexOf(a) + 1 || Infinity) - (order.indexOf(b) + 1 || Infinity));
-        return ids.map((id) => `**[${comments[id].title}](${storyUrl(id)})**\n\n${comments[id].text.trim()}`).join("\n\n---\n\n") + "\n";
+        return ids.map((id) => `**[${comments[id].title}](${storyUrl(id)})**\n\n${comments[id].text.trim()}`).join("\n\n---\n\n").concat("\n");
       }
 
       const dock = document.getElementById("comment-dock");
-      const pullRequestLink = document.getElementById("open-pull-request");
       if (report.pullRequestUrl) {
-        pullRequestLink.href = report.pullRequestUrl;
-        pullRequestLink.hidden = false;
+        const pullRequestLink = Object.assign(document.createElement("a"), {
+          className: "pill",
+          href: report.pullRequestUrl,
+          target: "_blank",
+          textContent: "Open pull request",
+        });
+        document.getElementById("copy-comments").after(pullRequestLink);
       }
 
       function updateDock() {
@@ -620,16 +633,11 @@
       const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
       const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
       const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
-      /** Names each dimension that changed, so a change in width alone or height alone stands out. */
+      /** Shows both dimensions, striking out the old value of each one that changed, so a change in width alone or height alone stands out. */
       function describeResize(before, after) {
-        if (!before || !after) return "";
-        const changes = ["width", "height"]
-          .filter((dimension) => before[dimension] !== after[dimension])
-          .map((dimension) => {
-            const difference = after[dimension] - before[dimension];
-            return `<span class="resized"><b>${dimension === "width" ? "Width" : "Height"}</b> ${before[dimension]} → ${after[dimension]} px (${difference > 0 ? "+" : "−"}${Math.abs(difference)})</span>`;
-          });
-        return changes.join("");
+        if (!before || !after || (before.width === after.width && before.height === after.height)) return "";
+        const dimension = (from, to) => (from === to ? `${to}` : `<s>${from}</s> → <b>${to}</b>`);
+        return `<span class="resized">Size ${dimension(before.width, after.width)} × ${dimension(before.height, after.height)}</span>`;
       }
 
       /** Lists a theme's screenshots that the comparison copied for a story. */
@@ -637,6 +645,16 @@
         report.variants
           .filter((variant) => variant.theme === themeName)
           .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
+
+      /** Shades the margins beside a variant's content, in percentages of its widest screenshot so they fit any scale. */
+      function marginShades(change, fileName) {
+        const content = change.contentColumns?.[fileName];
+        if (!content) return "";
+        const width = Math.max(...["before", "after"].map((side) => sizeOf(change, side, fileName)?.width ?? 0));
+        const percent = (x) => `${(x / width) * 100}%`;
+        return `<div class="margin-shade" style="left: 0; width: ${percent(content.x)}"></div>` +
+          `<div class="margin-shade" style="left: ${percent(content.x + content.width)}; right: 0"></div>`;
+      }
 
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
@@ -648,7 +666,7 @@
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
         return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side">${side}</span><span class="expand">⤢ Full screen</span></button>
-          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${marginShades(change, fileName)}${overlay}</div></figure>`;
       }
 
       function variantSection(change, variant) {
@@ -759,6 +777,9 @@
       const viewerFrame = viewer.querySelector(".viewer-frame");
       const [viewerImage, viewerOverlay] = viewerFrame.querySelectorAll("img");
       let viewedFigure = null;
+      // Made here rather than in the markup, where a link must have an address before it has one to show.
+      const viewerOriginal = Object.assign(document.createElement("a"), { target: "_blank", textContent: "Open image" });
+      viewer.querySelector(".viewer-close").before(viewerOriginal);
       const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
 
       function showFullScreen(figure) {
@@ -783,11 +804,13 @@
         viewer.querySelector(".side").textContent = side;
         viewer.querySelector(".viewer-title").textContent =
           `${story.querySelector(".title").textContent.replace(/\s+/g, " ")} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
-        viewer.querySelector(".viewer-original").href = img.getAttribute("src");
+        viewerOriginal.href = img.getAttribute("src");
         Object.assign(viewerFrame.style, { width: `min(100%, ${width}px)`, aspectRatio: `${width} / ${height}` });
         viewerImage.src = img.getAttribute("src");
         viewerImage.style.width = `${(img.dataset.width / width) * 100}%`;
         viewerImage.style.cursor = img.dataset.flip ? "pointer" : "auto";
+        for (const shade of viewerFrame.querySelectorAll(".margin-shade")) shade.remove();
+        viewerOverlay.before(...[...viewedFigure.querySelectorAll(".margin-shade")].map((shade) => shade.cloneNode()));
         viewerOverlay.hidden = !overlay;
         if (overlay) viewerOverlay.src = overlay.getAttribute("src");
       }

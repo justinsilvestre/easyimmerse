@@ -43,7 +43,20 @@ Before and after can be told apart at a glance:
 - **Before** has an orange label with "Before" on the left and a dashed frame.
 - **After** has a blue label with "After" on the right and a solid frame.
 
-Each label spans its screenshot and stays in view as you scroll. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
+Each label spans its screenshot and stays in view as you scroll. When a layout is much narrower than its viewport, as in most desktop screenshots, the plain margins on either side are shaded so your eye goes to the content. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
+
+## Trying the report page without capturing
+
+To try the report page, or to work on `report.html`, re-render a published report with the current template. This takes seconds:
+
+```sh
+git fetch origin gh-pages
+mkdir -p .dev/storybook-diff/demo
+git archive origin/gh-pages storybook/pr-58/changes | tar -x --strip-components=3 -C .dev/storybook-diff/demo
+node scripts/storybook-diff/rerender.ts --report .dev/storybook-diff/demo
+```
+
+Then open `.dev/storybook-diff/demo/index.html`. Any `pr-<number>` directory on the `gh-pages` branch that has a `changes/` directory works.
 
 ## Comments
 
@@ -81,5 +94,7 @@ If a story still renders differently from run to run, **treat it as a bug** in t
 - `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
 - `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`.
 - `report.html` is the report page's template.
+- `contentColumns.ts` finds where a screenshot's content lies between plain margins, for the shading.
+- `rerender.ts` rewrites an existing report's page with the current template.
 - `captureVariants.ts` defines the themes and viewports. **Add one there to add it to every capture and report.**
 - `storyPage.ts` drives Storybook. It loads Storybook once per worker and switches between stories through Storybook's own messaging, which is several times faster than reloading the page for each story.
