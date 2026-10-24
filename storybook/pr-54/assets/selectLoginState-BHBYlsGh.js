@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{Vt as t,qt as n,t as r}from"./src-C5CV-g-T.js";function i(e){let r=n(e);if(r===null)return`loggedOut`;if(r.bundledIn===void 0)return`loggedIn`;let i=t(e);return i===null?`unknown`:i.link===null?`loggedOut`:`loggedIn`}function a(){return(a=e((()=>{r()})))()}export{i as n,a as t};
