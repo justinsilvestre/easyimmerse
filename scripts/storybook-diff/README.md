@@ -36,12 +36,14 @@ Stories are grouped by component, in the order Storybook's sidebar lists them; *
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after. The rectangle around the changes is **highlighted** by darkening everything outside it; the checkbox above a screenshot turns this off. The changed pixels themselves flash red as the screenshot flips.
+To see what changed, **click a screenshot to flip it** between before and after. The rectangle around the changes is **highlighted** by darkening everything outside it, or lightening it on a dark screenshot, and bordered in the side's colour; the **Highlight changes** checkbox above a screenshot turns this off. The changed pixels themselves flash red as the screenshot flips.
 
 Before and after can be told apart at a glance:
 
-- **Before** has an orange label with "Before" on the left and a dashed frame.
+- **Before** has a brown label with "Before" on the left and a dashed frame.
 - **After** has a blue label with "After" on the right and a solid frame.
+
+Each label also has a phone or desktop icon for its viewport.
 
 Each label spans its screenshot and stays in view as you scroll. A resized screenshot shows its size with the old value of each changed dimension struck out. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way. Full screen starts zoomed in on the changes, which the magnifier button turns off, and has the story's Comment and Light/Dark buttons too; the **×** at its top left closes it.
 
@@ -94,7 +96,7 @@ If a story still renders differently from run to run, **treat it as a bug** in t
 
 - `index.ts` is the local task. It finds where your branch left the base branch, checks that commit out into a temporary worktree, and runs `capture.ts` and `compare.ts`.
 - `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
-- `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`.
+- `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`. `changes.json` also records the rectangle around each variant's changes, as `changedAreas`, for the highlight and the full-screen zoom.
 - `report.html` is the report page's template.
 - `rerender.ts` rewrites an existing report's page with the current template.
 - `captureVariants.ts` defines the themes and viewports. **Add one there to add it to every capture and report.**
