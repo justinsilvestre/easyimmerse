@@ -5,6 +5,16 @@ export interface ImageDiff {
   pixelsChanged: number;
   /** The changed pixels in red on a transparent background, to lay over either screenshot. */
   diff: PNG;
+  /** The rectangle around the changes, or null when nothing changed. */
+  area: Area | null;
+}
+
+/** A rectangle in a screenshot, from its top left corner. */
+export interface Area {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /**
@@ -28,7 +38,50 @@ export function diffImages(before: PNG, after: PNG): ImageDiff {
       diffMask: true,
     },
   );
-  return { pixelsChanged, diff };
+  return {
+    pixelsChanged,
+    diff,
+    area: changedArea(
+      diff,
+      Math.min(before.width, after.width),
+      Math.min(before.height, after.height),
+    ),
+  };
+}
+
+/**
+ * Finds the smallest rectangle around the changed pixels of a diff.
+ * Only the part both screenshots cover is searched, so that a screenshot that grew or shrank, which marks every pixel
+ * outside the smaller one as changed, gives the rectangle around what changed inside it instead of the full width.
+ * When nothing changed there, the rectangle is the whole diff, since only the size changed.
+ */
+export function changedArea(
+  diff: PNG,
+  commonWidth: number,
+  commonHeight: number,
+): Area | null {
+  let [left, top, right, bottom] = [Infinity, Infinity, -1, -1];
+  for (let y = 0; y < commonHeight; y++) {
+    for (let x = 0; x < commonWidth; x++) {
+      if (diff.data[(y * diff.width + x) * 4 + 3] === 0) continue;
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+    }
+  }
+  if (right >= 0) {
+    return {
+      x: left,
+      y: top,
+      width: right - left + 1,
+      height: bottom - top + 1,
+    };
+  }
+  const resized = commonWidth < diff.width || commonHeight < diff.height;
+  return resized
+    ? { x: 0, y: 0, width: diff.width, height: diff.height }
+    : null;
 }
 
 /** Copies the image onto a transparent canvas of the given size. */

@@ -18,6 +18,7 @@
         --muted: #666;
         --line: #ddd;
         --card: #f6f6f6;
+        --raised: #fff;
         --accent: #2563eb;
         --changed: #b45309;
         --added: #15803d;
@@ -30,34 +31,39 @@
         --muted: #999;
         --line: #333;
         --card: #1f1f1f;
+        --raised: #2a2a2a;
         --accent: #60a5fa;
         --changed: #f59e0b;
         --added: #4ade80;
         --removed: #f87171;
       }
+      /* The same in both themes, and far apart in hue, so the side shows from the corner of the eye. */
+      :root {
+        --before: #6e4630;
+        --after: #3d87f5;
+      }
       body {
         margin: 0;
-        padding: 0 16px 16px;
+        padding: 0 0 16px;
         font: 14px/1.5 system-ui, sans-serif;
         background: var(--bg);
         color: var(--fg);
       }
+      body:has(#comment-dock:not([hidden])) { padding-bottom: 88px; }
+      body:has(#viewer[open]) { overflow: hidden; }
+      /* Only the page's own header is inset; the stories run to the window's edges. */
+      :is(h1, .summary, .toolbar) { padding-inline: 8px; }
       h1 {
-        font-size: 20px;
-        margin: 0 0 4px;
-        padding-top: 16px;
+        font-size: 18px;
+        margin: 0 0 2px;
+        padding-top: 10px;
       }
       .summary {
         color: var(--muted);
-        margin: 0 0 8px;
+        margin: 0;
       }
       .toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        padding: 8px 0;
-        margin-bottom: 8px;
-        background: var(--bg);
+        padding-block: 8px;
         display: flex;
         gap: 8px 16px;
         flex-wrap: wrap;
@@ -68,202 +74,516 @@
         gap: 8px;
         flex-wrap: wrap;
       }
-      .toolbar button, summary button {
+      .pill {
         font: inherit;
-        padding: 4px 10px;
+        font-size: 13px;
+        padding: 3px 12px;
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: var(--card);
+        background: var(--raised);
         color: var(--fg);
         cursor: pointer;
       }
-      :is(.toolbar, summary) button[aria-pressed="true"] {
+      a.pill { text-decoration: none; }
+      .pill:hover { border-color: var(--muted); }
+      .pill[aria-pressed="true"] {
         border-color: var(--accent);
         color: var(--accent);
       }
+      .text-button {
+        font: inherit;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--accent);
+        cursor: pointer;
+      }
+      .text-button:hover { text-decoration: underline; }
       .segmented {
         display: flex;
         margin: 0;
         padding: 0;
         border: 0;
       }
-      .segmented button:first-child { border-radius: 999px 0 0 999px; }
-      .segmented button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
-      .segmented button[aria-pressed="true"] { position: relative; }
+      .segmented .pill:first-child { border-radius: 999px 0 0 999px; }
+      .segmented .pill:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
+      .segmented .pill[aria-pressed="true"] { position: relative; }
+
       details.story {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        margin-bottom: 16px;
+        --kind: var(--changed);
+        border-block: 1px solid var(--line);
+        border-left: 4px solid var(--kind);
+        margin-bottom: 8px;
         background: var(--card);
         color: var(--fg);
-        scroll-margin-top: calc(var(--toolbar-height, 0px) + 8px);
+        scroll-margin-top: 8px;
       }
+      details.story.kind-added { --kind: var(--added); }
+      details.story:is(.kind-removed, .kind-errored) { --kind: var(--removed); }
       details.story > summary {
         position: sticky;
-        top: var(--toolbar-height, 0px);
-        z-index: 1;
-        padding: 8px 12px;
-        border-radius: 8px;
+        top: 0;
+        z-index: 2;
+        padding: 6px 8px;
         background: var(--card);
         cursor: pointer;
         list-style: none;
         display: flex;
-        gap: 4px 8px;
-        align-items: baseline;
+        gap: 8px 12px;
+        align-items: center;
         flex-wrap: wrap;
       }
-      details.story[open] > summary {
-        border-radius: 8px 8px 0 0;
-        border-bottom: 1px solid var(--line);
-      }
+      details.story[open] > summary { border-bottom: 1px solid var(--line); }
       details.story > summary::-webkit-details-marker { display: none; }
-      details.story > summary::before {
-        content: "▸";
-        width: 1em;
+      .chevron {
+        flex: none;
+        width: 7px;
+        height: 7px;
+        margin: 0 4px;
+        border-right: 2px solid var(--muted);
+        border-bottom: 2px solid var(--muted);
+        transform: rotate(-45deg);
+        transition: transform 0.15s;
+      }
+      details.story[open] .chevron { transform: rotate(45deg); }
+      .heading {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .title-line { display: block; }
+      .kind {
+        flex: none;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 6px;
+        /* Wide enough for the longest kind, so the names beside the badges line up. */
+        min-width: 7.5em;
+        box-sizing: border-box;
+        text-align: center;
+        color: var(--kind);
+        background: color-mix(in srgb, var(--kind) 14%, transparent);
+      }
+      .title { font-size: 15px; }
+      .title .group { color: var(--muted); }
+      h2.component {
+        margin: 16px 8px 6px;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--muted);
       }
-      details.story[open] > summary::before { content: "▾"; }
-      .title {
-        font-size: 15px;
-        font-weight: 600;
+      h2.component:first-child { margin-top: 4px; }
+      .title .name { font-weight: 600; }
+      .nowrap { white-space: nowrap; }
+      .icon-button {
+        display: inline-grid;
+        vertical-align: middle;
+        margin-left: 2px;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
       }
-      summary .copy {
-        font-size: 12px;
-        padding: 0 8px;
-      }
-      summary .segmented {
-        margin-left: auto;
-        align-self: center;
-      }
-      .kind {
-        font-size: 12px;
-        padding: 1px 8px;
-        border-radius: 999px;
-        border: 1px solid currentColor;
-      }
-      .kind-changed { color: var(--changed); }
-      .kind-added { color: var(--added); }
-      .kind-removed, .kind-errored { color: var(--removed); }
+      .icon-button:hover { color: var(--fg); background: var(--line); }
+      .icon-button svg { width: 14px; height: 14px; }
       .meta {
         color: var(--muted);
         font-size: 12px;
+        display: flex;
+        gap: 4px 12px;
+        flex-wrap: wrap;
       }
       .meta a { color: var(--accent); }
-      .story-body { padding: 0 12px 12px; }
-      .full-size { margin-left: 6px; color: var(--accent); }
+      .heading .meta { overflow-wrap: anywhere; }
+      /* The header's first row holds the change type beside the story's name and path; the second, everything else. */
+      .header-row {
+        flex-basis: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px 12px;
+        min-width: 0;
+      }
+      /* A wide screen has room for the controls at the end of the first row. */
+      @media (min-width: 601px) {
+        .header-row.identity { flex: 1 1 0; }
+        .header-row.controls { flex-basis: auto; margin-left: auto; }
+      }
+      .controls {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .comment-toggle::before { content: "✎ "; }
+      .story.has-comment .comment-toggle {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .story.has-comment .comment-toggle::before { content: "● "; }
+
+      .story-body { padding: 0 4px 4px; }
+      /* Sits in the sticky header, across its full width, so it stays in view beside the screenshots it is about. */
+      .comment-box {
+        position: relative;
+        flex-basis: 100%;
+        cursor: auto;
+      }
+      .close-button {
+        font: inherit;
+        font-size: 18px;
+        line-height: 1;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .close-button:hover { color: var(--fg); background: var(--line); }
+      .comment-box .hide-comment {
+        position: absolute;
+        top: 7px;
+        right: 10px;
+        font-size: 12px;
+      }
+      .comment-box textarea {
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        min-height: 3.2em;
+        resize: vertical;
+        padding: 8px 48px 8px 10px;
+        font: inherit;
+        color: var(--fg);
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .comment-box textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
       .variants {
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
-        gap: 12px 16px;
+        gap: 8px;
       }
       .variant {
-        margin-top: 12px;
+        margin-top: 6px;
         min-width: 0;
         max-width: 100%;
       }
       .variant h3 {
         font-size: 13px;
-        margin: 0 0 6px;
+        margin: 0 0 4px;
         color: var(--muted);
         font-weight: normal;
         display: flex;
         gap: 0 12px;
         flex-wrap: wrap;
       }
+      .variant h3 .viewport { color: var(--fg); font-weight: 600; text-transform: capitalize; }
       .variant label { cursor: pointer; }
       .resized { color: var(--changed); }
       .images {
         display: flex;
         align-items: flex-start;
-        gap: 16px;
+        gap: 8px;
       }
       figure {
         flex: 0 1 auto;
         margin: 0;
         min-width: 0;
       }
-      figcaption {
+      figure[data-showing="before"], #viewer[data-showing="before"] { --side: var(--before); }
+      figure[data-showing="after"], #viewer[data-showing="after"] { --side: var(--after); }
+
+      /*
+       * The label spans its screenshot, sticks under the story's header while the screenshot scrolls by, and opens the full-screen viewer.
+       * Before and after differ in colour, in where the label's text sits, and in the frame's style, so a flip shows without reading the label.
+       * Its zero width keeps it from widening the figure past the screenshot.
+       */
+      .label {
+        position: sticky;
+        top: var(--summary-height, 0px);
+        z-index: 1;
+        box-sizing: border-box;
+        width: 0;
+        min-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 2px 6px 4px;
+        border: 0;
+        font: inherit;
         font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 4px;
+        color: #fff;
+        background: var(--side);
+        cursor: zoom-in;
+        overflow: hidden;
+        white-space: nowrap;
       }
+      figure[data-showing="after"] .label { flex-direction: row-reverse; }
+      /* The viewport's icon sits on the label's outer edge, beside Before or After. */
+      .side-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      figure[data-showing="after"] .side-group { flex-direction: row-reverse; }
+      .viewport-icon {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
+      .side {
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .expand {
+        opacity: 0.85;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .label:hover .expand { opacity: 1; text-decoration: underline; }
+      /* The label closes the frame's top edge, so the two read as one box. */
       .frame {
         position: relative;
-        display: inline-block;
         max-width: 100%;
         overflow: hidden;
-        vertical-align: top;
-        border: 1px solid var(--line);
+        border: 4px solid var(--side);
+        border-top: 0;
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
-      .frame .overlay {
+      figure[data-showing="before"] .frame { border-style: dashed; }
+      .overlay {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        background: none;
-        opacity: 0.8;
+        opacity: 0.9;
         pointer-events: none;
         visibility: hidden;
       }
-      :is(.variant:has(.highlight:checked), .flash) .overlay { visibility: visible; }
-      figure img {
+      .flash .overlay { visibility: visible; }
+      :is(figure, #viewer) img {
         display: block;
         max-width: 100%;
         width: auto;
         height: auto;
         background: #fff;
-        cursor: pointer;
       }
+      /*
+       * Darkens everything outside the rectangle around the changes, or on a dark screenshot, veils it, and borders it in the side's colour.
+       * The border is an outline, drawn outside the rectangle, so it never covers the changes.
+       * The shadow reaches past the frame, which clips it to the screenshot.
+       */
+      .focus {
+        position: absolute;
+        box-sizing: border-box;
+        pointer-events: none;
+        outline: 3px solid var(--side);
+        box-shadow: 0 0 0 100vmax rgb(24 24 24 / 0.35);
+        visibility: hidden;
+      }
+      /* A dark screenshot has little left to darken, so a light veil sets the rectangle apart instead. */
+      .focus.on-dark { box-shadow: 0 0 0 100vmax rgb(170 170 170 / 0.18); }
+      :is(.variant:has(.highlight:checked), #viewer.highlighted) .focus { visibility: visible; }
+      :is(figure, #viewer)[data-showing="before"] .focus { outline-style: dashed; }
+      /* The diff shows only its red pixels, without the white backing the screenshots have. */
+      :is(figure, #viewer) img.overlay { background: none; }
+      img[data-flip] { cursor: pointer; }
       pre.error {
         white-space: pre-wrap;
         font-size: 12px;
         color: var(--removed);
-        margin: 12px 0 0;
+        margin: 6px 0 0;
       }
       .empty { color: var(--muted); }
       .story[data-theme="light"] [data-variants="dark"],
       .story[data-theme="dark"] [data-variants="light"] {
         display: none;
       }
+
+      #viewer {
+        box-sizing: border-box;
+        width: 100vw;
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: var(--bg);
+        color: var(--fg);
+        flex-direction: column;
+      }
+      #viewer[open] { display: flex; }
+      .viewer-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px 16px;
+        flex-wrap: wrap;
+        padding: 8px 16px;
+        color: #fff;
+        background: var(--side);
+      }
+      .viewer-bar .side { font-size: 16px; }
+      /* The viewer's buttons keep to the right, also when they wrap below the title. */
+      .viewer-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-left: auto;
+      }
+      .icon-pill {
+        display: inline-grid;
+        place-items: center;
+        padding: 4px 9px;
+      }
+      .icon-pill svg { width: 16px; height: 16px; }
+      .viewer-bar .close-button { color: #fff; font-size: 24px; margin-left: -6px; }
+      .viewer-bar .close-button:hover { background: rgb(255 255 255 / 0.2); }
+      .viewer-bar .pill[aria-pressed="true"] { color: #fff; border-color: #fff; background: rgb(255 255 255 / 0.25); }
+      #viewer.has-comment .viewer-comment-toggle::before { content: "● "; }
+      .viewer-comment { flex: none; padding: 8px 16px 0; }
+      .viewer-comment .hide-comment { right: 26px; top: 15px; }
+      .viewer-bar .viewport-icon { width: 18px; height: 18px; display: block; }
+      .viewer-title { flex: 1 1 200px; min-width: 0; }
+      .viewer-bar a, .viewer-bar button { color: #fff; }
+      .viewer-bar .pill { background: transparent; border-color: rgb(255 255 255 / 0.6); }
+      .viewer-body {
+        flex: 1;
+        outline: none;
+        overflow: auto;
+        padding: 8px 0;
+      }
+      .viewer-frame {
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto;
+        background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
+      }
+      /* The viewer's background takes the tone of the dimmed area around the changes, so that area blends into it. */
+      #viewer[data-shot-theme="light"] :is(.viewer-body, .viewer-comment) { background: #aeaeae; }
+      #viewer[data-shot-theme="dark"] :is(.viewer-body, .viewer-comment) { background: #2a2c31; }
+      #viewer[data-shot-theme="dark"] .viewer-comment textarea { color: #eee; background: #1d1f23; border-color: #44474d; }
+      /* Holds the whole screenshot; zooming moves and enlarges it so that the frame shows only the changed area. */
+      .viewer-canvas { position: absolute; }
+
+      #comment-dock {
+        position: fixed;
+        z-index: 3;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        box-sizing: border-box;
+        max-width: calc(100vw - 32px);
+        display: flex;
+        align-items: center;
+        gap: 8px 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 12px 8px 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--raised);
+        box-shadow: 0 4px 24px rgb(0 0 0 / 0.18);
+      }
+      #comment-dock[hidden] { display: none; }
+      #comment-count { font-weight: 600; }
     </style>
   </head>
   <body>
     <h1>Storybook changes</h1>
     <p class="summary" id="summary"></p>
-    <header class="toolbar" id="toolbar">
+    <header class="toolbar">
       <div id="filters"></div>
       <div>
-        <button type="button" id="collapse-all">Collapse all</button>
-        <button type="button" id="expand-all">Expand all</button>
+        <fieldset class="segmented" aria-label="Sort">
+          <button type="button" class="pill" data-sort="storybook" title="By component, as in Storybook's sidebar">Storybook order</button>
+          <button type="button" class="pill" data-sort="pixels" title="The stories with the most changed pixels first">Most changed</button>
+        </fieldset>
+        <button type="button" class="pill" id="collapse-all">Collapse all</button>
+        <button type="button" class="pill" id="expand-all">Expand all</button>
       </div>
     </header>
     <main id="changes"></main>
+    <aside id="comment-dock" hidden>
+      <span><span id="comment-count"></span> <span class="meta">saved in this browser</span></span>
+      <button type="button" class="pill" id="copy-comments">Copy as Markdown</button>
+      <button type="button" class="text-button" id="clear-comments">Clear all</button>
+      <button type="button" class="close-button" id="hide-dock" title="Hide until you scroll to the top or bottom" aria-label="Hide">×</button>
+    </aside>
+    <dialog id="viewer" aria-label="Screenshot">
+      <div class="viewer-bar">
+        <button type="button" class="close-button viewer-close" title="Close full screen" aria-label="Close full screen">×</button>
+        <span class="side-group"><span class="viewer-icon"></span><span class="side"></span></span>
+        <span class="viewer-title"></span>
+        <span class="viewer-actions">
+        <button type="button" class="pill icon-pill viewer-zoom" aria-pressed="true"></button>
+        <button type="button" class="pill comment-toggle viewer-comment-toggle">Comment</button>
+        <fieldset class="segmented viewer-themes" aria-label="Theme">
+          <button type="button" class="pill icon-pill" data-viewer-theme="light" title="Light" aria-label="Light"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06"/></svg></button>
+          <button type="button" class="pill icon-pill" data-viewer-theme="dark" title="Dark" aria-label="Dark"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 9.5A5.5 5.5 0 1 1 6.5 2.5a4.5 4.5 0 0 0 7 7Z"/></svg></button>
+        </fieldset>
+        </span>
+      </div>
+      <div class="comment-box viewer-comment" hidden>
+        <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on this story"></textarea>
+        <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
+      </div>
+      <div class="viewer-body" tabindex="-1">
+        <div class="viewer-frame"><div class="viewer-canvas"><img alt="" /><img class="overlay" alt="" /></div></div>
+      </div>
+    </dialog>
     <script id="report" type="application/json">"__REPORT__"</script>
     <script>
       const report = JSON.parse(document.getElementById("report").textContent);
       const kinds = ["changed", "added", "removed", "errored"];
       const themeNames = ["light", "dark"];
-      const state = { kind: "all", collapsed: new Set(), themes: new Map() };
+      // Highlighting starts on, so only the variants it was turned off for are remembered.
+      const state = { kind: "all", sort: "storybook", collapsed: new Set(), themes: new Map(), unhighlighted: new Set(), closedComments: new Set() };
       const themeOf = (change) => state.themes.get(change.id) ?? systemTheme();
-      const toolbar = document.getElementById("toolbar");
 
       const count = (kind) => report.changes.filter((change) => change.kind === kind).length;
       document.getElementById("summary").textContent =
         kinds.map((kind) => `${count(kind)} ${kind}`).join(", ") +
         ` of ${report.storyCount} stories` +
         (report.baseLabel ? ` compared with ${report.baseLabel}` : "") +
-        ". Each story has a switch between its light and dark screenshots. Click a screenshot to flip between before and after.";
+        ". Click a screenshot to flip between before and after, or its label to see it full screen. " +
+        "Comments you write are kept in this browser until you copy them into the pull request.";
 
       const filters = document.getElementById("filters");
       for (const kind of ["all", ...kinds]) {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = "pill";
         button.textContent = kind === "all" ? `All (${report.changes.length})` : `${kind} (${count(kind)})`;
         button.addEventListener("click", () => { state.kind = kind; render(); });
         button.dataset.kind = kind;
         filters.append(button);
+      }
+
+      const sortButtons = document.querySelectorAll("[data-sort]");
+      for (const button of sortButtons) {
+        button.addEventListener("click", () => { state.sort = button.dataset.sort; render(); });
       }
 
       // Both themes are already in the story, so switching only changes which one is visible.
@@ -274,23 +594,203 @@
         layoutStory(story);
       }
 
-      async function copyTitle(button) {
+      const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1"/></svg>`;
+      const copiedIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>`;
+
+      /** Copies the text and says so on the button for a moment: in words, or for an icon button, with a tick. */
+      async function copyText(button, text) {
+        // Kept on the button, so a second click while it shows the result still restores the original content.
+        button.dataset.content ??= button.innerHTML;
+        const content = button.dataset.content;
+        const icon = button.classList.contains("icon-button");
         try {
-          await navigator.clipboard.writeText(button.dataset.copy);
-          button.textContent = "Copied";
+          await navigator.clipboard.writeText(text);
+          button.innerHTML = icon ? copiedIcon : "Copied";
         } catch {
-          button.textContent = "Copy failed";
+          button.textContent = icon ? "!" : "Copy failed";
         }
-        setTimeout(() => { button.textContent = "Copy"; }, 1500);
+        setTimeout(() => { button.innerHTML = content; }, 1500);
       }
+
+      // Comments are kept in the browser's storage under the report's address, so they survive a closed tab and a redeployed report.
+      // Storage can be unavailable, as in some private windows; the comments then last as long as the page.
+      const commentsKey = `storybook-diff-comments:${location.pathname}`;
+      const comments = readComments();
+
+      function readComments() {
+        try {
+          return JSON.parse(localStorage.getItem(commentsKey) ?? "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function writeComments() {
+        try {
+          localStorage.setItem(commentsKey, JSON.stringify(comments));
+        } catch {}
+        updateDock();
+      }
+
+      const commentedIds = () => Object.keys(comments).filter((id) => comments[id].text.trim());
+      const storyTitle = (change) => `${change.title} / ${change.name}`;
+
+      function storyUrl(id) {
+        const url = new URL(location.href);
+        url.hash = id;
+        return url.href;
+      }
+
+      /** The comments in the report's order, then any left from stories this report no longer shows. */
+      function commentsMarkdown() {
+        const order = report.changes.map((change) => change.id);
+        const ids = commentedIds().sort((a, b) => (order.indexOf(a) + 1 || Infinity) - (order.indexOf(b) + 1 || Infinity));
+        return ids.map((id) => `**[${comments[id].title}](${storyUrl(id)})**\n\n${comments[id].text.trim()}`).join("\n\n---\n\n").concat("\n");
+      }
+
+      const dock = document.getElementById("comment-dock");
+      if (report.pullRequestUrl) {
+        const pullRequestLink = Object.assign(document.createElement("a"), {
+          className: "pill",
+          href: report.pullRequestUrl,
+          target: "_blank",
+          textContent: "Open pull request",
+        });
+        document.getElementById("copy-comments").after(pullRequestLink);
+      }
+
+      // The bar hides when dismissed, or on its own once the page has scrolled a little way from where it appeared. It comes
+      // back when a comment box is closed, or when the page is scrolled to its top or bottom after being scrolled away from
+      // both, so hiding it at the top does not bring it straight back.
+      const dockState = { dismissed: false, leftEdge: false, shownAtY: 0 };
+      const autoHideDistance = 400;
+
+      function updateDock() {
+        const total = commentedIds().length;
+        const wasHidden = dock.hidden;
+        dock.hidden = total === 0 || dockState.dismissed;
+        if (wasHidden && !dock.hidden) dockState.shownAtY = scrollY;
+        document.getElementById("comment-count").textContent = `${total} ${total === 1 ? "comment" : "comments"}`;
+      }
+
+      function showDock() {
+        dockState.dismissed = false;
+        updateDock();
+      }
+
+      const edgeDistance = 80;
+      const atEdge = () => scrollY < edgeDistance || innerHeight + scrollY > document.documentElement.scrollHeight - edgeDistance;
+
+      // Hidden away from the top and bottom, the bar has already left them, so reaching either brings it back.
+      function hideDock() {
+        Object.assign(dockState, { dismissed: true, leftEdge: !atEdge() });
+        updateDock();
+      }
+
+      document.getElementById("hide-dock").addEventListener("click", hideDock);
+
+      addEventListener("scroll", () => {
+        if (!dockState.dismissed) {
+          if (!dock.hidden && Math.abs(scrollY - dockState.shownAtY) > autoHideDistance) hideDock();
+          return;
+        }
+        if (!atEdge()) dockState.leftEdge = true;
+        else if (dockState.leftEdge) showDock();
+      }, { passive: true });
+
+      document.getElementById("copy-comments").addEventListener("click", (event) => copyText(event.currentTarget, commentsMarkdown()));
+      document.getElementById("clear-comments").addEventListener("click", () => {
+        if (!confirm("Delete every comment on this report from this browser?")) return;
+        for (const id of Object.keys(comments)) delete comments[id];
+        writeComments();
+        render();
+      });
+
+      document.addEventListener("change", (event) => {
+        const checkbox = event.target.closest?.(".highlight");
+        if (!checkbox) return;
+        if (checkbox.checked) state.unhighlighted.delete(checkbox.dataset.key);
+        else state.unhighlighted.add(checkbox.dataset.key);
+      });
+
+      document.addEventListener("input", (event) => {
+        const textarea = event.target.closest(".comment-box textarea");
+        if (!textarea) return;
+        // The story's own box and the full-screen viewer's edit the same comment, so each keeps the other up to date.
+        const id = textarea.closest("[data-id]").dataset.id;
+        const change = report.changes.find((candidate) => candidate.id === id);
+        if (textarea.value.trim()) comments[id] = { title: storyTitle(change), text: textarea.value };
+        else delete comments[id];
+        for (const element of document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`)) {
+          element.classList.toggle("has-comment", Boolean(comments[id]));
+          const other = element.querySelector(".comment-box textarea");
+          if (other && other !== textarea) other.value = textarea.value;
+        }
+        writeComments();
+      });
+
+      // An emptied comment box closes once it loses focus.
+      document.addEventListener("focusout", (event) => {
+        const textarea = event.target.closest?.(".comment-box textarea");
+        if (textarea && !textarea.value.trim()) textarea.parentElement.hidden = true;
+      });
+
+      // Pressing Comment takes the focus from an empty box, which closes it before the click arrives, so whether the box
+      // was open is noted as the press starts, and the click closes it rather than opening it again.
+      document.addEventListener("pointerdown", (event) => {
+        const toggle = event.target.closest(".comment-toggle");
+        const box = toggle?.closest("[data-id]")?.querySelector(".comment-box");
+        if (box) toggle.dataset.boxWasOpen = String(!box.hidden);
+      }, true);
+
+      /** Hides a story's comment box, keeping what is in it; the Comment button opens it again. */
+      function closeComment(story) {
+        story.querySelector(".comment-box").hidden = true;
+        state.closedComments.add(story.dataset.id);
+        showDock();
+      }
+
+      function toggleComment(story, button) {
+        const box = story.querySelector(".comment-box");
+        const textarea = box.querySelector("textarea");
+        const wasOpen = button.dataset.boxWasOpen ? button.dataset.boxWasOpen === "true" : !box.hidden;
+        delete button.dataset.boxWasOpen;
+        if (wasOpen) {
+          if (textarea.value.trim()) closeComment(story);
+          else box.hidden = true;
+          return;
+        }
+        story.open = true;
+        box.hidden = false;
+        state.closedComments.delete(story.dataset.id);
+        textarea.focus();
+      }
+
+      // Another tab of the same report keeps its comments in step with this one.
+      addEventListener("storage", (event) => {
+        if (event.key !== commentsKey) return;
+        for (const id of Object.keys(comments)) delete comments[id];
+        Object.assign(comments, readComments());
+        render();
+      });
+
+      // Clicking into the comment box in a story's header must not also open or close the story, and neither must typing
+      // in it: the browser turns Space and Enter there into a click on the header, one with no mouse behind it.
+      document.addEventListener("click", (event) => {
+        const typing = event.detail === 0 && document.activeElement?.closest("summary .comment-box");
+        if (event.target.closest("summary .comment-box") || typing) event.preventDefault();
+      });
 
       // Buttons in a story's header act on their own instead of also opening or closing the story.
       document.addEventListener("click", (event) => {
         const button = event.target.closest("summary button");
         if (!button) return;
         event.preventDefault();
-        if (button.dataset.themeChoice) switchTheme(button.closest("details.story"), button.dataset.themeChoice);
-        else copyTitle(button);
+        const story = button.closest("details.story");
+        if (button.dataset.themeChoice) switchTheme(story, button.dataset.themeChoice);
+        else if (button.classList.contains("comment-toggle")) toggleComment(story, button);
+        else if (button.classList.contains("hide-comment")) closeComment(story);
+        else copyText(button, button.dataset.copy);
       });
 
       // Stories left on the system's theme follow it when it changes.
@@ -306,21 +806,27 @@
         for (const story of document.querySelectorAll("details.story")) story.open = true;
       });
 
-      new ResizeObserver(([entry]) => {
-        document.documentElement.style.setProperty("--toolbar-height", `${entry.borderBoxSize[0].blockSize}px`);
-      }).observe(toolbar);
+      // Each story's header wraps to its own height, under which that story's screenshot labels stick.
+      const summaryHeights = new ResizeObserver((entries) => {
+        for (const entry of entries) entry.target.parentElement.style.setProperty("--summary-height", `${entry.borderBoxSize[0].blockSize}px`);
+      });
 
       function storyLink(change) {
         if (!report.storybookUrl) return change.importPath;
         const url = new URL(report.storybookUrl, location.href);
         url.search = `?path=/story/${change.id}`;
-        return `<a href="${url.href}" target="_blank">${change.importPath}</a>`;
+        return `<a href="${url.href}" target="_blank" title="Open in Storybook">${change.importPath}</a>`;
       }
 
       const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
       const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
       const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
-      const describeSize = (size) => size && `${size.width}×${size.height}`;
+      /** Shows both dimensions, striking out the old value of each one that changed, so a change in width alone or height alone stands out. */
+      function describeResize(before, after) {
+        if (!before || !after || (before.width === after.width && before.height === after.height)) return "";
+        const dimension = (from, to) => (from === to ? `${to}` : `<s>${from}</s> → <b>${to}</b>`);
+        return `<span class="resized">Size ${dimension(before.width, after.width)} × ${dimension(before.height, after.height)}</span>`;
+      }
 
       /** Lists a theme's screenshots that the comparison copied for a story. */
       const shownVariants = (change, themeName) =>
@@ -328,16 +834,40 @@
           .filter((variant) => variant.theme === themeName)
           .filter((variant) => ["before", "after"].some((side) => sizeOf(change, side, fileNameOf(variant))));
 
+      /** Marks the rectangle around the variant's changes, in percentages of its largest screenshot so it fits any scale. */
+      function focus(change, fileName) {
+        const area = change.changedAreas?.[fileName];
+        if (!area) return "";
+        const [width, height] = ["width", "height"].map((dimension) =>
+          Math.max(...["before", "after"].map((side) => sizeOf(change, side, fileName)?.[dimension] ?? 0)));
+        // A little room around the changes, so the darkening does not start right at their edge.
+        const padding = 6;
+        const left = Math.max(0, area.x - padding);
+        const top = Math.max(0, area.y - padding);
+        const right = Math.min(width, area.x + area.width + padding);
+        const bottom = Math.min(height, area.y + area.height + padding);
+        const percent = (value, total) => `${(value / total) * 100}%`;
+        return `<div class="focus ${fileName.startsWith("dark-") ? "on-dark" : ""}" style="left: ${percent(left, width)}; top: ${percent(top, height)}; width: ${percent(right - left, width)}; height: ${percent(bottom - top, height)}"></div>`;
+      }
+
+      /** Icons for the viewports captureVariants.ts defines; a viewport without one is named by the text above it alone. */
+      const viewportIcons = {
+        phone: `<svg class="viewport-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4.25" y="1.25" width="7.5" height="13.5" rx="1.5"/><path d="M7 12.25h2"/></svg>`,
+        desktop: `<svg class="viewport-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.25" y="2.25" width="13.5" height="9" rx="1"/><path d="M5.5 14.25h5M8 11.25v3"/></svg>`,
+      };
+      const viewportIcon = (fileName) => viewportIcons[fileName.replace(/^\w+-|\.png$/g, "")] ?? "";
+
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
         const size = sizeOf(change, side, fileName);
         const other = side === "before" ? "after" : "before";
+        const otherSize = sizeOf(change, other, fileName);
         const flip = change.kind === "changed"
-          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${sizeOf(change, other, fileName)?.width}"` : "";
+          ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${otherSize?.width}" data-flip-height="${otherSize?.height}"` : "";
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
-        return `<figure data-side="${side}"><figcaption><span>${side === "before" ? "Before" : "After"}</span><a class="full-size" href="${src}" target="_blank">full size</a></figcaption>
-          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}</div></figure>`;
+        return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side-group">${viewportIcon(fileName)}<span class="side">${side}</span></span><span class="expand">⤢ Full screen</span></button>
+          <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}${focus(change, fileName)}</div></figure>`;
       }
 
       function variantSection(change, variant) {
@@ -345,11 +875,10 @@
         const pixels = change.changedVariants[fileName];
         const sides = ["before", "after"].filter((side) => sizeOf(change, side, fileName));
         const status = pixels
-          ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels} changed px</label>`
+          ? `<label><input type="checkbox" class="highlight" data-key="${change.id}/${fileName}" ${state.unhighlighted.has(`${change.id}/${fileName}`) ? "" : "checked"} /> Highlight changes (${pixels.toLocaleString("en-US")} px)</label>`
           : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
-        const [before, after] = ["before", "after"].map((side) => describeSize(sizeOf(change, side, fileName)));
-        const resized = before && after && before !== after ? `<span class="resized">Size changed: ${before} → ${after}</span>` : "";
-        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span>${variant.viewport.name}</span>${status}${resized}</h3>
+        const resized = describeResize(sizeOf(change, "before", fileName), sizeOf(change, "after", fileName));
+        return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span class="viewport">${variant.viewport.name}</span>${status}${resized}</h3>
           <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
 
@@ -359,15 +888,30 @@
 
       const themeSwitch = (change) =>
         `<span class="segmented" role="group" aria-label="Theme">${themeNames.map((name) =>
-          `<button type="button" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
+          `<button type="button" class="pill" data-theme-choice="${name}" aria-pressed="${name === themeOf(change)}">${name === "light" ? "Light" : "Dark"}</button>`).join("")}</span>`;
 
-      function card(change) {
+      /** A story's card; when it sits under its component's heading, its header leaves the component's name out. */
+      function card(change, grouped) {
         const errors = [change.errorBefore && `Before: ${change.errorBefore}`, change.error && `After: ${change.error}`].filter(Boolean);
-        const title = `${change.title} / ${change.name}`;
-        return `<details class="story" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
-          <summary><span class="kind kind-${change.kind}">${change.kind}</span><span class="title">${title}</span>
-            <button type="button" class="copy" data-copy="${title.replaceAll('"', "&quot;")}">Copy</button>
-            <span class="meta">${storyLink(change)}</span>${themeSwitch(change)}</summary>
+        const commented = Boolean(comments[change.id]);
+        const commentShown = commented && !state.closedComments.has(change.id);
+        return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
+          <summary>
+            <span class="header-row identity">
+            <span class="chevron" aria-hidden="true"></span>
+            <span class="kind">${change.kind}</span>
+            <span class="heading">
+              <span class="title-line"><span class="title">${grouped ? "" : `<span class="group">${change.title} /</span> `}<span class="nowrap"><span class="name">${change.name}</span>
+                <button type="button" class="icon-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}" title="Copy name" aria-label="Copy name">${copyIcon}</button></span></span></span>
+              <span class="meta">${storyLink(change)}</span>
+            </span>
+            </span>
+            <span class="header-row controls"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
+            <div class="comment-box" ${commentShown ? "" : "hidden"}>
+              <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
+              <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
+            </div>
+          </summary>
           <div class="story-body">
             ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
             ${variantsBody(change)}
@@ -375,15 +919,27 @@
         </details>`;
       }
 
+      const sortByPixels = (changes) => [...changes].sort((a, b) => pixelsOf(b) - pixelsOf(a));
+
+      // Storybook's sidebar lists components by title, and each component's stories in the order it declares them,
+      // which is the order the capture lists them in. The sort is stable, so that order holds within each title.
+      function componentGroups(changes) {
+        const sorted = [...changes].sort((a, b) => a.title.localeCompare(b.title));
+        return sorted.map((change, index) => (sorted[index - 1]?.title === change.title ? "" : `<h2 class="component">${change.title}</h2>`) + card(change, true)).join("");
+      }
+
       function render() {
         for (const button of filters.children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.kind));
-        const shown = report.changes
-          .filter((change) => state.kind === "all" || change.kind === state.kind)
-          .sort((a, b) => pixelsOf(b) - pixelsOf(a));
+        for (const button of sortButtons) button.setAttribute("aria-pressed", String(button.dataset.sort === state.sort));
+        const shown = report.changes.filter((change) => state.kind === "all" || change.kind === state.kind);
         document.getElementById("changes").innerHTML = shown.length
-          ? shown.map(card).join("")
+          ? state.sort === "pixels" ? sortByPixels(shown).map((change) => card(change, false)).join("") : componentGroups(shown)
           : `<p class="empty">No stories ${state.kind === "all" ? "changed" : state.kind}.</p>`;
+        // Set as a value rather than written into the markup, so a comment's text is never read as HTML.
+        for (const story of document.querySelectorAll("details.story")) story.querySelector(".comment-box textarea").value = comments[story.dataset.id]?.text ?? "";
         document.querySelectorAll("details.story[open]").forEach(layoutStory);
+        summaryHeights.disconnect();
+        for (const summary of document.querySelectorAll("details.story > summary")) summaryHeights.observe(summary);
       }
 
       // Keeps a collapsed story's header in view, since collapsing a long story while its header is stuck to the top would scroll it out of sight.
@@ -395,22 +951,196 @@
           layoutStory(story);
         } else {
           state.collapsed.add(story.dataset.id);
-          if (story.getBoundingClientRect().top < toolbar.offsetHeight) story.scrollIntoView({ block: "start" });
+          if (story.getBoundingClientRect().top < 0) story.scrollIntoView({ block: "start" });
         }
       }, true);
 
-      document.addEventListener("click", (event) => {
-        const img = event.target.closest("img[data-flip]");
-        if (!img) return;
+      /** Swaps a screenshot for the other side's, and flashes the changed pixels over it. */
+      function flip(img) {
         const flipped = img.dataset.flip;
         img.dataset.flip = img.getAttribute("src");
         img.src = flipped;
         [img.dataset.width, img.dataset.flipWidth] = [img.dataset.flipWidth, img.dataset.width];
+        [img.dataset.height, img.dataset.flipHeight] = [img.dataset.flipHeight, img.dataset.height];
         img.style.width = `${img.dataset.width * img.closest(".variant").dataset.scale}px`;
-        img.parentElement.classList.add("flash");
-        setTimeout(() => img.parentElement.classList.remove("flash"), 200);
-        const caption = img.closest("figure").querySelector("figcaption span");
-        caption.textContent = flipped.includes("/before-") ? "Before" : "After";
+        flash(img.parentElement);
+        const side = flipped.includes("/before-") ? "before" : "after";
+        const figure = img.closest("figure");
+        figure.dataset.showing = side;
+        figure.querySelector(".side").textContent = side;
+      }
+
+      function flash(frame) {
+        frame.classList.add("flash");
+        setTimeout(() => frame.classList.remove("flash"), 200);
+      }
+
+      document.addEventListener("click", (event) => {
+        const img = event.target.closest("figure img[data-flip]");
+        if (img) flip(img);
+        const label = event.target.closest("figure .label");
+        if (label) showFullScreen(label.closest("figure"));
+      });
+
+      // The viewer shows one screenshot at its own size, capped at the screen's width, and flips the same way the story does,
+      // so flipping in either place leaves both on the same side. It asks for the browser's full screen where the browser allows it,
+      // and otherwise, as on a phone, fills the window.
+      const viewer = document.getElementById("viewer");
+      const viewerFrame = viewer.querySelector(".viewer-frame");
+      const viewerCanvas = viewerFrame.querySelector(".viewer-canvas");
+      const [viewerImage, viewerOverlay] = viewerFrame.querySelectorAll("img");
+      const zoomButton = viewer.querySelector(".viewer-zoom");
+      // Zooming starts on, and stays as it was left for the next screenshot opened.
+      let zoomToChanges = true;
+      /** How much of the screenshot around the changed area a zoomed view keeps, in its pixels. */
+      const zoomContext = 40;
+      /** The most a zoomed view enlarges a screenshot, so a tiny change does not turn into a blur. */
+      const maxZoom = 3;
+      let viewedFigure = null;
+      // Made here rather than in the markup, where a link must have an address before it has one to show.
+      const viewerOriginal = Object.assign(document.createElement("a"), {
+        className: "pill icon-pill",
+        target: "_blank",
+        title: "Open the image in a new tab",
+        innerHTML: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3"/></svg>`,
+      });
+      viewerOriginal.setAttribute("aria-label", "Open image");
+      viewer.querySelector(".viewer-zoom").before(viewerOriginal);
+      const flipHint = matchMedia("(pointer: coarse)").matches ? " · tap to flip" : " · click or press space to flip";
+
+      function showFullScreen(figure) {
+        viewedFigure = figure;
+        const id = figure.closest("details.story").dataset.id;
+        viewer.dataset.id = id;
+        viewer.classList.toggle("has-comment", Boolean(comments[id]));
+        viewerComment.querySelector("textarea").value = comments[id]?.text ?? "";
+        viewerComment.hidden = !comments[id];
+        // Opened before it is filled, since a zoomed view is fitted to the room the open viewer has.
+        viewer.showModal();
+        syncViewer();
+        // Focus starts on the screenshot rather than the bar's link, so the space bar flips instead of following it.
+        viewer.querySelector(".viewer-body").focus();
+        viewer.requestFullscreen?.().catch(() => {});
+      }
+
+      function syncViewer() {
+        const img = viewedFigure.querySelector(".frame img:not(.overlay)");
+        const overlay = viewedFigure.querySelector(".overlay");
+        const story = viewedFigure.closest("details.story");
+        const variant = viewedFigure.closest(".variant");
+        const side = viewedFigure.dataset.showing;
+        const width = Math.max(img.dataset.width, img.dataset.flipWidth || 0);
+        const height = Math.max(img.dataset.height, img.dataset.flipHeight || 0);
+        viewer.dataset.showing = side;
+        viewer.dataset.shotTheme = story.dataset.theme;
+        for (const button of viewer.querySelectorAll("[data-viewer-theme]")) button.setAttribute("aria-pressed", String(button.dataset.viewerTheme === story.dataset.theme));
+        viewer.classList.toggle("highlighted", Boolean(variant.querySelector(".highlight:checked")));
+        viewer.querySelector(".side").textContent = side;
+        viewer.querySelector(".viewer-icon").innerHTML = viewportIcons[variant.dataset.viewport] ?? "";
+        viewer.querySelector(".viewer-title").textContent =
+          `${storyTitle(report.changes.find((change) => change.id === story.dataset.id))}${img.dataset.flip ? flipHint : ""}`;
+        viewerOriginal.href = img.getAttribute("src");
+        const change = report.changes.find((candidate) => candidate.id === story.dataset.id);
+        const area = change.changedAreas?.[`${story.dataset.theme}-${variant.dataset.viewport}.png`];
+        zoomButton.hidden = !area;
+        zoomButton.setAttribute("aria-pressed", String(zoomToChanges));
+        zoomButton.innerHTML = zoomIcon(zoomToChanges);
+        zoomButton.title = zoomToChanges ? "Show the whole screenshot" : "Zoom to the changes";
+        zoomButton.setAttribute("aria-label", "Zoom to changes");
+        // The part of the screenshot the frame shows: all of it, or the changed area with some context around it.
+        const shown = area && zoomToChanges
+          ? clampedArea(area.x - zoomContext, area.y - zoomContext, area.x + area.width + zoomContext, area.y + area.height + zoomContext, width, height)
+          : { x: 0, y: 0, width, height };
+        // A zoomed view fits the screen's height as well as its width, so the whole changed area is in view at once.
+        const zoomed = shown.width !== width || shown.height !== height;
+        const roomHeight = viewer.querySelector(".viewer-body").clientHeight - 16;
+        const widths = [`${shown.width * (zoomed ? maxZoom : 1)}px`, ...(zoomed ? [`${(roomHeight * shown.width) / shown.height}px`] : [])];
+        Object.assign(viewerFrame.style, { width: `min(100%, ${widths.join(", ")})`, aspectRatio: `${shown.width} / ${shown.height}` });
+        const percent = (value, total) => `${(value / total) * 100}%`;
+        Object.assign(viewerCanvas.style, {
+          left: `-${percent(shown.x, shown.width)}`,
+          top: `-${percent(shown.y, shown.height)}`,
+          width: percent(width, shown.width),
+          height: percent(height, shown.height),
+        });
+        viewerImage.src = img.getAttribute("src");
+        viewerImage.style.width = `${(img.dataset.width / width) * 100}%`;
+        viewerImage.style.cursor = img.dataset.flip ? "pointer" : "auto";
+        viewerCanvas.querySelector(".focus")?.remove();
+        const focusArea = viewedFigure.querySelector(".focus");
+        if (focusArea) viewerCanvas.append(focusArea.cloneNode());
+        viewerOverlay.hidden = !overlay;
+        if (overlay) viewerOverlay.src = overlay.getAttribute("src");
+      }
+
+      /** A magnifier, with a plus while zoomed to the changes and a minus while showing the whole screenshot. */
+      const zoomIcon = (zoomed) =>
+        `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.75" cy="6.75" r="4.75"/><path d="M10.25 10.25 14.5 14.5M4.5 6.75h4.5${zoomed ? "M6.75 4.5v4.5" : ""}"/></svg>`;
+
+      function clampedArea(left, top, right, bottom, width, height) {
+        const [x, y] = [Math.max(0, left), Math.max(0, top)];
+        return { x, y, width: Math.min(width, right) - x, height: Math.min(height, bottom) - y };
+      }
+
+      zoomButton.addEventListener("click", () => {
+        zoomToChanges = !zoomToChanges;
+        syncViewer();
+      });
+
+      function flipInViewer() {
+        const img = viewedFigure.querySelector("img[data-flip]");
+        if (!img) return;
+        flip(img);
+        syncViewer();
+        flash(viewerFrame);
+      }
+
+      viewerImage.addEventListener("click", flipInViewer);
+      viewer.addEventListener("keydown", (event) => {
+        if (![" ", "ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("a, button, textarea")) return;
+        event.preventDefault();
+        flipInViewer();
+      });
+      viewer.querySelector(".viewer-close").addEventListener("click", () => viewer.close());
+
+      // The viewer's Comment and theme buttons act on the story it shows, as the story's own do.
+      const viewerComment = viewer.querySelector(".viewer-comment");
+      viewer.querySelector(".viewer-comment-toggle").addEventListener("click", (event) => {
+        const textarea = viewerComment.querySelector("textarea");
+        const button = event.currentTarget;
+        const wasOpen = button.dataset.boxWasOpen ? button.dataset.boxWasOpen === "true" : !viewerComment.hidden;
+        delete button.dataset.boxWasOpen;
+        if (wasOpen) {
+          viewerComment.hidden = true;
+          return;
+        }
+        viewerComment.hidden = false;
+        textarea.focus();
+      });
+      viewerComment.querySelector(".hide-comment").addEventListener("click", () => { viewerComment.hidden = true; });
+
+      // Switching theme shows the same viewport and side in the other theme.
+      for (const button of viewer.querySelectorAll("[data-viewer-theme]")) {
+        button.addEventListener("click", () => {
+          const story = viewedFigure.closest("details.story");
+          const viewport = viewedFigure.closest(".variant").dataset.viewport;
+          const position = [...viewedFigure.parentElement.children].indexOf(viewedFigure);
+          switchTheme(story, button.dataset.viewerTheme);
+          const figures = story.querySelector(`.variants[data-variants="${story.dataset.theme}"] .variant[data-viewport="${viewport}"] .images`)?.children;
+          if (figures?.[position]) viewedFigure = figures[position];
+          syncViewer();
+        });
+      }
+      viewer.addEventListener("close", () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+      });
+      // Escape leaves the browser's full screen before the dialog sees it, so leaving full screen closes the viewer too.
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && viewer.open) viewer.close();
+        else if (viewer.open) syncViewer();
+      });
+      addEventListener("resize", () => {
+        if (viewer.open) syncViewer();
       });
 
       let resizeFrame = 0;
@@ -419,8 +1149,9 @@
         resizeFrame = requestAnimationFrame(() => document.querySelectorAll("details.story[open]").forEach(layoutStory));
       });
 
-      const gap = 16;
-      const border = 2;
+      const gap = 8;
+      /** The frame's border on both sides of a screenshot. */
+      const border = 8;
       const minVariantWidth = 180;
       /** Variants share a row only when none is shown at less than this scale, or than its scale on a row of its own if that is smaller. */
       const minSharedScale = 0.5;
@@ -489,6 +1220,12 @@
       }
 
       render();
+      updateDock();
+      // The stories are drawn after the browser looks for the address's fragment, so a link to one story scrolls to it here.
+      if (location.hash) {
+        const linked = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (linked) { linked.open = true; linked.scrollIntoView({ block: "start" }); }
+      }
     </script>
   </body>
 </html>

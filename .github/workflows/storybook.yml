@@ -199,9 +199,10 @@ jobs:
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
         run: |
           base="$(git merge-base "origin/$BASE_REF" "$HEAD_SHA")"
-          summary="$(node scripts/storybook-diff/compare.ts --before capture-base --after capture-head --out changes --storybook-url ../ --base-label "$BASE_REF (${base:0:7})")"
+          summary="$(node scripts/storybook-diff/compare.ts --before capture-base --after capture-head --out changes --storybook-url ../ --base-label "$BASE_REF (${base:0:7})" --pull-request-url "$PULL_REQUEST_URL")"
           echo "summary=$summary" >> "$GITHUB_OUTPUT"
           echo "Storybook changes: $summary" >> "$GITHUB_STEP_SUMMARY"
 

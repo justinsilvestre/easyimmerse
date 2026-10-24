@@ -9,6 +9,8 @@ export interface ReportLabels {
   storybookUrl?: string;
   /** Describes the earlier capture, such as a branch name or commit. */
   baseLabel?: string;
+  /** The pull request that a story's Comment button opens, for discussing that story. */
+  pullRequestUrl?: string;
 }
 
 const templatePath = join(import.meta.dirname, "report.html");

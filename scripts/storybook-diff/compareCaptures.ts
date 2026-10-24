@@ -7,7 +7,7 @@ import { PNG } from "pngjs";
 import { readManifest } from "./captureManifest.ts";
 import type { CaptureVariant } from "./captureVariants.ts";
 import { classifyStories, type StoryChange } from "./classifyStories.ts";
-import { diffImages, type ImageDiff } from "./diffImages.ts";
+import { type Area, diffImages, type ImageDiff } from "./diffImages.ts";
 import { pngSize } from "./pngSize.ts";
 import { shownFileNames } from "./shownFileNames.ts";
 
@@ -28,6 +28,8 @@ export interface ComparisonReport {
 export interface ReportedChange extends StoryChange {
   /** The size of each image beside the report, by its path under the story's directory, such as `before-light-phone.png`. */
   imageSizes: Record<string, { width: number; height: number }>;
+  /** The rectangle around the changes in each changed variant, by its file name, such as `light-phone.png`. */
+  changedAreas: Record<string, Area>;
 }
 
 /**
@@ -52,7 +54,12 @@ export async function compareCaptures(
       change,
       after.variants,
     );
-    reported.push({ ...change, imageSizes });
+    const changedAreas: ReportedChange["changedAreas"] = {};
+    for (const fileName of Object.keys(change.changedVariants)) {
+      const area = diffs.get(`${change.id}/${fileName}`)?.area;
+      if (area) changedAreas[fileName] = area;
+    }
+    reported.push({ ...change, imageSizes, changedAreas });
   }
   const report = {
     variants: after.variants,
