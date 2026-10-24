@@ -36,7 +36,7 @@ Each story is a collapsible section. Its header stays at the top of the screen w
 
 A changed story shows every viewport that changed in either theme, and says so when a viewport did not change in the theme you are looking at. Phone and desktop screenshots sit side by side when the page is wide enough.
 
-To see what changed, **click a screenshot to flip it** between before and after. A rectangle **highlights** where the changes are, with everything outside it darkened; the checkbox above a screenshot turns this off. The changed pixels themselves flash red as the screenshot flips.
+To see what changed, **click a screenshot to flip it** between before and after. The rectangle around the changes is **highlighted** by darkening everything outside it; the checkbox above a screenshot turns this off. The changed pixels themselves flash red as the screenshot flips.
 
 Before and after can be told apart at a glance:
 

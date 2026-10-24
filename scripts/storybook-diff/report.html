@@ -330,14 +330,13 @@
         background: #fff;
       }
       /*
-       * Darkens everything outside the rectangle around the changes, and outlines it.
+       * Darkens everything outside the rectangle around the changes.
        * The shadow reaches past the frame, which clips it to the screenshot.
        */
       .focus {
         position: absolute;
         box-sizing: border-box;
         pointer-events: none;
-        outline: 2px solid #ff3b30;
         box-shadow: 0 0 0 100vmax rgb(24 24 24 / 0.6);
         visibility: hidden;
       }
@@ -665,7 +664,7 @@
         if (!area) return "";
         const [width, height] = ["width", "height"].map((dimension) =>
           Math.max(...["before", "after"].map((side) => sizeOf(change, side, fileName)?.[dimension] ?? 0)));
-        // A little room around the changes, so the outline does not cover them.
+        // A little room around the changes, so the darkening does not start right at their edge.
         const padding = 6;
         const left = Math.max(0, area.x - padding);
         const top = Math.max(0, area.y - padding);
