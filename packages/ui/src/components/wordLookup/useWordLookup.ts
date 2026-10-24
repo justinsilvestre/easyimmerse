@@ -9,7 +9,6 @@ import { useId } from "react";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useAppStore } from "../../useAppStore.ts";
-import type { LibraryWords } from "../dictionaryPopup/libraryWords.ts";
 import {
   lookupPopupProps,
   matchedLengthOf,
@@ -18,6 +17,7 @@ import type { SentenceRowProps } from "../dictionaryPopup/SentenceRow.tsx";
 import type { SentenceRowSource } from "../dictionaryPopup/sentenceRowSource.ts";
 import { sentenceTranslationActionOf } from "../dictionaryPopup/sentenceTranslationActionOf.ts";
 import { useLookupDisplay } from "../dictionaryPopup/useLookupDisplay.ts";
+import type { LibraryWords } from "./libraryWords.ts";
 import type { LookupPlace } from "./lookupPlace.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
 import { useLookupFlashcards } from "./useLookupFlashcards.ts";

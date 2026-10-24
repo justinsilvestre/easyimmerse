@@ -7,8 +7,8 @@ import {
   type CueWordGestures,
 } from "../../components/cuePanel/cueWordGestures.ts";
 import type { DictionaryPopup } from "../../components/dictionaryPopup/DictionaryPopup.tsx";
-import type { LibraryWords } from "../../components/dictionaryPopup/libraryWords.ts";
 import type { SentenceRowSource } from "../../components/dictionaryPopup/sentenceRowSource.ts";
+import type { LibraryWords } from "../../components/wordLookup/libraryWords.ts";
 import { matchedLengthAhead } from "../../components/wordLookup/matchedLengthAhead.ts";
 import type { WordHit } from "../../components/wordLookup/useWordGestures.ts";
 import { useWordLookup } from "../../components/wordLookup/useWordLookup.ts";

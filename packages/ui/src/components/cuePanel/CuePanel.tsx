@@ -11,10 +11,8 @@ import { type KeyboardEvent, type MouseEvent, memo, useMemo } from "react";
 import { formatTimestamp } from "../../lib/formatting/formatTimestamp.ts";
 import { useStableCallbacks } from "../../lib/useStableCallbacks.ts";
 import { useVisibleItemSpan } from "../../lib/useVisibleItemSpan.ts";
-import { libraryWordsOf } from "../../screens/media/libraryWordsByCue.ts";
 import { Button } from "../common/Button.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
-import type { WordSpan } from "../splitAtWords.ts";
 import {
   type ActiveWord,
   ClickableText,
@@ -22,6 +20,7 @@ import {
 import { lineStepOfKey } from "../wordLookup/cursorKeys.ts";
 import { clickableWordAttribute } from "../wordLookup/lookupTrigger.ts";
 import type { Range } from "../wordLookup/RunText.tsx";
+import type { WordSpan } from "../wordLookup/splitAtWords.ts";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,
@@ -29,6 +28,7 @@ import {
   type CueWordGestures,
   gesturesForCue,
 } from "./cueWordGestures.ts";
+import { libraryWordsOf } from "./libraryWordsByCue.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
 
 /**

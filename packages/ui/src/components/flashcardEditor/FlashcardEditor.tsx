@@ -17,12 +17,12 @@ import {
   type FlashcardLanguages,
   flashcardFieldDefinitions,
 } from "../flashcards/flashcardFields.ts";
-import { SuspendedStrip } from "../flashcards/SuspendedStrip.tsx";
 import {
   MediaFields,
   type MediaWaveform,
   TextFieldBlocks,
 } from "./FlashcardEditorFields.tsx";
+import { SuspendedStrip } from "./SuspendedStrip.tsx";
 
 /**
  * The form for a flashcard that was just created or reopened.

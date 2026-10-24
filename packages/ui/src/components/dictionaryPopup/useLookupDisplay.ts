@@ -9,8 +9,11 @@ import type { DictionarySummary } from "@easyimmerse/types";
 import { useCallback } from "react";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { coversLanguage } from "../wordLookup/dictionaryLanguages.ts";
+import {
+  type LibraryWords,
+  libraryLookupOf,
+} from "../wordLookup/libraryWords.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
-import { type LibraryWords, libraryLookupOf } from "./libraryWords.ts";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 

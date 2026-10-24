@@ -13,9 +13,9 @@ import type { Flashcard } from "@easyimmerse/types";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import type { FlashcardLanguages } from "../flashcards/flashcardFields.ts";
-import { LibraryFlashcardView } from "../flashcards/LibraryFlashcardView.tsx";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 import type { MediaWaveform } from "./FlashcardEditorFields.tsx";
+import { LibraryFlashcardView } from "./LibraryFlashcardView.tsx";
 
 /**
  * The flashcard editor for the card open in the form, which it edits, saves and plays through the store.

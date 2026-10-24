@@ -5,7 +5,6 @@ import {
   useRef,
   useState,
 } from "react";
-import type { WordSpan } from "../../components/splitAtWords.ts";
 import type { ViewportPoint } from "../../components/wordLookup/characterAtPoint.ts";
 import { hoverMs } from "../../components/wordLookup/gestureTiming.ts";
 import {
@@ -13,6 +12,7 @@ import {
   lookupTriggerAttribute,
 } from "../../components/wordLookup/lookupTrigger.ts";
 import { createPressTracker } from "../../components/wordLookup/pressTracker.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { useTimer } from "../../components/wordLookup/useTimer.ts";
 import type { WordHit } from "../../components/wordLookup/useWordGestures.ts";
 import { useWordClickMemory } from "../../components/wordLookup/wordClickMemoryContext.tsx";

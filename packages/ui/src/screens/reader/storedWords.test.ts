@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exampleLibraryDocumentText } from "../../library/exampleLibrary.ts";
+import { exampleLibraryDocumentText } from "../../testSupport/exampleLibrary.ts";
 import { storedWordsAroundCaret, storedWordsOf } from "./storedWords.ts";
 
 const words = [

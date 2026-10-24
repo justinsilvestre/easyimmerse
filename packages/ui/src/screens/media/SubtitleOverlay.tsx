@@ -11,7 +11,6 @@ import {
   type CueWordGestures,
   gesturesForCue,
 } from "../../components/cuePanel/cueWordGestures.ts";
-import type { WordSpan } from "../../components/splitAtWords.ts";
 import type { SubtitleAppearance } from "../../components/subtitleAppearance/subtitleAppearance.ts";
 import { subtitleBoxStyles } from "../../components/subtitleAppearance/subtitleBoxStyles.ts";
 import { ClickableText } from "../../components/wordLookup/ClickableText.tsx";
@@ -20,6 +19,7 @@ import {
   lineStepOfKey,
 } from "../../components/wordLookup/cursorKeys.ts";
 import type { Range } from "../../components/wordLookup/RunText.tsx";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { useFocusFollowsCue } from "./useFocusFollowsCue.ts";
 
 /**

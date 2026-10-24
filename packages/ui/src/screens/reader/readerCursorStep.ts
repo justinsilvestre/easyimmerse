@@ -4,8 +4,8 @@ import type {
   TextDirection,
   TextStep,
 } from "@easyimmerse/state";
-import type { WordSpan } from "../../components/splitAtWords.ts";
 import { runLookupStarts } from "../../components/wordLookup/runLookupStarts.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { stepTextCursor } from "../../components/wordLookup/textCursorStep.ts";
 import type { ChapterSection } from "./chapterSections.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";

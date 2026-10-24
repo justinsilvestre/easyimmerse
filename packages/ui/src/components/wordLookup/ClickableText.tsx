@@ -5,13 +5,13 @@ import {
 } from "@easyimmerse/types";
 import clsx from "clsx";
 import { useId } from "react";
-import { splitAtWords, type WordSpan } from "../splitAtWords.ts";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
 } from "./lookupTrigger.ts";
 import { type Range, RunText } from "./RunText.tsx";
 import { runLookupEnd } from "./runLookupStarts.ts";
+import { splitAtWords, type WordSpan } from "./splitAtWords.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";

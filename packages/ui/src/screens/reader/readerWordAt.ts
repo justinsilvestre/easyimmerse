@@ -1,6 +1,6 @@
 import type { ReaderLocation } from "@easyimmerse/state";
-import type { WordSpan } from "../../components/splitAtWords.ts";
 import { characterLength } from "../../components/wordLookup/characterLength.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
 import { storedWordAt } from "./storedWords.ts";

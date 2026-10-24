@@ -7,9 +7,9 @@ import {
 } from "@easyimmerse/state";
 import type { LookupResult, NewFlashcard } from "@easyimmerse/types";
 import { useAppDispatch } from "../../useAppDispatch.ts";
-import { libraryFlashcardsOf } from "../dictionaryPopup/libraryFlashcardsOf.ts";
-import type { LibraryWords } from "../dictionaryPopup/libraryWords.ts";
 import { popupFlashcardOf } from "../dictionaryPopup/popupFlashcardOf.ts";
+import { libraryFlashcardsOf } from "./libraryFlashcardsOf.ts";
+import type { LibraryWords } from "./libraryWords.ts";
 import { type LookupPlace, placeOf } from "./lookupPlace.ts";
 import type { WordFlashcards } from "./wordFlashcards.ts";
 

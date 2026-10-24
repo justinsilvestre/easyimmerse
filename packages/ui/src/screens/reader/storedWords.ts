@@ -1,6 +1,6 @@
 import { libraryChaptersOf } from "@easyimmerse/state";
 import type { LibraryText } from "@easyimmerse/types";
-import type { WordSpan } from "../../components/splitAtWords.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import type { TextSpan } from "./wordAt.ts";
 
 /**

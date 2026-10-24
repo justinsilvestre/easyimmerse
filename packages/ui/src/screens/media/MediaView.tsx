@@ -9,14 +9,14 @@ import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../../components/cuePanel/cueWordGestures.ts";
-import type { WordSpan } from "../../components/splitAtWords.ts";
+import { libraryWordsOf } from "../../components/cuePanel/libraryWordsByCue.ts";
 import type { SubtitleAppearance } from "../../components/subtitleAppearance/subtitleAppearance.ts";
 import type { LineStep } from "../../components/wordLookup/cursorKeys.ts";
 import type { Range } from "../../components/wordLookup/RunText.tsx";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { AppFooter } from "../../layout/AppFooter.tsx";
 import { ProfileMenu } from "../../layout/ProfileMenu.tsx";
 import { useElementSize } from "../../lib/useElementSize.ts";
-import { libraryWordsOf } from "./libraryWordsByCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
 import type { PlayerCallbacks, PlayerPanelsState } from "./PlayerControls.tsx";
 import { SourceChip } from "./SourceChip.tsx";

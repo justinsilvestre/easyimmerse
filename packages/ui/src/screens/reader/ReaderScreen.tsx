@@ -14,8 +14,8 @@ import {
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
 import { DictionaryPopup } from "../../components/dictionaryPopup/DictionaryPopup.tsx";
-import type { LibraryItemText } from "../../components/dictionaryPopup/libraryWords.ts";
 import { ConnectedFlashcardEditor } from "../../components/flashcardEditor/ConnectedFlashcardEditor.tsx";
+import type { LibraryItemText } from "../../components/wordLookup/libraryWords.ts";
 import type { LookupPlace } from "../../components/wordLookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../../components/wordLookup/useLookupPrefetch.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";

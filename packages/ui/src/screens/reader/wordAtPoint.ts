@@ -1,8 +1,8 @@
-import type { WordSpan } from "../../components/splitAtWords.ts";
 import type { ViewportPoint } from "../../components/wordLookup/characterAtPoint.ts";
 import { characterLength } from "../../components/wordLookup/characterLength.ts";
 import type { LookupText } from "../../components/wordLookup/lookupTextAt.ts";
 import { runLookupStartAt } from "../../components/wordLookup/runLookupStarts.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";

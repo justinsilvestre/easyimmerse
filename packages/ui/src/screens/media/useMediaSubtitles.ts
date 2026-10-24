@@ -12,8 +12,8 @@ import type {
   SubtitleTrack,
 } from "@easyimmerse/types";
 import { useMemo } from "react";
+import { libraryWordsByCue } from "../../components/cuePanel/libraryWordsByCue.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
-import { libraryWordsByCue } from "./libraryWordsByCue.ts";
 import type { SubtitleTrackOption } from "./SubtitleTrackChoices.ts";
 
 const noCues: readonly Cue[] = [];
