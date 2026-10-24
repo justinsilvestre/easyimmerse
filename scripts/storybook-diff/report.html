@@ -330,7 +330,7 @@
         background: #fff;
       }
       /*
-       * Darkens everything outside the rectangle around the changes.
+       * Darkens everything outside the rectangle around the changes, or on a dark screenshot, veils it.
        * The shadow reaches past the frame, which clips it to the screenshot.
        */
       .focus {
@@ -340,6 +340,8 @@
         box-shadow: 0 0 0 100vmax rgb(24 24 24 / 0.6);
         visibility: hidden;
       }
+      /* A dark screenshot has little left to darken, so a light veil sets the rectangle apart instead. */
+      .focus.on-dark { box-shadow: 0 0 0 100vmax rgb(170 170 170 / 0.42); }
       :is(.variant:has(.highlight:checked), #viewer.highlighted) .focus { visibility: visible; }
       /* The diff shows only its red pixels, without the white backing the screenshots have. */
       :is(figure, #viewer) img.overlay { background: none; }
@@ -671,7 +673,7 @@
         const right = Math.min(width, area.x + area.width + padding);
         const bottom = Math.min(height, area.y + area.height + padding);
         const percent = (value, total) => `${(value / total) * 100}%`;
-        return `<div class="focus" style="left: ${percent(left, width)}; top: ${percent(top, height)}; width: ${percent(right - left, width)}; height: ${percent(bottom - top, height)}"></div>`;
+        return `<div class="focus ${fileName.startsWith("dark-") ? "on-dark" : ""}" style="left: ${percent(left, width)}; top: ${percent(top, height)}; width: ${percent(right - left, width)}; height: ${percent(bottom - top, height)}"></div>`;
       }
 
       function image(change, side, fileName) {
