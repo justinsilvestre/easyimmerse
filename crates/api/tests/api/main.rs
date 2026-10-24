@@ -13,6 +13,7 @@ mod extra_listeners;
 mod flashcards;
 mod library;
 mod library_cover;
+mod library_tracks;
 mod local_media_sample;
 mod media;
 mod media_availability;
