@@ -5,6 +5,7 @@ pub mod dictionary;
 pub mod document;
 pub mod flashcard;
 pub mod found_subtitle_tracks;
+pub mod image_media_type;
 pub mod language_code;
 pub mod library;
 pub mod lookup;

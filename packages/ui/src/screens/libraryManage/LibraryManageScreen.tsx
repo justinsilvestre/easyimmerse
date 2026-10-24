@@ -26,9 +26,7 @@ export function LibraryManageScreen() {
     <LibraryManagementView
       status={listing.isError ? "failed" : listing.data ? "ready" : "loading"}
       items={listing.data?.items ?? []}
-      coverUrlOf={(item) =>
-        server && item.has_cover ? buildLibraryCoverUrl(server, item.id) : null
-      }
+      coverUrlOf={(item) => buildLibraryCoverUrl(server, item)}
       upload={upload}
       onChooseUpload={(chosen) => dispatch(actions.libraryUploadChosen(chosen))}
       isCreating={creation.isCreating}

@@ -5,4 +5,4 @@ import type { LibraryItemKind } from "./LibraryItemKind";
 /**
  * What a manager sends to create an item or change its metadata.
  */
-export type LibraryItemDraft = { title: string, description: string, language: string, translation_language: string, kind: LibraryItemKind, difficulty: LibraryDifficulty | null, tags: Array<string>, cover_at_ms: number | null, };
+export type LibraryItemDraft = { title: string, description: string, language: string, translation_language: string, kind: LibraryItemKind, difficulty: LibraryDifficulty | null, tags: Array<string>, };

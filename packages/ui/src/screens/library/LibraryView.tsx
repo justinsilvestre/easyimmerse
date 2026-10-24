@@ -84,6 +84,7 @@ export function LibraryView({
         canManage={canManage}
         coverUrlOf={coverUrlOf}
         isFiltered={filter.language !== null || filter.tags.length > 0}
+        isOneLanguage={filter.language !== null}
         onOpenItem={onOpenItem}
       />
     </ScreenLayout>
@@ -131,6 +132,7 @@ function Items({
   canManage,
   coverUrlOf,
   isFiltered,
+  isOneLanguage,
   onOpenItem,
 }: {
   status: LibraryListStatus;
@@ -138,6 +140,8 @@ function Items({
   canManage: boolean;
   coverUrlOf: (item: LibraryItem) => string | null;
   isFiltered: boolean;
+  /** Whether the filter keeps only the items of one language, which the cards then need not name. */
+  isOneLanguage: boolean;
   onOpenItem: (itemId: string) => void;
 }) {
   switch (status) {
@@ -182,6 +186,7 @@ function Items({
                 item={item}
                 coverUrl={coverUrlOf(item)}
                 showsStatus={canManage}
+                showsLanguage={!isOneLanguage}
                 onOpen={onOpenItem}
               />
             </li>

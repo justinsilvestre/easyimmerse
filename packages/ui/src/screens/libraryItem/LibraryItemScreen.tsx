@@ -55,16 +55,14 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         </LoadingStatus>
       </ScreenLayout>
     );
-  const { language, has_cover } = item.data;
+  const { language } = item.data;
   const projectsInLanguage = projects.filter(
     ({ settings }) => settings.target_language === language,
   );
   return (
     <LibraryItemView
       item={item.data}
-      coverUrl={
-        server && has_cover ? buildLibraryCoverUrl(server, itemId) : null
-      }
+      coverUrl={buildLibraryCoverUrl(server, item.data)}
       projects={projectsInLanguage}
       chosenProjectId={
         chosen === undefined ? (projectsInLanguage[0]?.id ?? null) : chosen

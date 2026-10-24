@@ -122,6 +122,10 @@ import {
   type SubscriptionActions,
 } from "./isQuerySubscribed.ts";
 import {
+  type LibraryCoverUploadArgs,
+  uploadLibraryCover,
+} from "./libraryCoverUpload.ts";
+import {
   type LibraryFileUploadArgs,
   uploadLibraryFile,
 } from "./libraryFileUpload.ts";
@@ -230,6 +234,8 @@ type ReviewHoldArgs = {
 };
 
 type LibraryItemArgs = { itemId: string; draft: LibraryItemDraft };
+
+type LibraryCoverFrameArgs = { itemId: string; atMs: number };
 
 type AddLibraryItemArgs = { itemId: string; projectId: string | null };
 
@@ -1397,7 +1403,7 @@ export const backendApi = createApi({
       },
       invalidatesTags: [libraryListTag],
     }),
-    /** Changes the title, description, languages, kind, difficulty, tags or cover time of a library item. */
+    /** Changes the title, description, languages, kind, difficulty or tags of a library item. */
     updateLibraryItem: build.mutation<LibraryItem, LibraryItemArgs>({
       query: ({ itemId, draft }) => ({
         method: "PUT",
@@ -1422,6 +1428,38 @@ export const backendApi = createApi({
         libraryItemTag(itemId),
         libraryTextTag(itemId),
       ],
+    }),
+    /** Makes a picture that a browser holds the cover of a library item. */
+    uploadLibraryCover: build.mutation<LibraryItem, LibraryCoverUploadArgs>({
+      queryFn: (args, api, _options, baseQuery) =>
+        uploadLibraryCover(args, api.extra as BackendThunkExtra, baseQuery),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Takes a video item's cover from the frame at the given time. */
+    setLibraryCoverFrame: build.mutation<LibraryItem, LibraryCoverFrameArgs>({
+      query: ({ itemId, atMs }) => ({
+        method: "PUT",
+        path: `${libraryItemPath(itemId)}/cover/frame`,
+        body: { kind: "json", value: { at_ms: atMs } },
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Gives a library item its automatic cover again: a video's first line, or an EPUB file's own cover. */
+    resetLibraryCover: build.mutation<LibraryItem, string>({
+      query: (itemId) => ({
+        method: "DELETE",
+        path: `${libraryItemPath(itemId)}/cover`,
+      }),
+      async onQueryStarted(_itemId, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
     }),
     /** Replaces a video or audio item's segments with the cues of its subtitles, each paired with the translation cue that overlaps it most. */
     putLibrarySubtitles: build.mutation<LibraryText, LibrarySubtitlesArgs>({
@@ -1698,6 +1736,9 @@ export const {
   useUpdateLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useUploadLibraryFileMutation,
+  useUploadLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
+  useResetLibraryCoverMutation,
   usePutLibrarySubtitlesMutation,
   useProposeLibraryWordsMutation,
   useApplyLibraryEntryMutation,

@@ -70,8 +70,8 @@ use easyimmerse_core::dictionary::{
 };
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::library::{
-    LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus, LibrarySegment,
-    LibraryText, LibraryWord,
+    LibraryCover, LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus,
+    LibrarySegment, LibraryText, LibraryWord,
 };
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
@@ -1172,9 +1172,22 @@ impl Storage {
         self.write(|conn| library_items::fail_interrupted_library_publishes(conn, message))
     }
 
-    /// Records that a cover image was rendered for the library item's current file.
-    pub fn set_library_cover(&self, id: &LibraryItemId) -> Result<LibraryItem, StorageError> {
-        self.write(|conn| library_items::set_library_cover(conn, id))
+    /// Records the type of the cover picture now kept for the library item, or that it has none.
+    pub fn set_library_cover(
+        &self,
+        id: &LibraryItemId,
+        media_type: Option<&str>,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_cover(conn, id, media_type))
+    }
+
+    /// Records where the library item's cover picture comes from.
+    pub fn set_library_cover_choice(
+        &self,
+        id: &LibraryItemId,
+        cover: LibraryCover,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_cover_choice(conn, id, cover))
     }
 
     /// Records the length of a video or audio library item, as probed when it is published.

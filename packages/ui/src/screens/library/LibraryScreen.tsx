@@ -40,9 +40,7 @@ export function LibraryScreen() {
       tags={libraryTagsOf(items)}
       filter={filter}
       canManage={canManageLibrary(principal)}
-      coverUrlOf={(item) =>
-        server && item.has_cover ? buildLibraryCoverUrl(server, item.id) : null
-      }
+      coverUrlOf={(item) => buildLibraryCoverUrl(server, item)}
       onChooseLanguage={(language) =>
         dispatch(actions.libraryLanguageChosen(language))
       }

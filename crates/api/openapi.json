@@ -2334,7 +2334,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Changes an item's metadata in any status, except its kind and languages once it is published or being published.\nChanging the cover time of a published video item renders its cover again.",
+        "summary": "Changes an item's metadata in any status, except its kind and languages once it is published or being published.",
         "operationId": "updateLibraryItem",
         "parameters": [
           {
@@ -2399,7 +2399,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change, nor the cover time of an item being published",
+            "description": "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change",
             "content": {
               "application/json": {
                 "schema": {
@@ -2410,16 +2410,6 @@
           },
           "421": {
             "description": "Unexpected Host header",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "The cover must be rendered again, and this server has no ffmpeg (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2703,7 +2693,6 @@
         "tags": [
           "library"
         ],
-        "summary": "Serves the cover of a published video item, a frame of the video.",
         "operationId": "getLibraryCover",
         "parameters": [
           {
@@ -2727,9 +2716,9 @@
         ],
         "responses": {
           "200": {
-            "description": "The cover",
+            "description": "The cover picture, a JPEG, PNG, GIF or WebP image",
             "content": {
-              "image/jpeg": {
+              "image/*": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -2773,6 +2762,329 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Makes the request body, a JPEG, PNG, GIF or WebP picture, the item's cover, in place of any other.",
+        "operationId": "uploadLibraryCover",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "The library item id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The picture's bytes",
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The item with its new cover",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is not a JPEG, PNG, GIF or WebP picture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`cover_too_large`: the picture is larger than 10 MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Gives the item its automatic cover again: a video's first cue, rendered at once when the video's file is uploaded,\nor an EPUB file's own cover. Other items are left without a cover.",
+        "operationId": "resetLibraryCover",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "The library item id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item with its automatic cover",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no ffmpeg to render a video's frame (code `conversion_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/library/items/{item_id}/cover/frame": {
+      "put": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Takes a video item's cover from the frame at the given time, rendering it at once when the video's file is uploaded.",
+        "operationId": "setLibraryCoverFrame",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "The library item id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryCoverFrame"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The item with its new cover",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The item is not a video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such item, or the video has no frame at that time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no ffmpeg to render the frame (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2911,7 +3223,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.",
+        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.\nUnless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.",
         "operationId": "uploadLibraryFile",
         "parameters": [
           {
@@ -3348,7 +3660,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.",
+        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.\nAn automatic cover goes, to be rendered again from the new first cue when the item is published.",
         "operationId": "putLibrarySubtitles",
         "parameters": [
           {
@@ -12818,12 +13130,86 @@
           }
         }
       },
+      "LibraryCover": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The screenshot of a video's first cue, or the cover image of an EPUB file. Other items have no automatic cover.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "automatic"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The frame of a video at the given time.",
+            "required": [
+              "at_ms",
+              "kind"
+            ],
+            "properties": {
+              "at_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "frame"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A picture a library manager uploaded.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "uploaded"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Where the cover picture of an item comes from."
+      },
+      "LibraryCoverFrame": {
+        "type": "object",
+        "description": "What a manager sends to take a video item's cover from one of its frames.",
+        "required": [
+          "at_ms"
+        ],
+        "properties": {
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "LibraryDifficulty": {
         "type": "string",
+        "description": "A level of the Common European Framework of Reference for Languages (CEFR),\nfrom A1 for beginners to C2 for learners who understand nearly everything.",
         "enum": [
-          "beginner",
-          "intermediate",
-          "advanced"
+          "A1",
+          "A2",
+          "B1",
+          "B2",
+          "C1",
+          "C2"
         ]
       },
       "LibraryEntry": {
@@ -12863,6 +13249,7 @@
           "translation_language",
           "kind",
           "tags",
+          "cover",
           "has_cover",
           "segment_count",
           "status",
@@ -12870,14 +13257,8 @@
           "updated_at_ms"
         ],
         "properties": {
-          "cover_at_ms": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "The time of the video frame the cover is taken from. Null for the first cue's screenshot time.",
-            "minimum": 0
+          "cover": {
+            "$ref": "#/components/schemas/LibraryCover"
           },
           "created_at_ms": {
             "type": "integer",
@@ -12915,7 +13296,8 @@
             "description": "The uploaded file's original name. Null until a file is uploaded."
           },
           "has_cover": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the item has a cover picture to show now. A video's automatic cover and a chosen frame\nthat is not rendered yet are rendered when the item is published."
           },
           "id": {
             "$ref": "#/components/schemas/LibraryItemId"
@@ -12981,14 +13363,6 @@
           "tags"
         ],
         "properties": {
-          "cover_at_ms": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "minimum": 0
-          },
           "description": {
             "type": "string"
           },

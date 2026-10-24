@@ -17,6 +17,7 @@ import { SegmentWordsEditor } from "./SegmentWordsEditor.tsx";
 /** What is under way on the library edit screen, and why the last change failed, or null. */
 export type LibraryEditActivity = {
   isSaving: boolean;
+  isChangingCover: boolean;
   isUploading: boolean;
   isPublishing: boolean;
   failure: string | null;
@@ -26,12 +27,16 @@ export type LibraryEditActivity = {
 export function LibraryEditView({
   item,
   text,
+  coverUrl,
   previewUrl,
   activity,
   isConfirmingDelete,
   selectedWord,
   isOnlyUndefinedShown,
   onSave,
+  onUploadCover,
+  onChooseCoverFrame,
+  onResetCover,
   onReplaceFile,
   onReplaceSubtitles,
   onSelectWord,
@@ -49,12 +54,16 @@ export function LibraryEditView({
   item: LibraryItem;
   /** The item's text, or null while it loads. */
   text: LibraryText | null;
+  coverUrl: string | null;
   previewUrl: string | null;
   activity: LibraryEditActivity;
   isConfirmingDelete: boolean;
   selectedWord: LibraryWordPlace | null;
   isOnlyUndefinedShown: boolean;
   onSave: (draft: LibraryItemDraft) => void;
+  onUploadCover: (file: File) => void;
+  onChooseCoverFrame: (atMs: number) => void;
+  onResetCover: () => void;
   onReplaceFile: (file: File) => void;
   onReplaceSubtitles: (files: LibrarySubtitleFiles) => void;
   onSelectWord: (place: LibraryWordPlace | null) => void;
@@ -91,9 +100,14 @@ export function LibraryEditView({
       <LibraryItemForm
         key={item.id}
         item={item}
+        coverUrl={coverUrl}
         previewUrl={previewUrl}
         isSaving={activity.isSaving}
+        isChangingCover={activity.isChangingCover}
         onSave={onSave}
+        onUploadCover={onUploadCover}
+        onChooseCoverFrame={onChooseCoverFrame}
+        onResetCover={onResetCover}
       />
       <LibraryFilesSection
         item={item}

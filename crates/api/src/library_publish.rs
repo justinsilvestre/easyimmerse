@@ -4,10 +4,11 @@
 use std::path::Path;
 
 use easyimmerse_core::library::{
-    LibraryItem, LibraryItemId, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
+    LibraryItem, LibraryItemKind, LibraryItemStatus, LibrarySegment, LibraryText,
 };
 
 use crate::auth::error_body::{ApiFailure, internal};
+use crate::library_covers::{midpoint, refresh_cover};
 use crate::library_paths::LibraryItemPaths;
 use crate::routes::library_support::{
     item_paths, item_processing, load_item, require_editable, source_path,
@@ -138,41 +139,8 @@ async fn render_screenshots(
     state
         .with_storage(move |storage| storage.set_screenshot_times(&id, &times))
         .await?;
-    let text = LibraryText {
-        segments,
-        chapter_titles: text.chapter_titles,
-    };
-    match cover_time(item.cover_at_ms, &text) {
-        Some(at_ms) => render_cover(state, &item.id, source, at_ms).await,
-        None => Ok(()),
-    }
-}
-
-/// Renders the cover of a video item from the frame at `at_ms`, and records that the item has one.
-pub async fn render_cover(
-    state: &AppState,
-    item_id: &LibraryItemId,
-    source: &str,
-    at_ms: u64,
-) -> Result<(), ApiFailure> {
-    let paths = item_paths(state, item_id)?;
-    let cover = render_frame_at(state, source, None, at_ms).await?;
-    create_dir(&paths.dir).await?;
-    write_file(&paths.cover(), &cover).await?;
-    let id = item_id.clone();
-    state
-        .with_storage(move |storage| storage.set_library_cover(&id))
-        .await?;
+    refresh_cover(state, item).await?;
     Ok(())
-}
-
-/// The time of the cover: the one the manager chose, else the first cue's screenshot time.
-pub fn cover_time(cover_at_ms: Option<u64>, text: &LibraryText) -> Option<u64> {
-    cover_at_ms.or_else(|| {
-        text.segments
-            .iter()
-            .find_map(|segment| segment.screenshot_at_ms)
-    })
 }
 
 /// Gives every cue with a time window its screenshot time, the midpoint of the window.
@@ -184,10 +152,6 @@ fn with_screenshot_times(segments: Vec<LibrarySegment>) -> Vec<LibrarySegment> {
             ..segment
         })
         .collect()
-}
-
-fn midpoint((start_ms, end_ms): (u64, u64)) -> u64 {
-    start_ms + end_ms.saturating_sub(start_ms) / 2
 }
 
 async fn create_dir(dir: &Path) -> Result<(), ApiFailure> {
@@ -219,13 +183,6 @@ mod tests {
         }
     }
 
-    fn text(segments: Vec<LibrarySegment>) -> LibraryText {
-        LibraryText {
-            segments,
-            chapter_titles: Vec::new(),
-        }
-    }
-
     #[test]
     fn takes_the_screenshot_at_the_midpoint_of_the_cue() {
         let segments = with_screenshot_times(vec![segment(0, Some((1_000, 2_001)))]);
@@ -236,18 +193,5 @@ mod tests {
     fn takes_no_screenshot_of_a_segment_without_times() {
         let segments = with_screenshot_times(vec![segment(0, None)]);
         assert_eq!(segments[0].screenshot_at_ms, None);
-    }
-
-    #[test]
-    fn takes_the_cover_at_the_chosen_time() {
-        let text = text(with_screenshot_times(vec![segment(0, Some((0, 1_000)))]));
-        assert_eq!(cover_time(Some(3_000), &text), Some(3_000));
-    }
-
-    #[test]
-    fn takes_the_cover_at_the_first_screenshot_without_a_chosen_time() {
-        let segments = vec![segment(0, None), segment(1, Some((2_000, 3_000)))];
-        let text = text(with_screenshot_times(segments));
-        assert_eq!(cover_time(None, &text), Some(2_500));
     }
 }

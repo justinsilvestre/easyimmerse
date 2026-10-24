@@ -207,7 +207,6 @@ mod tests {
                 kind: LibraryItemKind::Video,
                 difficulty: None,
                 tags: Vec::new(),
-                cover_at_ms: None,
             })
             .unwrap();
         (storage, item)

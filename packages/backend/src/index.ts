@@ -51,10 +51,13 @@ export {
   usePutLibrarySubtitlesMutation,
   usePutLibraryWordsMutation,
   useRemoveAlignmentMutation,
+  useResetLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
   useSetTranslationDocumentMutation,
   useUnpublishLibraryItemMutation,
   useUpdateFlashcardMutation,
   useUpdateLibraryItemMutation,
+  useUploadLibraryCoverMutation,
   useUploadLibraryFileMutation,
 } from "./backendApi.ts";
 export type {

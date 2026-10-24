@@ -11,11 +11,14 @@ export const libraryKindLabels: Record<LibraryItemKind, string> = {
   document: "Text",
 };
 
-/** The name of each difficulty level. */
+/** Each difficulty level, a CEFR level, with the plain name it commonly goes by. */
 export const libraryDifficultyLabels: Record<LibraryDifficulty, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+  A1: "A1 · Beginner",
+  A2: "A2 · Elementary",
+  B1: "B1 · Intermediate",
+  B2: "B2 · Upper intermediate",
+  C1: "C1 · Advanced",
+  C2: "C2 · Proficient",
 };
 
 /** The name of each status of a library item, as the library management screen shows it. */

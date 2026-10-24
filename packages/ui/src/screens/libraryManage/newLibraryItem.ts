@@ -24,7 +24,6 @@ export function newLibraryItemOf(
     kind: kindOf(file, upload),
     difficulty: null,
     tags: [],
-    cover_at_ms: null,
   } satisfies LibraryItemDraft;
   const subtitles =
     upload === "media" && target

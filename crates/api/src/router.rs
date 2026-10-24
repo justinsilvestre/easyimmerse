@@ -19,7 +19,7 @@ use crate::routes::{
     account_sessions, alignments, anki, anki_exported, anki_package, anki_pending_deletions,
     auth_server, conversion_cache, conversion_capabilities, conversions, current_principal,
     dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media,
-    documents, email_confirmation, flashcards, health, library_files, library_items,
+    documents, email_confirmation, flashcards, health, library_cover, library_files, library_items,
     library_learning, library_publication, library_text, local_dictionaries, media,
     media_availability, media_clip, media_frame, media_import, media_playback_method, media_stream,
     media_tracks, media_waveform, openapi, pairing, password_reset, plugins, preferences, projects,
@@ -219,7 +219,12 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             library_files::upload_library_file,
             library_files::get_library_file
         ))
-        .routes(routes!(library_files::get_library_cover))
+        .routes(routes!(
+            library_cover::get_library_cover,
+            library_cover::upload_library_cover,
+            library_cover::reset_library_cover
+        ))
+        .routes(routes!(library_cover::set_library_cover_frame))
         .routes(routes!(library_text::get_library_text))
         .routes(routes!(library_text::put_library_subtitles))
         .routes(routes!(library_text::propose_library_words))

@@ -1321,7 +1321,7 @@ const parkItem = (status: LibraryItemStatus): LibraryItem => ({
   tags: [],
   file_name: "park.mp4",
   duration_ms: null,
-  cover_at_ms: null,
+  cover: { kind: "automatic" },
   has_cover: false,
   segment_count: 1,
   status,
@@ -1337,7 +1337,6 @@ const parkDraft = {
   kind: "video",
   difficulty: null,
   tags: [],
-  cover_at_ms: null,
 } satisfies LibraryItemDraft;
 
 const hundWord = {
@@ -1607,6 +1606,31 @@ describe("the library endpoints", () => {
         body: { kind: "json", value: [hundWord] },
       },
     ]);
+  });
+
+  it("put the time of the frame for setLibraryCoverFrame", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.setLibraryCoverFrame.initiate({
+          itemId: "i1",
+          atMs: 12_000,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/cover/frame",
+        body: { kind: "json", value: { at_ms: 12_000 } },
+      },
+    ]);
+  });
+
+  it("send DELETE .../cover for resetLibraryCover", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.resetLibraryCover.initiate("i1"),
+      ),
+    ).toEqual([{ method: "DELETE", path: "/library/items/i1/cover" }]);
   });
 
   it("send POST .../publish for publishLibraryItem", async () => {
