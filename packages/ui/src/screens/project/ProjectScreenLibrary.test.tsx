@@ -161,6 +161,16 @@ describe("ProjectScreen with a media file from the library", () => {
       await screen.findByRole("article", { name: "Flashcard preview" });
       expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
     });
+
+    it("asks for confirmation before deleting it", async () => {
+      await openFlashcard();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Delete flashcard" }),
+      );
+      expect(
+        await screen.findByRole("dialog", { name: "Delete this flashcard?" }),
+      ).toBeDefined();
+    });
   });
 
   describe("when the item cannot be read", () => {

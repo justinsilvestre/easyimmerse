@@ -9,8 +9,8 @@ import type { FlashcardLanguages } from "../flashcards/flashcardFields.ts";
 import { SuspendedStrip } from "./SuspendedStrip.tsx";
 
 /**
- * A flashcard made from a library item, shown as it is reviewed rather than in the editor, since the server fills it and refuses changes.
- * It can be closed, brought back into the review while suspended, or deleted after confirming.
+ * A flashcard made from a library item, shown as it is reviewed, since the server fills it and refuses changes.
+ * It can be closed, brought back into the review while suspended, or deleted after confirming in a dialog.
  */
 export function LibraryFlashcardView({
   content,
@@ -47,32 +47,33 @@ export function LibraryFlashcardView({
 }) {
   return (
     <section
-      aria-label="Flashcard"
-      className="flex h-full w-full flex-col rounded-lg border border-line bg-surface text-fg"
+      aria-label="Flashcard from the library"
+      className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-lg border border-line bg-surface p-4 text-fg"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-        <h2 className="font-semibold">Flashcard</h2>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm text-fg-muted">
+          This flashcard was made from the library, so it can't be edited.
+        </p>
         <IconButton label="Close" onClick={onClose}>
           <X className="size-4" />
         </IconButton>
       </div>
-      {onUnsuspend && <SuspendedStrip onUnsuspend={onUnsuspend} />}
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
-        <p className="text-sm text-fg-muted">
-          This flashcard was made from the library, so it can't be edited.
-        </p>
-        <FlashcardPreview
-          content={content}
-          includedFields={settings.flashcard_fields}
-          frontFields={settings.flashcard_front_fields}
-          languages={languages}
-          screenshotUrl={screenshotUrl}
-          onPlayAudio={onPlayAudio}
-        />
-      </div>
-      <div className="flex justify-start border-t border-line px-4 py-2">
+      {onUnsuspend && (
+        <div className="overflow-hidden rounded-md border border-line">
+          <SuspendedStrip onUnsuspend={onUnsuspend} />
+        </div>
+      )}
+      <FlashcardPreview
+        content={content}
+        includedFields={settings.flashcard_fields}
+        frontFields={settings.flashcard_front_fields}
+        languages={languages}
+        screenshotUrl={screenshotUrl}
+        onPlayAudio={onPlayAudio}
+      />
+      <div>
         <Button variant="danger" onClick={onAskDelete}>
-          Delete
+          Delete flashcard
         </Button>
       </div>
       {isConfirmingDelete && (
