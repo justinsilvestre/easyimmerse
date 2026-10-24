@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t,t as n}from"./withAppStore-BJ2ImV9m.js";import{n as r,t as i}from"./DisplaySection-DIzRe-tV.js";var a,o,s;function c(){return(c=e((()=>{n(),r(),a={title:`Components/DisplaySection`,component:i,decorators:[t]},o={},s=[`Default`]})))()}c();export{o as Default,s as __namedExportsOrder,a as default};
