@@ -18,8 +18,9 @@ use crate::routes::library_support::{load_published_item, load_visible_item};
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
 
-/// Adds an item to one of the principal's projects, or to a new project for the item's languages
-/// named after its language. A project that already has the item keeps its media file, which is returned.
+/// Adds an item to one of the principal's projects, or to a new project named "Library"
+/// for the library's language and the item's translation language.
+/// A project that already has the item keeps its media file, which is returned.
 /// Anyone may add a published item; a library manager may also add an unpublished one,
 /// to prepare its words in the player or the reader that learners use.
 #[utoipa::path(
@@ -34,6 +35,7 @@ use crate::state::AppState;
         (status = 200, description = "The project and the item's media file in it", body = LibraryItemAdded),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such item, one the principal may not see, or no such project of the principal's", body = ApiError),
+        (status = 409, description = "`library_language_unset`: no project is given and the library has no language yet", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -67,9 +69,10 @@ fn add_to_project(
             project_id
         }
         None => {
-            storage
-                .create_project(owner, &library_project_settings(item))?
-                .id
+            let language = (storage.get_library_settings()?.language)
+                .ok_or(StorageError::LibraryLanguageUnset)?;
+            let settings = library_project_settings(language, item);
+            storage.create_project(owner, &settings)?.id
         }
     };
     let media_file = match storage.find_library_media_file(&project_id, &item.id)? {
@@ -87,13 +90,13 @@ fn add_to_project(
     })
 }
 
-/// The settings of a project made for a library item: the item's languages, the beginner's flashcard fields,
-/// and a name such as "German library".
-fn library_project_settings(item: &LibraryItem) -> ProjectSettings {
+/// The settings of a project made for a library item: the library's language, the item's translation language,
+/// the beginner's flashcard fields, and the name "Library".
+fn library_project_settings(language: String, item: &LibraryItem) -> ProjectSettings {
     use FlashcardFieldKey::*;
     ProjectSettings {
-        name: format!("{} library", language_name(&item.language)),
-        target_language: item.language.clone(),
+        name: "Library".to_string(),
+        target_language: language,
         translation_language: item.translation_language.clone(),
         flashcard_fields: vec![
             Word,
@@ -112,30 +115,6 @@ fn library_project_settings(item: &LibraryItem) -> ProjectSettings {
         flashcard_front_fields: vec![AudioContext, Screenshot],
         lists_anki_deletions: true,
     }
-}
-
-/// The English name of the languages the project form offers, else the code itself.
-fn language_name(code: &str) -> String {
-    let names = [
-        ("de", "German"),
-        ("en", "English"),
-        ("es", "Spanish"),
-        ("fr", "French"),
-        ("it", "Italian"),
-        ("ja", "Japanese"),
-        ("ko", "Korean"),
-        ("pt", "Portuguese"),
-        ("ru", "Russian"),
-        ("zh", "Chinese"),
-    ];
-    let primary = code
-        .split(['-', '_'])
-        .next()
-        .unwrap_or(code)
-        .to_ascii_lowercase();
-    (names.iter())
-        .find(|(known, _)| *known == primary)
-        .map_or_else(|| code.to_string(), |(_, name)| name.to_string())
 }
 
 /// Saves a flashcard built by the server from a segment of a library media file, and from one of its words when
@@ -255,16 +234,6 @@ fn not_library_media() -> ApiFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn names_a_known_language_in_english() {
-        assert_eq!(language_name("de-AT"), "German");
-    }
-
-    #[test]
-    fn names_an_unknown_language_by_its_code() {
-        assert_eq!(language_name("tlh"), "tlh");
-    }
 
     #[test]
     fn makes_a_tag_of_a_media_name_without_its_extension() {

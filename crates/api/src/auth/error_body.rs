@@ -137,6 +137,14 @@ impl From<StorageError> for ApiFailure {
             StorageError::EmailTaken(_) => {
                 ApiFailure::new(StatusCode::CONFLICT, "email_taken", error.to_string())
             }
+            StorageError::LibraryHasItems => {
+                ApiFailure::new(StatusCode::CONFLICT, "library_has_items", error.to_string())
+            }
+            StorageError::LibraryLanguageUnset => ApiFailure::new(
+                StatusCode::CONFLICT,
+                "library_language_unset",
+                error.to_string(),
+            ),
             StorageError::LastAdministrator(_) => ApiFailure::new(
                 StatusCode::CONFLICT,
                 "last_administrator",

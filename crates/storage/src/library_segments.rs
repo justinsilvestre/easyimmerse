@@ -195,14 +195,14 @@ mod tests {
 
     use super::*;
     use crate::Storage;
+    use crate::library_settings::german_library_storage;
 
     fn storage_with_item() -> (Storage, LibraryItem) {
-        let storage = Storage::open_in_memory().unwrap();
+        let storage = german_library_storage();
         let item = storage
             .create_library_item(&LibraryItemDraft {
                 title: "Film".to_string(),
                 description: String::new(),
-                language: "de".to_string(),
                 translation_language: "en".to_string(),
                 kind: LibraryItemKind::Video,
                 difficulty: None,

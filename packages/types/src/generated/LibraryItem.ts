@@ -8,7 +8,7 @@ import type { LibraryItemStatus } from "./LibraryItemStatus";
 /**
  * An item of the library, without its text.
  */
-export type LibraryItem = { id: LibraryItemId, title: string, description: string, language: string, translation_language: string, kind: LibraryItemKind, difficulty: LibraryDifficulty | null, tags: Array<string>, 
+export type LibraryItem = { id: LibraryItemId, title: string, description: string, translation_language: string, kind: LibraryItemKind, difficulty: LibraryDifficulty | null, tags: Array<string>, 
 /**
  * The uploaded file's original name. Null until a file is uploaded.
  */

@@ -1,11 +1,18 @@
--- Media that library managers prepare for everyone on the server. Server-local; does not sync.
+-- What holds for the whole library: one row. `language` is null until a library manager sets it,
+-- which is possible only while the library has no items. Server-local; does not sync.
+CREATE TABLE library_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    language TEXT
+);
+INSERT INTO library_settings (id, language) VALUES (1, NULL);
+
+-- Media that library managers prepare for everyone on the server, in the library's language. Server-local; does not sync.
 -- `kind`, `status` and `cover_kind` are the snake_case names of the core library enums;
 -- `difficulty` is a level of the Common European Framework of Reference for Languages, A1 to C2.
 CREATE TABLE library_items (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    language TEXT NOT NULL,
     translation_language TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('video', 'audio', 'document')),
     difficulty TEXT CHECK (difficulty IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),

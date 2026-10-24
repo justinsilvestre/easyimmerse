@@ -23,6 +23,7 @@ pub mod library_files;
 pub mod library_items;
 pub mod library_learning;
 pub mod library_publication;
+pub mod library_settings;
 pub mod library_support;
 pub mod library_text;
 pub mod local_dictionaries;

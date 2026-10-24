@@ -47,7 +47,8 @@ fn propose_stored_words(
     owner: &OwnerId,
     item_id: &LibraryItemId,
 ) -> Result<LibraryText, StorageError> {
-    let item = storage.get_library_item(item_id)?;
+    let language =
+        (storage.get_library_settings()?.language).ok_or(StorageError::LibraryLanguageUnset)?;
     let text = storage.get_library_text(item_id)?;
     let unworded: Vec<_> = (text.segments.iter())
         .filter(|segment| segment.words.is_empty())
@@ -56,7 +57,7 @@ fn propose_stored_words(
         return Ok(text);
     }
     let request = BatchLookupRequest {
-        language: item.language.clone(),
+        language: language.clone(),
         texts: unworded
             .iter()
             .map(|segment| segment.text.clone())
@@ -65,10 +66,7 @@ fn propose_stored_words(
     let response = look_up_all(storage, owner, &request)?;
     let languages = dictionary_languages(storage, owner)?;
     let field_of = |dictionary_id: &str| {
-        field_of_language(
-            languages.get(dictionary_id).cloned().flatten(),
-            &item.language,
-        )
+        field_of_language(languages.get(dictionary_id).cloned().flatten(), &language)
     };
     for (segment, lookups) in unworded.iter().zip(&response.texts) {
         let words = proposed_words(&segment.text, lookups, &response, field_of);
@@ -89,10 +87,10 @@ fn dictionary_languages(
         .collect())
 }
 
-/// Definitions in the item's own language go into L2; all others, and those of a dictionary that states no language, into L1.
-fn field_of_language(language: Option<String>, item_language: &str) -> DefinitionField {
+/// Definitions in the library's language go into L2; all others, and those of a dictionary that states no language, into L1.
+fn field_of_language(language: Option<String>, library_language: &str) -> DefinitionField {
     match language {
-        Some(language) if is_same_language(&language, item_language) => DefinitionField::L2,
+        Some(language) if is_same_language(&language, library_language) => DefinitionField::L2,
         _ => DefinitionField::L1,
     }
 }
@@ -280,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn puts_definitions_in_the_items_language_into_l2() {
+    fn puts_definitions_in_the_librarys_language_into_l2() {
         let response = response();
         let words = proposed_words("New York is big", &response.texts[0], &response, |_| {
             DefinitionField::L2
@@ -302,7 +300,7 @@ mod tests {
     }
 
     #[test]
-    fn reads_a_dictionary_in_the_items_language_as_l2() {
+    fn reads_a_dictionary_in_the_librarys_language_as_l2() {
         assert_eq!(
             field_of_language(Some("de-DE".to_string()), "de"),
             DefinitionField::L2

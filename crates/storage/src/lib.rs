@@ -13,6 +13,7 @@ mod error;
 mod flashcards;
 mod library_items;
 mod library_segments;
+mod library_settings;
 mod media_copies;
 #[cfg(test)]
 mod media_copies_tests;
@@ -71,7 +72,7 @@ use easyimmerse_core::dictionary::{
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::library::{
     LibraryCover, LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus,
-    LibrarySegment, LibraryText, LibraryWord,
+    LibrarySegment, LibrarySettings, LibraryText, LibraryWord,
 };
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
@@ -1106,7 +1107,20 @@ impl Storage {
         self.read(|conn| sync::remote_copies::remote_copy_size(conn, remote_id, media_file_id))
     }
 
-    /// Creates a draft library item with no file and no text.
+    pub fn get_library_settings(&self) -> Result<LibrarySettings, StorageError> {
+        self.read(library_settings::get_library_settings)
+    }
+
+    /// Replaces the library's settings, refusing with `LibraryHasItems` while the library has any item.
+    pub fn set_library_settings(
+        &self,
+        settings: &LibrarySettings,
+    ) -> Result<LibrarySettings, StorageError> {
+        self.write(|conn| library_settings::set_library_settings(conn, settings))
+    }
+
+    /// Creates a draft library item with no file and no text, refusing with `LibraryLanguageUnset`
+    /// while the library's language is unset.
     pub fn create_library_item(
         &self,
         draft: &LibraryItemDraft,

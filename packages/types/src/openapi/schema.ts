@@ -539,7 +539,7 @@ export interface paths {
         /** Lists the published items, or every item for a library manager, by title. */
         get: operations["listLibraryItems"];
         put?: never;
-        /** Creates a draft item with no file and no text. */
+        /** Creates a draft item with no file and no text, in the library's language. */
         post: operations["createLibraryItem"];
         delete?: never;
         options?: never;
@@ -555,7 +555,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getLibraryItem"];
-        /** Changes an item's metadata in any status, except its kind and languages once it is published or being published. */
+        /** Changes an item's metadata in any status, except its kind and translation language once it is published or being published. */
         put: operations["updateLibraryItem"];
         post?: never;
         /** Deletes an item with its text and files. Learners' media files of the item stay, but can no longer be played. */
@@ -575,8 +575,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Adds an item to one of the principal's projects, or to a new project for the item's languages
-         *     named after its language. A project that already has the item keeps its media file, which is returned.
+         * Adds an item to one of the principal's projects, or to a new project named "Library"
+         *     for the library's language and the item's translation language.
+         *     A project that already has the item keeps its media file, which is returned.
          *     Anyone may add a published item; a library manager may also add an unpublished one,
          *     to prepare its words in the player or the reader that learners use.
          */
@@ -770,6 +771,26 @@ export interface paths {
         put?: never;
         /** Hides the item from learners. The flashcards they made from it are kept. */
         post: operations["unpublishLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/library/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLibrarySettings"];
+        /**
+         * Replaces the library's settings. The language can change only while the library has no items,
+         *     since their texts and words are in the language they were made for.
+         */
+        put: operations["putLibrarySettings"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2899,7 +2920,6 @@ export interface components {
             has_cover: boolean;
             id: components["schemas"]["LibraryItemId"];
             kind: components["schemas"]["LibraryItemKind"];
-            language: string;
             /** Format: int32 */
             segment_count: number;
             status: components["schemas"]["LibraryItemStatus"];
@@ -2921,7 +2941,6 @@ export interface components {
             description: string;
             difficulty?: components["schemas"]["LibraryDifficulty"] | null;
             kind: components["schemas"]["LibraryItemKind"];
-            language: string;
             tags: string[];
             title: string;
             translation_language: string;
@@ -2969,6 +2988,11 @@ export interface components {
             text: string;
             translation?: string | null;
             words: components["schemas"]["LibraryWord"][];
+        };
+        /** @description What holds for the whole library. A library manager sets its language while the library has no items. */
+        LibrarySettings: {
+            /** @description The language the library's media are in, which its learners study. Null until a library manager sets it. */
+            language?: string | null;
         };
         /** @description Subtitle texts as uploaded; the format is detected when not given, as for subtitle tracks. */
         LibrarySubtitles: {
@@ -5961,6 +5985,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description `library_language_unset`: the library has no language yet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description Unexpected Host header */
             421: {
                 headers: {
@@ -6074,7 +6107,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change */
+            /** @description `item_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6196,6 +6229,15 @@ export interface operations {
             };
             /** @description No such item, one the principal may not see, or no such project of the principal's */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `library_language_unset`: no project is given and the library has no language yet */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7204,6 +7246,104 @@ export interface operations {
                 };
             };
             /** @description `item_processing`: the item is being published */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLibrarySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The library's settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySettings"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    putLibrarySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibrarySettings"];
+            };
+        };
+        responses: {
+            /** @description The library's settings as they now stand */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySettings"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `forbidden`: the principal does not manage the library */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `library_has_items`: the library has items, so its language cannot change */
             409: {
                 headers: {
                     [name: string]: unknown;
