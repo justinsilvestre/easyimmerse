@@ -291,6 +291,18 @@
         white-space: nowrap;
       }
       figure[data-showing="after"] .label { flex-direction: row-reverse; }
+      /* The viewport's icon sits on the label's outer edge, beside Before or After. */
+      .side-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      figure[data-showing="after"] .side-group { flex-direction: row-reverse; }
+      .viewport-icon {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
       .side {
         font-weight: 700;
         letter-spacing: 0.08em;
@@ -382,6 +394,7 @@
         background: var(--side);
       }
       .viewer-bar .side { font-size: 16px; }
+      .viewer-bar .viewport-icon { width: 18px; height: 18px; display: block; }
       .viewer-title { flex: 1 1 200px; min-width: 0; }
       .viewer-bar a, .viewer-bar button { color: #fff; }
       .viewer-bar .pill { background: transparent; border-color: rgb(255 255 255 / 0.6); }
@@ -441,7 +454,7 @@
     </aside>
     <dialog id="viewer" aria-label="Screenshot">
       <div class="viewer-bar">
-        <span class="side"></span>
+        <span class="side-group"><span class="viewer-icon"></span><span class="side"></span></span>
         <span class="viewer-title"></span>
         <button type="button" class="pill viewer-close">Close</button>
       </div>
@@ -676,6 +689,13 @@
         return `<div class="focus ${fileName.startsWith("dark-") ? "on-dark" : ""}" style="left: ${percent(left, width)}; top: ${percent(top, height)}; width: ${percent(right - left, width)}; height: ${percent(bottom - top, height)}"></div>`;
       }
 
+      /** Icons for the viewports captureVariants.ts defines; a viewport without one is named by the text above it alone. */
+      const viewportIcons = {
+        phone: `<svg class="viewport-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4.25" y="1.25" width="7.5" height="13.5" rx="1.5"/><path d="M7 12.25h2"/></svg>`,
+        desktop: `<svg class="viewport-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.25" y="2.25" width="13.5" height="9" rx="1"/><path d="M5.5 14.25h5M8 11.25v3"/></svg>`,
+      };
+      const viewportIcon = (fileName) => viewportIcons[fileName.replace(/^\w+-|\.png$/g, "")] ?? "";
+
       function image(change, side, fileName) {
         const src = `${change.id}/${side}-${fileName}`;
         const size = sizeOf(change, side, fileName);
@@ -685,7 +705,7 @@
           ? `data-flip="${change.id}/${other}-${fileName}" data-flip-width="${otherSize?.width}" data-flip-height="${otherSize?.height}"` : "";
         const overlay = change.changedVariants[fileName]
           ? `<img class="overlay" src="${change.id}/diff-${fileName}" alt="" loading="lazy" />` : "";
-        return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side">${side}</span><span class="expand">⤢ Full screen</span></button>
+        return `<figure data-showing="${side}"><button type="button" class="label" title="Show full screen"><span class="side-group">${viewportIcon(fileName)}<span class="side">${side}</span></span><span class="expand">⤢ Full screen</span></button>
           <div class="frame"><img src="${src}" alt="${side}" loading="lazy" data-width="${size.width}" data-height="${size.height}" ${flip} />${overlay}${focus(change, fileName)}</div></figure>`;
       }
 
@@ -822,6 +842,7 @@
         viewer.dataset.showing = side;
         viewer.classList.toggle("highlighted", Boolean(variant.querySelector(".highlight:checked")));
         viewer.querySelector(".side").textContent = side;
+        viewer.querySelector(".viewer-icon").innerHTML = viewportIcons[variant.dataset.viewport] ?? "";
         viewer.querySelector(".viewer-title").textContent =
           `${story.querySelector(".title").textContent.replace(/\s+/g, " ")} · ${variant.dataset.viewport}, ${story.dataset.theme}${img.dataset.flip ? flipHint : ""}`;
         viewerOriginal.href = img.getAttribute("src");
