@@ -153,13 +153,6 @@
         flex-direction: column;
         gap: 2px;
       }
-      /* On a narrow screen, the story's path takes a line of its own below the badge and name, rather than wrapping beside them. */
-      @media (max-width: 600px) {
-        .identity { flex-wrap: wrap; row-gap: 2px; }
-        .identity .heading { display: contents; }
-        .identity .title-line { flex: 1 1 0; min-width: 0; }
-        .identity .meta { flex-basis: 100%; }
-      }
       .title-line { display: block; }
       .kind {
         flex: none;
@@ -855,7 +848,7 @@
         const commentShown = commented && !state.closedComments.has(change.id);
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
-            <span class="header-row identity">
+            <span class="header-row">
             <span class="chevron" aria-hidden="true"></span>
             <span class="kind">${change.kind}</span>
             <span class="heading">
