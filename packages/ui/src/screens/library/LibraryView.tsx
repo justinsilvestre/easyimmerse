@@ -170,7 +170,7 @@ function Items({
             title={isFiltered ? "Nothing matches" : "The library is empty"}
             description={
               isFiltered
-                ? "No item is in this language with every tag chosen."
+                ? "Nothing in the library is in this language with every tag chosen."
                 : "Nothing has been added to this server's library yet."
             }
           />

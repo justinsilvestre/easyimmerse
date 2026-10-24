@@ -6,7 +6,7 @@ type CoveredItem = Pick<
   "kind" | "cover" | "has_cover" | "file_name"
 >;
 
-const whenPublished = ", taken when the item is published.";
+const whenPublished = ", taken when the video is published.";
 
 /** Says where an item's cover picture comes from, or that it has none. */
 export function libraryCoverDescription(item: CoveredItem): string {
@@ -16,7 +16,7 @@ export function libraryCoverDescription(item: CoveredItem): string {
     const source =
       cover.kind === "frame"
         ? `The frame at ${formatLibraryDuration(cover.at_ms)} into the video`
-        : "The screenshot of the first line";
+        : "The screenshot of the first subtitle";
     return has_cover ? `${source}.` : `${source}${whenPublished}`;
   }
   return has_cover
@@ -27,7 +27,7 @@ export function libraryCoverDescription(item: CoveredItem): string {
 /** The label of the button that gives an item its automatic cover again, or null for an item that has it already. */
 export function automaticCoverLabel(item: CoveredItem): string | null {
   if (item.cover.kind === "automatic") return null;
-  if (item.kind === "video") return "Use the first line's screenshot";
+  if (item.kind === "video") return "Use the first subtitle's screenshot";
   return isEpub(item) ? "Use the book's own cover" : "Remove the picture";
 }
 
