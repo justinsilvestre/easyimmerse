@@ -34,36 +34,5 @@
     }
   ],
   "storyCount": 581,
-  "changes": [
-    {
-      "id": "reader-readerview--pages",
-      "title": "Reader/ReaderView",
-      "name": "Pages",
-      "importPath": "./src/reader/ReaderView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 33,
-        "dark-phone.png": 28
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        }
-      },
-      "contentColumns": {}
-    }
-  ]
+  "changes": []
 }
