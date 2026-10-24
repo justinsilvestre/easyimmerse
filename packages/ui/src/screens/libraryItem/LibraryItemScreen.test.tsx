@@ -82,7 +82,17 @@ describe("LibraryItemScreen", () => {
     });
     await addToProject();
     expect((await screen.findByRole("alert")).textContent).toBe(
-      "The item is not published, so it can't be added to a project yet.",
+      "This item isn't published right now, so it can't be added to a project. It can be added once it's published again.",
+    );
+  });
+
+  it("names the item it could not add when the server gives no reason", async () => {
+    renderItem({
+      "POST /library/items/i1/add": fakeFailure({ status: 500, message: "" }),
+    });
+    await addToProject();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "“Im Park” couldn't be added to the project. Try again in a moment.",
     );
   });
 

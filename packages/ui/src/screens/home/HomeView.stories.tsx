@@ -19,6 +19,7 @@ const meta = {
     onCreateProject: fn(),
     onContinueOffline: fn(),
     onOpenLibrary: fn(),
+    onManageLibrary: null,
   },
 } satisfies Meta<typeof HomeView>;
 
@@ -26,6 +27,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const RecentProjects: Story = {};
+
+export const LibraryManager: Story = { args: { onManageLibrary: fn() } };
 
 export const Empty: Story = { args: { projects: [] } };
 

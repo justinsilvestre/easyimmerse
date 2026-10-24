@@ -18,6 +18,7 @@ Before the first run, install Chromium for Playwright: `mise exec -- pnpm exec p
 - **Later runs against the same base take about five**, because the base commit's screenshots are kept.
 - Everything goes in `.dev/storybook-diff/`, which git ignores and which you can delete at any time.
 - The report is written to `.dev/storybook-diff/report/index.html`.
+- **A story that throws while rendering fails the run** once the report is written. The report lists it as errored, with its error.
 
 ## Report screenshots and controls
 
@@ -74,11 +75,12 @@ While there are comments, a bar at the bottom of the page counts them and offers
 
 ## Automatic reports on pull requests
 
-The `storybook` workflow runs the same scripts in three jobs:
+The `storybook` workflow runs the same scripts in four jobs:
 
 1. `capture` screenshots the base commit and the pull request's head.
 2. `compare` builds the report.
-3. `deploy-changes` publishes it at **`storybook/pr-<number>/changes/`**, beside the pull request's Storybook preview, and posts a comment with the counts.
+3. `renders` fails the run when a story of the head throws while rendering. The report is still published, so the error can be read there.
+4. `deploy-changes` publishes it at **`storybook/pr-<number>/changes/`**, beside the pull request's Storybook preview, and posts a comment with the counts.
 
 The screenshots are also kept as workflow artifacts for a week.
 
@@ -96,6 +98,7 @@ If a story still renders differently from run to run, **treat it as a bug** in t
 
 - `index.ts` is the local task. It finds where your branch left the base branch, checks that commit out into a temporary worktree, and runs `capture.ts` and `compare.ts`.
 - `capture.ts` screenshots a built Storybook: one directory per story, one image per theme and viewport, and a `manifest.json`.
+- `checkRenders.ts` fails when a capture holds a story that failed to render.
 - `compare.ts` compares two captures and writes the report: `changes.json`, the before, after, and diff images of each changed story, and `index.html`. `changes.json` also records the rectangle around each variant's changes, as `changedAreas`, for the highlight and the full-screen zoom.
 - `report.html` is the report page's template.
 - `rerender.ts` rewrites an existing report's page with the current template.

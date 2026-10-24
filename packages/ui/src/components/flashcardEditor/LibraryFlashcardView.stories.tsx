@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { LibraryFlashcardView } from "./LibraryFlashcardView.tsx";
 
@@ -7,6 +8,7 @@ const meta = {
   title: "Components/Flashcard Editor/LibraryFlashcardView",
   component: LibraryFlashcardView,
   decorators: [
+    withAppStore,
     (Story) => (
       <div className="h-[36rem] max-w-sm">
         <Story />

@@ -26,6 +26,6 @@ export const Uploading: Story = { args: { isCreating: true } };
 export const UploadFailed: Story = {
   args: {
     failure:
-      "Im Park was added as a draft, but its files could not be uploaded. Open it below to upload them again.",
+      "Im Park was added as a draft, but its files couldn't be uploaded. Open it below to upload them again.",
   },
 };

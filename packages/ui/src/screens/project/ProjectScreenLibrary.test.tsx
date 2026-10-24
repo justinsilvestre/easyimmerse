@@ -161,6 +161,16 @@ describe("ProjectScreen with a media file from the library", () => {
       await screen.findByRole("article", { name: "Flashcard preview" });
       expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
     });
+
+    it("asks for confirmation before deleting it", async () => {
+      await openFlashcard();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Delete flashcard" }),
+      );
+      expect(
+        await screen.findByRole("dialog", { name: "Delete this flashcard?" }),
+      ).toBeDefined();
+    });
   });
 
   describe("when the item cannot be read", () => {
@@ -169,7 +179,7 @@ describe("ProjectScreen with a media file from the library", () => {
         "GET /library/items/i1": fakeFailure({ status: 404, message: "" }),
       });
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "This library item is no longer available.",
+        "This item is no longer in the library. It may have been deleted, or taken out of the library for now.",
       );
     });
 
@@ -178,7 +188,7 @@ describe("ProjectScreen with a media file from the library", () => {
         "GET /library/items/i1": fakeFailure({ status: 500, message: "" }),
       });
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "This library item could not be loaded.",
+        "This library item couldn't be loaded. Try again in a moment.",
       );
     });
   });

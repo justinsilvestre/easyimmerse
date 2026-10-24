@@ -15,6 +15,15 @@ export function createVitestConfig(options: {
   return defineConfig({
     test: {
       environment: options.environment,
+      // Pages such as dictionary entries link stylesheets and scripts by relative paths that no test serves.
+      environmentOptions: {
+        happyDOM: {
+          settings: {
+            disableCSSFileLoading: true,
+            disableJavaScriptFileLoading: true,
+          },
+        },
+      },
       setupFiles: options.setupFiles,
       testTimeout: options.testTimeout,
       include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
