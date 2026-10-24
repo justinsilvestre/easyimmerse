@@ -5,9 +5,9 @@ import type {
 } from "@easyimmerse/state";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
-import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
-import { FailedSavesStatus } from "./flashcards/unsaved/FailedSavesStatus.tsx";
-import { NoticeRegion } from "./notices/NoticeRegion.tsx";
+import { FailedSavesStatus } from "./components/notices/FailedSavesStatus.tsx";
+import { NoticeRegion } from "./components/notices/NoticeRegion.tsx";
+import { WordClickMemoryProvider } from "./components/wordLookup/wordClickMemoryContext.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { Screens } from "./Screens.tsx";
 

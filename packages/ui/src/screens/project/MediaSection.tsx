@@ -1,0 +1,128 @@
+import type { MediaImportSource } from "@easyimmerse/state";
+import { Link, Plus } from "lucide-react";
+import { useState } from "react";
+import { Button } from "../../components/common/Button.tsx";
+import { EmptyState } from "../../components/common/EmptyState.tsx";
+import { MenuButton } from "../../components/common/MenuButton.tsx";
+import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
+import { type MediaItem, MediaList } from "./MediaList.tsx";
+import {
+  type MediaCategory,
+  mediaCategories,
+  mediaCategoryLabel,
+  mediaOfCategory,
+} from "./mediaCategories.ts";
+
+/**
+ * The project's media files, with the ways to add one: from a file, and through each installed
+ * media-source plugin, whose button carries the plugin's own label.
+ * The heading is a menu that narrows the list to one kind of file, videos, audio or ebooks, each option counting its files.
+ * Until the list has loaded, the section shows placeholders and offers nothing to choose.
+ */
+export function MediaSection({
+  media,
+  ...props
+}: {
+  /** The project's media files, or `undefined` while they are loading. */
+  media: readonly MediaItem[] | undefined;
+  /** The installed media-source plugins, each offered as a button beside "Add media". */
+  importSources: readonly MediaImportSource[];
+  onAddMedia: () => void;
+  onImportMedia: (source: MediaImportSource) => void;
+  onOpenMedia: (mediaId: string) => void;
+  onDeleteMedia: (mediaId: string) => void;
+}) {
+  if (!media) return <LoadingMedia />;
+  return <LoadedMedia media={media} {...props} />;
+}
+
+function LoadingMedia() {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-semibold">Media</h2>
+      <LoadingStatus label="Loading media" className="flex flex-col gap-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </LoadingStatus>
+    </section>
+  );
+}
+
+function LoadedMedia({
+  media,
+  importSources,
+  onAddMedia,
+  onImportMedia,
+  onOpenMedia,
+  onDeleteMedia,
+}: {
+  media: readonly MediaItem[];
+  importSources: readonly MediaImportSource[];
+  onAddMedia: () => void;
+  onImportMedia: (source: MediaImportSource) => void;
+  onOpenMedia: (mediaId: string) => void;
+  onDeleteMedia: (mediaId: string) => void;
+}) {
+  const [category, setCategory] = useState<MediaCategory>("all");
+  const shown = mediaOfCategory(media, category);
+  const importButtons = importSources.map((source) => (
+    <Button key={source.name} onClick={() => onImportMedia(source)}>
+      <Link className="size-4" aria-hidden />
+      {source.label}
+    </Button>
+  ));
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-semibold">
+          <MenuButton
+            label="Media category"
+            size="md"
+            items={mediaCategories.map((option) => ({
+              label: `${mediaCategoryLabel(option)} (${mediaOfCategory(media, option).length})`,
+              isChecked: option === category,
+              closesOnSelect: true,
+              onSelect: () => setCategory(option),
+            }))}
+          >
+            {mediaCategoryLabel(category)}
+          </MenuButton>
+        </h2>
+        {media.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {importButtons}
+            <Button onClick={onAddMedia}>
+              <Plus className="size-4" aria-hidden />
+              Add media
+            </Button>
+          </div>
+        )}
+      </div>
+      {media.length === 0 ? (
+        <EmptyState
+          title="No media yet"
+          description="Add a video, an audio file, or an ebook in the project's language."
+          actions={
+            <>
+              <Button variant="primary" onClick={onAddMedia}>
+                <Plus className="size-4" aria-hidden />
+                Add media
+              </Button>
+              {importButtons}
+            </>
+          }
+        />
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-fg-muted">
+          No {mediaCategoryLabel(category).toLowerCase()} in this project yet.
+        </p>
+      ) : (
+        <MediaList
+          media={shown}
+          onOpen={onOpenMedia}
+          onDelete={onDeleteMedia}
+        />
+      )}
+    </section>
+  );
+}

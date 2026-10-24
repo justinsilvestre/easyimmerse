@@ -9,7 +9,7 @@ import type {
 import { actions, createRecordingEffects } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";
-import { browserFrameCapturer } from "../player/browserFrameCapturer.ts";
+import { browserFrameCapturer } from "../components/player/browserFrameCapturer.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 

@@ -1,7 +1,7 @@
 import type { AppAction } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useRef } from "react";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppDispatch } from "../useAppDispatch.ts";
 
 /**
  * Dispatches the actions once the story has mounted, to put the store in the state the story shows.

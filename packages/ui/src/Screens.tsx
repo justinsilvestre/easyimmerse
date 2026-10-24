@@ -10,23 +10,23 @@ import {
   selectRoute,
   settingsPageOf,
 } from "@easyimmerse/state";
-import { licenseNoticesStateOf } from "./components/licenseNoticesStateOf.ts";
-import { useAppDispatch } from "./hooks/useAppDispatch.ts";
-import { useAppSelector } from "./hooks/useAppSelector.ts";
-import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
-import { useFfmpegBuildControls } from "./hooks/useFfmpegBuildControls.ts";
-import { useNavigate } from "./hooks/useNavigate.ts";
-import { PairingScreen } from "./pairing/PairingScreen.tsx";
-import { AccountScreen } from "./screens/AccountScreen.tsx";
-import { ConnectedReviewScreen } from "./screens/ConnectedReviewScreen.tsx";
-import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
-import { HomeScreen } from "./screens/HomeScreen.tsx";
-import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
-import { OfflineScreen } from "./screens/OfflineScreen.tsx";
-import { ProjectScreen } from "./screens/ProjectScreen.tsx";
-import { ProjectSettingsScreen } from "./screens/ProjectSettingsScreen.tsx";
-import { SettingsScreen } from "./screens/SettingsScreen.tsx";
-import { ServerScreen } from "./server/ServerScreen.tsx";
+import { AccountScreen } from "./screens/account/AccountScreen.tsx";
+import { DictionariesScreen } from "./screens/dictionaries/DictionariesScreen.tsx";
+import { HomeScreen } from "./screens/home/HomeScreen.tsx";
+import { OfflineScreen } from "./screens/home/OfflineScreen.tsx";
+import { PairingScreen } from "./screens/pairing/PairingScreen.tsx";
+import { ProjectScreen } from "./screens/project/ProjectScreen.tsx";
+import { NewProjectScreen } from "./screens/projectSettings/NewProjectScreen.tsx";
+import { ProjectSettingsScreen } from "./screens/projectSettings/ProjectSettingsScreen.tsx";
+import { ConnectedReviewScreen } from "./screens/review/ConnectedReviewScreen.tsx";
+import { ServerScreen } from "./screens/server/ServerScreen.tsx";
+import { licenseNoticesStateOf } from "./screens/settings/licenseNoticesStateOf.ts";
+import { SettingsScreen } from "./screens/settings/SettingsScreen.tsx";
+import { useConversionCacheControls } from "./screens/settings/useConversionCacheControls.ts";
+import { useFfmpegBuildControls } from "./screens/settings/useFfmpegBuildControls.ts";
+import { useAppDispatch } from "./useAppDispatch.ts";
+import { useAppSelector } from "./useAppSelector.ts";
+import { useNavigate } from "./useNavigate.ts";
 
 /** The main screen, with Settings over it while they are open. */
 export function Screens() {
