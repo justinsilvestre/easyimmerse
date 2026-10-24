@@ -541,7 +541,7 @@ mod tests {
 
     #[test]
     fn a_new_item_plays_the_default_tracks() {
-        let storage = Storage::open_in_memory().unwrap();
+        let storage = german_library_storage();
         let item = storage.create_library_item(&draft("Film")).unwrap();
         assert_eq!(
             storage.get_library_track_selection_json(&item.id).unwrap(),
@@ -551,7 +551,7 @@ mod tests {
 
     #[test]
     fn round_trips_a_track_selection() {
-        let storage = Storage::open_in_memory().unwrap();
+        let storage = german_library_storage();
         let item = storage.create_library_item(&draft("Film")).unwrap();
         let json = r#"{"video":0,"audio":2}"#;
         storage
