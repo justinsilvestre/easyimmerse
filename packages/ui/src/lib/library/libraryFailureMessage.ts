@@ -1,24 +1,44 @@
+/** What to tell the person for each failure the library's requests can end in, by the failure's code or status. */
+const messages: Record<string, string> = {
+  item_published:
+    "This item is published, so its file, subtitles, and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+  item_processing:
+    "The server is still preparing this item. Wait until its status changes, then try again.",
+  item_not_published:
+    "This item isn't published right now, so it can't be added to a project. It can be added once it's published again.",
+  uploads_unavailable:
+    "This server has no place set aside for uploaded files, so it can't hold a library. Whoever runs the server can set one up.",
+  browserFileUnreachable:
+    "This app can't send files from your device to the library. Open easyImmerse in a web browser and upload them from there.",
+  NETWORK:
+    "easyImmerse couldn't reach the server. Check your internet connection, then try again.",
+};
+
 /**
- * Says why a change to a library item failed: that a published item must be unpublished first,
- * to wait while it is being prepared, that it is not published yet, that the server keeps no uploads, or else `fallback`.
+ * Says what went wrong with a change to the library, why when that is known, and what the person can do next.
+ * A failure with no message of its own gets `fallback`.
  */
 export function libraryFailureMessage(
   error: unknown,
   fallback: string,
 ): string {
-  const code =
-    typeof error === "object" && error !== null && "code" in error
-      ? error.code
-      : undefined;
-  if (code === "item_published")
-    return "Unpublish the item to change its file, subtitles, or words.";
-  if (code === "item_processing")
-    return "Wait until the item is prepared, then try again.";
-  if (code === "item_not_published")
-    return "The item is not published, so it can't be added to a project yet.";
-  if (code === "uploads_unavailable")
-    return "This server keeps no uploaded files, so it has no library.";
-  if (code === "browserFileUnreachable")
-    return "This app can't upload files to the library. Use the web app instead.";
-  return fallback;
+  const key = codeOf(error) ?? statusOf(error);
+  const message =
+    key !== undefined && Object.hasOwn(messages, key) ? messages[key] : null;
+  return message ?? fallback;
+}
+
+function codeOf(error: unknown): string | undefined {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
+
+function statusOf(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null && "status" in error
+    ? String(error.status)
+    : undefined;
 }

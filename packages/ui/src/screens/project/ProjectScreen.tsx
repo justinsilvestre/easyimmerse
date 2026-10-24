@@ -118,8 +118,8 @@ function LibraryFileScreen({
       >
         <p role="alert">
           {isNotFound(error)
-            ? "This library item is no longer available."
-            : "This library item could not be loaded."}
+            ? "This item is no longer in the library. It may have been deleted, or taken out of the library for now."
+            : "This library item couldn't be loaded. Try again in a moment."}
         </p>
       </ScreenLayout>
     );

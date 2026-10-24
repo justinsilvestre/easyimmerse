@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { libraryFailureMessage } from "./libraryFailureMessage.ts";
 
 describe("libraryFailureMessage", () => {
-  it("tells to unpublish a published item first", () => {
+  it("tells to unpublish a published item before changing it", () => {
     expect(
       libraryFailureMessage(
         { status: 409, code: "item_published", message: "" },
         "Failed.",
       ),
-    ).toBe("Unpublish the item to change its file, subtitles, or words.");
+    ).toContain("Unpublish it, make the change, then publish it again.");
   });
 
   it("tells to wait while the item is being prepared", () => {
@@ -17,21 +17,36 @@ describe("libraryFailureMessage", () => {
         { status: 409, code: "item_processing", message: "" },
         "Failed.",
       ),
-    ).toBe("Wait until the item is prepared, then try again.");
+    ).toContain("Wait until its status changes, then try again.");
   });
 
-  it("tells that an unpublished item can't be added", () => {
+  it("tells that an unpublished item can't be added to a project", () => {
     expect(
       libraryFailureMessage(
         { status: 409, code: "item_not_published", message: "" },
         "Failed.",
       ),
-    ).toBe("The item is not published, so it can't be added to a project yet.");
+    ).toContain("so it can't be added to a project");
+  });
+
+  it("tells to check the connection when the server can't be reached", () => {
+    expect(
+      libraryFailureMessage({ status: "NETWORK", message: "" }, "Failed."),
+    ).toContain("Check your internet connection");
   });
 
   it("falls back for any other failure", () => {
     expect(libraryFailureMessage({ status: 500, message: "" }, "Failed.")).toBe(
       "Failed.",
     );
+  });
+
+  it("falls back for a code that only matches a property every object has", () => {
+    expect(
+      libraryFailureMessage(
+        { status: 400, code: "toString", message: "" },
+        "Failed.",
+      ),
+    ).toBe("Failed.");
   });
 });

@@ -46,7 +46,10 @@ export const NotPublished: Story = {
 export const Adding: Story = { args: { isAdding: true } };
 
 export const CouldNotAdd: Story = {
-  args: { addFailure: "Could not add the item to the project." },
+  args: {
+    addFailure:
+      "“Im Park” couldn't be added to the project. Try again in a moment.",
+  },
 };
 
 export const Manager: Story = { args: { canManage: true } };

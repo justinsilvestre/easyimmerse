@@ -64,11 +64,11 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
   return {
     activity,
     save: (draft: LibraryItemDraft) =>
-      run("Could not save the details.", () =>
+      run("The details couldn't be saved. Try again in a moment.", () =>
         update({ itemId, draft }).unwrap(),
       ),
     replaceFile: (file: File) =>
-      run("Could not upload the file.", () =>
+      run("The file couldn't be uploaded. Try again in a moment.", () =>
         registry === null
           ? Promise.reject(unreachableFile)
           : uploadFromRegistry(registry, file, (picked) =>
@@ -76,30 +76,43 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
             ),
       ),
     replaceSubtitles: (files: LibrarySubtitleFiles) =>
-      run("Could not upload the subtitles.", async () =>
-        putSubtitles({
-          itemId,
-          subtitles: await librarySubtitlesOf(files),
-        }).unwrap(),
+      run(
+        "The subtitles couldn't be uploaded. Try again in a moment.",
+        async () =>
+          putSubtitles({
+            itemId,
+            subtitles: await librarySubtitlesOf(files),
+          }).unwrap(),
       ),
     saveWords: (segmentIndex: number, words: LibraryWord[]) =>
-      run("Could not save the words.", () =>
-        wordSaves.run(segmentIndex, () =>
-          putWords({ itemId, segmentIndex, words }).unwrap(),
-        ),
+      run(
+        "The words of this subtitle couldn't be saved. Try again in a moment.",
+        () =>
+          wordSaves.run(segmentIndex, () =>
+            putWords({ itemId, segmentIndex, words }).unwrap(),
+          ),
       ),
     applyEverywhere: (text: string, entry: LibraryEntry) =>
-      run("Could not save the entry.", () =>
-        applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
+      run(
+        "The dictionary entry couldn't be saved. Try again in a moment.",
+        () =>
+          applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
       ),
     proposeWords: () =>
-      run("Could not propose words.", () => propose(itemId).unwrap()),
+      run(
+        "The words couldn't be filled in from your dictionaries. Try again in a moment.",
+        () => propose(itemId).unwrap(),
+      ),
     publish: () =>
-      run("Could not publish the item.", () => publish(itemId).unwrap()),
+      run("The item couldn't be published. Try again in a moment.", () =>
+        publish(itemId).unwrap(),
+      ),
     unpublish: () =>
-      run("Could not unpublish the item.", () => unpublish(itemId).unwrap()),
+      run("The item couldn't be unpublished. Try again in a moment.", () =>
+        unpublish(itemId).unwrap(),
+      ),
     remove: () =>
-      run("Could not delete the item.", () =>
+      run("The item couldn't be deleted. Try again in a moment.", () =>
         remove(itemId).unwrap().then(onDeleted),
       ),
   };

@@ -39,7 +39,10 @@ export function useLibraryItemCreation(onCreated: (itemId: string) => void) {
       .then(
         (item) => item,
         (error: unknown) => {
-          fail(error, "Could not add the item to the library.");
+          fail(
+            error,
+            "The item couldn't be added to the library. Try again in a moment.",
+          );
           return null;
         },
       );
@@ -57,7 +60,7 @@ export function useLibraryItemCreation(onCreated: (itemId: string) => void) {
     } catch (error) {
       fail(
         error,
-        `${draft.title} was added as a draft, but its files could not be uploaded. Open it below to upload them again.`,
+        `${draft.title} was added as a draft, but its files couldn't be uploaded. Open it below to upload them again.`,
       );
     }
   };

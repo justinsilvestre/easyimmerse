@@ -153,7 +153,11 @@ function Items({
         </LoadingStatus>
       );
     case "failed":
-      return <p role="alert">Could not load the library.</p>;
+      return (
+        <p role="alert">
+          The library couldn't be loaded. Try again in a moment.
+        </p>
+      );
     case "ready":
       if (items.length === 0)
         return (

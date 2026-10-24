@@ -45,7 +45,11 @@ export function LibraryManagementView({
           Loading the library…
         </p>
       )}
-      {status === "failed" && <p role="alert">Could not load the library.</p>}
+      {status === "failed" && (
+        <p role="alert">
+          The library couldn't be loaded. Try again in a moment.
+        </p>
+      )}
       {status === "ready" && items.length === 0 && (
         <p className="text-sm text-fg-muted">The library has no items yet.</p>
       )}

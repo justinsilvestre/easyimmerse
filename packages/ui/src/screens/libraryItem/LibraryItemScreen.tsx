@@ -39,7 +39,10 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
   if (item.isError)
     return (
       <ScreenLayout onBack={back} backLabel="Library">
-        <p role="alert">This library item could not be loaded.</p>
+        <p role="alert">
+          This library item couldn't be loaded. Go back to the library and try
+          again.
+        </p>
       </ScreenLayout>
     );
   // The "Add to" choice starts on the first project, so it waits for the projects.
@@ -72,7 +75,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         added.isError
           ? libraryFailureMessage(
               added.error,
-              "Could not add the item to the project.",
+              `“${item.data.title}” couldn't be added to the project. Try again in a moment.`,
             )
           : null
       }

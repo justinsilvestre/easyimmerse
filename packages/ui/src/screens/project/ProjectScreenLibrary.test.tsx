@@ -179,7 +179,7 @@ describe("ProjectScreen with a media file from the library", () => {
         "GET /library/items/i1": fakeFailure({ status: 404, message: "" }),
       });
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "This library item is no longer available.",
+        "This item is no longer in the library. It may have been deleted, or taken out of the library for now.",
       );
     });
 
@@ -188,7 +188,7 @@ describe("ProjectScreen with a media file from the library", () => {
         "GET /library/items/i1": fakeFailure({ status: 500, message: "" }),
       });
       expect((await screen.findByRole("alert")).textContent).toBe(
-        "This library item could not be loaded.",
+        "This library item couldn't be loaded. Try again in a moment.",
       );
     });
   });
