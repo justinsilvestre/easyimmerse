@@ -1,6 +1,7 @@
 import type { LookupSource } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { ActiveWord } from "../wordLookup/ClickableText.tsx";
+import type { TextSelection } from "../wordLookup/textSelection.ts";
 import type { WordGestures, WordHit } from "../wordLookup/useWordGestures.ts";
 
 type CueWordHandler = (hit: WordHit, cue: Cue) => void;
@@ -24,6 +25,7 @@ export type CueWordGestures = {
   ) => Promise<number | null> | null;
   onWordHold?: CueWordHandler;
   onWordMouseHold?: CueWordHandler;
+  onTextSelect?: (selection: TextSelection, cue: Cue) => void;
 };
 
 /** Binds the gestures to the cue whose words they come from. */
@@ -43,6 +45,7 @@ export function gesturesForCue(
     lookUpMatchedLength: bind(gestures.lookUpMatchedLength),
     onWordHold: bind(gestures.onWordHold),
     onWordMouseHold: bind(gestures.onWordMouseHold),
+    onTextSelect: bind(gestures.onTextSelect),
   };
 }
 

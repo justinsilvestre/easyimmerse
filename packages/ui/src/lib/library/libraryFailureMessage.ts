@@ -4,8 +4,6 @@ const messages: Record<string, string> = {
     "This item is published, so its file, subtitles, and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
   item_processing:
     "The server is still preparing this item. Wait until its status changes, then try again.",
-  item_not_published:
-    "This item isn't published right now, so it can't be added to a project. It can be added once it's published again.",
   uploads_unavailable:
     "This server has no place set aside for uploaded files, so it can't hold a library. Whoever runs the server can set one up.",
   browserFileUnreachable:

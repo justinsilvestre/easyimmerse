@@ -198,12 +198,14 @@ pub async fn get_library_file(
     Ok(serve_file(&path, request).await)
 }
 
-/// The uploaded file of a published item, which learners' media files of the item play.
-pub async fn published_source_path(
+/// The uploaded file of an item the principal may see, which media files of the item play:
+/// a published item's for anyone, and an unpublished item's for a library manager preparing it.
+pub async fn visible_source_path(
     state: &AppState,
+    principal: &Principal,
     item_id: &LibraryItemId,
 ) -> Result<String, ApiFailure> {
-    let item = load_published_item(state, item_id).await?;
+    let item = load_visible_item(state, principal, item_id).await?;
     source_path(&item_paths(state, item_id)?, &item)
 }
 

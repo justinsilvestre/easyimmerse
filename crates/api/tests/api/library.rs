@@ -689,6 +689,34 @@ async fn the_stream_of_an_unpublished_item_is_not_found() {
     );
 }
 
+/// The project and media file that adding a draft document item gives the launch token's holder, a library manager.
+async fn manager_draft_media(server: &TestServer) -> (String, String) {
+    let item_id = document_item(server).await;
+    let path = format!("/library/items/{item_id}/add");
+    let added = server
+        .post_json(&path, &json!({ "project_id": null }))
+        .await
+        .json();
+    let id = |key: &str| added[key].as_str().unwrap().to_string();
+    (id("project_id"), id("media_file_id"))
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_library_manager_adds_a_draft_to_a_project() {
+    let (server, _dir) = library_server().await;
+    let (project_id, media_id) = manager_draft_media(&server).await;
+    let media = server.get(&format!("/projects/{project_id}/media")).await;
+    assert_eq!(media.json()["media_files"][0]["id"], json!(media_id));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_stream_of_a_draft_serves_its_file_to_a_library_manager() {
+    let (server, _dir) = library_server().await;
+    let (project_id, media_id) = manager_draft_media(&server).await;
+    let path = format!("/projects/{project_id}/media/{media_id}/stream");
+    assert_eq!(server.get(&path).await.bytes, DOCUMENT_TEXT.as_bytes());
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn deleting_an_item_removes_its_files() {
     let (server, dir) = library_server().await;

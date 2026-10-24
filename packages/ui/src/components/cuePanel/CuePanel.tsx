@@ -46,6 +46,7 @@ export function CuePanel({
   activeCueIndex,
   flashcardCueIndexes,
   flashcardWordRanges,
+  markedTitle,
   libraryWords,
   activeWord,
   cursor,
@@ -65,6 +66,8 @@ export function CuePanel({
    * A card renders again when its own entry changes identity.
    */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedTitle?: string;
   /** The words of each cue a library item stores, by cue index, which alone are clickable; unset for any other media file. */
   libraryWords?: ReadonlyMap<number, readonly WordSpan[]>;
   activeWord?: ActiveCueWord;
@@ -73,8 +76,9 @@ export function CuePanel({
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
-  onAddSubtitlesFile: () => void;
-  onGenerateSubtitles: () => void;
+  /** Offers a subtitles file for a file that has none; without it and `onGenerateSubtitles`, the panel offers nothing. */
+  onAddSubtitlesFile?: () => void;
+  onGenerateSubtitles?: () => void;
   /** Opens the flashcard made from a cue. Without it, a card only marks that it has one. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
   /** Receives the positions in `cues` of the cards in view, each time they change, and null once the panel is gone. */
@@ -119,18 +123,25 @@ export function CuePanel({
       <div className="p-3">
         <EmptyState
           title="No subtitles"
-          description="Add a subtitles file, or have them generated from the audio."
+          description={
+            onAddSubtitlesFile &&
+            onGenerateSubtitles &&
+            "Add a subtitles file, or have them generated from the audio."
+          }
           actions={
-            <>
-              <Button onClick={onAddSubtitlesFile}>
-                <FilePlus className="size-4" aria-hidden />
-                Add a file
-              </Button>
-              <Button variant="primary" onClick={onGenerateSubtitles}>
-                <Sparkles className="size-4" aria-hidden />
-                Generate
-              </Button>
-            </>
+            onAddSubtitlesFile &&
+            onGenerateSubtitles && (
+              <>
+                <Button onClick={onAddSubtitlesFile}>
+                  <FilePlus className="size-4" aria-hidden />
+                  Add a file
+                </Button>
+                <Button variant="primary" onClick={onGenerateSubtitles}>
+                  <Sparkles className="size-4" aria-hidden />
+                  Generate
+                </Button>
+              </>
+            )
           }
         />
       </div>
@@ -155,6 +166,7 @@ export function CuePanel({
             flashcardWordRanges={
               flashcardWordRanges?.get(cue.index) ?? noRanges
             }
+            markedTitle={markedTitle}
             words={libraryWordsOf(libraryWords, cue)}
             activeWord={activeWordIn(activeWord, cue)}
             cursor={cursorIn(cursor, cue)}
@@ -194,6 +206,7 @@ const CueCard = memo(function CueCard({
   isActive,
   hasFlashcard,
   flashcardWordRanges,
+  markedTitle,
   words,
   activeWord,
   cursor,
@@ -206,6 +219,7 @@ const CueCard = memo(function CueCard({
   isActive: boolean;
   hasFlashcard: boolean;
   flashcardWordRanges: readonly Range[];
+  markedTitle?: string;
   /** The only words to make clickable, as a library item stores them; unset to find them in the cue's text. */
   words?: readonly WordSpan[];
   /** The word the pop-up shows, when it lies in this cue. */
@@ -281,6 +295,7 @@ const CueCard = memo(function CueCard({
           activeWord={activeWord}
           cursor={cursor}
           markedRanges={flashcardWordRanges}
+          markedTitle={markedTitle}
           words={words}
           gestures={gesturesForCue(wordGestures, cue)}
         />

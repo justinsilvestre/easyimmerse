@@ -20,15 +20,6 @@ describe("libraryFailureMessage", () => {
     ).toContain("Wait until its status changes, then try again.");
   });
 
-  it("tells that an unpublished item can't be added to a project", () => {
-    expect(
-      libraryFailureMessage(
-        { status: 409, code: "item_not_published", message: "" },
-        "Failed.",
-      ),
-    ).toContain("so it can't be added to a project");
-  });
-
   it("tells to check the connection when the server can't be reached", () => {
     expect(
       libraryFailureMessage({ status: "NETWORK", message: "" }, "Failed."),

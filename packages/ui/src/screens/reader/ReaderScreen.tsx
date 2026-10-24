@@ -15,18 +15,20 @@ import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
 import { DictionaryPopup } from "../../components/dictionaryPopup/DictionaryPopup.tsx";
 import { ConnectedFlashcardEditor } from "../../components/flashcardEditor/ConnectedFlashcardEditor.tsx";
+import { LibraryEditingBar } from "../../components/libraryEditing/LibraryEditingBar.tsx";
 import type { LibraryItemText } from "../../components/wordLookup/libraryWords.ts";
 import type { LookupPlace } from "../../components/wordLookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../../components/wordLookup/useLookupPrefetch.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
+import { useNavigate } from "../../useNavigate.ts";
 import { bookFailureSentence } from "./bookFailureSentence.ts";
 import { ConnectedReaderView } from "./ConnectedReaderView.tsx";
 import { draftFromText } from "./draftFromText.ts";
 import { ReaderStatus } from "./ReaderStatus.tsx";
 import { selectNearbySentences } from "./selectNearbySentences.ts";
 import { sentenceWordLookups } from "./sentenceWordLookups.ts";
-import { storedWordsOf } from "./storedWords.ts";
+import { storedWordSpansOf, storedWordsOf } from "./storedWords.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useBookTranslation } from "./useBookTranslation.tsx";
 import { useReaderAudio } from "./useReaderAudio.tsx";
@@ -45,7 +47,10 @@ import { useReaderSentenceRow } from "./useReaderSentenceRow.ts";
  * Another document of the project can be paired with the book as its translation, and read alone,
  * or once the two are aligned, together with the book.
  * A file from the library is read from its item's text, whose words show their stored entries in the pop-up without being looked up,
- * and every flashcard made from it is a library flashcard.
+ * and every flashcard made from it is a library flashcard; it cannot be paired with a translation.
+ * While a library manager prepares the item, every word can be clicked and any text selected, the stored words are underlined,
+ * the pop-up gives the text an entry for learners, as `useWordLookup` describes, and no flashcard is made;
+ * a bar under the toolbar leads back to the item's details, as does the way back.
  */
 export function ReaderScreen({
   project,
@@ -159,10 +164,21 @@ function BookReader({
       settings,
     });
   const libraryText = library?.text;
+  const isEditing = library?.isEditing ?? false;
   const storedWords = useMemo(
-    () => libraryText && storedWordsOf(libraryText),
-    [libraryText],
+    () => (libraryText && !isEditing ? storedWordsOf(libraryText) : undefined),
+    [libraryText, isEditing],
   );
+  const markedSpans = useMemo(
+    () =>
+      libraryText && isEditing ? storedWordSpansOf(libraryText) : undefined,
+    [libraryText, isEditing],
+  );
+  const navigate = useNavigate();
+  const close = () =>
+    library?.isEditing
+      ? navigate({ type: "editLibraryItem", itemId: library.item.id })
+      : dispatch(actions.closeMedia());
   const audio = useReaderAudio(project.id, mediaFile.id, text);
   const sentence = useReaderSentenceRow(text, bilingual, audio);
   const lookup = useReaderLookup(
@@ -195,9 +211,13 @@ function BookReader({
       mediaFileId={mediaFile.id}
       document={text}
       title={document.title || mediaFile.name}
-      projectName={settings.name}
+      projectName={isEditing ? "Item details" : settings.name}
       language={textLanguage}
       storedWords={storedWords}
+      markedSpans={markedSpans}
+      headerContent={
+        isEditing && <LibraryEditingBar kind="text" onOpenDetails={close} />
+      }
       preferences={preferences}
       controls={controls}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
@@ -207,7 +227,7 @@ function BookReader({
       highlightedSentence={lookup.highlightedSentence}
       callbacks={{
         ...lookup.wordGestures,
-        onBack: () => dispatch(actions.closeMedia()),
+        onBack: close,
         onLookup: lookup.openSearch,
         onDismissLookup: lookup.close,
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
@@ -220,7 +240,7 @@ function BookReader({
         form && <ConnectedFlashcardEditor form={form} languages={languages} />
       }
       audio={audio}
-      translation={bilingual.translation}
+      translation={library ? undefined : bilingual.translation}
     />
   );
 }

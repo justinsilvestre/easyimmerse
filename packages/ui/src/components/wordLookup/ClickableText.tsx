@@ -12,6 +12,7 @@ import {
 import { type Range, RunText } from "./RunText.tsx";
 import { runLookupEnd } from "./runLookupStarts.ts";
 import { splitAtWords, type WordSpan } from "./splitAtWords.ts";
+import { selectionWithin } from "./textSelection.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
@@ -108,6 +109,7 @@ export function splitIntoWords(text: string): TextPart[] {
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
  * Given `words`, only those are clickable, in place of the words the text is split into otherwise.
+ * Text selected by dragging the mouse goes to the gestures' `onTextSelect`, when it is given, instead of a click on a word.
  */
 export function ClickableText({
   text,
@@ -116,6 +118,7 @@ export function ClickableText({
   markedRanges = noRanges,
   gestures = noGestures,
   words,
+  markedTitle = "Has a flashcard",
 }: {
   text: string;
   activeWord?: ActiveWord;
@@ -129,6 +132,8 @@ export function ClickableText({
   gestures?: WordGestures;
   /** The only words to make clickable, such as those a library manager set, in order and without overlaps. */
   words?: readonly WordSpan[];
+  /** What hovering a word in `markedRanges` tells about it. */
+  markedTitle?: string;
 }) {
   const textId = useId();
   const textCursor = useTextCursor(text, givenCursor, gestures);
@@ -141,7 +146,21 @@ export function ClickableText({
   return (
     // Positioned, so that the announcement region below, which is positioned off screen, stays inside this text
     // rather than reaching out of a scrolling list and stretching the page.
-    <span className="relative whitespace-pre-line" {...keyboard.textHandlers}>
+    <span
+      className="relative whitespace-pre-line"
+      {...keyboard.textHandlers}
+      onClickCapture={(event) => {
+        keyboard.textHandlers.onClickCapture();
+        // A double-click selects its word as well, and stays a double-click.
+        const selection =
+          gestures.onTextSelect &&
+          event.detail === 1 &&
+          selectionWithin(event.currentTarget, isPassageText);
+        if (!selection) return;
+        event.stopPropagation();
+        gestures.onTextSelect?.(selection);
+      }}
+    >
       {parts.map((part) => {
         if (!part.isWord) return part.text;
         const isActive =
@@ -171,7 +190,7 @@ export function ClickableText({
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
-            title={hasFlashcard ? "Has a flashcard" : undefined}
+            title={hasFlashcard ? markedTitle : undefined}
             {...{ [lookupTriggerAttribute]: "", [clickableWordAttribute]: "" }}
             {...pointer.handlersFor(part)}
             {...keyboard.handlersFor(part)}
@@ -207,7 +226,11 @@ export function ClickableText({
         );
       })}
       {/* One region for the whole text, outside the words, where screen readers announce reliably. */}
-      <span aria-live="polite" className="sr-only">
+      <span
+        aria-live="polite"
+        className="sr-only"
+        {...{ [announcementAttribute]: "" }}
+      >
         {keyboard.hasFocus ? announcementOf(cursor, parts) : ""}
       </span>
     </span>
@@ -255,6 +278,13 @@ const wordKeyShortcuts = "ArrowLeft ArrowRight";
 const runKeyShortcuts = "ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight";
 
 const noGestures: WordGestures = {};
+
+/** Marks the region where screen readers hear about the cursor, whose text is not the passage's. */
+const announcementAttribute = "data-announcement";
+
+function isPassageText(node: Node): boolean {
+  return !node.parentElement?.closest(`[${announcementAttribute}]`);
+}
 
 const noRanges: readonly Range[] = [];
 

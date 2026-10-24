@@ -5,8 +5,8 @@ use axum::http::StatusCode;
 use axum::{Extension, Json};
 use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardFieldKey};
 use easyimmerse_core::library::{
-    AddLibraryItem, LibraryItem, LibraryItemAdded, LibraryItemId, LibraryItemStatus,
-    NewLibraryFlashcard, library_flashcard_content,
+    AddLibraryItem, LibraryItem, LibraryItemAdded, LibraryItemId, NewLibraryFlashcard,
+    library_flashcard_content,
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
@@ -18,8 +18,10 @@ use crate::routes::library_support::{load_published_item, load_visible_item};
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
 
-/// Adds a published item to one of the principal's projects, or to a new project for the item's languages
+/// Adds an item to one of the principal's projects, or to a new project for the item's languages
 /// named after its language. A project that already has the item keeps its media file, which is returned.
+/// Anyone may add a published item; a library manager may also add an unpublished one,
+/// to prepare its words in the player or the reader that learners use.
 #[utoipa::path(
     post,
     path = "/library/items/{item_id}/add",
@@ -32,7 +34,6 @@ use crate::state::AppState;
         (status = 200, description = "The project and the item's media file in it", body = LibraryItemAdded),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such item, one the principal may not see, or no such project of the principal's", body = ApiError),
-        (status = 409, description = "`item_not_published`: the item is not published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -43,13 +44,6 @@ pub async fn add_library_item(
     Json(request): Json<AddLibraryItem>,
 ) -> Result<Json<LibraryItemAdded>, ApiFailure> {
     let item = load_visible_item(&state, &principal, &item_id).await?;
-    if item.status != LibraryItemStatus::Published {
-        return Err(ApiFailure::new(
-            StatusCode::CONFLICT,
-            "item_not_published",
-            "only a published item can be added to a project",
-        ));
-    }
     let owner = principal.owner_id();
     let added = state
         .with_storage(move |storage| add_to_project(storage, &owner, &item, request.project_id))

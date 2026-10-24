@@ -8,9 +8,11 @@ import {
   libraryHund,
   libraryVideo,
   withLibraryVideo,
+  withLibraryVideoText,
 } from "../../flashcards/libraryFlashcardTestSupport.ts";
 import type { ServerCacheSlice } from "../../server/cacheEntry.ts";
 import { serverCacheWith } from "../../server/serverCacheWith.ts";
+import { exampleLibraryItem } from "../libraryBrowse/exampleLibraryItem.ts";
 import { cursorFlashcardCommands } from "./cursorFlashcardCommands.ts";
 
 const onHund = actions.lookupCursorMoved(libraryHund, "mouse");
@@ -58,5 +60,16 @@ describe("cursorFlashcardCommands on a library media file", () => {
       media_files: [libraryVideo],
     });
     expect(apply(save, filesOnly, onHund)).toEqual([]);
+  });
+
+  it("asks for nothing while the item is not published, as when a library manager prepares it", () => {
+    const save = actions.lookupCursorFlashcardRequested("save");
+    const draft = serverCacheWith(
+      "getLibraryItem",
+      "i1",
+      exampleLibraryItem({ status: { kind: "draft" } }),
+      withLibraryVideoText,
+    );
+    expect(apply(save, draft, onHund)).toEqual([]);
   });
 });

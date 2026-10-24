@@ -1,18 +1,14 @@
-import type { LibraryWordPlace } from "@easyimmerse/state";
 import type {
-  LibraryEntry,
   LibraryItem,
   LibraryItemDraft,
   LibraryText,
-  LibraryWord,
 } from "@easyimmerse/types";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import type { LibrarySubtitleFiles } from "../../lib/library/libraryUploads.ts";
 import { LibraryFilesSection } from "./LibraryFilesSection.tsx";
 import { LibraryItemForm } from "./LibraryItemForm.tsx";
 import { LibraryPublication } from "./LibraryPublication.tsx";
-import { libraryLockOf } from "./libraryLock.ts";
-import { SegmentWordsEditor } from "./SegmentWordsEditor.tsx";
+import { LibraryWordsSection } from "./LibraryWordsSection.tsx";
 
 /** What is under way on the library edit screen, and why the last change failed, or null. */
 export type LibraryEditActivity = {
@@ -20,10 +16,14 @@ export type LibraryEditActivity = {
   isChangingCover: boolean;
   isUploading: boolean;
   isPublishing: boolean;
+  isOpening: boolean;
   failure: string | null;
 };
 
-/** The library manager's screen for one item: where it stands and how to publish it, its details, its files, and its words. */
+/**
+ * The library manager's details page for one item: where it stands and how to publish it,
+ * its words and the way to the player or the reader where they are chosen, its details, and its files.
+ */
 export function LibraryEditView({
   item,
   text,
@@ -31,18 +31,13 @@ export function LibraryEditView({
   previewUrl,
   activity,
   isConfirmingDelete,
-  selectedWord,
-  isOnlyUndefinedShown,
   onSave,
   onUploadCover,
   onChooseCoverFrame,
   onResetCover,
   onReplaceFile,
   onReplaceSubtitles,
-  onSelectWord,
-  onShowOnlyUndefined,
-  onSaveWords,
-  onApplyEverywhere,
+  onOpenWords,
   onProposeWords,
   onPublish,
   onUnpublish,
@@ -58,18 +53,14 @@ export function LibraryEditView({
   previewUrl: string | null;
   activity: LibraryEditActivity;
   isConfirmingDelete: boolean;
-  selectedWord: LibraryWordPlace | null;
-  isOnlyUndefinedShown: boolean;
   onSave: (draft: LibraryItemDraft) => void;
   onUploadCover: (file: File) => void;
   onChooseCoverFrame: (atMs: number) => void;
   onResetCover: () => void;
   onReplaceFile: (file: File) => void;
   onReplaceSubtitles: (files: LibrarySubtitleFiles) => void;
-  onSelectWord: (place: LibraryWordPlace | null) => void;
-  onShowOnlyUndefined: (isOn: boolean) => void;
-  onSaveWords: (segmentIndex: number, words: LibraryWord[]) => Promise<boolean>;
-  onApplyEverywhere: (text: string, entry: LibraryEntry) => Promise<boolean>;
+  /** Opens the item in the player or the reader, where its words are chosen. */
+  onOpenWords: () => void;
   onProposeWords: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
@@ -97,6 +88,12 @@ export function LibraryEditView({
         onCancelDelete={onCancelDelete}
         onDelete={onDelete}
       />
+      <LibraryWordsSection
+        item={item}
+        text={text}
+        isOpening={activity.isOpening}
+        onOpen={onOpenWords}
+      />
       <LibraryItemForm
         key={item.id}
         item={item}
@@ -115,26 +112,6 @@ export function LibraryEditView({
         onReplaceFile={onReplaceFile}
         onReplaceSubtitles={onReplaceSubtitles}
       />
-      {text ? (
-        <SegmentWordsEditor
-          segments={text.segments}
-          languages={{
-            target: item.language,
-            translation: item.translation_language,
-          }}
-          lock={libraryLockOf(item.status)}
-          selectedWord={selectedWord}
-          isOnlyUndefinedShown={isOnlyUndefinedShown}
-          onSelectWord={onSelectWord}
-          onShowOnlyUndefined={onShowOnlyUndefined}
-          onSaveWords={onSaveWords}
-          onApplyEverywhere={onApplyEverywhere}
-        />
-      ) : (
-        <p role="status" className="text-sm text-fg-muted">
-          Loading the item's text…
-        </p>
-      )}
     </ScreenLayout>
   );
 }

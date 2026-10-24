@@ -1,10 +1,9 @@
 import {
-  useApplyLibraryEntryMutation,
+  useAddLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useProposeLibraryWordsMutation,
   usePublishLibraryItemMutation,
   usePutLibrarySubtitlesMutation,
-  usePutLibraryWordsMutation,
   useResetLibraryCoverMutation,
   useSetLibraryCoverFrameMutation,
   useUnpublishLibraryItemMutation,
@@ -12,11 +11,8 @@ import {
   useUploadLibraryCoverMutation,
   useUploadLibraryFileMutation,
 } from "@easyimmerse/backend";
-import type {
-  LibraryEntry,
-  LibraryItemDraft,
-  LibraryWord,
-} from "@easyimmerse/types";
+import { actions } from "@easyimmerse/state";
+import type { LibraryItemDraft } from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
 import { libraryFailureMessage } from "../../lib/library/libraryFailureMessage.ts";
@@ -26,15 +22,15 @@ import {
   unreachableFile,
   uploadFromRegistry,
 } from "../../lib/library/libraryUploads.ts";
+import { useAppDispatch } from "../../useAppDispatch.ts";
 import type { LibraryEditActivity } from "./LibraryEditView.tsx";
-import { createSaveQueue } from "./saveQueue.ts";
 
 /**
  * The changes the library edit screen makes to an item through the server, with what is under way and why the last one failed.
- * Each change resolves to whether it was made. Saves of one segment's words go one after another.
- * `onDeleted` is called once the item is deleted.
+ * Each change resolves to whether it was made. `onDeleted` is called once the item is deleted.
  */
 export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
+  const dispatch = useAppDispatch();
   const registry = useBrowserFileRegistry();
   const [update, updated] = useUpdateLibraryItemMutation();
   const [upload, uploaded] = useUploadLibraryFileMutation();
@@ -43,14 +39,12 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
     useSetLibraryCoverFrameMutation();
   const [resetCover, coverReset] = useResetLibraryCoverMutation();
   const [putSubtitles, subtitlesPut] = usePutLibrarySubtitlesMutation();
-  const [putWords] = usePutLibraryWordsMutation();
-  const [applyEntry] = useApplyLibraryEntryMutation();
+  const [add, added] = useAddLibraryItemMutation();
   const [propose, proposed] = useProposeLibraryWordsMutation();
   const [publish, published] = usePublishLibraryItemMutation();
   const [unpublish, unpublished] = useUnpublishLibraryItemMutation();
   const [remove] = useDeleteLibraryItemMutation();
   const [failure, setFailure] = useState<string | null>(null);
-  const [wordSaves] = useState(createSaveQueue);
   const run = (fallback: string, change: () => Promise<unknown>) => {
     setFailure(null);
     return change().then(
@@ -70,6 +64,7 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
     isUploading: uploaded.isLoading || subtitlesPut.isLoading,
     isPublishing:
       proposed.isLoading || published.isLoading || unpublished.isLoading,
+    isOpening: added.isLoading,
     failure,
   };
   return {
@@ -87,7 +82,7 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
             ),
       ),
     uploadCover: (file: File) =>
-      run("Could not upload the cover.", () =>
+      run("The cover picture couldn't be uploaded. Try again in a moment.", () =>
         registry === null
           ? Promise.reject(unreachableFile)
           : uploadFromRegistry(registry, file, (picked) =>
@@ -95,11 +90,11 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
             ),
       ),
     chooseCoverFrame: (atMs: number) =>
-      run("Could not take the cover from that frame.", () =>
+      run("The cover couldn't be taken from that frame. Try again in a moment.", () =>
         chooseCoverFrame({ itemId, atMs }).unwrap(),
       ),
     resetCover: () =>
-      run("Could not change the cover.", () => resetCover(itemId).unwrap()),
+      run("The cover couldn't be changed. Try again in a moment.", () => resetCover(itemId).unwrap()),
     replaceSubtitles: (files: LibrarySubtitleFiles) =>
       run(
         "The subtitles couldn't be uploaded. Try again in a moment.",
@@ -109,20 +104,17 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
             subtitles: await librarySubtitlesOf(files),
           }).unwrap(),
       ),
-    saveWords: (segmentIndex: number, words: LibraryWord[]) =>
-      run(
-        "The words of this subtitle couldn't be saved. Try again in a moment.",
-        () =>
-          wordSaves.run(segmentIndex, () =>
-            putWords({ itemId, segmentIndex, words }).unwrap(),
+    /** Adds the item to the project given, or to a new one when null, and opens it there in the player or the reader. */
+    openWords: (projectId: string | null) =>
+      run("The item couldn't be opened for editing. Try again in a moment.", async () => {
+        const opened = await add({ itemId, projectId }).unwrap();
+        dispatch(
+          actions.openMediaFileRequested(
+            opened.project_id,
+            opened.media_file_id,
           ),
-      ),
-    applyEverywhere: (text: string, entry: LibraryEntry) =>
-      run(
-        "The dictionary entry couldn't be saved. Try again in a moment.",
-        () =>
-          applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
-      ),
+        );
+      }),
     proposeWords: () =>
       run(
         "The words couldn't be filled in from your dictionaries. Try again in a moment.",

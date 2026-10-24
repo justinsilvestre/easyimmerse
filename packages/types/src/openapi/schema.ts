@@ -575,8 +575,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Adds a published item to one of the principal's projects, or to a new project for the item's languages
+         * Adds an item to one of the principal's projects, or to a new project for the item's languages
          *     named after its language. A project that already has the item keeps its media file, which is returned.
+         *     Anyone may add a published item; a library manager may also add an unpublished one,
+         *     to prepare its words in the player or the reader that learners use.
          */
         post: operations["addLibraryItem"];
         delete?: never;
@@ -6193,15 +6195,6 @@ export interface operations {
             };
             /** @description No such item, one the principal may not see, or no such project of the principal's */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description `item_not_published`: the item is not published */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

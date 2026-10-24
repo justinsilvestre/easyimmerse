@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { exampleLibraryItem } from "../../testSupport/exampleLibrary.ts";
 import { LibraryFilesSection } from "./LibraryFilesSection.tsx";
 
@@ -20,6 +20,22 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Draft: Story = {};
+
+/** The fold that replaces the video, open. */
+export const ReplacingTheFile: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByText("Replace park.mp4"));
+  },
+};
+
+/** The fold that replaces the subtitles, open. */
+export const ReplacingTheSubtitles: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByText("Replace the subtitles"),
+    );
+  },
+};
 
 export const WithoutAFile: Story = {
   args: {

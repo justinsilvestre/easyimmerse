@@ -14,17 +14,26 @@ import type {
   LookupResponse,
 } from "@easyimmerse/types";
 
-/** A library item a media file comes from, with its text. */
-export type LibraryItemText = { item: LibraryItem; text: LibraryText };
+/**
+ * A library item a media file comes from, with its text, and whether a library manager has it open to prepare its words,
+ * which they do while it is unpublished.
+ */
+export type LibraryItemText = {
+  item: LibraryItem;
+  text: LibraryText;
+  isEditing: boolean;
+};
 
 /**
  * The library item a media file of a project comes from, with its text, from which the dictionary pop-up and the flashcards
  * of its words are made instead of from the dictionaries. `wordlessSource` is the passage a flashcard for no word comes from,
  * such as the cue shown now, or null when there is none.
+ * While `isEditing`, the library manager gives words their entries from their own dictionaries instead, as `useLibraryWordEditing` describes.
  */
 export type LibraryWords = {
   item: LibraryItem;
   text: LibraryText;
+  isEditing: boolean;
   projectId: string;
   mediaFileId: string;
   wordlessSource: LookupSource | null;

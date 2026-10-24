@@ -53,6 +53,7 @@ function dropsPending(lookup: LookupState, action: AppAction): boolean {
       );
     case "lookupWordHeld":
       return !showsOccurrence(lookup, action.chosen);
+    case "lookupTextSelected":
     case "lookupCursorLookedUp":
     case "lookupSearchOpened":
     case "lookupSentenceTranslationOpened":

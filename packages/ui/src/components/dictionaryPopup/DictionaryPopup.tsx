@@ -1,12 +1,13 @@
 import type { DictionaryStylesheet } from "@easyimmerse/types";
 import { BookOpen, ChevronDown, ChevronUp, Search, X } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, useRef, useState } from "react";
 import { languageName } from "../../lib/formatting/languages.ts";
 import { Button } from "../common/Button.tsx";
 import { IconButton } from "../common/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
+import { LibraryWordSection } from "./LibraryWordSection.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type PopupSize, popupHeight, popupWidth } from "./popupSize.ts";
@@ -27,6 +28,9 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
  * Pressing outside the pop-up and not on a word marked as a lookup trigger closes it.
  * Images in definitions are found through `resolveMediaUrl`.
+ * While a library manager prepares an item, `forLearners` is given: the header makes no flashcard,
+ * and while the pop-up shows text of the item, it shows above the entries what learners see for that text,
+ * and each entry's button gives that entry to the text for learners instead of making a flashcard.
  */
 export function DictionaryPopup({
   id,
@@ -42,6 +46,7 @@ export function DictionaryPopup({
   sentence,
   onClose,
   onSetUpDictionary,
+  forLearners,
 }: {
   /** Lets the word the pop-up shows name it as the element it controls. */
   id?: string;
@@ -57,8 +62,16 @@ export function DictionaryPopup({
   sentence?: SentenceRowProps;
   onClose: () => void;
   onSetUpDictionary: () => void;
+  forLearners?: Omit<
+    ComponentProps<typeof LibraryWordSection>,
+    "resolveMediaUrl"
+  > | null;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const entryLabel =
+    forLearners === undefined
+      ? "Flashcard from this entry"
+      : forLearners && "Use this entry for learners";
   const isExpanded = size === "expanded";
   usePopupDismissal(ref, onClose);
   return (
@@ -80,14 +93,15 @@ export function DictionaryPopup({
           autoFocus={mode === "search"}
           onSearch={onSearch}
         />
-        {(state?.kind === "found" || state?.kind === "notFound") && (
-          <IconButton
-            label="New flashcard"
-            onClick={() => onCreateFlashcard(null)}
-          >
-            <NewFlashcardIcon className="size-4" />
-          </IconButton>
-        )}
+        {forLearners === undefined &&
+          (state?.kind === "found" || state?.kind === "notFound") && (
+            <IconButton
+              label="New flashcard"
+              onClick={() => onCreateFlashcard(null)}
+            >
+              <NewFlashcardIcon className="size-4" />
+            </IconButton>
+          )}
         <IconButton label="Close" onClick={onClose}>
           <X className="size-4" />
         </IconButton>
@@ -99,12 +113,19 @@ export function DictionaryPopup({
             Making a flashcard for “{pendingFlashcard}”…
           </p>
         )}
+        {forLearners && (
+          <LibraryWordSection
+            {...forLearners}
+            resolveMediaUrl={resolveMediaUrl}
+          />
+        )}
         <Body
           state={state}
           resolveMediaUrl={resolveMediaUrl}
           onSearch={onSearch}
           onWordHold={onWordHold}
           onCreateFlashcard={onCreateFlashcard}
+          entryLabel={entryLabel}
           onSetUpDictionary={onSetUpDictionary}
         />
       </div>
@@ -207,6 +228,7 @@ function Body({
   onSearch,
   onWordHold,
   onCreateFlashcard,
+  entryLabel,
   onSetUpDictionary,
 }: {
   state: LookupDisplayState | null;
@@ -214,6 +236,8 @@ function Body({
   onSearch: (term: string) => void;
   onWordHold?: (word: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
+  /** The label of each result's flashcard button, or null for none. */
+  entryLabel: string | null;
   onSetUpDictionary: () => void;
 }) {
   if (!state) return <Hint>Type a word and press Enter.</Hint>;
@@ -264,7 +288,10 @@ function Body({
               onWordLookup={onSearch}
               onWordHold={onWordHold}
               onLookup={onSearch}
-              onCreateFlashcard={() => onCreateFlashcard(index)}
+              onCreateFlashcard={
+                entryLabel === null ? undefined : () => onCreateFlashcard(index)
+              }
+              flashcardLabel={entryLabel ?? undefined}
             />
           ))}
           {state.kanji?.map((kanji) => (

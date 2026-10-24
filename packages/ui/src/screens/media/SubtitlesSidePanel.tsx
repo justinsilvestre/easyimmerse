@@ -11,7 +11,10 @@ import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
-/** The subtitles panel beside the stage: the track choice above one card per cue of the target-language track. */
+/**
+ * The subtitles panel beside the stage: the track choice above one card per cue of the target-language track.
+ * A file whose subtitles cannot change, as one from the library, has no track choice, and offers no subtitles when it has none.
+ */
 export function SubtitlesSidePanel({
   subtitles,
   tracks,
@@ -19,6 +22,7 @@ export function SubtitlesSidePanel({
   shownCue,
   flashcardCueIndexes,
   flashcardWordRanges,
+  markedTitle,
   activeWord,
   cursor,
   wordGestures,
@@ -28,7 +32,8 @@ export function SubtitlesSidePanel({
   onVisibleCuesChange,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
-  tracks: SubtitleTrackChoices;
+  /** The tracks to choose among, or null for a file whose subtitles cannot change. */
+  tracks: SubtitleTrackChoices | null;
   /** The project's target and translation languages, which name the track choices. */
   languages: { target: string; translation: string };
   /** The cue the screen shows now, whose card is active. */
@@ -36,6 +41,8 @@ export function SubtitlesSidePanel({
   flashcardCueIndexes: readonly number[];
   /** Where each cue's text holds the words that flashcards were made from, by cue index. */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedTitle?: string;
   /** The word the dictionary pop-up shows. */
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, or null when there is none. */
@@ -52,15 +59,17 @@ export function SubtitlesSidePanel({
 }) {
   return (
     <>
-      <SubtitleTrackBar
-        tracks={tracks}
-        languages={languages}
-        onTargetChange={(trackId) => subtitles.choose("target", trackId)}
-        onTranslationChange={(trackId) =>
-          subtitles.choose("translation", trackId)
-        }
-        onAddFile={subtitles.requestFile}
-      />
+      {tracks && (
+        <SubtitleTrackBar
+          tracks={tracks}
+          languages={languages}
+          onTargetChange={(trackId) => subtitles.choose("target", trackId)}
+          onTranslationChange={(trackId) =>
+            subtitles.choose("translation", trackId)
+          }
+          onAddFile={subtitles.requestFile}
+        />
+      )}
       {subtitles.hasFailed && (
         <p role="alert" className="px-3 py-2 text-sm text-danger-fg">
           The subtitles could not be loaded.
@@ -72,6 +81,7 @@ export function SubtitlesSidePanel({
         activeCueIndex={shownCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
         flashcardWordRanges={flashcardWordRanges}
+        markedTitle={markedTitle}
         libraryWords={subtitles.libraryWords}
         activeWord={activeWord}
         cursor={cursor}
@@ -79,8 +89,8 @@ export function SubtitlesSidePanel({
         wordGestures={wordGestures}
         onOpenFlashcardForCue={onOpenFlashcardForCue}
         onVisibleCuesChange={onVisibleCuesChange}
-        onAddSubtitlesFile={subtitles.requestFile}
-        onGenerateSubtitles={onGenerateSubtitles}
+        onAddSubtitlesFile={tracks ? subtitles.requestFile : undefined}
+        onGenerateSubtitles={tracks ? onGenerateSubtitles : undefined}
       />
     </>
   );

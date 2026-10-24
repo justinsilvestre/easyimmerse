@@ -3,6 +3,7 @@ import {
   buildLibraryFileUrl,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,
+  useListProjectsQuery,
 } from "@easyimmerse/backend";
 import {
   actions,
@@ -14,9 +15,13 @@ import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";
 import { LibraryEditView } from "./LibraryEditView.tsx";
+import { libraryProjectOf } from "./libraryProjectOf.ts";
 import { useLibraryItemEditing } from "./useLibraryItemEditing.ts";
 
-/** The library management screen for one item, which only library managers reach: its status, details, files and words. */
+/**
+ * The details page of one library item, which only library managers reach: its status, words, details and files.
+ * Its words are chosen in the player or the reader, in the manager's library project for the item's language.
+ */
 export function LibraryEditScreen({ itemId }: { itemId: string }) {
   const go = useNavigate();
   const dispatch = useAppDispatch();
@@ -24,13 +29,14 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
   const server = useAppSelector(selectServerConfig);
   const item = useGetLibraryItemQuery(itemId);
   const text = useGetLibraryTextQuery(itemId);
+  const projectList = useListProjectsQuery().data;
   const manage = () => go({ type: "manageLibrary" });
   const editing = useLibraryItemEditing(itemId, manage);
   if (!item.data)
     return (
       <ScreenLayout onBack={manage} backLabel="Manage library">
         {item.isError ? (
-          <p role="alert">This library item could not be loaded.</p>
+          <p role="alert">This library item couldn't be loaded. Try again in a moment.</p>
         ) : (
           <p role="status" className="text-sm text-fg-muted">
             Loading the item…
@@ -38,34 +44,35 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
         )}
       </ScreenLayout>
     );
+  const shown = item.data;
   return (
     <LibraryEditView
-      item={item.data}
+      item={shown}
       text={text.data ?? null}
       coverUrl={buildLibraryCoverUrl(server, item.data)}
       previewUrl={
-        server && item.data.file_name !== null
+        server && shown.file_name !== null
           ? buildLibraryFileUrl(server, itemId)
           : null
       }
-      activity={editing.activity}
+      // Opening waits for the projects, so that it finds the library project opened before.
+      activity={{
+        ...editing.activity,
+        isOpening: editing.activity.isOpening || projectList === undefined,
+      }}
       isConfirmingDelete={
         choices.deletion?.kind === "item" && choices.deletion.itemId === itemId
       }
-      selectedWord={choices.selectedWord}
-      isOnlyUndefinedShown={choices.isOnlyUndefinedShown}
       onSave={editing.save}
       onUploadCover={editing.uploadCover}
       onChooseCoverFrame={editing.chooseCoverFrame}
       onResetCover={editing.resetCover}
       onReplaceFile={editing.replaceFile}
       onReplaceSubtitles={editing.replaceSubtitles}
-      onSelectWord={(place) => dispatch(actions.libraryWordSelected(place))}
-      onShowOnlyUndefined={(isOn) =>
-        dispatch(actions.libraryUndefinedFilterSet(isOn))
+      onOpenWords={() =>
+        projectList &&
+        editing.openWords(libraryProjectOf(projectList.projects, shown))
       }
-      onSaveWords={editing.saveWords}
-      onApplyEverywhere={editing.applyEverywhere}
       onProposeWords={editing.proposeWords}
       onPublish={editing.publish}
       onUnpublish={editing.unpublish}

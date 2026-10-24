@@ -1,4 +1,5 @@
 import {
+  useGetCurrentPrincipalQuery,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,
   useGetProjectQuery,
@@ -12,6 +13,7 @@ import {
 import type { MediaFile, Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
+import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { MediaScreen } from "../media/MediaScreen.tsx";
@@ -96,7 +98,10 @@ function OpenFileScreen({
   return <MediaScreen project={project} mediaFileId={mediaFileId} />;
 }
 
-/** The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive. */
+/**
+ * The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive.
+ * A library manager who opens an item that is not published, and is not being published, prepares its words there for learners.
+ */
 function LibraryFileScreen({
   project,
   mediaFile,
@@ -109,6 +114,7 @@ function LibraryFileScreen({
   const dispatch = useAppDispatch();
   const item = useGetLibraryItemQuery(itemId);
   const text = useGetLibraryTextQuery(itemId);
+  const principal = useGetCurrentPrincipalQuery("self").data;
   const error = item.error ?? text.error;
   if (error)
     return (
@@ -124,7 +130,14 @@ function LibraryFileScreen({
       </ScreenLayout>
     );
   if (!item.data || !text.data) return <OpeningFile project={project} />;
-  const library = { item: item.data, text: text.data };
+  const { status } = item.data;
+  const library = {
+    item: item.data,
+    text: text.data,
+    isEditing:
+      canManageLibrary(principal) &&
+      (status.kind === "draft" || status.kind === "failed"),
+  };
   return item.data.kind === "document" ? (
     <ReaderScreen
       project={project}

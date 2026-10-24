@@ -9,6 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { exampleResults } from "../../components/dictionaryPopup/exampleLookup.ts";
 import { exampleFlashcard } from "../../components/flashcards/exampleFlashcard.ts";
 import {
   createFakeBackendClient,
@@ -104,6 +105,14 @@ describe("ProjectScreen with a media file from the library", () => {
     expect(within(list).queryByRole("button", { name: "Nacht" })).toBeNull();
   });
 
+  it("offers no subtitles file to add", async () => {
+    renderLibraryVideo();
+    await findPanelWord("Hund");
+    expect(
+      screen.queryByRole("button", { name: "Add a subtitles file" }),
+    ).toBeNull();
+  });
+
   describe("when a word is clicked", () => {
     it("shows the word's stored entry", async () => {
       renderLibraryVideo();
@@ -191,5 +200,124 @@ describe("ProjectScreen with a media file from the library", () => {
         "This library item couldn't be loaded. Try again in a moment.",
       );
     });
+  });
+});
+
+describe("ProjectScreen with an unpublished library item open for its library manager", () => {
+  /** Renders the draft video item i1 for the server's owner, whose dictionaries find the example results for every word. */
+  function renderPreparation() {
+    return renderLibraryVideo([], {
+      "GET /auth/me": { kind: "launch" },
+      "GET /library/items/i1": exampleLibraryItem({
+        status: { kind: "draft" },
+      }),
+      "GET /dictionaries/lookup": {
+        results: [...exampleResults],
+        kanji: [],
+        stylesheets: [],
+      },
+      "PUT /library/items/i1/segments/0/words":
+        exampleLibraryVideoText.segments[0],
+      "PUT /library/items/i1/segments/2/words":
+        exampleLibraryVideoText.segments[2],
+    });
+  }
+
+  /** The words the screen saved for a segment, once it saves them. */
+  async function savedWords(
+    client: ReturnType<typeof renderPreparation>,
+    segmentIndex: number,
+  ) {
+    const path = `/library/items/i1/segments/${segmentIndex}/words`;
+    await waitFor(() =>
+      expect(requestsTo(client.requests, "PUT", path)).toHaveLength(1),
+    );
+    return bodyOf(requestsTo(client.requests, "PUT", path)[0]);
+  }
+
+  /** Chooses the first of the dictionaries' entries for learners in the open pop-up. */
+  async function useFirstEntry() {
+    const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+    const [use] = await within(popup).findAllByRole("button", {
+      name: "Use this entry for learners",
+    });
+    fireEvent.click(use as HTMLElement);
+  }
+
+  /** Selects the text of a cue in the subtitles panel from one offset to another, and ends the selection with a click. */
+  async function selectInPanel(word: string, from: number, to: number) {
+    const root = (await findPanelWord(word)).parentElement as HTMLElement;
+    const range = document.createRange();
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let offset = 0;
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      if (from >= offset && from <= offset + node.length)
+        range.setStart(node, from - offset);
+      if (to >= offset && to <= offset + node.length)
+        range.setEnd(node, to - offset);
+      offset += node.length;
+    }
+    document.getSelection()?.removeAllRanges();
+    document.getSelection()?.addRange(range);
+    fireEvent.click(root, { detail: 1 });
+  }
+
+  it("makes every word clickable", async () => {
+    renderPreparation();
+    expect(await findPanelWord("Nacht")).toBeDefined();
+  });
+
+  it("gives a clicked word the entry chosen for learners", async () => {
+    const client = renderPreparation();
+    fireEvent.click(await findPanelWord("Nacht"), { detail: 1 });
+    await useFirstEntry();
+    expect(await savedWords(client, 2)).toMatchObject([
+      { start: 5, end: 10, entry: { term: "fressen" } },
+    ]);
+  });
+
+  it("gives selected text the entry chosen for learners", async () => {
+    const client = renderPreparation();
+    await selectInPanel("Nacht", 0, 10);
+    await useFirstEntry();
+    expect(await savedWords(client, 2)).toMatchObject([
+      { start: 0, end: 10, entry: { term: "fressen" } },
+    ]);
+  });
+
+  it("shows a stored word's entry as learners see it", async () => {
+    renderPreparation();
+    fireEvent.click(await findPanelWord("Hund"), { detail: 1 });
+    const forLearners = await screen.findByRole("region", {
+      name: "For learners",
+    });
+    expect(forLearners.textContent).toContain("ein Haustier");
+  });
+
+  it("removes a stored word", async () => {
+    const client = renderPreparation();
+    fireEvent.click(await findPanelWord("Hund"), { detail: 1 });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Remove the word" }),
+    );
+    expect(
+      ((await savedWords(client, 0)) as { start: number }[]).map(
+        ({ start }) => start,
+      ),
+    ).toEqual([0, 9]);
+  });
+
+  it("makes no flashcard of a double-clicked word", async () => {
+    const client = renderPreparation();
+    doubleClick(await findPanelWord("Hund"));
+    await screen.findByRole("dialog", { name: "Dictionary" });
+    expect(
+      requestsTo(
+        client.requests,
+        "POST",
+        "/projects/p1/media/m3/library-flashcards",
+      ),
+    ).toEqual([]);
   });
 });

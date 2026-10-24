@@ -276,6 +276,7 @@ export {
   type LibraryWordPlace,
   selectLibraryAddTarget,
   selectLibraryEdit,
+  selectLibraryWordPlace,
 } from "./screen/libraryEdit/libraryEditState.ts";
 export {
   cuesOfLibraryText,
