@@ -34,7 +34,7 @@ const addToProject = async () =>
   );
 
 describe("LibraryItemScreen", () => {
-  it("offers the person's projects in the item's language, and a new project", async () => {
+  it("offers the person's projects in the library's language, and a new project", async () => {
     renderItem();
     const choice = (await screen.findByLabelText(
       "Add to",

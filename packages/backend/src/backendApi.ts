@@ -44,6 +44,7 @@ import type {
   LibraryItemDraft,
   LibraryListing,
   LibrarySegment,
+  LibrarySettings,
   LibraryText,
   LibraryWord,
   LinkRemoteRequest,
@@ -411,6 +412,8 @@ const libraryItemPath = (itemId: string) =>
 
 /** The tag of the library's listing, which every change to an item makes stale. */
 const libraryListTag = { type: "Library", id: "list" } as const;
+
+const librarySettingsTag = { type: "Library", id: "settings" } as const;
 
 const libraryItemTag = (itemId: string) =>
   ({ type: "Library", id: itemId }) as const;
@@ -1323,6 +1326,30 @@ export const backendApi = createApi({
         path: accountPath(via, "/auth/server"),
       }),
     }),
+    /** What holds for the whole library, such as the language its media are in. */
+    getLibrarySettings: build.query<LibrarySettings, void>({
+      query: () => ({ method: "GET", path: "/library/settings" }),
+      providesTags: [librarySettingsTag],
+    }),
+    /** Replaces the library's settings, which the server refuses while the library has any item, and caches the answer at once. */
+    putLibrarySettings: build.mutation<LibrarySettings, LibrarySettings>({
+      query: (settings) => ({
+        method: "PUT",
+        path: "/library/settings",
+        body: { kind: "json", value: settings },
+      }),
+      async onQueryStarted(_settings, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result === null) return;
+        dispatch(
+          backendApi.util.upsertQueryData(
+            "getLibrarySettings",
+            undefined,
+            result.data,
+          ),
+        );
+      },
+    }),
     /** The library's items: the published ones, or every item for a library manager. */
     listLibraryItems: build.query<LibraryListing, void>({
       query: () => ({ method: "GET", path: "/library/items" }),
@@ -1407,7 +1434,7 @@ export const backendApi = createApi({
       },
       invalidatesTags: [libraryListTag],
     }),
-    /** Changes the title, description, languages, kind, difficulty or tags of a library item. */
+    /** Changes the title, description, translation language, kind, difficulty or tags of a library item. */
     updateLibraryItem: build.mutation<LibraryItem, LibraryItemArgs>({
       query: ({ itemId, draft }) => ({
         method: "PUT",
@@ -1717,6 +1744,8 @@ export const {
   useListReviewCountsQuery,
   useCurrentPairingCodeQuery,
   useIssuePairingCodeMutation,
+  useGetLibrarySettingsQuery,
+  usePutLibrarySettingsMutation,
   useListLibraryItemsQuery,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,

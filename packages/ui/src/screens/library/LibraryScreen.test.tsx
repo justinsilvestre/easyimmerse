@@ -1,11 +1,5 @@
 import type { AccountUser, CurrentPrincipal } from "@easyimmerse/types";
-import {
-  cleanup,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import { exampleLibraryItems } from "../../testSupport/exampleLibrary.ts";
@@ -30,6 +24,7 @@ function renderLibrary(principal: CurrentPrincipal) {
     ...fixtureResponses,
     "GET /auth/me": principal,
     "GET /library/items": { items: exampleLibraryItems },
+    "GET /library/settings": { language: "de" },
   });
   return renderWithAppStore(<LibraryScreen />, client);
 }
@@ -48,7 +43,7 @@ describe("LibraryScreen", () => {
     expect(await itemTitles()).toEqual([
       "Im Park",
       "Nachrichten am Morgen",
-      "桃太郎",
+      "Rotkäppchen",
     ]);
   });
 
@@ -58,28 +53,9 @@ describe("LibraryScreen", () => {
     expect(await itemTitles()).toEqual(["Nachrichten am Morgen"]);
   });
 
-  it("hides the items in other languages once a language is chosen", async () => {
+  it("names the library's language under its heading", async () => {
     renderLibrary({ kind: "account", user: learner });
-    fireEvent.change(await screen.findByLabelText("Language"), {
-      target: { value: "ja" },
-    });
-    expect(await itemTitles()).toEqual(["桃太郎"]);
-  });
-
-  it("names each item's language while every language is listed", async () => {
-    renderLibrary({ kind: "account", user: learner });
-    const list = await screen.findByRole("list", { name: "Library items" });
-    expect(within(list).getAllByText("German")).toHaveLength(2);
-  });
-
-  it("leaves out the items' language once a language is chosen", async () => {
-    renderLibrary({ kind: "account", user: learner });
-    fireEvent.change(await screen.findByLabelText("Language"), {
-      target: { value: "de" },
-    });
-    await waitFor(async () => expect(await itemTitles()).toHaveLength(2));
-    const list = screen.getByRole("list", { name: "Library items" });
-    expect(within(list).queryByText("German")).toBeNull();
+    expect(await screen.findByText("For learners of German.")).toBeDefined();
   });
 
   describe("for someone who cannot manage the library", () => {

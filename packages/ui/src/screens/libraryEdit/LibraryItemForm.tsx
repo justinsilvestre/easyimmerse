@@ -27,9 +27,9 @@ function changed(draft: LibraryItemDraft, changes: Partial<LibraryItemDraft>) {
 }
 
 /**
- * The metadata of a library item: its title, description, languages, difficulty and tags, saved together,
+ * The metadata of a library item: its title, description, translation language, difficulty and tags, saved together,
  * and its cover picture, which changes at once. These can change whatever the item's status,
- * except the languages, which are fixed while the item is being prepared or is published.
+ * except the translation language, which is fixed while the item is being prepared or is published.
  */
 export function LibraryItemForm({
   item,
@@ -56,8 +56,8 @@ export function LibraryItemForm({
   onResetCover: () => void;
 }) {
   const [draft, change] = useReducer(changed, item, libraryDraftOf);
-  // The languages decide how the text was divided into words, so they change only with the words.
-  const areLanguagesLocked = libraryLockOf(item.status) !== null;
+  // The translation language is the language of the words' definitions, so it changes only with the words.
+  const isTranslationLanguageLocked = libraryLockOf(item.status) !== null;
   return (
     <div className="flex flex-col gap-6">
       <form
@@ -81,19 +81,12 @@ export function LibraryItemForm({
           value={draft.description}
           onChange={(event) => change({ description: event.target.value })}
         />
-        <div className="grid items-start gap-3 sm:grid-cols-3">
-          <SelectField
-            label="Language"
-            options={languageOptions}
-            value={draft.language}
-            disabled={areLanguagesLocked}
-            onChange={(event) => change({ language: event.target.value })}
-          />
+        <div className="grid items-start gap-3 sm:grid-cols-2">
           <SelectField
             label="Translation language"
             options={languageOptions}
             value={draft.translation_language}
-            disabled={areLanguagesLocked}
+            disabled={isTranslationLanguageLocked}
             onChange={(event) =>
               change({ translation_language: event.target.value })
             }

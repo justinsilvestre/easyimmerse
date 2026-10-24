@@ -15,11 +15,10 @@ import {
   mediaFileExtensions,
 } from "../mediaFileExtensions.ts";
 
-/** What a new library item is made with, besides its file: its languages, and the project where it opens to be prepared. */
+/** What a new library item is made with, besides its file: its translation language, and the project where it opens to be prepared. */
 export type NewLibraryItemSettings = {
-  language: string;
   translationLanguage: string;
-  /** The library manager's library project for the language, or null to have one made. */
+  /** The library manager's library project, or null to have one made. */
   projectId: string | null;
 };
 
@@ -165,7 +164,7 @@ function failed(error: RequestFailure, title: string, fallback: string) {
   );
 }
 
-/** The draft of a new item: named after its file, in the chosen languages, of the kind its file's name tells. */
+/** The draft of a new item: named after its file, with the chosen translation language, of the kind its file's name tells. */
 function draftOf(
   settings: NewLibraryItemSettings,
   file: PickedMediaFile,
@@ -173,7 +172,6 @@ function draftOf(
   return {
     title: file.name,
     description: "",
-    language: settings.language,
     translation_language: settings.translationLanguage,
     kind: kindOf(file.name),
     difficulty: null,

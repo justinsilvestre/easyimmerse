@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Screens } from "../../Screens.tsx";
-import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+} from "../../testSupport/createFakeBackendClient.ts";
 import {
   exampleLibraryItem,
   exampleLibraryMediaFile,
@@ -31,8 +34,11 @@ const draft = exampleLibraryItem({
 
 const subtitles = "1\n00:00:01,000 --> 00:00:02,000\nHallo, Hund.";
 
-/** Renders the library management screen for the server's owner, a library manager, over a server that makes the draft item i1. */
-function renderManagement() {
+/**
+ * Renders the library management screen for the server's owner, a library manager, over a server that makes the draft item i1
+ * in a German library, unless answered otherwise.
+ */
+function renderManagement(responses: Record<string, FakeResponse> = {}) {
   const registry = createBrowserFileRegistry<File>();
   const client = createFakeBackendClient(
     {
@@ -56,6 +62,7 @@ function renderManagement() {
         format: "srt",
         sample: "Hallo, Hund.",
       },
+      ...responses,
     },
     directPlaybackRoutes,
   );
@@ -97,6 +104,71 @@ describe("LibraryManageScreen", () => {
     );
   });
 
+  describe("while the library has no language", () => {
+    const noLanguage = { "GET /library/settings": { language: null } };
+
+    it("asks which language the library is for", async () => {
+      renderManagement(noLanguage);
+      expect(
+        await screen.findByRole("form", { name: "Library language" }),
+      ).toBeDefined();
+    });
+
+    it("offers no way to add media", async () => {
+      renderManagement(noLanguage);
+      await screen.findByRole("form", { name: "Library language" });
+      expect(screen.queryByRole("button", { name: "Add media" })).toBeNull();
+    });
+
+    it("saves the chosen language", async () => {
+      const { client } = renderManagement({
+        ...noLanguage,
+        "PUT /library/settings": { language: "fr" },
+      });
+      fireEvent.change(await screen.findByLabelText("Language"), {
+        target: { value: "fr" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Set language" }));
+      await waitFor(() =>
+        expect(
+          bodyOf(requestsTo(client.requests, "PUT", "/library/settings")[0]),
+        ).toEqual({ language: "fr" }),
+      );
+    });
+
+    it("names the language once it is saved", async () => {
+      renderManagement({
+        ...noLanguage,
+        "PUT /library/settings": { language: "fr" },
+      });
+      fireEvent.change(await screen.findByLabelText("Language"), {
+        target: { value: "fr" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Set language" }));
+      expect(await screen.findByText("For learners of French.")).toBeDefined();
+    });
+  });
+
+  describe("once the library has a language", () => {
+    it("names it under the heading", async () => {
+      renderManagement();
+      expect(await screen.findByText("For learners of German.")).toBeDefined();
+    });
+
+    it("lets it change while the library has no items", async () => {
+      renderManagement();
+      expect(
+        await screen.findByRole("button", { name: "Change" }),
+      ).toBeDefined();
+    });
+
+    it("keeps it fixed once the library has items", async () => {
+      renderManagement({ "GET /library/items": { items: [draft] } });
+      await screen.findByText("For learners of German.");
+      expect(screen.queryByRole("button", { name: "Change" })).toBeNull();
+    });
+  });
+
   describe("when a video is picked", () => {
     it("makes a draft named after the file", async () => {
       const rendered = renderManagement();
@@ -105,7 +177,11 @@ describe("LibraryManageScreen", () => {
         bodyOf(
           requestsTo(rendered.client.requests, "POST", "/library/items")[0],
         ),
-      ).toMatchObject({ title: "park.mp4", kind: "video", language: "de" });
+      ).toMatchObject({
+        title: "park.mp4",
+        kind: "video",
+        translation_language: "en",
+      });
     });
 
     it("uploads the file to the draft", async () => {

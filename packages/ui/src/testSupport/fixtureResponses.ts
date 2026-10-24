@@ -191,6 +191,7 @@ export const fixtureResponses = {
   "GET /sync/status": fixtureSyncStatus(),
   "GET /projects": fixtureProjects,
   "GET /review/counts": { projects: [] },
+  "GET /library/settings": { language: "de" },
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,

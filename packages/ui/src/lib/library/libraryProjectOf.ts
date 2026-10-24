@@ -1,19 +1,18 @@
-import type { LibraryItem, Project } from "@easyimmerse/types";
-import { languageName } from "../formatting/languages.ts";
+import type { Project } from "@easyimmerse/types";
 
 /**
- * Returns the project in which a library manager opens an item to prepare its words: the project for the item's language
- * that adding a library item makes, such as "German library", or null while they have none, for the server to make one.
- * Opening the item there again finds the media file added before.
+ * Returns the project in which a library manager opens items to prepare their words: the project named "Library"
+ * in the library's language that adding a library item makes, or null while they have none, for the server to make one.
+ * Opening an item there again finds the media file added before.
  */
 export function libraryProjectOf(
   projects: readonly Project[],
-  item: Pick<LibraryItem, "language">,
+  libraryLanguage: string,
 ): string | null {
-  const name = `${languageName(item.language)} library`;
   const project = projects.find(
     ({ settings }) =>
-      settings.name === name && settings.target_language === item.language,
+      settings.name === "Library" &&
+      settings.target_language === libraryLanguage,
   );
   return project?.id ?? null;
 }

@@ -14,6 +14,7 @@ import { routeAfter } from "../route/updateRoute.ts";
 import { updateLibraryBrowse } from "./libraryBrowse/libraryBrowseFilter.ts";
 import { updateLibraryEdit } from "./libraryEdit/libraryEditState.ts";
 import { updateLibraryCreation } from "./libraryManage/libraryCreation.ts";
+import { updateLibraryLanguageForm } from "./libraryManage/libraryLanguageForm.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaScreenActionOf } from "./mediaScreen/mediaScreenActionOf.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
@@ -87,8 +88,19 @@ function updateShownScreen(
     );
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (main.kind === "libraryManage") {
-    const [creation, effects] = updateLibraryCreation(main.creation, action);
-    return updated({ ...main, creation }, ...effects);
+    const [creation, creationEffects] = updateLibraryCreation(
+      main.creation,
+      action,
+    );
+    const [languageForm, formEffects] = updateLibraryLanguageForm(
+      main.languageForm,
+      action,
+    );
+    return updated(
+      { ...main, creation, languageForm },
+      ...creationEffects,
+      ...formEffects,
+    );
   }
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));

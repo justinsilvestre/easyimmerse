@@ -12,6 +12,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     item: exampleLibraryItem(),
+    libraryLanguage: "de",
     coverUrl: null,
     projects: exampleProjects.slice(0, 1),
     chosenProjectId: exampleProjects[0]?.id ?? null,
@@ -30,7 +31,7 @@ type Story = StoryObj<typeof meta>;
 
 export const WithAProject: Story = {};
 
-export const WithoutProjectsInItsLanguage: Story = {
+export const WithoutProjectsInTheLibrarysLanguage: Story = {
   args: { projects: [], chosenProjectId: null },
 };
 

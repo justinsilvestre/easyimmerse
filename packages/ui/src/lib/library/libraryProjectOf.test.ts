@@ -9,19 +9,17 @@ const named = (id: string, name: string, language = "de") => ({
 });
 
 describe("libraryProjectOf", () => {
-  it("finds the library project of the item's language", () => {
-    const projects = [named("p1", "Alpha"), named("p2", "German library")];
-    expect(libraryProjectOf(projects, { language: "de" })).toBe("p2");
+  it("finds the library project of the library's language", () => {
+    const projects = [named("p1", "Alpha"), named("p2", "Library")];
+    expect(libraryProjectOf(projects, "de")).toBe("p2");
   });
 
   it("passes over a project of that name in another language", () => {
-    const projects = [named("p2", "German library", "ja")];
-    expect(libraryProjectOf(projects, { language: "de" })).toBeNull();
+    const projects = [named("p2", "Library", "ja")];
+    expect(libraryProjectOf(projects, "de")).toBeNull();
   });
 
   it("finds none among the learner's own projects", () => {
-    expect(libraryProjectOf([named("p1", "Alpha")], { language: "de" })).toBe(
-      null,
-    );
+    expect(libraryProjectOf([named("p1", "Alpha")], "de")).toBeNull();
   });
 });

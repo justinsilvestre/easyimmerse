@@ -267,7 +267,6 @@ export {
   selectLibraryBrowseFilter,
 } from "./screen/libraryBrowse/libraryBrowseFilter.ts";
 export { libraryItemsShown } from "./screen/libraryBrowse/libraryItemsShown.ts";
-export { libraryLanguagesOf } from "./screen/libraryBrowse/libraryLanguagesOf.ts";
 export { libraryTagsOf } from "./screen/libraryBrowse/libraryTagsOf.ts";
 export {
   type LibraryDeletion,
@@ -282,6 +281,10 @@ export {
   type NewLibraryItemSettings,
   selectIsCreatingLibraryItem,
 } from "./screen/libraryManage/libraryCreation.ts";
+export {
+  type LibraryLanguageForm,
+  selectLibraryLanguageForm,
+} from "./screen/libraryManage/libraryLanguageForm.ts";
 export {
   cuesOfLibraryText,
   documentOfLibraryText,

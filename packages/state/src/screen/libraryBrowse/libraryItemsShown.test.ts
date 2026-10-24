@@ -3,28 +3,20 @@ import { exampleLibraryItem } from "./exampleLibraryItem.ts";
 import { libraryItemsShown } from "./libraryItemsShown.ts";
 
 const items = [
-  exampleLibraryItem({ id: "de-news", language: "de", tags: ["news"] }),
-  exampleLibraryItem({ id: "de-film", language: "de", tags: ["film", "news"] }),
-  exampleLibraryItem({ id: "ja-news", language: "ja", tags: ["news"] }),
+  exampleLibraryItem({ id: "news", tags: ["news"] }),
+  exampleLibraryItem({ id: "film-news", tags: ["film", "news"] }),
+  exampleLibraryItem({ id: "film", tags: ["film"] }),
 ];
 
-const idsShown = (language: string | null, tags: string[]) =>
-  libraryItemsShown(items, { language, tags }).map(({ id }) => id);
+const idsShown = (tags: string[]) =>
+  libraryItemsShown(items, { tags }).map(({ id }) => id);
 
 describe("libraryItemsShown", () => {
-  it("keeps every item when the filter chooses nothing", () => {
-    expect(idsShown(null, [])).toEqual(["de-news", "de-film", "ja-news"]);
-  });
-
-  it("keeps the items in the chosen language", () => {
-    expect(idsShown("ja", [])).toEqual(["ja-news"]);
+  it("keeps every item when the filter chooses no tag", () => {
+    expect(idsShown([])).toEqual(["news", "film-news", "film"]);
   });
 
   it("keeps the items that carry every chosen tag", () => {
-    expect(idsShown(null, ["news", "film"])).toEqual(["de-film"]);
-  });
-
-  it("keeps the items in the chosen language that carry the chosen tags", () => {
-    expect(idsShown("de", ["news"])).toEqual(["de-news", "de-film"]);
+    expect(idsShown(["news", "film"])).toEqual(["film-news"]);
   });
 });

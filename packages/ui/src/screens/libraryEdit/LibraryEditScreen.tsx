@@ -2,6 +2,7 @@ import {
   buildLibraryCoverUrl,
   buildLibraryFileUrl,
   useGetLibraryItemQuery,
+  useGetLibrarySettingsQuery,
   useGetLibraryTextQuery,
   useListProjectsQuery,
 } from "@easyimmerse/backend";
@@ -20,7 +21,7 @@ import { useLibraryItemEditing } from "./useLibraryItemEditing.ts";
 
 /**
  * The details page of one library item, which only library managers reach: its status, words, details and files.
- * Its words are chosen in the player or the reader, in the manager's library project for the item's language.
+ * Its words are chosen in the player or the reader, in the manager's library project for the library's language.
  */
 export function LibraryEditScreen({ itemId }: { itemId: string }) {
   const go = useNavigate();
@@ -30,6 +31,7 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
   const item = useGetLibraryItemQuery(itemId);
   const text = useGetLibraryTextQuery(itemId);
   const projectList = useListProjectsQuery().data;
+  const libraryLanguage = useGetLibrarySettingsQuery().data?.language;
   const manage = () => go({ type: "manageLibrary" });
   const editing = useLibraryItemEditing(
     itemId,
@@ -61,10 +63,13 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
           ? buildLibraryFileUrl(server, itemId)
           : null
       }
-      // Opening waits for the projects, so that it finds the library project opened before.
+      // Opening waits for the projects and the library's language, so that it finds the library project opened before.
       activity={{
         ...editing.activity,
-        isOpening: editing.activity.isOpening || projectList === undefined,
+        isOpening:
+          editing.activity.isOpening ||
+          projectList === undefined ||
+          !libraryLanguage,
       }}
       isConfirmingDelete={
         choices.deletion?.kind === "item" && choices.deletion.itemId === itemId
@@ -76,7 +81,10 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
       onReplaceFile={editing.replaceFile}
       onOpenWords={() =>
         projectList &&
-        editing.openWords(libraryProjectOf(projectList.projects, shown))
+        libraryLanguage &&
+        editing.openWords(
+          libraryProjectOf(projectList.projects, libraryLanguage),
+        )
       }
       onProposeWords={editing.proposeWords}
       onPublish={editing.publish}
