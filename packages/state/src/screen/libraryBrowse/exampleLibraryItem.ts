@@ -9,7 +9,7 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     language: "de",
     translation_language: "en",
     kind: "video",
-    difficulty: "beginner",
+    difficulty: "A1",
     tags: [],
     file_name: "park.mp4",
     duration_ms: 60_000,

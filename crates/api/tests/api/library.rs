@@ -46,7 +46,7 @@ fn draft(kind: &str) -> Value {
         "language": "de",
         "translation_language": "en",
         "kind": kind,
-        "difficulty": "beginner",
+        "difficulty": "A1",
         "tags": ["animals"],
         "cover_at_ms": null,
     })

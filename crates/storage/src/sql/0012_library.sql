@@ -1,5 +1,6 @@
 -- Media that library managers prepare for everyone on the server. Server-local; does not sync.
--- `kind`, `difficulty` and `status` are the snake_case names of the core library enums.
+-- `kind` and `status` are the snake_case names of the core library enums;
+-- `difficulty` is a level of the Common European Framework of Reference for Languages, A1 to C2.
 CREATE TABLE library_items (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -7,7 +8,7 @@ CREATE TABLE library_items (
     language TEXT NOT NULL,
     translation_language TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('video', 'audio', 'document')),
-    difficulty TEXT CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')),
+    difficulty TEXT CHECK (difficulty IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
     tags_json TEXT NOT NULL,
     chapter_titles_json TEXT,          -- documents only: one entry per chapter, null entries for untitled ones
     file_name TEXT,                    -- the uploaded file's original name, null until uploaded

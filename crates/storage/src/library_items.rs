@@ -278,7 +278,7 @@ mod tests {
             language: "de".to_string(),
             translation_language: "en".to_string(),
             kind: LibraryItemKind::Video,
-            difficulty: Some(LibraryDifficulty::Beginner),
+            difficulty: Some(LibraryDifficulty::A2),
             tags: vec!["film".to_string()],
             cover_at_ms: Some(3_000),
         }

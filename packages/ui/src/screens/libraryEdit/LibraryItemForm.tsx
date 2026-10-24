@@ -90,6 +90,7 @@ export function LibraryItemForm({
         <SelectField
           label="Difficulty"
           options={difficultyOptions}
+          hint="A level of the Common European Framework of Reference for Languages (CEFR)."
           value={draft.difficulty ?? ""}
           onChange={(event) =>
             change({

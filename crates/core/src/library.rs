@@ -38,13 +38,17 @@ pub enum LibraryItemKind {
     Document,
 }
 
+/// A level of the Common European Framework of Reference for Languages (CEFR),
+/// from A1 for beginners to C2 for learners who understand nearly everything.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
-#[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum LibraryDifficulty {
-    Beginner,
-    Intermediate,
-    Advanced,
+    A1,
+    A2,
+    B1,
+    B2,
+    C1,
+    C2,
 }
 
 /// Whether learners can see an item. Only a published item is shown to people who cannot manage the library.
@@ -345,14 +349,17 @@ impl LibraryDifficulty {
     /// The difficulty's name as it is serialized and stored.
     pub fn as_str(self) -> &'static str {
         match self {
-            LibraryDifficulty::Beginner => "beginner",
-            LibraryDifficulty::Intermediate => "intermediate",
-            LibraryDifficulty::Advanced => "advanced",
+            LibraryDifficulty::A1 => "A1",
+            LibraryDifficulty::A2 => "A2",
+            LibraryDifficulty::B1 => "B1",
+            LibraryDifficulty::B2 => "B2",
+            LibraryDifficulty::C1 => "C1",
+            LibraryDifficulty::C2 => "C2",
         }
     }
 
     pub fn parse(name: &str) -> Result<Self, LibraryError> {
-        [Self::Beginner, Self::Intermediate, Self::Advanced]
+        [Self::A1, Self::A2, Self::B1, Self::B2, Self::C1, Self::C2]
             .into_iter()
             .find(|difficulty| difficulty.as_str() == name)
             .ok_or_else(|| LibraryError::UnknownName(name.to_string()))
@@ -568,6 +575,15 @@ mod tests {
         assert_eq!(
             json,
             serde_json::json!({ "kind": "failed", "message": "no audio" })
+        );
+    }
+
+    #[test]
+    fn parses_the_difficulty_name_it_serializes() {
+        let json = serde_json::to_value(LibraryDifficulty::B2).unwrap();
+        assert_eq!(
+            LibraryDifficulty::parse(json.as_str().unwrap()),
+            Ok(LibraryDifficulty::B2)
         );
     }
 

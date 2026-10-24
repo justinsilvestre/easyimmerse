@@ -39,7 +39,7 @@ export const Text: Story = {
       title: "桃太郎",
       language: "ja",
       duration_ms: null,
-      difficulty: "advanced",
+      difficulty: "C1",
     }),
   },
 };
