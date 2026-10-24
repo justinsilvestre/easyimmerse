@@ -341,19 +341,22 @@
         background: #fff;
       }
       /*
-       * Darkens everything outside the rectangle around the changes, or on a dark screenshot, veils it.
+       * Darkens everything outside the rectangle around the changes, or on a dark screenshot, veils it, and borders it in the side's colour.
+       * The border is an outline, drawn outside the rectangle, so it never covers the changes.
        * The shadow reaches past the frame, which clips it to the screenshot.
        */
       .focus {
         position: absolute;
         box-sizing: border-box;
         pointer-events: none;
+        outline: 3px solid var(--side);
         box-shadow: 0 0 0 100vmax rgb(24 24 24 / 0.35);
         visibility: hidden;
       }
       /* A dark screenshot has little left to darken, so a light veil sets the rectangle apart instead. */
       .focus.on-dark { box-shadow: 0 0 0 100vmax rgb(170 170 170 / 0.18); }
       :is(.variant:has(.highlight:checked), #viewer.highlighted) .focus { visibility: visible; }
+      :is(figure, #viewer)[data-showing="before"] .focus { outline-style: dashed; }
       /* The diff shows only its red pixels, without the white backing the screenshots have. */
       :is(figure, #viewer) img.overlay { background: none; }
       img[data-flip] { cursor: pointer; }
