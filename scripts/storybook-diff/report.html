@@ -213,6 +213,11 @@
         gap: 8px 12px;
         min-width: 0;
       }
+      /* A wide screen has room for the controls at the end of the first row. */
+      @media (min-width: 601px) {
+        .header-row.identity { flex: 1 1 0; }
+        .header-row.controls { flex-basis: auto; margin-left: auto; }
+      }
       .controls {
         flex-wrap: wrap;
         gap: 8px;
@@ -848,7 +853,7 @@
         const commentShown = commented && !state.closedComments.has(change.id);
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
-            <span class="header-row">
+            <span class="header-row identity">
             <span class="chevron" aria-hidden="true"></span>
             <span class="kind">${change.kind}</span>
             <span class="heading">
