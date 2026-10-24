@@ -69,8 +69,8 @@ export function ModalDialog({
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h2 id={titleId} className="text-lg font-semibold">
+        <div className="flex flex-col gap-3">
+          <h2 id={titleId} className="text-xl font-semibold">
             {title}
           </h2>
           {description && (
