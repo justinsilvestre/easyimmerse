@@ -32,11 +32,11 @@ describe("the library edit choices", () => {
     ).toBeNull();
   });
 
-  it("drop a flashcard's deletion once the flashcard closes", () => {
+  it("drop a flashcard's deletion once it is confirmed", () => {
     expect(
       editAfter(
         actions.libraryDeletionAsked({ kind: "flashcard", flashcardId: "f1" }),
-        actions.flashcardClosed(),
+        actions.flashcardDeleteConfirmed("p1", "f1"),
       ).deletion,
     ).toBeNull();
   });

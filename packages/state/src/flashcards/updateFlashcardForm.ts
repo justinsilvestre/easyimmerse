@@ -195,13 +195,14 @@ function formFromLookup({
 /**
  * Opens a flashcard of the list as the latest work on it leaves it, withdrawing the Undo of its last save,
  * since undoing it now would change the card under the form. A failed save of the flashcard opens instead, with its edits,
- * whether or not the list has the flashcard.
+ * whether or not the list has the flashcard. A flashcard made from the library never opens, since it cannot be edited.
  */
 function openListed(
   form: FlashcardForm | null,
   { flashcardId, listed }: { flashcardId: string; listed: Flashcard | null },
   app: FlashcardApp,
 ) {
+  if (listed?.is_from_library) return updated(form);
   const failedSave = selectFailedSave(app, flashcardId);
   if (failedSave) return takeFailedSave(form, failedSave, app);
   if (listed === null) return updated(form);

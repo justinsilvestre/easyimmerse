@@ -13,6 +13,8 @@ import { useStableCallbacks } from "../../lib/useStableCallbacks.ts";
 import { useVisibleItemSpan } from "../../lib/useVisibleItemSpan.ts";
 import { Button } from "../common/Button.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
+import { MenuButton } from "../common/MenuButton.tsx";
+import type { MenuItem } from "../common/MenuItemButton.tsx";
 import {
   type ActiveWord,
   ClickableText,
@@ -55,6 +57,7 @@ export function CuePanel({
   onAddSubtitlesFile,
   onGenerateSubtitles,
   onOpenFlashcardForCue,
+  flashcardMenus,
   onVisibleCuesChange,
 }: {
   cues: readonly Cue[];
@@ -81,6 +84,11 @@ export function CuePanel({
   onGenerateSubtitles?: () => void;
   /** Opens the flashcard made from a cue. Without it, a card only marks that it has one. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /**
+   * The actions on the flashcard made from each cue, by cue index, which its mark offers in a menu instead of opening it,
+   * as for a flashcard made from the library, which cannot be edited. A card renders again when its own entry changes identity.
+   */
+  flashcardMenus?: ReadonlyMap<number, readonly MenuItem[]>;
   /** Receives the positions in `cues` of the cards in view, each time they change, and null once the panel is gone. */
   onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
@@ -175,6 +183,7 @@ export function CuePanel({
             onOpenFlashcardForCue={
               onOpenFlashcardForCue && handlers.openFlashcardForCue
             }
+            flashcardMenu={flashcardMenus?.get(cue.index)}
           />
         ))}
       </ol>
@@ -213,6 +222,7 @@ const CueCard = memo(function CueCard({
   onSeek,
   wordGestures,
   onOpenFlashcardForCue,
+  flashcardMenu,
 }: {
   cue: Cue;
   translation: Cue | null;
@@ -230,6 +240,8 @@ const CueCard = memo(function CueCard({
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /** The actions on the cue's flashcard, offered in a menu on its mark instead of opening it. */
+  flashcardMenu?: readonly MenuItem[];
 }) {
   const seekOnClick = (event: MouseEvent<HTMLLIElement>) => {
     if (
@@ -270,7 +282,16 @@ const CueCard = memo(function CueCard({
           {formatTimestamp(cue.start_ms)}
         </button>
         {hasFlashcard &&
-          (onOpenFlashcardForCue ? (
+          (flashcardMenu ? (
+            <div className="-my-2 flex">
+              <MenuButton
+                label="Flashcard actions"
+                icon={<Layers className="size-3 text-accent-fg" aria-hidden />}
+                items={flashcardMenu}
+                align="start"
+              />
+            </div>
+          ) : onOpenFlashcardForCue ? (
             <button
               type="button"
               aria-label="Open the flashcard"

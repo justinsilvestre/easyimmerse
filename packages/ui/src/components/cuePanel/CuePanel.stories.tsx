@@ -1,6 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import {
   exampleCues,
   exampleFlashcardCueIndexes,
@@ -49,6 +49,27 @@ export const WithFlashcards: Story = {
   args: {
     flashcardCueIndexes: exampleFlashcardCueIndexes,
     flashcardWordRanges: exampleFlashcardWordRanges,
+  },
+};
+
+/**
+ * Lines with flashcards made from the library, which cannot be edited: the mark beside their time opens a menu of what can be done instead.
+ * The menu of the first is open; the second flashcard is suspended, so its menu offers "Unsuspend".
+ */
+export const WithLibraryFlashcardMenuOpen: Story = {
+  args: {
+    flashcardCueIndexes: exampleFlashcardCueIndexes,
+    flashcardWordRanges: exampleFlashcardWordRanges,
+    flashcardMenus: new Map([
+      [3, libraryFlashcardMenu("Suspend")],
+      [6, libraryFlashcardMenu("Unsuspend")],
+    ]),
+  },
+  play: async ({ canvasElement }) => {
+    const [first] = within(canvasElement).getAllByRole("button", {
+      name: "Flashcard actions",
+    });
+    if (first) await userEvent.click(first);
   },
 };
 
@@ -107,4 +128,12 @@ function repeatScene(cues: readonly Cue[], times: number): Cue[] {
       end_ms: cue.end_ms + round * sceneMs,
     })),
   ).flat();
+}
+
+/** The menu of a flashcard made from the library, offering to suspend it or bring it back, and to delete it. */
+function libraryFlashcardMenu(suspension: "Suspend" | "Unsuspend") {
+  return [
+    { label: suspension, onSelect: fn() },
+    { label: "Delete flashcard", isDestructive: true, onSelect: fn() },
+  ];
 }

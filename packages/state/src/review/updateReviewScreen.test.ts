@@ -426,7 +426,7 @@ describe("updateReviewScreen", () => {
         listedCache(),
         openReview,
         arrived,
-        actions.reviewFlashcardEditRequested("m1"),
+        actions.reviewFlashcardEditRequested(),
       );
 
     it("goes to the screen of its media file", () => {
@@ -445,6 +445,24 @@ describe("updateReviewScreen", () => {
       });
     });
   });
+  describe("on editing a shown card made from the library", () => {
+    const editing = () =>
+      stateAfterWithCache(
+        listedCache(["a", "b", "c"], 1, {}, ["a"]),
+        openReview,
+        arrived,
+        actions.reviewFlashcardEditRequested(),
+      );
+
+    it("stays on the review", () => {
+      expect(editing().route).toMatchObject({ screen: "review" });
+    });
+
+    it("opens no editor", () => {
+      expect(editing().screen.main.kind).toBe("review");
+    });
+  });
+
   describe("when a card's flashcard is deleted elsewhere", () => {
     const listedAtQueue = listedCache(["a", "b", "c"], 1);
     const withoutA = listedCache(["b", "c"], 2);

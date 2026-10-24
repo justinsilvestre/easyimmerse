@@ -3,7 +3,7 @@ import type { LibraryDeletion, LibraryWordPlace } from "./libraryEditState.ts";
 
 /** The action creators of the library screens' own choices. */
 export const libraryEditActions = {
-  /** The user asked to delete a library item or a library flashcard, which waits for confirmation; null takes the request back. */
+  /** The user asked to delete a library item or a flashcard made from the library, which waits for confirmation; null takes the request back. */
   libraryDeletionAsked: (deletion: LibraryDeletion | null) =>
     ({ type: "libraryDeletionAsked", deletion }) as const,
   /** The library manager clicked a word or selected text of an item in the player or the reader, to give it an entry. */

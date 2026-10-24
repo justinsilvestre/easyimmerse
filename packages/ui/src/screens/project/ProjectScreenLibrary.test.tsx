@@ -54,8 +54,16 @@ const libraryFlashcard: Flashcard = {
   is_from_library: true,
 };
 
-/** Renders project p1 with its library media file m3 open, the video item i1, over a server with German dictionaries. */
+/** Renders project p1 with its library media file m3 open, the video item i1, over a server with German dictionaries, returning its client. */
 function renderLibraryVideo(
+  flashcards: Flashcard[] = [],
+  responses: Record<string, FakeResponse> = {},
+) {
+  return renderLibraryVideoWithStore(flashcards, responses).client;
+}
+
+/** Renders the library video as `renderLibraryVideo` does, returning the store along with the client. */
+function renderLibraryVideoWithStore(
   flashcards: Flashcard[] = [],
   responses: Record<string, FakeResponse> = {},
 ) {
@@ -87,7 +95,7 @@ function renderLibraryVideo(
     rendered.store.dispatch(actions.preferencesLoaded({}));
     rendered.store.dispatch(actions.openMediaFileRequested("p1", "m3"));
   });
-  return client;
+  return { ...rendered, client };
 }
 
 /** Finds the first occurrence of a word in the subtitles panel. */
@@ -149,36 +157,71 @@ describe("ProjectScreen with a media file from the library", () => {
     );
   });
 
-  describe("when a library flashcard is opened", () => {
-    async function openFlashcard() {
-      renderLibraryVideo([libraryFlashcard]);
-      await findPanelWord("Hund");
+  describe("with a library flashcard", () => {
+    async function openFlashcardMenu() {
+      const client = renderLibraryVideo([libraryFlashcard], {
+        "PUT /projects/p1/review/holds/f9": null,
+        "DELETE /projects/p1/flashcards/f9": null,
+      });
       fireEvent.click(
-        await screen.findByRole("button", { name: "Open the flashcard" }),
+        await screen.findByRole("button", { name: "Flashcard actions" }),
       );
+      return client;
     }
 
-    it("shows it as it is reviewed", async () => {
-      await openFlashcard();
+    async function askToDelete() {
+      const client = await openFlashcardMenu();
+      fireEvent.click(
+        screen.getByRole("menuitem", { name: "Delete flashcard" }),
+      );
+      return client;
+    }
+
+    it("offers no way to open it", async () => {
+      renderLibraryVideo([libraryFlashcard]);
+      await screen.findByRole("button", { name: "Flashcard actions" });
       expect(
-        await screen.findByRole("article", { name: "Flashcard preview" }),
-      ).toBeDefined();
+        screen.queryByRole("button", { name: "Open the flashcard" }),
+      ).toBeNull();
     });
 
-    it("offers no way to edit it", async () => {
-      await openFlashcard();
-      await screen.findByRole("article", { name: "Flashcard preview" });
-      expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    it("keeps the subtitles panel when asked to open it, opening no editor in its place", async () => {
+      const { store } = renderLibraryVideoWithStore([libraryFlashcard]);
+      await screen.findByRole("button", { name: "Flashcard actions" });
+      act(() => {
+        store.dispatch(actions.flashcardOpened("f9", libraryFlashcard));
+      });
+      expect(screen.queryByRole("list", { name: "Subtitles" })).not.toBeNull();
+    });
+
+    it("suspends it from its menu", async () => {
+      const client = await openFlashcardMenu();
+      fireEvent.click(screen.getByRole("menuitem", { name: "Suspend" }));
+      await waitFor(() =>
+        expect(
+          requestsTo(client.requests, "PUT", "/projects/p1/review/holds/f9"),
+        ).toHaveLength(1),
+      );
     });
 
     it("asks for confirmation before deleting it", async () => {
-      await openFlashcard();
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Delete flashcard" }),
-      );
+      await askToDelete();
       expect(
         await screen.findByRole("dialog", { name: "Delete this flashcard?" }),
       ).toBeDefined();
+    });
+
+    it("deletes it once confirmed", async () => {
+      const client = await askToDelete();
+      const dialog = await screen.findByRole("dialog", {
+        name: "Delete this flashcard?",
+      });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+      await waitFor(() =>
+        expect(
+          requestsTo(client.requests, "DELETE", "/projects/p1/flashcards/f9"),
+        ).toHaveLength(1),
+      );
     });
   });
 

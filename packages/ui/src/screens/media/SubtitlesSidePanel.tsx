@@ -1,5 +1,6 @@
 import type { ItemSpan } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
+import type { MenuItem } from "../../components/common/MenuItemButton.tsx";
 import { CuePanel } from "../../components/cuePanel/CuePanel.tsx";
 import type { CueTextCursor } from "../../components/cuePanel/cueCursor.ts";
 import type {
@@ -29,6 +30,7 @@ export function SubtitlesSidePanel({
   onSeek,
   onGenerateSubtitles,
   onOpenFlashcardForCue,
+  flashcardMenus,
   onVisibleCuesChange,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
@@ -54,6 +56,8 @@ export function SubtitlesSidePanel({
   onGenerateSubtitles: () => void;
   /** Opens the flashcard made from a cue, from the mark on that cue's card. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /** The actions on the flashcards made from the library, by cue index, which their marks offer in a menu, as `CuePanel` describes. */
+  flashcardMenus?: ReadonlyMap<number, readonly MenuItem[]>;
   /** Receives the positions among the cues of the cards in view, each time they change, and null once the panel is gone. */
   onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
@@ -88,6 +92,7 @@ export function SubtitlesSidePanel({
         onSeek={onSeek}
         wordGestures={wordGestures}
         onOpenFlashcardForCue={onOpenFlashcardForCue}
+        flashcardMenus={flashcardMenus}
         onVisibleCuesChange={onVisibleCuesChange}
         onAddSubtitlesFile={tracks ? subtitles.requestFile : undefined}
         onGenerateSubtitles={tracks ? onGenerateSubtitles : undefined}

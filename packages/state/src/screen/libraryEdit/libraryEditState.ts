@@ -35,7 +35,7 @@ export const initialLibraryEdit: LibraryEditState = {
 
 /**
  * Keeps the library screens' choices. Moving to another place drops the pending deletion, the chosen text and the "Add to" choice;
- * closing the dictionary pop-up drops the chosen text; closing or deleting a flashcard drops a pending deletion of it.
+ * closing the dictionary pop-up drops the chosen text; confirming a flashcard's deletion drops it from waiting.
  */
 export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
   switch (action.type) {
@@ -57,8 +57,7 @@ export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
         selectedWord: null,
         addTarget: null,
       });
-    case "flashcardClosed":
-    case "flashcardDeleteRequested":
+    case "flashcardDeleteConfirmed":
       return updated({ ...state, deletion: null });
     default:
       return updated(state);

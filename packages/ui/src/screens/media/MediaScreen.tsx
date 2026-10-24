@@ -36,6 +36,7 @@ import { useNavigate } from "../../useNavigate.ts";
 import { ConnectedPlayerControls } from "./ConnectedPlayerControls.tsx";
 import { findAdjacentCue } from "./findCue.ts";
 import { flashcardWordRanges } from "./flashcardWordRanges.ts";
+import { LibraryFlashcardDeleteDialog } from "./LibraryFlashcardDeleteDialog.tsx";
 import { MediaFlashcardEditor } from "./MediaFlashcardEditor.tsx";
 import { MediaView } from "./MediaView.tsx";
 import { mediaSourceOf } from "./mediaSourceOf.ts";
@@ -70,6 +71,8 @@ import { useSubtitleLookup } from "./useSubtitleLookup.ts";
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
  * A file from the library takes its cues from its item's text, where only the stored words are clickable,
  * the pop-up shows each word's stored entry without looking it up, and every flashcard is a library flashcard.
+ * A library flashcard cannot be edited, so it never opens in the editor: the mark on its cue's card offers a menu with
+ * "Suspend" or "Unsuspend" and "Delete flashcard", which asks to confirm first.
  * Its subtitles cannot change, so the subtitles panel offers no tracks, and its audio tracks are those its library manager prepared.
  * While a library manager prepares the item, the subtitles panel offers its tracks as for any file, and the item's text follows the tracks chosen;
  * every word can be clicked and any text selected, the stored words are underlined,
@@ -230,6 +233,10 @@ export function MediaScreen({
   });
   return (
     <>
+      <LibraryFlashcardDeleteDialog
+        projectId={projectId}
+        flashcards={flashcards.flashcards}
+      />
       {sourceMedia && source && (
         <SourceMediaDialog
           title={source.title}
@@ -338,6 +345,7 @@ export function MediaScreen({
               cursor={lookup.cursor}
               wordGestures={lookup.wordGestures}
               onOpenFlashcardForCue={flashcards.openForCue}
+              flashcardMenus={flashcards.libraryMenus}
               onSeek={playerCallbacks.onSeek}
               onGenerateSubtitles={() =>
                 dispatch(

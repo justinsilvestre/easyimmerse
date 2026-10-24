@@ -5,13 +5,15 @@ import {
   selectFlashcardForm,
   selectMediaFlashcards,
 } from "@easyimmerse/state";
+import { useMemo } from "react";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
+import { libraryFlashcardMenusOf } from "./libraryFlashcardMenus.tsx";
 import { selectFlashcardSegments } from "./selectFlashcardSegments.ts";
 
 /**
  * The flashcards made from one media file, as the store holds them, with the waveform segment of the card open in the form,
- * and the ways to open a card and retime the open one.
+ * the ways to open a card and retime the open one, and the menus of the cards made from the library, which never open.
  * The waveform draws each card with the content the app holds for it; its handles edit only the open card.
  * None of it changes while the open card's text is edited, so a screen using it does not render again on each keystroke.
  */
@@ -28,6 +30,23 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     const form = selectFlashcardForm(state.app);
     return form && segmentIdOf(form.card);
   });
+  const libraryMenus = useMemo(
+    () =>
+      libraryFlashcardMenusOf(flashcards, {
+        onSuspend: ({ id }) =>
+          dispatch(actions.flashcardSuspendRequested(projectId, id)),
+        onUnsuspend: ({ id }) =>
+          dispatch(actions.flashcardUnsuspendRequested(projectId, id)),
+        onAskDelete: ({ id }) =>
+          dispatch(
+            actions.libraryDeletionAsked({
+              kind: "flashcard",
+              flashcardId: id,
+            }),
+          ),
+      }),
+    [flashcards, projectId, dispatch],
+  );
   /** Opens a listed flashcard, or a failed save never saved, which goes to the form with its edits. */
   const open = (id: string) => {
     const card = flashcards.find((flashcard) => flashcard.id === id) ?? null;
@@ -42,6 +61,8 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     /** The waveform segment of the open card, the only one whose clip and screenshot time can be dragged, or null when no card is open. */
     editedSegmentId,
     open,
+    /** The actions on each card made from the library, by the index of its cue, as `libraryFlashcardMenusOf` describes. */
+    libraryMenus,
     /** Opens the card made from the cue at `cueIndex` of the target-language subtitles, when there is one. */
     openForCue: (cueIndex: number) => {
       const card = flashcards.find((listed) => listed.cue_index === cueIndex);

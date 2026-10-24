@@ -55,7 +55,6 @@ export function ConnectedReviewScreen({
     rate: ({ rating }) => rate(rating),
   });
   if (session === null || project === undefined) return null;
-  const mediaFileId = editableMediaFileIdOf(shown?.flashcard);
   const { settings } = project;
   return (
     <>
@@ -92,9 +91,9 @@ export function ConnectedReviewScreen({
         }
         onRetry={() => dispatch(actions.reviewQueueRetried())}
         onEditFlashcard={
-          mediaFileId === null
-            ? null
-            : () => dispatch(actions.reviewFlashcardEditRequested(mediaFileId))
+          isEditable(shown?.flashcard)
+            ? () => dispatch(actions.reviewFlashcardEditRequested())
+            : null
         }
         onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
         onSuspend={() =>
@@ -130,8 +129,11 @@ function intervalsOf(intervals: ReviewIntervals) {
   } satisfies Record<ReviewGrade, string>;
 }
 
-/** The media file to open the flashcard's editor on, or null for a card the editor cannot open: one made from the library, or one whose media file is gone. */
-function editableMediaFileIdOf(flashcard: Flashcard | undefined) {
-  if (!flashcard || flashcard.is_from_library) return null;
-  return flashcard.media_file_id;
+/** Tells whether the editor can open the flashcard: it must have a media file, and not have been made from the library, which cannot be edited. */
+function isEditable(flashcard: Flashcard | undefined) {
+  return (
+    flashcard !== undefined &&
+    flashcard.media_file_id !== null &&
+    !flashcard.is_from_library
+  );
 }
