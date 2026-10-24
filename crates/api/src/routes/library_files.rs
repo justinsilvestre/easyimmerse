@@ -17,12 +17,13 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal};
 use crate::auth::library_manager::LibraryManager;
+use crate::auth::principal::Principal;
 use crate::body_files::{BodyFileError, write_body_to_file};
 use crate::library_covers::{refresh_cover, remove_cover};
 use crate::library_paths::LibraryItemPaths;
 use crate::library_segments::text_of_document;
 use crate::routes::library_support::{
-    item_paths, load_editable_item, load_item, load_published_item, source_path,
+    item_paths, load_editable_item, load_item, load_published_item, load_visible_item, source_path,
 };
 use crate::routes::media_stream::serve_file;
 use crate::routes::stored_copies::{content_length, length_required};
