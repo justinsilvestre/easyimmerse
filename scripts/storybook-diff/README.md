@@ -68,7 +68,7 @@ While there are comments, a bar at the bottom of the page counts them and offers
 - **Open pull request**, in a pull request's report;
 - **Clear all**.
 
-The **×** in a comment box closes it and keeps the comment; the story's Comment button opens it again. The **×** on the bar hides it until you close a comment box or scroll to the top or bottom of the page.
+**Hide** in a comment box closes it and keeps the comment; the story's Comment button opens it again. The bar hides itself once you scroll a little way, and its **×** hides it straight away. Either way it comes back when you close a comment box or scroll to the top or bottom of the page.
 
 ## Automatic reports on pull requests
 

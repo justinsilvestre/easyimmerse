@@ -227,10 +227,11 @@
         cursor: pointer;
       }
       .close-button:hover { color: var(--fg); background: var(--line); }
-      .comment-box .close-button {
+      .comment-box .hide-comment {
         position: absolute;
-        top: 4px;
-        right: 4px;
+        top: 7px;
+        right: 10px;
+        font-size: 12px;
       }
       .comment-box textarea {
         box-sizing: border-box;
@@ -238,7 +239,7 @@
         width: 100%;
         min-height: 3.2em;
         resize: vertical;
-        padding: 8px 34px 8px 10px;
+        padding: 8px 48px 8px 10px;
         font: inherit;
         color: var(--fg);
         background: var(--raised);
@@ -586,13 +587,17 @@
         document.getElementById("copy-comments").after(pullRequestLink);
       }
 
-      // The bar can be hidden, and comes back when a comment box is closed, or when the page is scrolled to its top or
-      // bottom after being scrolled away from both, so hiding it at the top does not bring it straight back.
-      const dockState = { dismissed: false, leftEdge: false };
+      // The bar hides when dismissed, or on its own once the page has scrolled a little way from where it appeared. It comes
+      // back when a comment box is closed, or when the page is scrolled to its top or bottom after being scrolled away from
+      // both, so hiding it at the top does not bring it straight back.
+      const dockState = { dismissed: false, leftEdge: false, shownAtY: 0 };
+      const autoHideDistance = 400;
 
       function updateDock() {
         const total = commentedIds().length;
+        const wasHidden = dock.hidden;
         dock.hidden = total === 0 || dockState.dismissed;
+        if (wasHidden && !dock.hidden) dockState.shownAtY = scrollY;
         document.getElementById("comment-count").textContent = `${total} ${total === 1 ? "comment" : "comments"}`;
       }
 
@@ -601,16 +606,23 @@
         updateDock();
       }
 
-      document.getElementById("hide-dock").addEventListener("click", () => {
-        Object.assign(dockState, { dismissed: true, leftEdge: false });
-        updateDock();
-      });
-
       const edgeDistance = 80;
+      const atEdge = () => scrollY < edgeDistance || innerHeight + scrollY > document.documentElement.scrollHeight - edgeDistance;
+
+      // Hidden away from the top and bottom, the bar has already left them, so reaching either brings it back.
+      function hideDock() {
+        Object.assign(dockState, { dismissed: true, leftEdge: !atEdge() });
+        updateDock();
+      }
+
+      document.getElementById("hide-dock").addEventListener("click", hideDock);
+
       addEventListener("scroll", () => {
-        if (!dockState.dismissed) return;
-        const atEdge = scrollY < edgeDistance || innerHeight + scrollY > document.documentElement.scrollHeight - edgeDistance;
-        if (!atEdge) dockState.leftEdge = true;
+        if (!dockState.dismissed) {
+          if (!dock.hidden && Math.abs(scrollY - dockState.shownAtY) > autoHideDistance) hideDock();
+          return;
+        }
+        if (!atEdge()) dockState.leftEdge = true;
         else if (dockState.leftEdge) showDock();
       }, { passive: true });
 
@@ -646,6 +658,13 @@
         if (textarea && !textarea.value.trim()) textarea.parentElement.hidden = true;
       });
 
+      // Pressing Comment takes the focus from an empty box, which closes it before the click arrives, so whether the box
+      // was open is noted as the press starts, and the click closes it rather than opening it again.
+      document.addEventListener("pointerdown", (event) => {
+        const toggle = event.target.closest(".comment-toggle");
+        if (toggle) toggle.dataset.boxWasOpen = String(!toggle.closest("details.story").querySelector(".comment-box").hidden);
+      }, true);
+
       /** Hides a story's comment box, keeping what is in it; the Comment button opens it again. */
       function closeComment(story) {
         story.querySelector(".comment-box").hidden = true;
@@ -653,11 +672,14 @@
         showDock();
       }
 
-      function toggleComment(story) {
+      function toggleComment(story, button) {
         const box = story.querySelector(".comment-box");
         const textarea = box.querySelector("textarea");
-        if (!box.hidden && !textarea.value.trim()) {
-          box.hidden = true;
+        const wasOpen = button.dataset.boxWasOpen ? button.dataset.boxWasOpen === "true" : !box.hidden;
+        delete button.dataset.boxWasOpen;
+        if (wasOpen) {
+          if (textarea.value.trim()) closeComment(story);
+          else box.hidden = true;
           return;
         }
         story.open = true;
@@ -688,8 +710,8 @@
         event.preventDefault();
         const story = button.closest("details.story");
         if (button.dataset.themeChoice) switchTheme(story, button.dataset.themeChoice);
-        else if (button.classList.contains("comment-toggle")) toggleComment(story);
-        else if (button.classList.contains("close-button")) closeComment(story);
+        else if (button.classList.contains("comment-toggle")) toggleComment(story, button);
+        else if (button.classList.contains("hide-comment")) closeComment(story);
         else copyText(button, button.dataset.copy);
       });
 
@@ -807,7 +829,7 @@
             <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
             <div class="comment-box" ${commentShown ? "" : "hidden"}>
               <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
-              <button type="button" class="close-button" title="Close; the comment is kept" aria-label="Close comment">×</button>
+              <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
             </div>
           </summary>
           <div class="story-body">
