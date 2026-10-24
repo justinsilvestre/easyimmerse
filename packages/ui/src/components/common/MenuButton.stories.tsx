@@ -58,3 +58,15 @@ export const WithCheckboxes: Story = {
     ],
   },
 };
+
+/** A checkbox that another choice keeps checked, which can be seen but not changed. */
+export const WithADisabledCheckbox: Story = {
+  args: {
+    label: "More fields",
+    children: "More fields",
+    items: [
+      { label: "Word", isChecked: true, isDisabled: true, onSelect: fn() },
+      { label: "Definition (de)", isChecked: false, onSelect: fn() },
+    ],
+  },
+};

@@ -258,4 +258,37 @@ describe("MenuButton pressed with a pointer that does not focus buttons", () => 
     pressWithoutFocusing(screen.getByRole("button", { name: "Actions" }));
     expect(screen.queryByRole("menu")).toBeNull();
   });
+
+  describe("with a disabled item", () => {
+    function renderDisabled(onSelect: () => void = () => undefined) {
+      render(
+        <MenuButton
+          label="Options"
+          items={[
+            {
+              label: "Show subtitles",
+              isChecked: true,
+              isDisabled: true,
+              onSelect,
+            },
+          ]}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Options" }));
+      return screen.getByRole("menuitemcheckbox", { name: "Show subtitles" });
+    }
+
+    it("marks the item disabled", () => {
+      expect(renderDisabled().getAttribute("aria-disabled")).toBe("true");
+    });
+
+    it("ignores choosing it", () => {
+      let toggled = 0;
+      const item = renderDisabled(() => {
+        toggled += 1;
+      });
+      fireEvent.click(item);
+      expect(toggled).toBe(0);
+    });
+  });
 });
