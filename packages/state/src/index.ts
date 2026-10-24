@@ -11,6 +11,7 @@ export {
   selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
+export { canManageLibrary } from "./account/canManageLibrary.ts";
 export {
   selectConfirmationEmailMessage,
   selectHasSentConfirmationEmail,

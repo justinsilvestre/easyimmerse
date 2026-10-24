@@ -7,13 +7,13 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
 import type { MediaFile, Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { MediaScreen } from "../media/MediaScreen.tsx";

@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { ReadableState } from "../../app/feature.ts";
 import { isSettled } from "../../server/isSettled.ts";
-import { cachedLibraryItemIdOf } from "../cachedLibrary.ts";
+import { isCachedLibraryFileLocked } from "../cachedLibrary.ts";
 import type { ScreenState } from "../screenState.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import { selectMediaScreen } from "./mediaScreenSelectors.ts";
@@ -20,7 +20,7 @@ export type PlaybackApp = Pick<
 
 /**
  * Opens the track choice before the first play when a kind has several tracks and no choice is saved, or when the user asks,
- * except for a media file from the library, which plays the tracks its library manager prepared;
+ * except for a media file from the library that the app's principal is not preparing, as `isCachedLibraryFileLocked` describes;
  * and the conversion notice when the playback method re-encodes a track and the user has not settled the notice;
  * a notice that comes due while the track choice is open waits until the choice is cancelled.
  * Keeps what each dialog shows until it closes. `app` is the state before the action.
@@ -64,7 +64,7 @@ export function updatePlaybackDialog(
 type OpenPathPlayback = {
   mediaFileId: string;
   playback: PathPlayback;
-  isFromLibrary: boolean;
+  isLocked: boolean;
 };
 
 function selectOpenPathPlayback(
@@ -76,12 +76,11 @@ function selectOpenPathPlayback(
     ? {
         mediaFileId: playedMediaFileOf(app.backend, open.route).mediaFileId,
         playback,
-        isFromLibrary:
-          cachedLibraryItemIdOf(
-            app.backend,
-            open.route.projectId,
-            open.route.mediaFileId,
-          ) !== null,
+        isLocked: isCachedLibraryFileLocked(
+          app.backend,
+          open.route.projectId,
+          open.route.mediaFileId,
+        ),
       }
     : null;
 }
@@ -94,7 +93,7 @@ function settledDialog(
 ): DialogState {
   const ids = playbackRequestIds(open.mediaFileId);
   if (isSettled(action, ids.tracks, "getMediaTracks") && action.outcome.ok)
-    return !open.isFromLibrary &&
+    return !open.isLocked &&
       needsTrackChoice(action.outcome.data.container, open.playback.selection)
       ? { kind: "trackChoice", selection: null, stage: "choosing" }
       : dialog;
