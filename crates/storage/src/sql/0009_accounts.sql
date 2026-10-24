@@ -1,13 +1,15 @@
 -- The accounts of a server that has them. `role` is the snake_case name of an `AccountRole`;
 -- `password_hash` is a PHC string, which only the API crate reads.
 -- `email_confirmed_at_ms` is null until the owner follows a link mailed to the address.
+-- `manages_library` is 1 for an account an administrator let manage the server's library.
 CREATE TABLE users (
     id TEXT PRIMARY KEY REFERENCES owners(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE COLLATE NOCASE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL,
     created_at_ms INTEGER NOT NULL,
-    email_confirmed_at_ms INTEGER
+    email_confirmed_at_ms INTEGER,
+    manages_library INTEGER NOT NULL DEFAULT 0
 );
 
 -- A session is stored under the hash of its token, so that the stored rows cannot be presented as tokens.

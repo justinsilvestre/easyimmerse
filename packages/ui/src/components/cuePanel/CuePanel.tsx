@@ -20,6 +20,7 @@ import {
 import { lineStepOfKey } from "../wordLookup/cursorKeys.ts";
 import { clickableWordAttribute } from "../wordLookup/lookupTrigger.ts";
 import type { Range } from "../wordLookup/RunText.tsx";
+import type { WordSpan } from "../wordLookup/splitAtWords.ts";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,
@@ -27,6 +28,7 @@ import {
   type CueWordGestures,
   gesturesForCue,
 } from "./cueWordGestures.ts";
+import { libraryWordsOf } from "./libraryWordsByCue.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
 
 /**
@@ -44,6 +46,7 @@ export function CuePanel({
   activeCueIndex,
   flashcardCueIndexes,
   flashcardWordRanges,
+  libraryWords,
   activeWord,
   cursor,
   onSeek,
@@ -62,6 +65,8 @@ export function CuePanel({
    * A card renders again when its own entry changes identity.
    */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** The words of each cue a library item stores, by cue index, which alone are clickable; unset for any other media file. */
+  libraryWords?: ReadonlyMap<number, readonly WordSpan[]>;
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, highlighted in the card of the cue it lies in; null when there is none. */
   cursor?: CueTextCursor | null;
@@ -150,6 +155,7 @@ export function CuePanel({
             flashcardWordRanges={
               flashcardWordRanges?.get(cue.index) ?? noRanges
             }
+            words={libraryWordsOf(libraryWords, cue)}
             activeWord={activeWordIn(activeWord, cue)}
             cursor={cursorIn(cursor, cue)}
             onSeek={handlers.seek}
@@ -188,6 +194,7 @@ const CueCard = memo(function CueCard({
   isActive,
   hasFlashcard,
   flashcardWordRanges,
+  words,
   activeWord,
   cursor,
   onSeek,
@@ -199,6 +206,8 @@ const CueCard = memo(function CueCard({
   isActive: boolean;
   hasFlashcard: boolean;
   flashcardWordRanges: readonly Range[];
+  /** The only words to make clickable, as a library item stores them; unset to find them in the cue's text. */
+  words?: readonly WordSpan[];
   /** The word the pop-up shows, when it lies in this cue. */
   activeWord?: ActiveWord;
   /** The lookup cursor, when it lies in this cue, as `ClickableText` takes it. */
@@ -272,6 +281,7 @@ const CueCard = memo(function CueCard({
           activeWord={activeWord}
           cursor={cursor}
           markedRanges={flashcardWordRanges}
+          words={words}
           gestures={gesturesForCue(wordGestures, cue)}
         />
       </p>

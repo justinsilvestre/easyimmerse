@@ -67,3 +67,9 @@ export const MoreMenuOpen: Story = {
     );
   },
 };
+
+/** The More menu open on a card made from the library, which opens read-only. */
+export const LibraryCardMenuOpen: Story = {
+  args: { isFromLibrary: true },
+  play: MoreMenuOpen.play,
+};

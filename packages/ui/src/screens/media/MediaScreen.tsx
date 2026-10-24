@@ -23,6 +23,7 @@ import { useScreenshotSource } from "../../components/flashcards/useScreenshotSo
 import { MediaPlayer } from "../../components/player/MediaPlayer.tsx";
 import { selectSubtitleAppearance } from "../../components/subtitleAppearance/selectSubtitleAppearance.ts";
 import type { LineStep } from "../../components/wordLookup/cursorKeys.ts";
+import type { LibraryItemText } from "../../components/wordLookup/libraryWords.ts";
 import type { LookupPlace } from "../../components/wordLookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../../components/wordLookup/useLookupPrefetch.ts";
 import { wordLookupsIn } from "../../components/wordLookup/wordLookupsIn.ts";
@@ -65,13 +66,18 @@ import { useSubtitleLookup } from "./useSubtitleLookup.ts";
  * The file resumes where playback last was, as `resume` in the state package describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `playOpenedCard` in the state package describes.
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
+ * A file from the library takes its cues from its item's text, where only the stored words are clickable,
+ * the pop-up shows each word's stored entry without looking it up, and every flashcard is a library flashcard.
  */
 export function MediaScreen({
   project,
   mediaFileId,
+  library,
 }: {
   project: Project;
   mediaFileId: string;
+  /** The library item the file comes from, with its text, or unset for a file from anywhere else. */
+  library?: LibraryItemText;
 }) {
   const dispatch = useAppDispatch();
   const projectId = project.id;
@@ -79,7 +85,7 @@ export function MediaScreen({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const isPlaying = useAppSelector((state) => selectPlayer(state).isPlaying);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
-  const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  const subtitles = useMediaSubtitles(projectId, mediaFileId, library?.text);
   const source = mediaSourceOf(
     mediaFile?.origin ?? null,
     useListPluginsQuery().data?.plugins,
@@ -139,11 +145,11 @@ export function MediaScreen({
   );
   useLookupPrefetch(
     languages.target,
-    cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
+    library ? [] : cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
     wordLookupsIn,
   );
   const isTranslationOnScreen =
-    subtitles.selection.translation_track_id !== null &&
+    subtitles.translationCues.length > 0 &&
     ((panels.subtitleDisplay !== "target" && !panels.areSubtitlesHidden) ||
       (panels.cues && !isEditorOpen));
   /** The cue of a word's passage, or the cue shown now for the current one; null for a word of a book. */
@@ -174,6 +180,12 @@ export function MediaScreen({
     languages,
     { draftFor, savesAtOnce: true },
     sentence,
+    library && {
+      ...library,
+      projectId,
+      mediaFileId,
+      wordlessSource: shownCue && { kind: "cue", cue: shownCue },
+    },
   );
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
@@ -263,6 +275,7 @@ export function MediaScreen({
           dispatch(actions.subtitleAppearanceClosed())
         }
         flashcardWordRanges={wordRanges}
+        libraryWords={subtitles.libraryWords}
         playerCallbacks={playerCallbacks}
         onBack={() => dispatch(actions.closeMedia())}
         onOpenSource={() => dispatch(actions.sourceMediaOpened())}

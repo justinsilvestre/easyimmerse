@@ -25,6 +25,7 @@ const user = (id: string, email: string, role: AccountRole): AccountUser => ({
   role,
   created_at_ms: 0,
   email_confirmed_at_ms: null,
+  manages_library: false,
 });
 
 const administrator = user("u1", "admin@example.com", "administrator");
@@ -118,6 +119,23 @@ describe("UserManagement", () => {
       expect(
         requestsTo(client.requests, "PUT", "/users/u2/role")[0]?.body,
       ).toEqual({ kind: "json", value: { role: "privileged" } }),
+    );
+  });
+
+  it("lets an account manage the library when its Manages library box is checked", async () => {
+    const client = renderWith({
+      "PUT /users/u2/library-manager": { ...reader, manages_library: true },
+    });
+    fireEvent.click(
+      await screen.findByRole("checkbox", {
+        name: "Manages library (someone@example.com)",
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        requestsTo(client.requests, "PUT", "/users/u2/library-manager")[0]
+          ?.body,
+      ).toEqual({ kind: "json", value: { manages_library: true } }),
     );
   });
 

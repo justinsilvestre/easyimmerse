@@ -18,6 +18,7 @@ const meta = {
     onReviewProject: fn(),
     onCreateProject: fn(),
     onContinueOffline: fn(),
+    onOpenLibrary: fn(),
   },
 } satisfies Meta<typeof HomeView>;
 

@@ -19,7 +19,8 @@ use crate::routes::{
     account_sessions, alignments, anki, anki_exported, anki_package, anki_pending_deletions,
     auth_server, conversion_cache, conversion_capabilities, conversions, current_principal,
     dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media,
-    documents, email_confirmation, flashcards, health, local_dictionaries, media,
+    documents, email_confirmation, flashcards, health, library_files, library_items,
+    library_learning, library_publication, library_text, local_dictionaries, media,
     media_availability, media_clip, media_frame, media_import, media_playback_method, media_stream,
     media_tracks, media_waveform, openapi, pairing, password_reset, plugins, preferences, projects,
     review, sessions, source_form, storage_status, stored_copies, stored_copy_fetch, subtitles,
@@ -203,7 +204,31 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(email_confirmation::resend_confirmation_email))
         .routes(routes!(users::list_users, users::create_user))
         .routes(routes!(users::set_user_role))
+        .routes(routes!(users::set_library_manager))
         .routes(routes!(users::delete_user))
+        .routes(routes!(
+            library_items::list_library_items,
+            library_items::create_library_item
+        ))
+        .routes(routes!(
+            library_items::get_library_item,
+            library_items::update_library_item,
+            library_items::delete_library_item
+        ))
+        .routes(routes!(
+            library_files::upload_library_file,
+            library_files::get_library_file
+        ))
+        .routes(routes!(library_files::get_library_cover))
+        .routes(routes!(library_text::get_library_text))
+        .routes(routes!(library_text::put_library_subtitles))
+        .routes(routes!(library_text::propose_library_words))
+        .routes(routes!(library_text::put_library_words))
+        .routes(routes!(library_text::apply_library_entry))
+        .routes(routes!(library_publication::publish_library_item))
+        .routes(routes!(library_publication::unpublish_library_item))
+        .routes(routes!(library_learning::add_library_item))
+        .routes(routes!(library_learning::create_library_flashcard))
         .routes(routes!(pairing::issue_pairing_code))
         .routes(routes!(pairing::current_pairing_code))
         .routes(routes!(

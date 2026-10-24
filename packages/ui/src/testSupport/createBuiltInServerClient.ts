@@ -37,6 +37,7 @@ function remoteAccountResponses(link: SyncLink) {
     role: link.account_role,
     created_at_ms: 0,
     email_confirmed_at_ms: null,
+    manages_library: false,
   };
   return {
     "GET /sync/remote/auth/me": { kind: "account", user },

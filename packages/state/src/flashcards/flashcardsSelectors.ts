@@ -1,7 +1,8 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { createSelector } from "reselect";
+import { cachedFlashcards } from "../anki/ankiCache.ts";
 import type { AppState } from "../app/appState.ts";
-import type { AppRoot } from "../app/createAppStore.ts";
+import type { AppRoot, RootState } from "../app/createAppStore.ts";
 import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import {
@@ -83,6 +84,20 @@ export function selectContentBeforeSave(
   return card.kind === "existing"
     ? draftOfFlashcard(selectLatestFlashcard(app, card.flashcard))
     : null;
+}
+
+/**
+ * Tells whether a flashcard of the project was made from a library item, which the server fills and refuses to change,
+ * as the cached list of the project's flashcards says. It stays one after its media file is removed. False while the list is not cached.
+ */
+export function selectIsLibraryFlashcard(
+  root: Pick<RootState, "backend">,
+  projectId: string,
+  flashcardId: string,
+): boolean {
+  return cachedFlashcards(root.backend, projectId).some(
+    ({ id, is_from_library }) => id === flashcardId && is_from_library,
+  );
 }
 
 /** The app state that the unsaved work count reads. */

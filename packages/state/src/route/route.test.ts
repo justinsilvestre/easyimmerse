@@ -157,6 +157,45 @@ describe("navigate", () => {
       screen: "offline",
     });
   });
+
+  it("opens the library from home", () => {
+    expect(navigate(initialRoute, { type: "openLibrary" })).toEqual({
+      screen: "library",
+    });
+  });
+
+  it("opens a library item from the library", () => {
+    expect(
+      navigate(
+        { screen: "library" },
+        { type: "openLibraryItem", itemId: "i1" },
+      ),
+    ).toEqual({ screen: "libraryItem", itemId: "i1" });
+  });
+
+  it("opens the library management screen from the library", () => {
+    expect(navigate({ screen: "library" }, { type: "manageLibrary" })).toEqual({
+      screen: "libraryManage",
+    });
+  });
+
+  it("opens a library item for editing", () => {
+    expect(
+      navigate(
+        { screen: "library" },
+        { type: "editLibraryItem", itemId: "i1" },
+      ),
+    ).toEqual({ screen: "libraryEdit", itemId: "i1" });
+  });
+
+  it("moves from one library item to another", () => {
+    expect(
+      navigate(
+        { screen: "libraryItem", itemId: "i1" },
+        { type: "openLibraryItem", itemId: "i2" },
+      ),
+    ).toEqual({ screen: "libraryItem", itemId: "i2" });
+  });
 });
 
 describe("mainScreenOf", () => {

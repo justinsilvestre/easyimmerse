@@ -17,6 +17,7 @@ import type { SentenceRowProps } from "../dictionaryPopup/SentenceRow.tsx";
 import type { SentenceRowSource } from "../dictionaryPopup/sentenceRowSource.ts";
 import { sentenceTranslationActionOf } from "../dictionaryPopup/sentenceTranslationActionOf.ts";
 import { useLookupDisplay } from "../dictionaryPopup/useLookupDisplay.ts";
+import type { LibraryWords } from "./libraryWords.ts";
 import type { LookupPlace } from "./lookupPlace.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
 import { useLookupFlashcards } from "./useLookupFlashcards.ts";
@@ -30,24 +31,32 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * and a double-click turns the word into a flashcard filled from its lookup, made as `flashcards` says.
  * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
  * The pop-up's sentence row is filled from `sentence`, as the screen knows the sentences or cues.
+ * Given a library item's words, the pop-up shows their stored entries, nothing is looked up, and flashcards are library flashcards.
  */
 export function useWordLookup(
   languages: { target: string; translation: string },
   flashcards: WordFlashcards,
   sentence: SentenceRowSource,
+  library?: LibraryWords,
 ) {
   const dispatch = useAppDispatch();
   const store = useAppStore();
   const lookup = useAppSelector((state) => selectLookup(state.app));
-  const display = useLookupDisplay(lookup?.popup ?? null, languages.target);
+  const display = useLookupDisplay(
+    lookup?.popup ?? null,
+    languages.target,
+    library,
+  );
   const popupId = useId();
   const chosen = lookup?.popup?.chosen ?? null;
-  const made = useLookupFlashcards(flashcards, chosen, {
-    languages,
-    dictionaries: display.dictionaries,
-  });
+  const made = useLookupFlashcards(
+    flashcards,
+    chosen,
+    { languages, dictionaries: display.dictionaries },
+    library,
+  );
   const wordOf = (term: string, text: Parameters<typeof lookupWordOf>[1]) =>
-    lookupWordOf(term, text, languages.target, display.isCovered);
+    lookupWordOf(term, text, languages.target, !library && display.isCovered);
   const hasTranslationOf = (source: LookupSource | null) =>
     sentence.factsOf(source).translation !== null;
   const row = sentenceRowOf(

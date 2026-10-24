@@ -144,7 +144,7 @@ pub async fn delete_project(
                 .into_iter()
                 .filter_map(|media_file| match media_file.source {
                     MediaFileSource::Path { path } => Some(path),
-                    MediaFileSource::BrowserFile { .. } => None,
+                    MediaFileSource::BrowserFile { .. } | MediaFileSource::Library { .. } => None,
                 })
                 .collect())
         })

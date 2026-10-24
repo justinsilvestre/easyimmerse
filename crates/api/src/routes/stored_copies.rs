@@ -226,7 +226,7 @@ pub fn uploads_of(state: &AppState) -> Result<UploadsConfig, ApiFailure> {
     })
 }
 
-fn content_length(headers: &HeaderMap) -> Option<u64> {
+pub fn content_length(headers: &HeaderMap) -> Option<u64> {
     headers
         .get(CONTENT_LENGTH)?
         .to_str()
@@ -236,7 +236,7 @@ fn content_length(headers: &HeaderMap) -> Option<u64> {
         .ok()
 }
 
-fn length_required() -> ApiFailure {
+pub fn length_required() -> ApiFailure {
     ApiFailure::new(
         StatusCode::LENGTH_REQUIRED,
         "length_required",

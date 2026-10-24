@@ -19,6 +19,7 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
     was_packaged: false,
     sent_at_ms: null,
     is_suspended: false,
+    is_from_library: false,
   };
 }
 

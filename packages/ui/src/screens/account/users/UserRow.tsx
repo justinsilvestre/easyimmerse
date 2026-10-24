@@ -1,3 +1,4 @@
+import { useSetLibraryManagerMutation } from "@easyimmerse/backend";
 import {
   actions,
   selectDeletionToConfirm,
@@ -5,11 +6,15 @@ import {
 } from "@easyimmerse/state";
 import type { AccountRole, AccountUser } from "@easyimmerse/types";
 import { Button } from "../../../components/common/Button.tsx";
+import { CheckboxField } from "../../../components/common/CheckboxField.tsx";
 import { useAppDispatch } from "../../../useAppDispatch.ts";
 import { useAppSelector } from "../../../useAppSelector.ts";
 import { roleOptions } from "./roleOptions.ts";
 
-/** One account, with a select that changes its role and a Delete button that asks for confirmation first. */
+/**
+ * One account, with a select that changes its role, a checkbox that lets it manage the library,
+ * and a Delete button that asks for confirmation first.
+ */
 export function UserRow({ user }: { user: AccountUser }) {
   const dispatch = useAppDispatch();
   const change = useAppSelector((state) =>
@@ -58,8 +63,41 @@ export function UserRow({ user }: { user: AccountUser }) {
           {change === "deleteUser" ? "Deleting…" : "Delete"}
         </Button>
       </div>
+      <LibraryManagerCheckbox user={user} />
       {isConfirming && <DeletionConfirmation email={user.email} />}
     </li>
+  );
+}
+
+/** Lets an account manage the library, or stops it. An administrator always manages it, so its box stays checked. */
+function LibraryManagerCheckbox({ user }: { user: AccountUser }) {
+  const [setLibraryManager, setting] = useSetLibraryManagerMutation();
+  const isAdministrator = user.role === "administrator";
+  return (
+    <div className="flex flex-col gap-1">
+      <CheckboxField
+        label="Manages library"
+        aria-label={`Manages library (${user.email})`}
+        hint={
+          isAdministrator
+            ? "Administrators always manage the library."
+            : undefined
+        }
+        checked={isAdministrator || user.manages_library}
+        disabled={isAdministrator || setting.isLoading}
+        onChange={(event) =>
+          setLibraryManager({
+            userId: user.id,
+            managesLibrary: event.target.checked,
+          })
+        }
+      />
+      {setting.isError && (
+        <p role="alert" className="text-sm text-danger-fg">
+          {`Could not change whether ${user.email} manages the library.`}
+        </p>
+      )}
+    </div>
   );
 }
 

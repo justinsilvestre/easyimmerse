@@ -6,6 +6,7 @@ pub mod document;
 pub mod flashcard;
 pub mod found_subtitle_tracks;
 pub mod language_code;
+pub mod library;
 pub mod lookup;
 pub mod media_copy;
 pub mod media_file;

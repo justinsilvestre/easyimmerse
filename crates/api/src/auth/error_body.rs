@@ -4,6 +4,7 @@ use axum::http::header::RETRY_AFTER;
 use axum::response::{IntoResponse, Response};
 use easyimmerse_core::dictionary::DictionaryError;
 use easyimmerse_core::document::DocumentError;
+use easyimmerse_core::library::LibraryError;
 use easyimmerse_core::timed_text::TimedTextError;
 use easyimmerse_storage::StorageError;
 use serde::{Deserialize, Serialize};
@@ -126,7 +127,9 @@ impl From<StorageError> for ApiFailure {
             | StorageError::AlignmentNotFound(_)
             | StorageError::UserNotFound(_)
             | StorageError::SessionNotFound(_)
-            | StorageError::ReviewAnswerNotFound(_) => not_found(error.to_string()),
+            | StorageError::ReviewAnswerNotFound(_)
+            | StorageError::LibraryItemNotFound(_)
+            | StorageError::LibrarySegmentNotFound { .. } => not_found(error.to_string()),
             StorageError::PairedWithItself(_) => bad_request(error.to_string()),
             StorageError::FlashcardIdTaken(_) | StorageError::ReviewAnswerNotLatest(_) => {
                 conflict(error.to_string())
@@ -181,6 +184,12 @@ impl From<StorageError> for ApiFailure {
 
 impl From<TimedTextError> for ApiFailure {
     fn from(error: TimedTextError) -> Self {
+        bad_request(error.to_string())
+    }
+}
+
+impl From<LibraryError> for ApiFailure {
+    fn from(error: LibraryError) -> Self {
         bad_request(error.to_string())
     }
 }

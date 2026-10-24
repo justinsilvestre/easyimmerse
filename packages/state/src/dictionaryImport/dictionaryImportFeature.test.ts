@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { PickedDictionaryFile } from "../platform/effects.ts";
 import type { Route } from "../route/route.ts";
+import { initialScreen } from "../screen/screenState.ts";
 import { dictionaryImportFeature } from "./dictionaryImportFeature.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 
@@ -41,7 +42,7 @@ const updateOnPage = (
 ) =>
   dictionaryImportFeature.update(wizard, action, {
     route: dictionariesPage,
-    screen: { main: { kind: "home" }, settings: null, dialog: null },
+    screen: initialScreen,
   });
 
 describe("dictionaryImportFeature", () => {

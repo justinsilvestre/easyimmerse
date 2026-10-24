@@ -142,6 +142,7 @@ const someone: CurrentPrincipal & { kind: "account" } = {
     role: "privileged",
     created_at_ms: 0,
     email_confirmed_at_ms: null,
+    manages_library: false,
   },
 };
 

@@ -11,6 +11,8 @@ import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
 import type { MainRoute, MediaRoute } from "../route/route.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
+import { updateLibraryBrowse } from "./libraryBrowse/libraryBrowseFilter.ts";
+import { updateLibraryEdit } from "./libraryEdit/libraryEditState.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaScreenActionOf } from "./mediaScreen/mediaScreenActionOf.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
@@ -33,9 +35,11 @@ import { initialMainScreen, initialScreen } from "./screenState.ts";
 import { updateDialog } from "./updateDialog.ts";
 import { updateSettings } from "./updateSettings.ts";
 
-/** Updates the main screen, Settings and the open dialog, each from the state before the action. */
+/** Updates the main screen, the library's filter, Settings and the open dialog, each from the state before the action. */
 export const updateScreen = combineUpdates<ScreenState, [ScreenApp]>({
   main: updateMain,
+  libraryBrowse: updateLibraryBrowse,
+  libraryEdit: updateLibraryEdit,
   settings: (settings, action, app) =>
     updateSettings(settings, action, routeAfter(app, action)),
   dialog: updateDialog,

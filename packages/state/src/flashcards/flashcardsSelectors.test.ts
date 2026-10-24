@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
+import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
 import {
+  selectIsLibraryFlashcard,
   selectLatestFlashcard,
   selectMediaFlashcards,
   selectUnsavedWorkCount,
@@ -187,5 +189,22 @@ describe("selectUnsavedWorkCount", () => {
     selectUnsavedWorkCount.resetRecomputations();
     applied(app, typeWord("Kater"));
     expect(selectUnsavedWorkCount.recomputations()).toBe(1);
+  });
+});
+
+describe("selectIsLibraryFlashcard", () => {
+  /** The server cache with the flashcard Hund of p1, made from the library or not. */
+  const backendWith = (isFromLibrary: boolean) => ({
+    backend: serverCacheWith("listFlashcards", "p1", {
+      flashcards: [{ ...hund, is_from_library: isFromLibrary }],
+    }),
+  });
+
+  it("tells that a flashcard made from the library is a library flashcard", () => {
+    expect(selectIsLibraryFlashcard(backendWith(true), "p1", "h")).toBe(true);
+  });
+
+  it("tells that any other flashcard is not", () => {
+    expect(selectIsLibraryFlashcard(backendWith(false), "p1", "h")).toBe(false);
   });
 });

@@ -14,6 +14,10 @@ import { AccountScreen } from "./screens/account/AccountScreen.tsx";
 import { DictionariesScreen } from "./screens/dictionaries/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/home/HomeScreen.tsx";
 import { OfflineScreen } from "./screens/home/OfflineScreen.tsx";
+import { LibraryScreen } from "./screens/library/LibraryScreen.tsx";
+import { LibraryEditScreen } from "./screens/libraryEdit/LibraryEditScreen.tsx";
+import { LibraryItemScreen } from "./screens/libraryItem/LibraryItemScreen.tsx";
+import { LibraryManageScreen } from "./screens/libraryManage/LibraryManageScreen.tsx";
 import { PairingScreen } from "./screens/pairing/PairingScreen.tsx";
 import { ProjectScreen } from "./screens/project/ProjectScreen.tsx";
 import { NewProjectScreen } from "./screens/projectSettings/NewProjectScreen.tsx";
@@ -89,6 +93,14 @@ function MainScreen({ route }: { route: MainRoute }) {
           onBack={() => openProject(route.projectId)}
         />
       );
+    case "library":
+      return <LibraryScreen />;
+    case "libraryItem":
+      return <LibraryItemScreen key={route.itemId} itemId={route.itemId} />;
+    case "libraryManage":
+      return <LibraryManageScreen />;
+    case "libraryEdit":
+      return <LibraryEditScreen key={route.itemId} itemId={route.itemId} />;
   }
 }
 

@@ -1,7 +1,9 @@
 import type { ReaderLocation } from "@easyimmerse/state";
 import { characterLength } from "../../components/wordLookup/characterLength.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
+import { storedWordAt } from "./storedWords.ts";
 import { rangeOfSpan } from "./textOffsets.ts";
 import { wordAt } from "./wordAt.ts";
 import type { ReaderWord } from "./wordAtPoint.ts";
@@ -13,15 +15,19 @@ export type ReaderWordText = Omit<ReaderWord, "rect">;
  * The word at a place in a paragraph of the text, as the lookup cursor lands on it: a word written with spaces whole,
  * or in a script written without spaces the rest of the run from the character at the place.
  * Null when the place holds no word, as on punctuation.
+ * Given the paragraph's stored words, as for a library document, only those are words, each taken whole.
  */
 export function readerWordAt(
   paragraph: string,
   location: ReaderLocation,
   language: string,
+  storedWords?: readonly WordSpan[],
 ): ReaderWordText | null {
-  const word = wordAt(paragraph, location.offset, language);
+  const word = storedWords
+    ? storedWordAt(paragraph, storedWords, location.offset)
+    : wordAt(paragraph, location.offset, language);
   if (word === null) return null;
-  const isUnspaced = isUnspacedWord(word.text);
+  const isUnspaced = !storedWords && isUnspacedWord(word.text);
   const start = isUnspaced ? location.offset : word.start;
   return {
     text: paragraph.slice(start, word.end),

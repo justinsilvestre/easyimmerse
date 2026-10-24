@@ -12,6 +12,7 @@ import {
   lookupTriggerAttribute,
 } from "../../components/wordLookup/lookupTrigger.ts";
 import { createPressTracker } from "../../components/wordLookup/pressTracker.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { useTimer } from "../../components/wordLookup/useTimer.ts";
 import type { WordHit } from "../../components/wordLookup/useWordGestures.ts";
 import { useWordClickMemory } from "../../components/wordLookup/wordClickMemoryContext.tsx";
@@ -69,6 +70,8 @@ export function useWordPointer(
   chapterIndex: number,
   language: string,
   callbacks: WordPointerCallbacks,
+  /** The stored words of the chapter's paragraphs, as for a library document, which alone are words. */
+  storedWords?: readonly (readonly WordSpan[])[],
 ) {
   const latest = useRef(callbacks);
   latest.current = callbacks;
@@ -78,7 +81,7 @@ export function useWordPointer(
   const memory = useWordClickMemory();
   const hovered = useRef<ReaderWord | null>(null);
   const findWord = (point: ViewportPoint) =>
-    wordAtPoint(point, chapterIndex, language);
+    wordAtPoint(point, chapterIndex, language, storedWords);
   const reportClick = (
     event: MouseEvent<HTMLElement>,
     word: ReaderWord,

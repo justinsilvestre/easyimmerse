@@ -2,9 +2,11 @@ import type { ViewportPoint } from "../../components/wordLookup/characterAtPoint
 import { characterLength } from "../../components/wordLookup/characterLength.ts";
 import type { LookupText } from "../../components/wordLookup/lookupTextAt.ts";
 import { runLookupStartAt } from "../../components/wordLookup/runLookupStarts.ts";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { isUnspacedWord } from "./isUnspacedWord.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
+import { storedWordsAroundCaret } from "./storedWords.ts";
 import {
   caretAtPoint,
   isInTranslation,
@@ -34,11 +36,13 @@ export type ReaderWord = {
  * Finds the word under a point of the window, or null when the point lies on no word.
  * In a script written without spaces, the word begins at the character under the point, as a lookup there does,
  * or at the first digit of a stretch of digits under it.
+ * Given the stored words of the chapter's paragraphs, as for a library document, only those are words, each taken whole.
  */
 export function wordAtPoint(
   point: ViewportPoint,
   chapterIndex: number,
   language: string,
+  storedWords?: readonly (readonly WordSpan[])[],
 ): ReaderWord | null {
   const caret = caretAtPoint(point.x, point.y);
   const paragraph = caret?.node.parentElement?.closest(
@@ -48,10 +52,15 @@ export function wordAtPoint(
   if (!caret || !paragraph || isInTranslation(caret.node)) return null;
   const text = paragraphTextOf(paragraph);
   const offset = offsetWithin(paragraph, caret.node, caret.offset);
-  for (const word of wordsAroundCaret(text, offset, language)) {
+  const paragraphIndex = paragraphIndexOf(paragraph);
+  const stored = storedWords && (storedWords[paragraphIndex] ?? []);
+  const candidates = stored
+    ? storedWordsAroundCaret(text, stored, offset)
+    : wordsAroundCaret(text, offset, language);
+  for (const word of candidates) {
     const rect = rectsOf(paragraph, word).find((r) => contains(r, point));
     if (!rect) continue;
-    const isUnspaced = isUnspacedWord(word.text);
+    const isUnspaced = !stored && isUnspacedWord(word.text);
     const start = isUnspaced
       ? word.start +
         runLookupStartAt(
@@ -65,7 +74,7 @@ export function wordAtPoint(
       ...sentenceLookupAt(text, start, language),
       location: {
         chapterIndex,
-        paragraphIndex: paragraphIndexOf(paragraph),
+        paragraphIndex,
         offset: start,
       },
       rect,

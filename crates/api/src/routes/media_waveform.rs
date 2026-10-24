@@ -61,7 +61,8 @@ pub async fn get_media_waveform(
     let path = resolve_source_path(&state, &principal, &media_file).await?;
     let service = state.conversion.as_ref().ok_or_else(waveform_unavailable)?;
     let container = probe_media(&state, &path).await?;
-    let Some(track) = chosen_audio_track(&container, &media_file) else {
+    let Some(track) = chosen_audio_track(&container, media_file.track_selection_json.as_deref())
+    else {
         return Ok(Json(WaveformResponse {
             start_ms: query.start_ms,
             peaks: Vec::new(),

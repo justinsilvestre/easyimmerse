@@ -1,3 +1,4 @@
+use easyimmerse_core::library::LibraryItemId;
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_core::providers::media_source::MediaLocator;
@@ -62,6 +63,25 @@ pub fn get_media_file(conn: &Connection, id: &MediaFileId) -> Result<MediaFile, 
     )
     .optional()?
     .ok_or_else(|| StorageError::MediaFileNotFound(id.0.clone()))
+}
+
+/// Finds the project's media file of the library item, the oldest when there are several.
+pub fn find_library_media_file(
+    conn: &Connection,
+    project_id: &ProjectId,
+    item_id: &LibraryItemId,
+) -> Result<Option<MediaFile>, StorageError> {
+    Ok(conn
+        .query_row(
+            &format!(
+                "SELECT {SELECTED_COLUMNS} FROM media_files \
+                 WHERE project_id = ?1 AND source_kind = 'library' AND source_path = ?2 \
+                 ORDER BY created_at_ms, rowid LIMIT 1"
+            ),
+            params![project_id.0, item_id.0],
+            read_media_file,
+        )
+        .optional()?)
 }
 
 /// Adds a media file to a project and returns it with its new id and creation time.
@@ -147,7 +167,7 @@ pub fn set_track_selection_json(
 pub fn list_referenced_source_paths(conn: &Connection) -> Result<Vec<String>, StorageError> {
     let mut statement = conn.prepare(
         "SELECT DISTINCT source_path FROM media_files \
-         WHERE source_path IS NOT NULL ORDER BY source_path",
+         WHERE source_kind = 'path' AND source_path IS NOT NULL ORDER BY source_path",
     )?;
     let paths = statement
         .query_map([], |row| row.get(0))?
@@ -215,6 +235,7 @@ fn source_columns(
             Some(to_stored_integer(*size)),
             Some(to_stored_integer(*last_modified_ms)),
         ),
+        MediaFileSource::Library { item_id } => ("library", Some(&item_id.0), None, None),
     }
 }
 
@@ -249,6 +270,9 @@ fn read_source(row: &Row) -> rusqlite::Result<MediaFileSource> {
         "browser_file" => Ok(MediaFileSource::BrowserFile {
             size: read_unsigned(row, 5)?,
             last_modified_ms: read_unsigned(row, 6)?,
+        }),
+        "library" => Ok(MediaFileSource::Library {
+            item_id: LibraryItemId(row.get(4)?),
         }),
         other => Err(rusqlite::Error::InvalidColumnType(
             3,
@@ -285,6 +309,12 @@ mod tests {
         MediaFileSource::BrowserFile {
             size: 1234,
             last_modified_ms: 5678,
+        }
+    }
+
+    fn library_source() -> MediaFileSource {
+        MediaFileSource::Library {
+            item_id: LibraryItemId("item-1".to_string()),
         }
     }
 
@@ -389,6 +419,54 @@ mod tests {
             storage.get_media_file(&added.id).unwrap().source,
             browser_source()
         );
+    }
+
+    #[test]
+    fn round_trips_a_library_source() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        assert_eq!(
+            storage.get_media_file(&added.id).unwrap().source,
+            library_source()
+        );
+    }
+
+    #[test]
+    fn finds_the_media_file_of_a_library_item() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        let found = storage
+            .find_library_media_file(&project(), &LibraryItemId("item-1".to_string()))
+            .unwrap();
+        assert_eq!(found, Some(added));
+    }
+
+    #[test]
+    fn finds_no_library_media_file_in_another_project() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        let found = storage
+            .find_library_media_file(
+                &ProjectId("placeholder-2".to_string()),
+                &LibraryItemId("item-1".to_string()),
+            )
+            .unwrap();
+        assert_eq!(found, None);
+    }
+
+    #[test]
+    fn leaves_library_items_out_of_the_referenced_paths() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        assert!(storage.list_referenced_source_paths().unwrap().is_empty());
     }
 
     #[test]

@@ -96,6 +96,7 @@ export function ConnectedReviewScreen({
             ? null
             : () => dispatch(actions.reviewFlashcardEditRequested(mediaFileId))
         }
+        isFromLibrary={shown?.flashcard.is_from_library ?? false}
         onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
         onSuspend={() =>
           dispatch(actions.reviewCardHeld("suspended", Date.now()))

@@ -3,7 +3,7 @@
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_core::account::{AccountRole, AccountUser, SetLibraryManager};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -106,6 +106,35 @@ pub async fn set_user_role(
 ) -> Result<Json<AccountUser>, ApiFailure> {
     let user = state
         .with_storage(move |storage| storage.set_user_role(&id, request.role))
+        .await?;
+    Ok(Json(user))
+}
+
+/// Lets an account manage the server's library, or stops it. Administrators manage it whatever this says.
+#[utoipa::path(
+    put,
+    path = "/users/{user_id}/library-manager",
+    tag = "users",
+    operation_id = "setLibraryManager",
+    security(("bearer_token" = [])),
+    params(("user_id" = String, Path, description = "The account id")),
+    request_body = SetLibraryManager,
+    responses(
+        (status = 200, description = "The account with its new permission", body = AccountUser),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 403, description = "`forbidden`: the token is not an administrator's", body = ApiError),
+        (status = 404, description = "No account has this id", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn set_library_manager(
+    _: Administrator,
+    State(state): State<AppState>,
+    Path(user_id): Path<String>,
+    Json(request): Json<SetLibraryManager>,
+) -> Result<Json<AccountUser>, ApiFailure> {
+    let user = state
+        .with_storage(move |storage| storage.set_library_manager(&user_id, request.manages_library))
         .await?;
     Ok(Json(user))
 }

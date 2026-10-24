@@ -6,7 +6,7 @@ use axum::Extension;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::Response;
-use easyimmerse_core::media_file::{MediaFile, MediaFileId};
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_media_ffmpeg::{FfmpegError, FrameGrab, frame_grab_args};
 use serde::Deserialize;
@@ -14,6 +14,7 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::principal::Principal;
+use crate::routes::library_files::preprocessed_frame;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
     chosen_video_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
@@ -39,7 +40,8 @@ pub struct FrameQuery {
 }
 
 /// Returns the frame of the chosen video track at the given time, else of the default video track,
-/// as a JPEG image at most 640 pixels wide.
+/// as a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues
+/// is served, from the screenshot rendered when the item was published.
 #[utoipa::path(
     get,
     path = "/projects/{id}/media/{media_id}/frame",
@@ -56,7 +58,7 @@ pub struct FrameQuery {
         (status = 400, description = "The file could not be probed", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths", body = ApiError),
-        (status = 404, description = "No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without video", body = ApiError),
+        (status = 404, description = "No such media file, no file at its path, a browser-held file (code `not_resolvable`), a file without video, or a library media file and a time that is not the screenshot time of one of its cues (code `not_preprocessed`)", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 500, description = "ffmpeg failed (code `frame_failed`)", body = ApiError),
         (status = 503, description = "This server has no ffmpeg (code `conversion_unavailable`)", body = ApiError),
@@ -75,18 +77,33 @@ pub async fn get_media_frame(
 
 /// Grabs the frame of the media file's chosen video track, else its default video track, at `at_ms` in player time,
 /// as a JPEG image at most 640 pixels wide.
+/// A media file from the library answers with the screenshot its item's publish rendered at that time.
 pub async fn render_frame(
     state: &AppState,
     principal: &Principal,
     media_file: &MediaFile,
     at_ms: u64,
 ) -> Result<Vec<u8>, ApiFailure> {
+    if let MediaFileSource::Library { item_id } = &media_file.source {
+        return preprocessed_frame(state, item_id, at_ms).await;
+    }
     let path = resolve_source_path(state, principal, media_file).await?;
-    let container = probe_media(state, &path).await?;
-    let track = chosen_video_track(&container, media_file)
+    let selection = media_file.track_selection_json.as_deref();
+    render_frame_at(state, &path, selection, at_ms).await
+}
+
+/// Grabs the frame of the file at `path` as `render_frame` does, choosing the video track by the saved track selection.
+pub async fn render_frame_at(
+    state: &AppState,
+    path: &str,
+    track_selection_json: Option<&str>,
+    at_ms: u64,
+) -> Result<Vec<u8>, ApiFailure> {
+    let container = probe_media(state, path).await?;
+    let track = chosen_video_track(&container, track_selection_json)
         .ok_or_else(|| not_found("the media file has no video track"))?;
     let args = frame_grab_args(&FrameGrab {
-        source: FilePath::new(&path),
+        source: FilePath::new(path),
         stream_index: track.index,
         at_micros: micros(at_ms),
         max_width: FRAME_MAX_WIDTH,

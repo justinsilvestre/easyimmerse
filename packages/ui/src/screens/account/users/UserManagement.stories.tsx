@@ -17,6 +17,7 @@ const user = (id: string, email: string, role: AccountRole): AccountUser => ({
   role,
   created_at_ms: 0,
   email_confirmed_at_ms: null,
+  manages_library: false,
 });
 
 const administrator = user("u1", "admin@example.com", "administrator");
@@ -87,6 +88,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const SeveralUsers: Story = {};
+
+export const WithALibraryManager: Story = {
+  parameters: serverWith(administrator, [
+    administrator,
+    {
+      ...user("u2", "someone@example.com", "library_user"),
+      manages_library: true,
+    },
+    user("u3", "reader@example.com", "privileged"),
+  ]),
+};
 
 export const EmptyList: Story = {
   parameters: serverWith(administrator, []),

@@ -10,10 +10,10 @@ import type { FlashcardCard } from "./flashcardCard.ts";
 import type { LookupFieldsContext, Rollback } from "./flashcardForm.ts";
 
 /** How long a flashcard request may go unanswered, as when the connection hangs, before it counts as failed. */
-const flashcardRequestLimitMs = 30_000;
+export const flashcardRequestLimitMs = 30_000;
 
 /** How long a flashcard request may go unanswered before the footer tells that saves are under way. */
-const flashcardRequestSlowMs = 2000;
+export const flashcardRequestSlowMs = 2000;
 
 /** Why a flashcard was saved. It comes back in `requestSettled`, so the settling branch needs nothing else. */
 export type SavePurpose =

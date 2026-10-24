@@ -1,4 +1,5 @@
 import type { BackendClient } from "@easyimmerse/backend";
+import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
@@ -127,5 +128,11 @@ describe("HomeScreen", () => {
     expect(
       card.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("opens the library when Library is clicked", () => {
+    const { store } = renderHome();
+    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+    expect(selectRoute(store.getState())).toEqual({ screen: "library" });
   });
 });

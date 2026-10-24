@@ -165,9 +165,12 @@ async fn is_copy_readable(state: &AppState, media_file: &MediaFile) -> bool {
     }
 }
 
-/// Whether the server can tell if the file is there: it has a path, or this server keeps a copy.
+/// Whether the server can tell if the file is there: it has a path, comes from the library, or this server keeps a copy.
 fn is_checkable(media_file: &MediaFile) -> bool {
-    matches!(media_file.source, MediaFileSource::Path { .. }) || media_file.has_stored_copy
+    matches!(
+        media_file.source,
+        MediaFileSource::Path { .. } | MediaFileSource::Library { .. }
+    ) || media_file.has_stored_copy
 }
 
 /// Maps a failure to resolve a media file's path to its availability.

@@ -33,7 +33,10 @@ const apply = (
   });
 
 /** The flashcard the command asks to start, or undefined when it asks for none. */
-const startOf = (...args: Parameters<typeof apply>) => apply(...args)[0]?.start;
+const startOf = (...args: Parameters<typeof apply>) => {
+  const [effect] = apply(...args);
+  return effect?.type === "startFlashcardWithNewId" ? effect.start : undefined;
+};
 
 describe("cursorFlashcardCommands", () => {
   describe("with the lookup cursor on a word", () => {

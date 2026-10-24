@@ -2,6 +2,9 @@ import type {
   AnkiPendingDeletions,
   CurrentPrincipal,
   Document,
+  LibraryItem,
+  LibraryListing,
+  LibraryText,
   ListDictionariesResponse,
   ListProjectsResponse,
   MediaFile,
@@ -57,6 +60,9 @@ export type CachedQueries = {
   checkAnkiConnection: undefined;
   getReviewSummary: string;
   getSyncStatus: undefined;
+  listLibraryItems: undefined;
+  getLibraryItem: string;
+  getLibraryText: string;
   /** Cached under the server that the account request reaches: the app's own, or its built-in server's remote. */
   getCurrentPrincipal: "self" | "linkedRemote";
   /** Cached under the server that the account request reaches: the app's own, or its built-in server's remote. */
@@ -72,6 +78,9 @@ export type CachedResponses = ServerResponses & {
   getSubtitleCues: TimedTextTrack;
   getReviewSummary: ReviewSummary;
   getSyncStatus: SyncStatus;
+  listLibraryItems: LibraryListing;
+  getLibraryItem: LibraryItem;
+  getLibraryText: LibraryText;
   getCurrentPrincipal: CurrentPrincipal;
   getServerAuthInfo: ServerAuthInfo;
 };
