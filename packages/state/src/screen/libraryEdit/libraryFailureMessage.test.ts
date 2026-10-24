@@ -4,7 +4,7 @@ import { libraryFailureMessage } from "./libraryFailureMessage.ts";
 const didntHappen = "“Im Park” couldn't be saved.";
 
 function messageFor(error: unknown, nextStep?: string) {
-  return libraryFailureMessage(error, didntHappen, "“Im Park”", nextStep);
+  return libraryFailureMessage(error, didntHappen, nextStep);
 }
 
 describe("libraryFailureMessage", () => {
@@ -21,7 +21,7 @@ describe("libraryFailureMessage", () => {
 
     it("tells why and to unpublish it before changing it", () => {
       expect(message).toBe(
-        "“Im Park” couldn't be saved. “Im Park” is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+        "“Im Park” couldn't be saved. It is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
       );
     });
   });
@@ -29,7 +29,9 @@ describe("libraryFailureMessage", () => {
   it("tells to wait while the item is being prepared", () => {
     expect(
       messageFor({ status: 409, code: "item_processing", message: "" }),
-    ).toContain("Wait until its status changes, then try again.");
+    ).toBe(
+      "“Im Park” couldn't be saved. The server is still preparing it for learners. Wait until its status changes, then try again.",
+    );
   });
 
   it("tells to check the connection when the server can't be reached", () => {

@@ -75,7 +75,6 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
           ? libraryFailureMessage(
               added.error,
               `“${item.data.title}” couldn't be added to ${targetNameOf(added.originalArgs?.projectId ?? null, projects)}.`,
-              `“${item.data.title}”`,
             )
           : null
       }

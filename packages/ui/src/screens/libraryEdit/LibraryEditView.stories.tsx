@@ -81,7 +81,7 @@ export const ChangeRefused: Story = {
     activity: {
       ...idle,
       failure:
-        "The file of “Im Park” couldn't be uploaded. “Im Park” is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+        "The file of “Im Park” couldn't be replaced. It is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
     },
   },
 };

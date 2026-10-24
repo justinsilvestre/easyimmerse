@@ -95,7 +95,6 @@ function settle(
     if (!action.outcome.ok)
       return failed(
         action.outcome.error,
-        title,
         `${title} couldn't be added to the library.`,
       );
     const itemId = action.outcome.data.id;
@@ -115,7 +114,6 @@ function settle(
     if (!action.outcome.ok)
       return failed(
         action.outcome.error,
-        title,
         `${title} was added to the library as a draft, but the file couldn't be uploaded.`,
         "Open the draft below to upload the file again.",
       );
@@ -140,7 +138,6 @@ function settle(
     if (!action.outcome.ok)
       return failed(
         action.outcome.error,
-        title,
         `${title} was added to the library, but couldn't be opened in the player or the reader.`,
         "Open it below to try again.",
       );
@@ -153,19 +150,14 @@ function settle(
   return updated(creation);
 }
 
-function failed(
-  error: RequestFailure,
-  title: string,
-  didntHappen: string,
-  nextStep?: string,
-) {
+function failed(error: RequestFailure, didntHappen: string, nextStep?: string) {
   return updated(
     null,
     dispatch(
       actions.noticeRequested(
         transientNotice(
           "danger",
-          libraryFailureMessage(error, didntHappen, title, nextStep),
+          libraryFailureMessage(error, didntHappen, nextStep),
         ),
       ),
     ),

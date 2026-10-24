@@ -59,7 +59,6 @@ export function useLibraryWordEditing(
           libraryFailureMessage(
             error,
             `The word couldn't be saved in “${item.title}”.`,
-            `“${item.title}”`,
           ),
         ),
       ),

@@ -57,7 +57,7 @@ export function useLibraryItemEditing(
     return change().then(
       () => true,
       (error) => {
-        setFailure(libraryFailureMessage(error, didntHappen, title));
+        setFailure(libraryFailureMessage(error, didntHappen));
         return false;
       },
     );
@@ -139,6 +139,5 @@ function failureOfReplacement(
   return libraryFailureMessage(
     replacement.error,
     `The file of ${title} couldn't be replaced.`,
-    title,
   );
 }
