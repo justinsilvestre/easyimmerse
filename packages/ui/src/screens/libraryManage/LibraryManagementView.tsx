@@ -1,45 +1,35 @@
-import type { LibraryUpload } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 import { LibraryItemCard } from "../../components/libraryItemCard/LibraryItemCard.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import type { LibraryListStatus } from "../../lib/library/LibraryListStatus.ts";
-import { NewLibraryItemForm } from "./NewLibraryItemForm.tsx";
-import type { NewLibraryItem } from "./newLibraryItem.ts";
+import {
+  NewLibraryMediaForm,
+  type NewLibraryMediaLanguages,
+  type NewLibraryMediaStatus,
+} from "./NewLibraryMediaForm.tsx";
 
-/** The library management screen: the form that adds an item, and every item of the library, published or not, with its status. */
+/** The library management screen: the way to add media to the library, and every item of the library, published or not, with its status. */
 export function LibraryManagementView({
   status,
   items,
   coverUrlOf,
-  upload,
-  onChooseUpload,
-  isCreating,
-  createFailure,
-  onCreate,
+  addStatus,
+  onAddMedia,
   onEditItem,
   onBack,
 }: {
   status: LibraryListStatus;
   items: readonly LibraryItem[];
   coverUrlOf: (item: LibraryItem) => string | null;
-  upload: LibraryUpload;
-  onChooseUpload: (upload: LibraryUpload) => void;
-  isCreating: boolean;
-  createFailure: string | null;
-  onCreate: (item: NewLibraryItem) => void;
+  addStatus: NewLibraryMediaStatus;
+  onAddMedia: (languages: NewLibraryMediaLanguages) => void;
   onEditItem: (itemId: string) => void;
   onBack: () => void;
 }) {
   return (
     <ScreenLayout onBack={onBack} backLabel="Library" wide>
       <h1 className="text-xl font-semibold">Manage library</h1>
-      <NewLibraryItemForm
-        upload={upload}
-        onChooseUpload={onChooseUpload}
-        isCreating={isCreating}
-        failure={createFailure}
-        onCreate={onCreate}
-      />
+      <NewLibraryMediaForm status={addStatus} onAddMedia={onAddMedia} />
       {status === "loading" && (
         <p role="status" className="text-sm text-fg-muted">
           Loading the library…

@@ -11,11 +11,11 @@ import {
   selectServerConfig,
 } from "@easyimmerse/state";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
+import { libraryProjectOf } from "../../lib/library/libraryProjectOf.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";
 import { LibraryEditView } from "./LibraryEditView.tsx";
-import { libraryProjectOf } from "./libraryProjectOf.ts";
 import { useLibraryItemEditing } from "./useLibraryItemEditing.ts";
 
 /**
@@ -31,7 +31,11 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
   const text = useGetLibraryTextQuery(itemId);
   const projectList = useListProjectsQuery().data;
   const manage = () => go({ type: "manageLibrary" });
-  const editing = useLibraryItemEditing(itemId, manage);
+  const editing = useLibraryItemEditing(
+    itemId,
+    `“${item.data?.title ?? ""}”`,
+    manage,
+  );
   if (!item.data)
     return (
       <ScreenLayout onBack={manage} backLabel="Manage library">
@@ -70,7 +74,6 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
       onChooseCoverFrame={editing.chooseCoverFrame}
       onResetCover={editing.resetCover}
       onReplaceFile={editing.replaceFile}
-      onReplaceSubtitles={editing.replaceSubtitles}
       onOpenWords={() =>
         projectList &&
         editing.openWords(libraryProjectOf(projectList.projects, shown))

@@ -6,6 +6,7 @@ import {
   actions,
   type ChosenWord,
   type LookupFieldsContext,
+  libraryFailureMessage,
   libraryLookupResponse,
   selectLibraryWordPlace,
   transientNotice,
@@ -15,7 +16,6 @@ import type {
   LibraryWord,
   LookupResult,
 } from "@easyimmerse/types";
-import { libraryFailureMessage } from "../../lib/library/libraryFailureMessage.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import type { LibraryWords } from "../wordLookup/libraryWords.ts";
@@ -56,7 +56,11 @@ export function useLibraryWordEditing(
       actions.noticeRequested(
         transientNotice(
           "danger",
-          libraryFailureMessage(error, "Could not save the word."),
+          libraryFailureMessage(
+            error,
+            `The word couldn't be saved in “${item.title}”. Try again in a moment.`,
+            `“${item.title}”`,
+          ),
         ),
       ),
     );

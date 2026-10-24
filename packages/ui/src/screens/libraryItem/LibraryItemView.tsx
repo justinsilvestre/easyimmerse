@@ -89,7 +89,7 @@ export function LibraryItemView({
       </div>
       {item.status.kind !== "published" ? (
         <p className="rounded-lg border border-line bg-surface p-4 text-sm text-fg-muted">
-          Publish the item before adding it to a project.
+          {`Publish “${item.title}” before adding it to a project.`}
         </p>
       ) : (
         <form

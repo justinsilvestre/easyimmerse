@@ -1508,6 +1508,7 @@ export interface paths {
          * Adds a subtitles file to the media file.
          *     The text is parsed once to check it and to take its first cue as the track's sample;
          *     a `path` source is read on the server's machine.
+         *     For a media file from the library, the item's segments become the cues of the tracks it then shows.
          */
         post: operations["addSubtitleTrack"];
         delete?: never;
@@ -9976,7 +9977,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The selection was saved */
+            /** @description The selection was saved. For a media file from the library, the item's segments became the cues of the chosen tracks */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -9992,8 +9993,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description The media file is from the library and the principal does not manage it */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No such media file in the project, or a named track is not on it */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10109,7 +10128,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The token may not read local paths */
+            /** @description The token may not read local paths, or the media file is from the library and the principal does not manage it */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10120,6 +10139,15 @@ export interface operations {
             };
             /** @description No such media file in the project, or no file at the given path */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

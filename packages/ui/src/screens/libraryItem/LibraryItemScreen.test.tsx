@@ -104,7 +104,7 @@ describe("LibraryItemScreen", () => {
         }),
       });
       await screen.findByText(
-        "Publish the item before adding it to a project.",
+        "Publish “Im Park” before adding it to a project.",
       );
       expect(
         screen.queryByRole("button", { name: "Add to project" }),

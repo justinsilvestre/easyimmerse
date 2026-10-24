@@ -7702,7 +7702,7 @@
         },
         "responses": {
           "204": {
-            "description": "The selection was saved"
+            "description": "The selection was saved. For a media file from the library, the item's segments became the cues of the chosen tracks"
           },
           "401": {
             "description": "Missing or invalid token",
@@ -7714,8 +7714,28 @@
               }
             }
           },
+          "403": {
+            "description": "The media file is from the library and the principal does not manage it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No such media file in the project, or a named track is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -7820,7 +7840,7 @@
         "tags": [
           "subtitles"
         ],
-        "summary": "Adds a subtitles file to the media file.\nThe text is parsed once to check it and to take its first cue as the track's sample;\na `path` source is read on the server's machine.",
+        "summary": "Adds a subtitles file to the media file.\nThe text is parsed once to check it and to take its first cue as the track's sample;\na `path` source is read on the server's machine.\nFor a media file from the library, the item's segments become the cues of the tracks it then shows.",
         "operationId": "addSubtitleTrack",
         "parameters": [
           {
@@ -7884,7 +7904,7 @@
             }
           },
           "403": {
-            "description": "The token may not read local paths",
+            "description": "The token may not read local paths, or the media file is from the library and the principal does not manage it",
             "content": {
               "application/json": {
                 "schema": {
@@ -7895,6 +7915,16 @@
           },
           "404": {
             "description": "No such media file in the project, or no file at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
             "content": {
               "application/json": {
                 "schema": {

@@ -50,7 +50,7 @@ export function LibraryCoverPicker({
       <p className="text-sm text-fg-muted">{libraryCoverDescription(item)}</p>
       {isProcessing ? (
         <p className="text-sm text-fg-muted">
-          Wait until the item is prepared to change its cover.
+          {`Wait until the server has prepared “${item.title}” for learners to change its cover.`}
         </p>
       ) : (
         <>
@@ -98,7 +98,7 @@ export function LibraryCoverPicker({
               </div>
               {isEpub(item) && (
                 <p className="text-xs text-fg-muted">
-                  If the EPUB file has no cover, the item is left without a
+                  If the EPUB file has no cover, the text is left without a
                   picture.
                 </p>
               )}

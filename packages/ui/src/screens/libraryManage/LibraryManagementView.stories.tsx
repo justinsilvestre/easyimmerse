@@ -13,11 +13,8 @@ const meta = {
     status: "ready",
     items: exampleManagedLibraryItems,
     coverUrlOf: () => null,
-    upload: "media",
-    onChooseUpload: fn(),
-    isCreating: false,
-    createFailure: null,
-    onCreate: fn(),
+    addStatus: "ready",
+    onAddMedia: fn(),
     onEditItem: fn(),
     onBack: fn(),
   },
@@ -30,7 +27,8 @@ export const EveryStatus: Story = {};
 
 export const Empty: Story = { args: { items: [] } };
 
-export const Creating: Story = { args: { isCreating: true } };
+/** A picked file being uploaded, before the new item opens in the player or the reader. */
+export const Adding: Story = { args: { addStatus: "adding" } };
 
 export const Loading: Story = { args: { status: "loading", items: [] } };
 

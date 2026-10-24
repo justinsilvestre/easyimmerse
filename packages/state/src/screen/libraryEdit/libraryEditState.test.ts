@@ -62,10 +62,6 @@ describe("the library edit choices", () => {
         .selectedWord,
     ).toBeNull();
   });
-
-  it("keep the kind of file chosen for a new item", () => {
-    expect(editAfter(actions.libraryUploadChosen("text")).upload).toBe("text");
-  });
 });
 
 describe("selectLibraryAddTarget", () => {

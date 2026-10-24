@@ -35,7 +35,7 @@ describe("libraryCoverDescription", () => {
     expect(
       libraryCoverDescription(exampleLibraryItem({ has_cover: false })),
     ).toBe(
-      "The screenshot of the first line, taken when the item is published.",
+      "The screenshot of the first subtitle, taken when the video is published.",
     );
   });
 
@@ -57,10 +57,10 @@ describe("automaticCoverLabel", () => {
     expect(automaticCoverLabel(exampleLibraryItem())).toBeNull();
   });
 
-  it("offers a video's first line", () => {
+  it("offers the screenshot of a video's first subtitle", () => {
     expect(
       automaticCoverLabel(exampleLibraryItem({ cover: { kind: "uploaded" } })),
-    ).toBe("Use the first line's screenshot");
+    ).toBe("Use the first subtitle's screenshot");
   });
 
   it("offers an EPUB file's own cover", () => {

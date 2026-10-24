@@ -22,6 +22,7 @@ pub mod library_paths;
 mod library_proposals;
 mod library_publish;
 mod library_segments;
+mod library_tracks;
 pub mod local_dictionary_files;
 pub mod local_path;
 pub mod local_table_file;

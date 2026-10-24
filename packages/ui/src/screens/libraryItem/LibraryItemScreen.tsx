@@ -7,13 +7,13 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  libraryFailureMessage,
   selectLibraryAddTarget,
   selectServerConfig,
 } from "@easyimmerse/state";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
-import { libraryFailureMessage } from "../../lib/library/libraryFailureMessage.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";
@@ -74,6 +74,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
           ? libraryFailureMessage(
               added.error,
               `“${item.data.title}” couldn't be added to the project. Try again in a moment.`,
+              `“${item.data.title}”`,
             )
           : null
       }

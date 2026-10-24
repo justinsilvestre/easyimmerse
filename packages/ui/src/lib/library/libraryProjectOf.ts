@@ -1,5 +1,5 @@
 import type { LibraryItem, Project } from "@easyimmerse/types";
-import { languageName } from "../../lib/formatting/languages.ts";
+import { languageName } from "../formatting/languages.ts";
 
 /**
  * Returns the project in which a library manager opens an item to prepare its words: the project for the item's language

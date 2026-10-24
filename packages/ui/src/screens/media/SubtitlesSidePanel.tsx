@@ -13,7 +13,7 @@ import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
 /**
  * The subtitles panel beside the stage: the track choice above one card per cue of the target-language track.
- * A file whose subtitles cannot change, as one from the library, has no track choice, and offers no subtitles when it has none.
+ * A file whose subtitles cannot change, as one from the library that learners use, has no track choice, and offers no subtitles when it has none.
  */
 export function SubtitlesSidePanel({
   subtitles,

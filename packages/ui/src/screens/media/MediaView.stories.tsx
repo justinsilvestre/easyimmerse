@@ -207,19 +207,34 @@ function lookupPopup(
   );
 }
 
-/** The subtitles panel of a file from the library, whose subtitles cannot change, with the words given as marked. */
-function libraryPanel(marked: ReadonlyMap<number, readonly Range[]>) {
+/** The subtitles panel of a library item its manager prepares, with the track choice and the words given as marked. */
+function libraryPanel(
+  marked: ReadonlyMap<number, readonly Range[]>,
+  cues: readonly Cue[] = exampleCues,
+  shownTracks: SubtitleTrackChoices = tracks,
+) {
   return (
-    <CuePanel
-      cues={exampleCues}
-      translationCues={exampleTranslationCues}
-      activeCueIndex={3}
-      flashcardCueIndexes={[]}
-      flashcardWordRanges={marked}
-      markedTitle="Has an entry for learners"
-      onSeek={fn()}
-      wordGestures={{ onWordClick: fn() }}
-    />
+    <>
+      <SubtitleTrackBar
+        tracks={shownTracks}
+        languages={{ target: "de", translation: "en" }}
+        onTargetChange={fn()}
+        onTranslationChange={fn()}
+        onAddFile={fn()}
+      />
+      <CuePanel
+        cues={cues}
+        translationCues={cues.length > 0 ? exampleTranslationCues : []}
+        activeCueIndex={3}
+        flashcardCueIndexes={[]}
+        flashcardWordRanges={marked}
+        markedTitle="Has an entry for learners"
+        onSeek={fn()}
+        wordGestures={{ onWordClick: fn() }}
+        onAddSubtitlesFile={fn()}
+        onGenerateSubtitles={fn()}
+      />
+    </>
   );
 }
 
@@ -591,13 +606,46 @@ export const ExpandedLookupInTheSubtitlesPanel: Story = {
 };
 
 /**
- * A library manager preparing an item in the player: every word can be clicked, the words with an entry for learners are underlined,
- * and the pop-up gives the text chosen an entry for learners.
+ * A library manager preparing a new item in the player, just after adding its video: it has no subtitles yet,
+ * so the subtitles panel offers to add a subtitles file or to generate subtitles.
+ */
+export const PreparingANewLibraryItem: Story = {
+  args: {
+    media: { projectName: "Item details", title: "park.mp4", source: null },
+    headerContent: (
+      <LibraryEditingBar
+        title="Im Park"
+        kind="subtitles"
+        onOpenDetails={fn()}
+      />
+    ),
+    markedWordTitle: "Has an entry for learners",
+    onAddFlashcard: undefined,
+    cues: [],
+    translationCues: [],
+    shownCue: null,
+    sidePanel: libraryPanel(new Map(), [], {
+      subtitles: [],
+      targetSubtitlesId: null,
+      translationSubtitlesId: null,
+    }),
+  },
+};
+
+/**
+ * A library manager preparing an item in the player: the subtitles panel chooses its subtitles and their translation,
+ * every word can be clicked, the words with an entry for learners are underlined, and the pop-up gives the text chosen an entry for learners.
  */
 export const PreparingALibraryItem: Story = {
   args: {
     media: { projectName: "Item details", title: "Im Park", source: null },
-    headerContent: <LibraryEditingBar kind="subtitles" onOpenDetails={fn()} />,
+    headerContent: (
+      <LibraryEditingBar
+        title="park.mp4"
+        kind="subtitles"
+        onOpenDetails={fn()}
+      />
+    ),
     markedWordTitle: "Has an entry for learners",
     onAddFlashcard: undefined,
     sidePanel: libraryPanel(exampleFlashcardWordRanges),

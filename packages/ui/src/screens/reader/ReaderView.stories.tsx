@@ -436,7 +436,9 @@ export const PreparingALibraryDocument: Story = {
   decorators: openedWith(),
   args: {
     projectName: "Item details",
-    headerContent: <LibraryEditingBar kind="text" onOpenDetails={fn()} />,
+    headerContent: (
+      <LibraryEditingBar title="Der Hund" kind="text" onOpenDetails={fn()} />
+    ),
     markedSpans: preparedWords,
   },
 };

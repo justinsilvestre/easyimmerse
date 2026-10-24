@@ -44,7 +44,6 @@ import type {
   LibraryItemDraft,
   LibraryListing,
   LibrarySegment,
-  LibrarySubtitles,
   LibraryText,
   LibraryWord,
   LinkRemoteRequest,
@@ -241,8 +240,6 @@ type AddLibraryItemArgs = { itemId: string; projectId: string | null };
 
 type LibraryFlashcardArgs = MediaFileArgs & { card: NewLibraryFlashcard };
 
-type LibrarySubtitlesArgs = { itemId: string; subtitles: LibrarySubtitles };
-
 type LibraryWordsArgs = {
   itemId: string;
   segmentIndex: number;
@@ -284,6 +281,13 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
+
+/**
+ * The tags a change of a media file's subtitle tracks invalidates.
+ * A media file from the library that its manager prepares takes the item's text from them, so the library is fetched again too.
+ */
+const subtitleChangeTags = (args: MediaFileArgs) =>
+  [...subtitleTracksTag(args), "Library"] as const;
 
 const alignmentsTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "Alignments", id: mediaFileId }] as const;
@@ -975,7 +979,7 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/subtitles`,
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+      invalidatesTags: (_result, _error, args) => subtitleChangeTags(args),
     }),
     getSubtitleCues: build.query<TimedTextTrack, SubtitleTrackArgs>({
       query: ({ trackId, ...args }) => ({
@@ -1005,7 +1009,7 @@ export const backendApi = createApi({
         );
         await queryFulfilled.catch(patch.undo);
       },
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+      invalidatesTags: (_result, _error, args) => subtitleChangeTags(args),
     }),
     /** A document's alignments with its audio and its translation, newest first. */
     listAlignments: build.query<AlignmentsResponse, MediaFileArgs>({
@@ -1461,21 +1465,6 @@ export const backendApi = createApi({
       },
       invalidatesTags: [libraryListTag],
     }),
-    /** Replaces a video or audio item's segments with the cues of its subtitles, each paired with the translation cue that overlaps it most. */
-    putLibrarySubtitles: build.mutation<LibraryText, LibrarySubtitlesArgs>({
-      query: ({ itemId, subtitles }) => ({
-        method: "PUT",
-        path: `${libraryItemPath(itemId)}/subtitles`,
-        body: { kind: "json", value: subtitles },
-      }),
-      async onQueryStarted({ itemId }, { dispatch, queryFulfilled }) {
-        await cacheLibraryText(dispatch, itemId, queryFulfilled);
-      },
-      invalidatesTags: (_result, _error, { itemId }) => [
-        libraryListTag,
-        libraryItemTag(itemId),
-      ],
-    }),
     /** Fills the segments that have no words yet with words from the library manager's own dictionaries. */
     proposeLibraryWords: build.mutation<LibraryText, string>({
       query: (itemId) => ({
@@ -1739,7 +1728,6 @@ export const {
   useUploadLibraryCoverMutation,
   useSetLibraryCoverFrameMutation,
   useResetLibraryCoverMutation,
-  usePutLibrarySubtitlesMutation,
   useProposeLibraryWordsMutation,
   useApplyLibraryEntryMutation,
   usePutLibraryWordsMutation,

@@ -48,7 +48,6 @@ export {
   useProbePicturesQuery,
   useProposeLibraryWordsMutation,
   usePublishLibraryItemMutation,
-  usePutLibrarySubtitlesMutation,
   usePutLibraryWordsMutation,
   useRemoveAlignmentMutation,
   useResetLibraryCoverMutation,

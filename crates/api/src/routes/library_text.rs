@@ -3,7 +3,7 @@
 use axum::extract::{Path, State};
 use axum::{Extension, Json};
 use easyimmerse_core::library::{
-    ApplyLibraryEntry, LibraryCover, LibraryItemId, LibraryItemKind, LibrarySegment,
+    ApplyLibraryEntry, LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibrarySegment,
     LibrarySubtitles, LibraryText, LibraryWord, validate_words,
 };
 
@@ -81,17 +81,26 @@ pub async fn put_library_subtitles(
         None => Vec::new(),
     };
     let text = text_of_subtitles(&target.cues, &translation);
+    Ok(Json(store_library_text(&state, &item, text).await?))
+}
+
+/// Replaces the segments of a video or audio item. An automatic cover goes, to be rendered again from the new first cue when the item is published.
+pub async fn store_library_text(
+    state: &AppState,
+    item: &LibraryItem,
+    text: LibraryText,
+) -> Result<LibraryText, ApiFailure> {
     // The automatic cover of a video is taken at its first cue, which the new subtitles may move.
     let drops_cover = item.cover == LibraryCover::Automatic;
-    let stored = state
+    let item_id = item.id.clone();
+    state
         .with_storage(move |storage| {
             if drops_cover {
                 storage.set_library_cover(&item_id, None)?;
             }
             storage.replace_library_segments(&item_id, &text)
         })
-        .await?;
-    Ok(Json(stored))
+        .await
 }
 
 /// Divides the segments that have no words yet into words, by the longest match at each place in the manager's own dictionaries.

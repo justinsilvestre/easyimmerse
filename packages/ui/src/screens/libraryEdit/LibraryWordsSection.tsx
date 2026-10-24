@@ -4,7 +4,7 @@ import { pluralize } from "../../lib/formatting/pluralize.ts";
 import { libraryLockOf, libraryLockText } from "./libraryLock.ts";
 
 /**
- * The words learners can click in a library item, on its details page: how many there are and in how many of its lines or paragraphs,
+ * The words learners can click in a library item, on its details page: how many there are and in how many of its subtitles or paragraphs,
  * and the button that opens the item in the player or the reader as learners see it, where the library manager gives text its entries.
  * While the item is published or being published, the words show there but cannot change.
  */
@@ -31,14 +31,14 @@ export function LibraryWordsSection({
       )}
       {lock && (
         <p className="text-sm text-fg-muted">
-          {libraryLockText(lock, "change its words")}
+          {libraryLockText(lock, "change its words", item.title)}
         </p>
       )}
       {item.file_name !== null && (
         <div className="flex flex-col items-start gap-2">
           {!lock && (
             <p className="text-sm text-fg-muted">
-              {`Open the item as learners see it, then click a word or select any text in the ${isMedia ? "subtitles" : "text"} to give it an entry from your dictionaries.`}
+              {`Open “${item.title}” as learners see it, then click a word or select any text in the ${isMedia ? "subtitles" : "text"} to give it an entry from your dictionaries.`}
             </p>
           )}
           <Button
@@ -56,9 +56,9 @@ export function LibraryWordsSection({
   );
 }
 
-/** Tells how many words learners can click, and in how many of the item's lines or paragraphs. */
+/** Tells how many words learners can click, and in how many of the item's subtitles or paragraphs. */
 function countsOf(text: LibraryText, isMedia: boolean): string {
-  const unit = isMedia ? "line" : "paragraph";
+  const unit = isMedia ? "subtitle" : "paragraph";
   const withWords = text.segments.filter(({ words }) => words.length > 0);
   const wordCount = withWords.reduce((sum, { words }) => sum + words.length, 0);
   if (wordCount === 0) return "Learners can click no words yet.";
