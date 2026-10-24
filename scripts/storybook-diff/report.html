@@ -207,12 +207,16 @@
       .story.has-comment .comment-toggle::before { content: "● "; }
 
       .story-body { padding: 0 4px 4px; }
-      .comment-box { margin-top: 6px; }
+      /* Sits in the sticky header, across its full width, so it stays in view beside the screenshots it is about. */
+      .comment-box {
+        flex-basis: 100%;
+        cursor: auto;
+      }
       .comment-box textarea {
         box-sizing: border-box;
         display: block;
         width: 100%;
-        min-height: 4.5em;
+        min-height: 3.2em;
         resize: vertical;
         padding: 8px 10px;
         font: inherit;
@@ -222,11 +226,6 @@
         border-radius: 6px;
       }
       .comment-box textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-      .comment-box p {
-        margin: 4px 0 0;
-        font-size: 12px;
-        color: var(--muted);
-      }
 
       .variants {
         display: flex;
@@ -621,6 +620,13 @@
         render();
       });
 
+      // Clicking into the comment box in a story's header must not also open or close the story, and neither must typing
+      // in it: the browser turns Space and Enter there into a click on the header, one with no mouse behind it.
+      document.addEventListener("click", (event) => {
+        const typing = event.detail === 0 && document.activeElement?.closest("summary .comment-box");
+        if (event.target.closest("summary .comment-box") || typing) event.preventDefault();
+      });
+
       // Buttons in a story's header act on their own instead of also opening or closing the story.
       document.addEventListener("click", (event) => {
         const button = event.target.closest("summary button");
@@ -743,12 +749,11 @@
               <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}</span>
             </span>
             <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
+            <div class="comment-box" ${commented ? "" : "hidden"}>
+              <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
+            </div>
           </summary>
           <div class="story-body">
-            <div class="comment-box" ${commented ? "" : "hidden"}>
-              <textarea rows="3" placeholder="What should change in this story?" aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
-              <p>Saved in this browser as you type.</p>
-            </div>
             ${errors.length ? `<pre class="error">${errors.join("\n")}</pre>` : ""}
             ${variantsBody(change)}
           </div>

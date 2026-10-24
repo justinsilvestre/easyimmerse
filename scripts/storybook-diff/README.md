@@ -60,7 +60,7 @@ Then open `.dev/storybook-diff/demo/index.html`. Any `pr-<number>` directory on 
 
 ## Comments
 
-The **Comment** button opens a box at the top of the story. What you type is saved in your browser's local storage as you type, keyed by the report's address. It survives a closed tab and a redeployed report, but not a different browser or device.
+The **Comment** button opens a box in the story's header, which stays in view as you scroll through the story and stays shown when it is collapsed. What you type is saved in your browser's local storage as you type, keyed by the report's address. It survives a closed tab and a redeployed report, but not a different browser or device.
 
 While there are comments, a bar at the bottom of the page counts them and offers:
 
