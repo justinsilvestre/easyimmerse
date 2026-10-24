@@ -39,8 +39,8 @@
       }
       /* The same in both themes, and far apart in hue, so the side shows from the corner of the eye. */
       :root {
-        --before: #c2410c;
-        --after: #1d4ed8;
+        --before: #b0643c;
+        --after: #4a6da6;
       }
       body {
         margin: 0;
@@ -151,31 +151,44 @@
       }
       details.story[open] .chevron { transform: rotate(45deg); }
       .heading {
-        flex: 1 1 260px;
+        flex: 1 1 160px;
         min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
-      .title-line {
-        display: flex;
-        gap: 8px;
-        align-items: baseline;
-        flex-wrap: wrap;
-      }
+      .title-line { display: block; }
       .kind {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.04em;
+        flex: none;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        padding: 1px 6px;
-        border-radius: 4px;
+        padding: 5px 10px;
+        border-radius: 6px;
         color: var(--kind);
         background: color-mix(in srgb, var(--kind) 14%, transparent);
       }
       .title { font-size: 15px; }
       .title .group { color: var(--muted); }
       .title .name { font-weight: 600; }
+      .nowrap { white-space: nowrap; }
+      .icon-button {
+        display: inline-grid;
+        vertical-align: middle;
+        margin-left: 2px;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .icon-button:hover { color: var(--fg); background: var(--line); }
+      .icon-button svg { width: 14px; height: 14px; }
       .meta {
         color: var(--muted);
         font-size: 12px;
@@ -246,7 +259,6 @@
         display: flex;
         align-items: flex-start;
         gap: 16px;
-        padding: 0 4px 4px;
       }
       figure {
         flex: 0 1 auto;
@@ -267,14 +279,13 @@
         z-index: 1;
         box-sizing: border-box;
         width: 0;
-        min-width: calc(100% + 8px);
-        margin: 0 -4px;
+        min-width: 100%;
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 8px;
-        padding: 3px 10px;
+        padding: 2px 6px 4px;
         border: 0;
-        border-radius: 6px 6px 0 0;
         font: inherit;
         font-size: 12px;
         color: #fff;
@@ -295,17 +306,17 @@
         text-overflow: ellipsis;
       }
       .label:hover .expand { opacity: 1; text-decoration: underline; }
+      /* The label closes the frame's top edge, so the two read as one box. */
       .frame {
         position: relative;
-        display: inline-block;
         max-width: 100%;
         overflow: hidden;
-        vertical-align: top;
-        border: 1px solid var(--line);
-        outline: 4px solid var(--side);
+        border: 4px solid var(--side);
+        border-top: 0;
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
-      figure[data-showing="before"] .frame, #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
+      figure[data-showing="before"] .frame { border-style: dashed; }
+      #viewer[data-showing="before"] .viewer-frame { outline-style: dashed; }
       .overlay {
         position: absolute;
         top: 0;
@@ -463,16 +474,21 @@
         layoutStory(story);
       }
 
+      const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h1"/></svg>`;
+      const copiedIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>`;
+
+      /** Copies the text and says so on the button for a moment: in words, or for an icon button, with a tick. */
       async function copyText(button, text) {
-        // Kept on the button, so a second click while it reads "Copied" still restores the original label.
-        const label = (button.dataset.label ??= button.textContent);
+        // Kept on the button, so a second click while it shows the result still restores the original content.
+        const content = (button.dataset.content ??= button.innerHTML);
+        const icon = button.classList.contains("icon-button");
         try {
           await navigator.clipboard.writeText(text);
-          button.textContent = "Copied";
+          button.innerHTML = icon ? copiedIcon : "Copied";
         } catch {
-          button.textContent = "Copy failed";
+          button.textContent = icon ? "!" : "Copy failed";
         }
-        setTimeout(() => { button.textContent = label; }, 1500);
+        setTimeout(() => { button.innerHTML = content; }, 1500);
       }
 
       // Comments are kept in the browser's storage under the report's address, so they survive a closed tab and a redeployed report.
@@ -657,11 +673,11 @@
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
             <span class="chevron" aria-hidden="true"></span>
+            <span class="kind">${change.kind}</span>
             <span class="heading">
-              <span class="title-line"><span class="kind">${change.kind}</span>
-                <span class="title"><span class="group">${change.title} /</span> <span class="name">${change.name}</span></span></span>
-              <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}
-                <button type="button" class="text-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}">Copy name</button></span>
+              <span class="title-line"><span class="title"><span class="group">${change.title} /</span> <span class="nowrap"><span class="name">${change.name}</span>
+                <button type="button" class="icon-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}" title="Copy name" aria-label="Copy name">${copyIcon}</button></span></span></span>
+              <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}</span>
             </span>
             <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
           </summary>
@@ -801,7 +817,8 @@
       });
 
       const gap = 16;
-      const border = 2;
+      /** The frame's border on both sides of a screenshot. */
+      const border = 8;
       const minVariantWidth = 180;
       /** Variants share a row only when none is shown at less than this scale, or than its scale on a row of its own if that is smaller. */
       const minSharedScale = 0.5;

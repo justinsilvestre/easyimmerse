@@ -29,7 +29,8 @@ Every story is screenshotted:
 
 Each story is a collapsible section. Its header stays at the top of the screen while you scroll through it, and it has:
 
-- a link to the story in Storybook, and a **Copy name** button for its title and name;
+- a button beside the story's name that copies its title and name;
+- below the name, a link to the story in Storybook;
 - a **Comment** button, described below;
 - a **Light/Dark** switch, which starts on your system's theme and affects only that story.
 
@@ -39,8 +40,8 @@ To see what changed, **click a screenshot to flip it** between before and after,
 
 Before and after can be told apart at a glance:
 
-- **Before** has an orange label with its text on the left and a dashed frame.
-- **After** has a blue label with its text on the right and a solid frame.
+- **Before** has an orange label with "Before" on the left and a dashed frame.
+- **After** has a blue label with "After" on the right and a solid frame.
 
 Each label spans its screenshot and stays in view as you scroll. **Clicking a label shows that screenshot full screen**, where clicking it, tapping it, or pressing the space bar flips it the same way.
 
