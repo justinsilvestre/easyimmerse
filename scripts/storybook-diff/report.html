@@ -44,25 +44,26 @@
       }
       body {
         margin: 0;
-        padding: 0 8px 16px;
+        padding: 0 0 16px;
         font: 14px/1.5 system-ui, sans-serif;
         background: var(--bg);
         color: var(--fg);
       }
       body:has(#comment-dock:not([hidden])) { padding-bottom: 88px; }
       body:has(#viewer[open]) { overflow: hidden; }
+      /* Only the page's own header is inset; the stories run to the window's edges. */
+      :is(h1, .summary, .toolbar) { padding-inline: 8px; }
       h1 {
-        font-size: 20px;
-        margin: 0 0 4px;
-        padding-top: 16px;
+        font-size: 18px;
+        margin: 0 0 2px;
+        padding-top: 10px;
       }
       .summary {
         color: var(--muted);
-        margin: 0 0 8px;
+        margin: 0;
       }
       .toolbar {
-        padding: 8px 0;
-        margin-bottom: 8px;
+        padding-block: 8px;
         display: flex;
         gap: 8px 16px;
         flex-wrap: wrap;
@@ -110,10 +111,9 @@
 
       details.story {
         --kind: var(--changed);
-        border: 1px solid var(--line);
+        border-block: 1px solid var(--line);
         border-left: 4px solid var(--kind);
-        border-radius: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 8px;
         background: var(--card);
         color: var(--fg);
         scroll-margin-top: 8px;
@@ -124,8 +124,7 @@
         position: sticky;
         top: 0;
         z-index: 2;
-        padding: 10px 8px;
-        border-radius: 0 7px 7px 0;
+        padding: 6px 8px;
         background: var(--card);
         cursor: pointer;
         list-style: none;
@@ -134,10 +133,7 @@
         align-items: center;
         flex-wrap: wrap;
       }
-      details.story[open] > summary {
-        border-radius: 0 7px 0 0;
-        border-bottom: 1px solid var(--line);
-      }
+      details.story[open] > summary { border-bottom: 1px solid var(--line); }
       details.story > summary::-webkit-details-marker { display: none; }
       .chevron {
         flex: none;
@@ -210,8 +206,8 @@
       }
       .story.has-comment .comment-toggle::before { content: "● "; }
 
-      .story-body { padding: 0 4px 8px; }
-      .comment-box { margin-top: 12px; }
+      .story-body { padding: 0 4px 4px; }
+      .comment-box { margin-top: 6px; }
       .comment-box textarea {
         box-sizing: border-box;
         display: block;
@@ -236,16 +232,16 @@
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
-        gap: 12px 8px;
+        gap: 8px;
       }
       .variant {
-        margin-top: 12px;
+        margin-top: 6px;
         min-width: 0;
         max-width: 100%;
       }
       .variant h3 {
         font-size: 13px;
-        margin: 0 0 10px;
+        margin: 0 0 4px;
         color: var(--muted);
         font-weight: normal;
         display: flex;
@@ -340,7 +336,7 @@
         white-space: pre-wrap;
         font-size: 12px;
         color: var(--removed);
-        margin: 12px 0 0;
+        margin: 6px 0 0;
       }
       .empty { color: var(--muted); }
       .story[data-theme="light"] [data-variants="dark"],
@@ -624,7 +620,17 @@
       const fileNameOf = (variant) => `${variant.theme}-${variant.viewport.name}.png`;
       const pixelsOf = (change) => Object.values(change.changedVariants).reduce((sum, pixels) => sum + pixels, 0);
       const sizeOf = (change, side, fileName) => change.imageSizes[`${side}-${fileName}`];
-      const describeSize = (size) => size && `${size.width}×${size.height}`;
+      /** Names each dimension that changed, so a change in width alone or height alone stands out. */
+      function describeResize(before, after) {
+        if (!before || !after) return "";
+        const changes = ["width", "height"]
+          .filter((dimension) => before[dimension] !== after[dimension])
+          .map((dimension) => {
+            const difference = after[dimension] - before[dimension];
+            return `<span class="resized"><b>${dimension === "width" ? "Width" : "Height"}</b> ${before[dimension]} → ${after[dimension]} px (${difference > 0 ? "+" : "−"}${Math.abs(difference)})</span>`;
+          });
+        return changes.join("");
+      }
 
       /** Lists a theme's screenshots that the comparison copied for a story. */
       const shownVariants = (change, themeName) =>
@@ -652,8 +658,7 @@
         const status = pixels
           ? `<label><input type="checkbox" class="highlight" /> Highlight ${pixels.toLocaleString("en-US")} changed px</label>`
           : change.kind === "changed" ? `<span>No change in the ${variant.theme} theme</span>` : "";
-        const [before, after] = ["before", "after"].map((side) => describeSize(sizeOf(change, side, fileName)));
-        const resized = before && after && before !== after ? `<span class="resized">Size changed: ${before} → ${after}</span>` : "";
+        const resized = describeResize(sizeOf(change, "before", fileName), sizeOf(change, "after", fileName));
         return `<section class="variant" data-viewport="${variant.viewport.name}"><h3><span class="viewport">${variant.viewport.name}</span>${status}${resized}</h3>
           <div class="images">${sides.map((side) => image(change, side, fileName)).join("")}</div></section>`;
       }
