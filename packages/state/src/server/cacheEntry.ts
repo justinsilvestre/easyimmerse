@@ -1,5 +1,6 @@
 import type {
   AnkiPendingDeletions,
+  CurrentPrincipal,
   Document,
   LibraryItem,
   LibraryListing,
@@ -9,6 +10,7 @@ import type {
   MediaFile,
   PlaybackMethodRequest,
   ReviewSummary,
+  ServerAuthInfo,
   SyncStatus,
   TimedTextTrack,
 } from "@easyimmerse/types";
@@ -61,6 +63,10 @@ export type CachedQueries = {
   listLibraryItems: undefined;
   getLibraryItem: string;
   getLibraryText: string;
+  /** Cached under the server that the account request reaches: the app's own, or its built-in server's remote. */
+  getCurrentPrincipal: "self" | "linkedRemote";
+  /** Cached under the server that the account request reaches: the app's own, or its built-in server's remote. */
+  getServerAuthInfo: "self" | "linkedRemote";
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
@@ -75,6 +81,8 @@ export type CachedResponses = ServerResponses & {
   listLibraryItems: LibraryListing;
   getLibraryItem: LibraryItem;
   getLibraryText: LibraryText;
+  getCurrentPrincipal: CurrentPrincipal;
+  getServerAuthInfo: ServerAuthInfo;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

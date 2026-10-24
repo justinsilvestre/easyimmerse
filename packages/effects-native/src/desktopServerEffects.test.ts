@@ -40,6 +40,7 @@ describe("createDesktopServerControls", () => {
       autostart: false,
       ffmpeg_dir: null,
       expected_hosts: [],
+      device_name: "Studio iMac",
     };
     await createDesktopServerControls(
       invoke as Invoke,

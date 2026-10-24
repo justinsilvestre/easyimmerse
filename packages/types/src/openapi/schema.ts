@@ -136,7 +136,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tells whether the server has accounts, whether sign-up is open, and whether it sends email. Needs no token. */
+        /** Tells whether the server has accounts, whether sign-up is open, whether it sends email, and the desktop app's device name. Needs no token. */
         get: operations["getServerAuthInfo"];
         put?: never;
         post?: never;
@@ -3632,6 +3632,8 @@ export interface components {
         ServerAuthInfo: {
             /** @description Whether the server has accounts that a client can log in to. */
             accounts: boolean;
+            /** @description The name of the desktop app's computer, which paired devices show. Absent for every other server. */
+            device_name?: string | null;
             /** @description Whether anyone may create an account on the server. */
             open_signup: boolean;
             /** @description Whether the server sends email, so that accounts can confirm their address and reset a forgotten password. */

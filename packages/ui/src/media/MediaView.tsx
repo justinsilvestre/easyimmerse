@@ -3,6 +3,7 @@ import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
 import { type PointerEvent, type ReactNode, useRef } from "react";
+import { ProfileMenu } from "../account/ProfileMenu.tsx";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
@@ -339,7 +340,7 @@ function Fading({
   return (
     <div
       className={clsx(
-        "transition-opacity has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100",
+        "transition-opacity has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100",
         isShown ? "pointer-events-auto" : "pointer-events-none opacity-0",
         className,
       )}
@@ -369,6 +370,9 @@ function Header({ media, onBack, onOpenSource }: MediaViewProps) {
       {media.source && (
         <SourceChip source={media.source} onOpen={onOpenSource} />
       )}
+      <div className="ml-auto">
+        <ProfileMenu />
+      </div>
     </header>
   );
 }

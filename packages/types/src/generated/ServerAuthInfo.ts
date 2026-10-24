@@ -15,4 +15,8 @@ open_signup: boolean,
 /**
  * Whether the server sends email, so that accounts can confirm their address and reset a forgotten password.
  */
-sends_email: boolean, };
+sends_email: boolean, 
+/**
+ * The name of the desktop app's computer, which paired devices show. Absent for every other server.
+ */
+device_name?: string, };

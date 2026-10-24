@@ -22,7 +22,12 @@ export type MainRoute =
 export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
 /** A page of the settings, which open over a main screen. */
-export type SettingsPage = "general" | "account" | "dictionaries" | "pairing";
+export type SettingsPage =
+  | "general"
+  | "account"
+  | "dictionaries"
+  | "pairing"
+  | "server";
 
 /** A section of the general settings page that the page scrolls to when it opens. */
 export type SettingsSection = "mediaConversion";
@@ -58,6 +63,8 @@ export type NavigationStep =
   | { type: "openDictionaries" }
   /** Opens the page for pairing with another easyImmerse app on the local network. */
   | { type: "openPairing" }
+  /** Opens the page of the desktop app's server settings. */
+  | { type: "openServerSettings" }
   | { type: "closeSettings" }
   | { type: "openLibrary" }
   | { type: "openLibraryItem"; itemId: string }
@@ -111,6 +118,8 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return openSettingsPage(current, "dictionaries");
     case "openPairing":
       return openSettingsPage(current, "pairing");
+    case "openServerSettings":
+      return openSettingsPage(current, "server");
     case "closeSettings":
       return closeSettingsPage(current);
     case "openLibrary":

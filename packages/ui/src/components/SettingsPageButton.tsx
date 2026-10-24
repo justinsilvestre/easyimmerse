@@ -1,16 +1,21 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 
-/** A row of the general settings that opens another settings page, with an icon, the page's name and what it holds. */
+/**
+ * A row of the general settings that opens another settings page, with an icon, the page's name and what it holds.
+ * An external row opens a page outside the app instead, and shows an external-link icon in place of the arrow.
+ */
 export function SettingsPageButton({
   icon,
   label,
   description,
+  isExternal = false,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
   description: string;
+  isExternal?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -24,7 +29,11 @@ export function SettingsPageButton({
         <span className="font-medium">{label}</span>
         <span className="text-sm text-fg-muted">{description}</span>
       </span>
-      <ChevronRight className="size-4 text-fg-muted" aria-hidden />
+      {isExternal ? (
+        <ExternalLink className="size-4 text-fg-muted" aria-hidden />
+      ) : (
+        <ChevronRight className="size-4 text-fg-muted" aria-hidden />
+      )}
     </button>
   );
 }

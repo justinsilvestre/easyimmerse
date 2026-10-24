@@ -247,6 +247,7 @@ fn build_config(settings: &ServeSettings, addr: SocketAddr) -> (ApiConfig, Optio
         open_signup: settings.open_signup,
     });
     config.uploads = uploads_config(settings);
+    config.device_name = settings.device_name.clone();
     if addr.ip().is_unspecified() {
         warn_when_no_host_is_expected(settings, addr);
     } else {
@@ -351,6 +352,7 @@ mod tests {
             mail_from: None,
             public_url: None,
             mail_to_stderr: false,
+            device_name: None,
         }
     }
 

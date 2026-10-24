@@ -138,6 +138,7 @@ describe("createBackendStoreParts", () => {
           autostart: false,
           ffmpeg_dir: "/usr/bin",
           expected_hosts: [],
+          device_name: "Studio iMac",
         },
         {
           state: { kind: "running" },

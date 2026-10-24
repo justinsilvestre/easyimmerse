@@ -1,8 +1,8 @@
 import type { Project, ReviewCounts } from "@easyimmerse/types";
-import { BookOpen, FolderOpen, Library, Plus } from "lucide-react";
+import { FolderOpen, Library, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
-import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus } from "../components/Skeleton.tsx";
 import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
@@ -10,7 +10,7 @@ import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 
-/** The home screen: the recent projects, most recently opened first, the way to a new one, and the way to the server's library. */
+/** The home screen: a suggestion above all else, if there is one, then the recent projects, most recently opened first, the way to a new one, and the way to the server's library. */
 export function HomeView({
   status,
   projects,
@@ -19,8 +19,8 @@ export function HomeView({
   onReviewProject,
   onCreateProject,
   onContinueOffline,
-  onOpenDictionaries,
   onOpenLibrary,
+  suggestion,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
@@ -31,37 +31,27 @@ export function HomeView({
   onReviewProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
-  onOpenDictionaries: () => void;
   onOpenLibrary: () => void;
+  /** A card suggesting another easyImmerse component, such as a way to back up the work. */
+  suggestion?: ReactNode;
 }) {
   return (
-    <ScreenLayout
-      headerActions={
-        <>
-          <Button variant="subtle" aria-label="Library" onClick={onOpenLibrary}>
-            <Library className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Library</span>
-          </Button>
-          <Button
-            variant="subtle"
-            aria-label="Dictionaries"
-            onClick={onOpenDictionaries}
-          >
-            <BookOpen className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Dictionaries</span>
-          </Button>
-          <HelpLink />
-        </>
-      }
-    >
+    <ScreenLayout>
+      {suggestion}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Projects</h1>
-        {projects.length > 0 && (
-          <Button variant="primary" onClick={onCreateProject}>
-            <Plus className="size-4" aria-hidden />
-            New project
+        <div className="flex items-center gap-2">
+          <Button onClick={onOpenLibrary}>
+            <Library className="size-4" aria-hidden />
+            Library
           </Button>
-        )}
+          {projects.length > 0 && (
+            <Button variant="primary" onClick={onCreateProject}>
+              <Plus className="size-4" aria-hidden />
+              New project
+            </Button>
+          )}
+        </div>
       </div>
       <Projects
         status={status}

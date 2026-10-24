@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { withAppStore } from "../storybook/withAppStore.tsx";
-import { HelpLink } from "./HelpLink.tsx";
+import { DisplaySection } from "./DisplaySection.tsx";
 
 const meta = {
-  title: "Components/HelpLink",
-  component: HelpLink,
+  title: "Components/DisplaySection",
+  component: DisplaySection,
   decorators: [withAppStore],
-} satisfies Meta<typeof HelpLink>;
+} satisfies Meta<typeof DisplaySection>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

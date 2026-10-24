@@ -4,6 +4,7 @@ import {
   compose,
   legacy_createStore as createStore,
 } from "redux";
+import { watchBackupFaults } from "../backup/watchBackupFaults.ts";
 import type { Effects } from "../platform/effects.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import type { RequestRunner } from "../server/serverRequest.ts";
@@ -49,7 +50,7 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
 /**
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
- * The store opens Settings whenever the platform asks for them, and follows the operating system's theme, for as long as it lives.
+ * The store opens Settings whenever the platform asks for them, follows the operating system's theme, and shows a notice each time the backup breaks, for as long as it lives.
  * `cloudUrl` is the address of the official easyImmerse server, which the app offers to log in to, or null while there is none.
  * Once created, it dispatches `appStarted`, which loads the stored preferences.
  */
@@ -79,6 +80,7 @@ export function createAppStore(
   effects.subscribeToSystemTheme((theme) =>
     store.dispatch(actions.systemThemeChanged(theme)),
   );
+  watchBackupFaults(store);
   store.dispatch(actions.appStarted());
   return store;
 }

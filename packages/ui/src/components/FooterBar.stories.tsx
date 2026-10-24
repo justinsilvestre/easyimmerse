@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { fn, userEvent, within } from "storybook/test";
+import { SyncMenu } from "../account/SyncMenu.tsx";
 import { PanelToggles } from "../media/PanelToggles.tsx";
 import { sampleFooterActivities as samples } from "../storybook/sampleFooterActivities.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
@@ -32,8 +33,7 @@ const meta = {
   decorators: [inWindow(), withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
-    isSettingsOpen: false,
-    onOpenSettings: fn(),
+    syncMenu: <SyncMenu />,
     activities: [samples.dictionaryImport],
     onOpenActivity: fn(),
   },
@@ -43,11 +43,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = { args: { activities: [] } };
-
-/** In Settings, whose button stands for the page already open. */
-export const InSettings: Story = {
-  args: { activities: [], isSettingsOpen: true },
-};
 
 export const OneActivity: Story = {};
 

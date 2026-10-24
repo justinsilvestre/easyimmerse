@@ -4,11 +4,13 @@ import {
 } from "@easyimmerse/backend";
 import { ConnectedEncoderNotice } from "../conversion/ConnectedEncoderNotice.tsx";
 import { useNavigate } from "../hooks/useNavigate.ts";
+import { ConnectedBackupNudgeCard } from "../projects/ConnectedBackupNudgeCard.tsx";
 import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 import { isOfflineError } from "./isOfflineError.ts";
 
 /**
  * The home screen with the projects the server lists, most recently opened first.
+ * Above them, a card suggests backing up a flashcard kept only on this device.
  * On the desktop app, it tells the person once when no video encoder works.
  */
 export function HomeScreen({
@@ -23,7 +25,6 @@ export function HomeScreen({
   onContinueOffline: () => void;
 }) {
   const navigate = useNavigate();
-  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { data, isLoading, error } = useListProjectsQuery();
   // Counted afresh on each visit, since what is due depends on the time of day.
   const reviewCounts = useListReviewCountsQuery(undefined, {
@@ -39,8 +40,8 @@ export function HomeScreen({
         onReviewProject={onReviewProject}
         onCreateProject={onCreateProject}
         onContinueOffline={onContinueOffline}
-        onOpenDictionaries={openDictionaries}
         onOpenLibrary={() => navigate({ type: "openLibrary" })}
+        suggestion={<ConnectedBackupNudgeCard />}
       />
       <ConnectedEncoderNotice />
     </>

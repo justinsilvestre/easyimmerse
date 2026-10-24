@@ -15,9 +15,9 @@ export function LicensesPage({ notices }: { notices: LicenseNoticesState }) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2 id={headingId} className="text-base font-semibold">
+      <h3 id={headingId} className="text-base font-semibold">
         Open-source licenses
-      </h2>
+      </h3>
       <LicensesBody notices={notices} />
     </section>
   );

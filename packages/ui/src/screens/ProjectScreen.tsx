@@ -35,13 +35,13 @@ export function ProjectScreen({
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   if (error)
     return (
-      <ScreenLayout>
+      <ScreenLayout onBack={onBack} backLabel="Projects">
         <p role="alert">Could not load the project.</p>
       </ScreenLayout>
     );
   if (project === undefined)
     return (
-      <ScreenLayout>
+      <ScreenLayout onBack={onBack} backLabel="Projects">
         <LoadingStatus
           label="Loading the project"
           className="flex flex-col gap-6"
@@ -92,7 +92,7 @@ function OpenFileScreen({
     );
   if (mediaFile && isDocumentFileName(mediaFile.name))
     return <ReaderScreen project={project} mediaFileId={mediaFileId} />;
-  if (!mediaFile && isFetching) return <OpeningFile />;
+  if (!mediaFile && isFetching) return <OpeningFile project={project} />;
   return <MediaScreen project={project} mediaFileId={mediaFileId} />;
 }
 
@@ -112,7 +112,10 @@ function LibraryFileScreen({
   const error = item.error ?? text.error;
   if (error)
     return (
-      <ScreenLayout onBack={() => dispatch(actions.closeMedia())}>
+      <ScreenLayout
+        onBack={() => dispatch(actions.closeMedia())}
+        backLabel={project.settings.name}
+      >
         <p role="alert">
           {isNotFound(error)
             ? "This library item is no longer available."
@@ -120,7 +123,7 @@ function LibraryFileScreen({
         </p>
       </ScreenLayout>
     );
-  if (!item.data || !text.data) return <OpeningFile />;
+  if (!item.data || !text.data) return <OpeningFile project={project} />;
   const library = { item: item.data, text: text.data };
   return item.data.kind === "document" ? (
     <ReaderScreen
@@ -137,9 +140,13 @@ function LibraryFileScreen({
   );
 }
 
-function OpeningFile() {
+function OpeningFile({ project }: { project: Project }) {
+  const dispatch = useAppDispatch();
   return (
-    <ScreenLayout>
+    <ScreenLayout
+      onBack={() => dispatch(actions.closeMedia())}
+      backLabel={project.settings.name}
+    >
       <p role="status" className="text-sm text-fg-muted">
         Opening the file…
       </p>

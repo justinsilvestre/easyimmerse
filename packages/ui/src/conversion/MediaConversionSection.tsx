@@ -36,9 +36,9 @@ export function MediaConversionSection({
       aria-labelledby={mediaConversionSectionId}
       className="flex scroll-mt-4 flex-col gap-3"
     >
-      <h2 id={mediaConversionSectionId} className="text-base font-semibold">
+      <h3 id={mediaConversionSectionId} className="text-base font-semibold">
         Media conversion
-      </h2>
+      </h3>
       <PreferenceToggle
         preferenceKey="losslessAudio"
         label="Keep audio lossless when converting"

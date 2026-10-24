@@ -7,17 +7,20 @@ import {
 /** Pairing with a server that has only the launch token: the address with the pairing code, and a warning that anyone on the network can use the server. */
 export function LaunchTokenPairing({
   url,
+  deviceName,
   code,
   onNewCode,
 }: {
   url: string;
+  /** The name paired devices show for this computer, or empty when it has none. */
+  deviceName: string;
   code: DesktopPairingCode;
   onNewCode: () => void;
 }) {
   const issued = code.kind === "issued" ? code.code.code : null;
   return (
     <div className="flex flex-col gap-4">
-      <PairingAddress url={url} code={issued}>
+      <PairingAddress url={url} code={issued} deviceName={deviceName}>
         <PairingCodeLine code={code} onNewCode={onNewCode} />
       </PairingAddress>
       <p
@@ -26,7 +29,7 @@ export function LaunchTokenPairing({
       >
         Anyone on your local network can access your projects, flashcards and
         dictionaries through this server. To keep them private, choose Accounts
-        under Authentication in the Server section of Settings.
+        under Authentication on the Server page of Settings.
       </p>
     </div>
   );

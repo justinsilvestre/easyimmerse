@@ -5,9 +5,10 @@ import type {
   ServerLogEntry,
 } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { fn } from "storybook/test";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
-import { ServerSection } from "./ServerSection.tsx";
+import { ServerScreen } from "./ServerScreen.tsx";
 
 const settings: DesktopServerSettings = {
   bind: "0.0.0.0:8787",
@@ -17,6 +18,7 @@ const settings: DesktopServerSettings = {
   autostart: false,
   ffmpeg_dir: null,
   expected_hosts: [],
+  device_name: "X's MacBook Pro",
 };
 
 const stopped: DesktopServerStatus = {
@@ -68,17 +70,11 @@ const loaded = (overrides: Partial<DesktopServerSettings> = {}) =>
   actions.desktopServerSettingsLoaded({ ...settings, ...overrides });
 
 const meta = {
-  title: "Server/ServerSection",
-  component: ServerSection,
-  decorators: [
-    (Story) => (
-      <div className="max-w-2xl bg-canvas p-4 text-fg">
-        <Story />
-      </div>
-    ),
-    withAppStore,
-  ],
-} satisfies Meta<typeof ServerSection>;
+  title: "Server/ServerScreen",
+  component: ServerScreen,
+  decorators: [withAppStore],
+  args: { onBack: fn() },
+} satisfies Meta<typeof ServerScreen>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -174,6 +170,18 @@ export const FailedToStart: Story = {
         },
       }),
       loaded(),
+      actions.desktopServerLogsReceived(logs.slice(0, 1)),
+    ),
+  ],
+};
+
+/** The device name was edited and not yet saved, which restarts the running server. */
+export const DeviceNameEdited: Story = {
+  decorators: [
+    withDispatchedActions(
+      actions.desktopServerStatusReceived(runningOnLan),
+      loaded(),
+      actions.desktopServerSettingsChanged({ device_name: "Studio iMac" }),
       actions.desktopServerLogsReceived(logs.slice(0, 1)),
     ),
   ],

@@ -24,9 +24,9 @@ export function SubtitleAppearanceSection() {
     );
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2 id={headingId} className="text-base font-semibold">
+      <h3 id={headingId} className="text-base font-semibold">
         Subtitles
-      </h2>
+      </h3>
       <div className="flex max-w-lg flex-col gap-4">
         <SubtitleAppearanceControls
           appearance={appearance}

@@ -59,12 +59,12 @@ function StorageOn({ via, host }: { via: AccountVia; host: string }) {
       aria-labelledby={`${cloudStorageSectionId}-heading`}
       className="flex flex-col gap-3"
     >
-      <h2
+      <h3
         id={`${cloudStorageSectionId}-heading`}
         className="text-base font-semibold"
       >
         Storage on {host}
-      </h2>
+      </h3>
       {status.data ? (
         <StorageDetails status={status.data} host={host} />
       ) : (

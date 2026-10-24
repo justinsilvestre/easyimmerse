@@ -16,7 +16,9 @@ export type PreferenceKey =
   /** How the subtitles over the video look, as JSON. */
   | "subtitleAppearance"
   /** The theme the user chose: "light", "dark", or anything else for the system's. */
-  | "theme";
+  | "theme"
+  /** The suggestions the person dismissed, as a JSON array of their ids. */
+  | "dismissedSuggestions";
 
 /** Every preference key, in the order the preferences are read. */
 export const preferenceKeys: readonly PreferenceKey[] = [
@@ -30,6 +32,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "readerPreferences",
   "subtitleAppearance",
   "theme",
+  "dismissedSuggestions",
 ];
 
 /** The preferences stored on the device, by key. */
