@@ -36,10 +36,291 @@
   "storyCount": 659,
   "changes": [
     {
-      "id": "account-builtinserveraccount--linked-as-administrator",
-      "title": "Account/BuiltInServerAccount",
+      "id": "components-flashcard-editor-libraryflashcardview--from-a-video",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "From A Video",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--from-a-text",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "From A Text",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--suspended",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "Suspended",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-light-desktop.png": {
+          "width": 416,
+          "height": 608
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 608
+        },
+        "after-dark-desktop.png": {
+          "width": 416,
+          "height": 608
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-flashcard-editor-libraryflashcardview--confirming-delete",
+      "title": "Components/Flashcard Editor/LibraryFlashcardView",
+      "name": "Confirming Delete",
+      "importPath": "./src/components/flashcardEditor/LibraryFlashcardView.stories.tsx",
+      "error": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {},
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--video",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Video",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--with-cover",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "With Cover",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--text",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Text",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--without-difficulty-or-tags",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Without Difficulty Or Tags",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 333
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 333
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 333
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 333
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--draft",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Draft",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--preparing",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Preparing",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "components-library-item-card-libraryitemcard--failed",
+      "title": "Components/Library Item Card/LibraryItemCard",
+      "name": "Failed",
+      "importPath": "./src/components/libraryItemCard/LibraryItemCard.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-light-desktop.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-phone.png": {
+          "width": 352,
+          "height": 365
+        },
+        "after-dark-desktop.png": {
+          "width": 352,
+          "height": 365
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-account-builtinserveraccount--linked-as-administrator",
+      "title": "Screens/Account/BuiltInServerAccount",
       "name": "Linked As Administrator",
-      "importPath": "./src/account/BuiltInServerAccount.stories.tsx",
+      "importPath": "./src/screens/account/BuiltInServerAccount.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 19307,
@@ -109,10 +390,10 @@
       }
     },
     {
-      "id": "account-usermanagement--several-users",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--several-users",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Several Users",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 52121,
@@ -182,10 +463,10 @@
       }
     },
     {
-      "id": "account-usermanagement--with-a-library-manager",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--with-a-library-manager",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "With A Library Manager",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "added",
       "changedVariants": {},
       "imageSizes": {
@@ -209,10 +490,10 @@
       "changedAreas": {}
     },
     {
-      "id": "account-usermanagement--creating",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--creating",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Creating",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 52756,
@@ -282,10 +563,10 @@
       }
     },
     {
-      "id": "account-usermanagement--creation-failed",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--creation-failed",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Creation Failed",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 54451,
@@ -355,10 +636,10 @@
       }
     },
     {
-      "id": "account-usermanagement--confirming-deletion",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--confirming-deletion",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Confirming Deletion",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 58653,
@@ -428,10 +709,10 @@
       }
     },
     {
-      "id": "account-usermanagement--role-changing",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--role-changing",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Role Changing",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 53041,
@@ -501,10 +782,10 @@
       }
     },
     {
-      "id": "account-usermanagement--deleting",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--deleting",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Deleting",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 52292,
@@ -574,10 +855,10 @@
       }
     },
     {
-      "id": "account-usermanagement--last-administrator",
-      "title": "Account/UserManagement",
+      "id": "screens-account-users-usermanagement--last-administrator",
+      "title": "Screens/Account/Users/UserManagement",
       "name": "Last Administrator",
-      "importPath": "./src/account/users/UserManagement.stories.tsx",
+      "importPath": "./src/screens/account/users/UserManagement.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 52123,
@@ -647,2046 +928,10 @@
       }
     },
     {
-      "id": "flashcards-libraryflashcardview--from-a-video",
-      "title": "Flashcards/LibraryFlashcardView",
-      "name": "From A Video",
-      "importPath": "./src/flashcards/LibraryFlashcardView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "flashcards-libraryflashcardview--from-a-text",
-      "title": "Flashcards/LibraryFlashcardView",
-      "name": "From A Text",
-      "importPath": "./src/flashcards/LibraryFlashcardView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "flashcards-libraryflashcardview--suspended",
-      "title": "Flashcards/LibraryFlashcardView",
-      "name": "Suspended",
-      "importPath": "./src/flashcards/LibraryFlashcardView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-light-desktop.png": {
-          "width": 416,
-          "height": 608
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 608
-        },
-        "after-dark-desktop.png": {
-          "width": 416,
-          "height": 608
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "flashcards-libraryflashcardview--confirming-delete",
-      "title": "Flashcards/LibraryFlashcardView",
-      "name": "Confirming Delete",
-      "importPath": "./src/flashcards/LibraryFlashcardView.stories.tsx",
-      "error": "light-phone: Cannot destructure property 'store' of 't(...)' as it is null.",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {},
-      "changedAreas": {}
-    },
-    {
-      "id": "library-dictionaryresults--results",
-      "title": "Library/DictionaryResults",
-      "name": "Results",
-      "importPath": "./src/library/DictionaryResults.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 516
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 494
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 516
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 494
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-dictionaryresults--looking-up",
-      "title": "Library/DictionaryResults",
-      "name": "Looking Up",
-      "importPath": "./src/library/DictionaryResults.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 410
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 410
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-dictionaryresults--no-entry",
-      "title": "Library/DictionaryResults",
-      "name": "No Entry",
-      "importPath": "./src/library/DictionaryResults.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 410
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 410
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-dictionaryresults--no-dictionary-for-the-language",
-      "title": "Library/DictionaryResults",
-      "name": "No Dictionary For The Language",
-      "importPath": "./src/library/DictionaryResults.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 442
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 410
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 442
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 410
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-dictionaryresults--lookup-failed",
-      "title": "Library/DictionaryResults",
-      "name": "Lookup Failed",
-      "importPath": "./src/library/DictionaryResults.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 410
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 410
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--draft",
-      "title": "Library/LibraryEditView",
-      "name": "Draft",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1700
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1392
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1700
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1392
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--text",
-      "title": "Library/LibraryEditView",
-      "name": "Text",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1288
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1116
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1288
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1116
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--preparing",
-      "title": "Library/LibraryEditView",
-      "name": "Preparing",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1490
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1258
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1490
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1258
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--failed",
-      "title": "Library/LibraryEditView",
-      "name": "Failed",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1732
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1424
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1732
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1424
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--published",
-      "title": "Library/LibraryEditView",
-      "name": "Published",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1484
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1292
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1484
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1292
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--change-refused",
-      "title": "Library/LibraryEditView",
-      "name": "Change Refused",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1536
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1344
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1536
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1344
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--confirming-delete",
-      "title": "Library/LibraryEditView",
-      "name": "Confirming Delete",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1810
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1448
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1810
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1448
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--word-selected",
-      "title": "Library/LibraryEditView",
-      "name": "Word Selected",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 2214
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1712
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 2214
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1712
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryeditview--loading-text",
-      "title": "Library/LibraryEditView",
-      "name": "Loading Text",
-      "importPath": "./src/library/LibraryEditView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1410
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1138
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1410
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1138
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--draft",
-      "title": "Library/LibraryFilesSection",
-      "name": "Draft",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 396
-        },
-        "after-light-desktop.png": {
-          "width": 724,
-          "height": 260
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 396
-        },
-        "after-dark-desktop.png": {
-          "width": 724,
-          "height": 260
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--without-a-file",
-      "title": "Library/LibraryFilesSection",
-      "name": "Without A File",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 396
-        },
-        "after-light-desktop.png": {
-          "width": 724,
-          "height": 260
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 396
-        },
-        "after-dark-desktop.png": {
-          "width": 724,
-          "height": 260
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--text",
-      "title": "Library/LibraryFilesSection",
-      "name": "Text",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 380,
-          "height": 166
-        },
-        "after-light-desktop.png": {
-          "width": 380,
-          "height": 166
-        },
-        "after-dark-phone.png": {
-          "width": 380,
-          "height": 166
-        },
-        "after-dark-desktop.png": {
-          "width": 380,
-          "height": 166
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--uploading",
-      "title": "Library/LibraryFilesSection",
-      "name": "Uploading",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-light-desktop.png": {
-          "width": 724,
-          "height": 296
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 432
-        },
-        "after-dark-desktop.png": {
-          "width": 724,
-          "height": 296
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--published",
-      "title": "Library/LibraryFilesSection",
-      "name": "Published",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 378,
-          "height": 128
-        },
-        "after-light-desktop.png": {
-          "width": 378,
-          "height": 128
-        },
-        "after-dark-phone.png": {
-          "width": 378,
-          "height": 128
-        },
-        "after-dark-desktop.png": {
-          "width": 378,
-          "height": 128
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryfilessection--preparing",
-      "title": "Library/LibraryFilesSection",
-      "name": "Preparing",
-      "importPath": "./src/library/LibraryFilesSection.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 148
-        },
-        "after-light-desktop.png": {
-          "width": 556,
-          "height": 128
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 148
-        },
-        "after-dark-desktop.png": {
-          "width": 556,
-          "height": 128
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--video",
-      "title": "Library/LibraryItemCard",
-      "name": "Video",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--with-cover",
-      "title": "Library/LibraryItemCard",
-      "name": "With Cover",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--text",
-      "title": "Library/LibraryItemCard",
-      "name": "Text",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--without-difficulty-or-tags",
-      "title": "Library/LibraryItemCard",
-      "name": "Without Difficulty Or Tags",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 333
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 333
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 333
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 333
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--draft",
-      "title": "Library/LibraryItemCard",
-      "name": "Draft",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--preparing",
-      "title": "Library/LibraryItemCard",
-      "name": "Preparing",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemcard--failed",
-      "title": "Library/LibraryItemCard",
-      "name": "Failed",
-      "importPath": "./src/library/LibraryItemCard.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-light-desktop.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-phone.png": {
-          "width": 352,
-          "height": 365
-        },
-        "after-dark-desktop.png": {
-          "width": 352,
-          "height": 365
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemform--video",
-      "title": "Library/LibraryItemForm",
-      "name": "Video",
-      "importPath": "./src/library/LibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 642
-        },
-        "after-light-desktop.png": {
-          "width": 447,
-          "height": 506
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 642
-        },
-        "after-dark-desktop.png": {
-          "width": 447,
-          "height": 506
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemform--cover-chosen",
-      "title": "Library/LibraryItemForm",
-      "name": "Cover Chosen",
-      "importPath": "./src/library/LibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 666
-        },
-        "after-light-desktop.png": {
-          "width": 447,
-          "height": 530
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 666
-        },
-        "after-dark-desktop.png": {
-          "width": 447,
-          "height": 530
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemform--text",
-      "title": "Library/LibraryItemForm",
-      "name": "Text",
-      "importPath": "./src/library/LibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 235,
-          "height": 574
-        },
-        "after-light-desktop.png": {
-          "width": 447,
-          "height": 438
-        },
-        "after-dark-phone.png": {
-          "width": 235,
-          "height": 574
-        },
-        "after-dark-desktop.png": {
-          "width": 447,
-          "height": 438
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemform--saving",
-      "title": "Library/LibraryItemForm",
-      "name": "Saving",
-      "importPath": "./src/library/LibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 642
-        },
-        "after-light-desktop.png": {
-          "width": 447,
-          "height": 506
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 642
-        },
-        "after-dark-desktop.png": {
-          "width": 447,
-          "height": 506
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--with-a-project",
-      "title": "Library/LibraryItemView",
-      "name": "With A Project",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--without-projects-in-its-language",
-      "title": "Library/LibraryItemView",
-      "name": "Without Projects In Its Language",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--new-project-chosen",
-      "title": "Library/LibraryItemView",
-      "name": "New Project Chosen",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--not-published",
-      "title": "Library/LibraryItemView",
-      "name": "Not Published",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--adding",
-      "title": "Library/LibraryItemView",
-      "name": "Adding",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--could-not-add",
-      "title": "Library/LibraryItemView",
-      "name": "Could Not Add",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryitemview--manager",
-      "title": "Library/LibraryItemView",
-      "name": "Manager",
-      "importPath": "./src/library/LibraryItemView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarymanagementview--every-status",
-      "title": "Library/LibraryManagementView",
-      "name": "Every Status",
-      "importPath": "./src/library/LibraryManagementView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 3040
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1488
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 3040
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1488
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarymanagementview--empty",
-      "title": "Library/LibraryManagementView",
-      "name": "Empty",
-      "importPath": "./src/library/LibraryManagementView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 894
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 826
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 894
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 826
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarymanagementview--creating",
-      "title": "Library/LibraryManagementView",
-      "name": "Creating",
-      "importPath": "./src/library/LibraryManagementView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 3040
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1488
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 3040
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1488
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarymanagementview--loading",
-      "title": "Library/LibraryManagementView",
-      "name": "Loading",
-      "importPath": "./src/library/LibraryManagementView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 894
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 826
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 894
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 826
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarymanagementview--could-not-load",
-      "title": "Library/LibraryManagementView",
-      "name": "Could Not Load",
-      "importPath": "./src/library/LibraryManagementView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 898
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 830
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 898
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 830
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--draft",
-      "title": "Library/LibraryPublication",
-      "name": "Draft",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-light-desktop.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-desktop.png": {
-          "width": 323,
-          "height": 134
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--draft-without-a-file",
-      "title": "Library/LibraryPublication",
-      "name": "Draft Without A File",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-light-desktop.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-desktop.png": {
-          "width": 323,
-          "height": 134
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--preparing",
-      "title": "Library/LibraryPublication",
-      "name": "Preparing",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 120
-        },
-        "after-light-desktop.png": {
-          "width": 713,
-          "height": 100
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 120
-        },
-        "after-dark-desktop.png": {
-          "width": 713,
-          "height": 100
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--failed",
-      "title": "Library/LibraryPublication",
-      "name": "Failed",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 318,
-          "height": 166
-        },
-        "after-light-desktop.png": {
-          "width": 318,
-          "height": 166
-        },
-        "after-dark-phone.png": {
-          "width": 318,
-          "height": 166
-        },
-        "after-dark-desktop.png": {
-          "width": 318,
-          "height": 166
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--published",
-      "title": "Library/LibraryPublication",
-      "name": "Published",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 154
-        },
-        "after-light-desktop.png": {
-          "width": 556,
-          "height": 134
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 154
-        },
-        "after-dark-desktop.png": {
-          "width": 556,
-          "height": 134
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--busy",
-      "title": "Library/LibraryPublication",
-      "name": "Busy",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-light-desktop.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-phone.png": {
-          "width": 323,
-          "height": 134
-        },
-        "after-dark-desktop.png": {
-          "width": 323,
-          "height": 134
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-librarypublication--confirming-delete",
-      "title": "Library/LibraryPublication",
-      "name": "Confirming Delete",
-      "importPath": "./src/library/LibraryPublication.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 244
-        },
-        "after-light-desktop.png": {
-          "width": 881,
-          "height": 190
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 244
-        },
-        "after-dark-desktop.png": {
-          "width": 881,
-          "height": 190
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--browsing",
-      "title": "Library/LibraryView",
-      "name": "Browsing",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1427
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1427
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--filtered",
-      "title": "Library/LibraryView",
-      "name": "Filtered",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--nothing-matches",
-      "title": "Library/LibraryView",
-      "name": "Nothing Matches",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--empty",
-      "title": "Library/LibraryView",
-      "name": "Empty",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--manager",
-      "title": "Library/LibraryView",
-      "name": "Manager",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 2544
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 1060
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 2544
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 1060
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--loading",
-      "title": "Library/LibraryView",
-      "name": "Loading",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 1056
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 1056
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-libraryview--could-not-load",
-      "title": "Library/LibraryView",
-      "name": "Could Not Load",
-      "importPath": "./src/library/LibraryView.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 800
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-newlibraryitemform--empty",
-      "title": "Library/NewLibraryItemForm",
-      "name": "Empty",
-      "importPath": "./src/library/NewLibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 331,
-          "height": 656
-        },
-        "after-light-desktop.png": {
-          "width": 339,
-          "height": 588
-        },
-        "after-dark-phone.png": {
-          "width": 331,
-          "height": 656
-        },
-        "after-dark-desktop.png": {
-          "width": 339,
-          "height": 588
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-newlibraryitemform--text-file",
-      "title": "Library/NewLibraryItemForm",
-      "name": "Text File",
-      "importPath": "./src/library/NewLibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 532
-        },
-        "after-light-desktop.png": {
-          "width": 479,
-          "height": 448
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 532
-        },
-        "after-dark-desktop.png": {
-          "width": 479,
-          "height": 448
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-newlibraryitemform--uploading",
-      "title": "Library/NewLibraryItemForm",
-      "name": "Uploading",
-      "importPath": "./src/library/NewLibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 331,
-          "height": 656
-        },
-        "after-light-desktop.png": {
-          "width": 339,
-          "height": 588
-        },
-        "after-dark-phone.png": {
-          "width": 331,
-          "height": 656
-        },
-        "after-dark-desktop.png": {
-          "width": 339,
-          "height": 588
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-newlibraryitemform--upload-failed",
-      "title": "Library/NewLibraryItemForm",
-      "name": "Upload Failed",
-      "importPath": "./src/library/NewLibraryItemForm.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 712
-        },
-        "after-light-desktop.png": {
-          "width": 696,
-          "height": 624
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 712
-        },
-        "after-dark-desktop.png": {
-          "width": 696,
-          "height": 624
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--cues",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Cues",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 577
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 537
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 577
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 537
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--paragraphs",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Paragraphs",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 520
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 480
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 520
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 480
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--word-selected",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Word Selected",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 856
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 697
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 856
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 697
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--only-lines-with-undefined-words",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Only Lines With Undefined Words",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 502
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 462
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 502
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 462
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--every-word-defined",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Every Word Defined",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 480
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 440
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 480
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 440
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--preparing",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Preparing",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 603
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 553
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 603
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 553
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--published",
-      "title": "Library/SegmentWordsEditor",
-      "name": "Published",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 593
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 553
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 593
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 553
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-segmentwordseditor--no-text",
-      "title": "Library/SegmentWordsEditor",
-      "name": "No Text",
-      "importPath": "./src/library/SegmentWordsEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 480
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 440
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 480
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 440
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-wordentryeditor--defined",
-      "title": "Library/WordEntryEditor",
-      "name": "Defined",
-      "importPath": "./src/library/WordEntryEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 556
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 556
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-wordentryeditor--without-definition",
-      "title": "Library/WordEntryEditor",
-      "name": "Without Definition",
-      "importPath": "./src/library/WordEntryEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 556
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 556
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "library-wordentryeditor--last-word",
-      "title": "Library/WordEntryEditor",
-      "name": "Last Word",
-      "importPath": "./src/library/WordEntryEditor.stories.tsx",
-      "kind": "added",
-      "changedVariants": {},
-      "imageSizes": {
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-light-desktop.png": {
-          "width": 1280,
-          "height": 556
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 675
-        },
-        "after-dark-desktop.png": {
-          "width": 1280,
-          "height": 556
-        }
-      },
-      "changedAreas": {}
-    },
-    {
-      "id": "projects-homeview--recent-projects",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--recent-projects",
+      "title": "Screens/Home/HomeView",
       "name": "Recent Projects",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 10208,
@@ -2756,10 +1001,10 @@
       }
     },
     {
-      "id": "projects-homeview--empty",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--empty",
+      "title": "Screens/Home/HomeView",
       "name": "Empty",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 8660,
@@ -2829,10 +1074,10 @@
       }
     },
     {
-      "id": "projects-homeview--loading",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--loading",
+      "title": "Screens/Home/HomeView",
       "name": "Loading",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 927,
@@ -2902,10 +1147,10 @@
       }
     },
     {
-      "id": "projects-homeview--could-not-load",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--could-not-load",
+      "title": "Screens/Home/HomeView",
       "name": "Could Not Load",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 2080,
@@ -2975,10 +1220,10 @@
       }
     },
     {
-      "id": "projects-homeview--offline",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--offline",
+      "title": "Screens/Home/HomeView",
       "name": "Offline",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 6019,
@@ -3048,10 +1293,10 @@
       }
     },
     {
-      "id": "projects-homeview--with-backup-suggestion",
-      "title": "Projects/HomeView",
+      "id": "screens-home-homeview--with-backup-suggestion",
+      "title": "Screens/Home/HomeView",
       "name": "With Backup Suggestion",
-      "importPath": "./src/projects/HomeView.stories.tsx",
+      "importPath": "./src/screens/home/HomeView.stories.tsx",
       "kind": "changed",
       "changedVariants": {
         "light-phone.png": 10988,
@@ -3121,69 +1366,1765 @@
       }
     },
     {
-      "id": "reader-readerview--sepia",
-      "title": "Reader/ReaderView",
-      "name": "Sepia",
-      "importPath": "./src/reader/ReaderView.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 31,
-        "light-desktop.png": 26
-      },
+      "id": "screens-library-libraryview--browsing",
+      "title": "Screens/Library/LibraryView",
+      "name": "Browsing",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
       "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 844
-        },
         "after-light-phone.png": {
           "width": 390,
-          "height": 844
-        },
-        "before-light-desktop.png": {
-          "width": 1280,
-          "height": 800
+          "height": 1427
         },
         "after-light-desktop.png": {
           "width": 1280,
           "height": 800
         },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 844
-        },
         "after-dark-phone.png": {
           "width": 390,
-          "height": 844
-        },
-        "before-dark-desktop.png": {
-          "width": 1280,
-          "height": 800
+          "height": 1427
         },
         "after-dark-desktop.png": {
           "width": 1280,
           "height": 800
         }
       },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 82,
-          "y": 824,
-          "width": 6,
-          "height": 7
-        },
-        "light-desktop.png": {
-          "x": 126,
-          "y": 780,
-          "width": 5,
-          "height": 8
-        }
-      }
+      "changedAreas": {}
     },
     {
-      "id": "review-reviewcontrolrow--library-card-menu-open",
-      "title": "Review/ReviewControlRow",
+      "id": "screens-library-libraryview--filtered",
+      "title": "Screens/Library/LibraryView",
+      "name": "Filtered",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-libraryview--nothing-matches",
+      "title": "Screens/Library/LibraryView",
+      "name": "Nothing Matches",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-libraryview--empty",
+      "title": "Screens/Library/LibraryView",
+      "name": "Empty",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-libraryview--manager",
+      "title": "Screens/Library/LibraryView",
+      "name": "Manager",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 2544
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1060
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 2544
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1060
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-libraryview--loading",
+      "title": "Screens/Library/LibraryView",
+      "name": "Loading",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1056
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1056
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-libraryview--could-not-load",
+      "title": "Screens/Library/LibraryView",
+      "name": "Could Not Load",
+      "importPath": "./src/screens/library/LibraryView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-dictionaryresults--results",
+      "title": "Screens/Library Edit/DictionaryResults",
+      "name": "Results",
+      "importPath": "./src/screens/libraryEdit/DictionaryResults.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 516
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 494
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 516
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 494
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-dictionaryresults--looking-up",
+      "title": "Screens/Library Edit/DictionaryResults",
+      "name": "Looking Up",
+      "importPath": "./src/screens/libraryEdit/DictionaryResults.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 410
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 410
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-dictionaryresults--no-entry",
+      "title": "Screens/Library Edit/DictionaryResults",
+      "name": "No Entry",
+      "importPath": "./src/screens/libraryEdit/DictionaryResults.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 410
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 410
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-dictionaryresults--no-dictionary-for-the-language",
+      "title": "Screens/Library Edit/DictionaryResults",
+      "name": "No Dictionary For The Language",
+      "importPath": "./src/screens/libraryEdit/DictionaryResults.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 442
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 410
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 442
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 410
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-dictionaryresults--lookup-failed",
+      "title": "Screens/Library Edit/DictionaryResults",
+      "name": "Lookup Failed",
+      "importPath": "./src/screens/libraryEdit/DictionaryResults.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 410
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 410
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--draft",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Draft",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1700
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1392
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1700
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1392
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--text",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Text",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1288
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1116
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1288
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1116
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--preparing",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Preparing",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1490
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1258
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1490
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1258
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--failed",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Failed",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1732
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1424
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1732
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1424
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--published",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Published",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1484
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1292
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1484
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1292
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--change-refused",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Change Refused",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1536
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1344
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1536
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1344
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--confirming-delete",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Confirming Delete",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1810
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1448
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1810
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1448
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--word-selected",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Word Selected",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 2214
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1712
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 2214
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1712
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryeditview--loading-text",
+      "title": "Screens/Library Edit/LibraryEditView",
+      "name": "Loading Text",
+      "importPath": "./src/screens/libraryEdit/LibraryEditView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 1410
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1138
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 1410
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1138
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--draft",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Draft",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 396
+        },
+        "after-light-desktop.png": {
+          "width": 724,
+          "height": 260
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 396
+        },
+        "after-dark-desktop.png": {
+          "width": 724,
+          "height": 260
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--without-a-file",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Without A File",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 396
+        },
+        "after-light-desktop.png": {
+          "width": 724,
+          "height": 260
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 396
+        },
+        "after-dark-desktop.png": {
+          "width": 724,
+          "height": 260
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--text",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Text",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 380,
+          "height": 166
+        },
+        "after-light-desktop.png": {
+          "width": 380,
+          "height": 166
+        },
+        "after-dark-phone.png": {
+          "width": 380,
+          "height": 166
+        },
+        "after-dark-desktop.png": {
+          "width": 380,
+          "height": 166
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--uploading",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Uploading",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-light-desktop.png": {
+          "width": 724,
+          "height": 296
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 432
+        },
+        "after-dark-desktop.png": {
+          "width": 724,
+          "height": 296
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--published",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Published",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 378,
+          "height": 128
+        },
+        "after-light-desktop.png": {
+          "width": 378,
+          "height": 128
+        },
+        "after-dark-phone.png": {
+          "width": 378,
+          "height": 128
+        },
+        "after-dark-desktop.png": {
+          "width": 378,
+          "height": 128
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryfilessection--preparing",
+      "title": "Screens/Library Edit/LibraryFilesSection",
+      "name": "Preparing",
+      "importPath": "./src/screens/libraryEdit/LibraryFilesSection.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 148
+        },
+        "after-light-desktop.png": {
+          "width": 556,
+          "height": 128
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 148
+        },
+        "after-dark-desktop.png": {
+          "width": 556,
+          "height": 128
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryitemform--video",
+      "title": "Screens/Library Edit/LibraryItemForm",
+      "name": "Video",
+      "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 642
+        },
+        "after-light-desktop.png": {
+          "width": 447,
+          "height": 506
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 642
+        },
+        "after-dark-desktop.png": {
+          "width": 447,
+          "height": 506
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryitemform--cover-chosen",
+      "title": "Screens/Library Edit/LibraryItemForm",
+      "name": "Cover Chosen",
+      "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 666
+        },
+        "after-light-desktop.png": {
+          "width": 447,
+          "height": 530
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 666
+        },
+        "after-dark-desktop.png": {
+          "width": 447,
+          "height": 530
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryitemform--text",
+      "title": "Screens/Library Edit/LibraryItemForm",
+      "name": "Text",
+      "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 235,
+          "height": 574
+        },
+        "after-light-desktop.png": {
+          "width": 447,
+          "height": 438
+        },
+        "after-dark-phone.png": {
+          "width": 235,
+          "height": 574
+        },
+        "after-dark-desktop.png": {
+          "width": 447,
+          "height": 438
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-libraryitemform--saving",
+      "title": "Screens/Library Edit/LibraryItemForm",
+      "name": "Saving",
+      "importPath": "./src/screens/libraryEdit/LibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 642
+        },
+        "after-light-desktop.png": {
+          "width": 447,
+          "height": 506
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 642
+        },
+        "after-dark-desktop.png": {
+          "width": 447,
+          "height": 506
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--draft",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Draft",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-light-desktop.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-desktop.png": {
+          "width": 323,
+          "height": 134
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--draft-without-a-file",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Draft Without A File",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-light-desktop.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-desktop.png": {
+          "width": 323,
+          "height": 134
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--preparing",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Preparing",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 120
+        },
+        "after-light-desktop.png": {
+          "width": 713,
+          "height": 100
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 120
+        },
+        "after-dark-desktop.png": {
+          "width": 713,
+          "height": 100
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--failed",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Failed",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 318,
+          "height": 166
+        },
+        "after-light-desktop.png": {
+          "width": 318,
+          "height": 166
+        },
+        "after-dark-phone.png": {
+          "width": 318,
+          "height": 166
+        },
+        "after-dark-desktop.png": {
+          "width": 318,
+          "height": 166
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--published",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Published",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 154
+        },
+        "after-light-desktop.png": {
+          "width": 556,
+          "height": 134
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 154
+        },
+        "after-dark-desktop.png": {
+          "width": 556,
+          "height": 134
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--busy",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Busy",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-light-desktop.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-phone.png": {
+          "width": 323,
+          "height": 134
+        },
+        "after-dark-desktop.png": {
+          "width": 323,
+          "height": 134
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarypublication--confirming-delete",
+      "title": "Screens/Library Edit/LibraryPublication",
+      "name": "Confirming Delete",
+      "importPath": "./src/screens/libraryEdit/LibraryPublication.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 244
+        },
+        "after-light-desktop.png": {
+          "width": 881,
+          "height": 190
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 244
+        },
+        "after-dark-desktop.png": {
+          "width": 881,
+          "height": 190
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--cues",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Cues",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 577
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 537
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 577
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 537
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--paragraphs",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Paragraphs",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 520
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 480
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 520
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 480
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--word-selected",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Word Selected",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 856
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 697
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 856
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 697
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--only-lines-with-undefined-words",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Only Lines With Undefined Words",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 502
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 462
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 502
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 462
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--every-word-defined",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Every Word Defined",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 480
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 440
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 480
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 440
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--preparing",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Preparing",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 603
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 553
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 603
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 553
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--published",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "Published",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 593
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 553
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 593
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 553
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-segmentwordseditor--no-text",
+      "title": "Screens/Library Edit/SegmentWordsEditor",
+      "name": "No Text",
+      "importPath": "./src/screens/libraryEdit/SegmentWordsEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 480
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 440
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 480
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 440
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-wordentryeditor--defined",
+      "title": "Screens/Library Edit/WordEntryEditor",
+      "name": "Defined",
+      "importPath": "./src/screens/libraryEdit/WordEntryEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 556
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 556
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-wordentryeditor--without-definition",
+      "title": "Screens/Library Edit/WordEntryEditor",
+      "name": "Without Definition",
+      "importPath": "./src/screens/libraryEdit/WordEntryEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 556
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 556
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-wordentryeditor--last-word",
+      "title": "Screens/Library Edit/WordEntryEditor",
+      "name": "Last Word",
+      "importPath": "./src/screens/libraryEdit/WordEntryEditor.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 556
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 675
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 556
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--with-a-project",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "With A Project",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--without-projects-in-its-language",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "Without Projects In Its Language",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--new-project-chosen",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "New Project Chosen",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--not-published",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "Not Published",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--adding",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "Adding",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--could-not-add",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "Could Not Add",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-item-libraryitemview--manager",
+      "title": "Screens/Library Item/LibraryItemView",
+      "name": "Manager",
+      "importPath": "./src/screens/libraryItem/LibraryItemView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 800
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 844
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 800
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--every-status",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Every Status",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--empty",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Empty",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 826
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 826
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--creating",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Creating",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 3040
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 1488
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--loading",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Loading",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 826
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 894
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 826
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-librarymanagementview--could-not-load",
+      "title": "Screens/Library Manage/LibraryManagementView",
+      "name": "Could Not Load",
+      "importPath": "./src/screens/libraryManage/LibraryManagementView.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 898
+        },
+        "after-light-desktop.png": {
+          "width": 1280,
+          "height": 830
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 898
+        },
+        "after-dark-desktop.png": {
+          "width": 1280,
+          "height": 830
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--empty",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Empty",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "after-light-desktop.png": {
+          "width": 339,
+          "height": 588
+        },
+        "after-dark-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "after-dark-desktop.png": {
+          "width": 339,
+          "height": 588
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--text-file",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Text File",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 532
+        },
+        "after-light-desktop.png": {
+          "width": 479,
+          "height": 448
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 532
+        },
+        "after-dark-desktop.png": {
+          "width": 479,
+          "height": 448
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--uploading",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Uploading",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "after-light-desktop.png": {
+          "width": 339,
+          "height": 588
+        },
+        "after-dark-phone.png": {
+          "width": 331,
+          "height": 656
+        },
+        "after-dark-desktop.png": {
+          "width": 339,
+          "height": 588
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-manage-newlibraryitemform--upload-failed",
+      "title": "Screens/Library Manage/NewLibraryItemForm",
+      "name": "Upload Failed",
+      "importPath": "./src/screens/libraryManage/NewLibraryItemForm.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 712
+        },
+        "after-light-desktop.png": {
+          "width": 696,
+          "height": 624
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 712
+        },
+        "after-dark-desktop.png": {
+          "width": 696,
+          "height": 624
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-review-reviewcontrolrow--library-card-menu-open",
+      "title": "Screens/Review/ReviewControlRow",
       "name": "Library Card Menu Open",
-      "importPath": "./src/review/ReviewControlRow.stories.tsx",
+      "importPath": "./src/screens/review/ReviewControlRow.stories.tsx",
       "kind": "added",
       "changedVariants": {},
       "imageSizes": {
