@@ -44,7 +44,7 @@
       }
       body {
         margin: 0;
-        padding: 0 16px 16px;
+        padding: 0 8px 16px;
         font: 14px/1.5 system-ui, sans-serif;
         background: var(--bg);
         color: var(--fg);
@@ -124,7 +124,7 @@
         position: sticky;
         top: 0;
         z-index: 2;
-        padding: 10px 12px;
+        padding: 10px 8px;
         border-radius: 0 7px 7px 0;
         background: var(--card);
         cursor: pointer;
@@ -210,7 +210,7 @@
       }
       .story.has-comment .comment-toggle::before { content: "● "; }
 
-      .story-body { padding: 0 12px 12px; }
+      .story-body { padding: 0 4px 8px; }
       .comment-box { margin-top: 12px; }
       .comment-box textarea {
         box-sizing: border-box;
@@ -236,7 +236,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
-        gap: 12px 16px;
+        gap: 12px 8px;
       }
       .variant {
         margin-top: 12px;
@@ -258,7 +258,7 @@
       .images {
         display: flex;
         align-items: flex-start;
-        gap: 16px;
+        gap: 8px;
       }
       figure {
         flex: 0 1 auto;
@@ -379,7 +379,7 @@
         flex: 1;
         outline: none;
         overflow: auto;
-        padding: 16px;
+        padding: 8px 0;
       }
       .viewer-frame {
         position: relative;
@@ -816,7 +816,7 @@
         resizeFrame = requestAnimationFrame(() => document.querySelectorAll("details.story[open]").forEach(layoutStory));
       });
 
-      const gap = 16;
+      const gap = 8;
       /** The frame's border on both sides of a screenshot. */
       const border = 8;
       const minVariantWidth = 180;
