@@ -19,8 +19,7 @@ export function HomeLibrarySection({
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold">Library</h2>
           <p className="text-sm text-fg-muted">
-            Videos, audio, and texts prepared on this server, ready to add to
-            your projects.
+            Videos, audio, and texts prepared for learners on this server.
           </p>
         </div>
       </div>
