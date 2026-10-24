@@ -147,7 +147,7 @@
       }
       details.story[open] .chevron { transform: rotate(45deg); }
       .heading {
-        flex: 1 1 160px;
+        flex: 1 1 0;
         min-width: 0;
         display: flex;
         flex-direction: column;
@@ -193,11 +193,20 @@
         flex-wrap: wrap;
       }
       .meta a { color: var(--accent); }
-      .actions {
+      .heading .meta { overflow-wrap: anywhere; }
+      /* The header's first row holds the change type beside the story's name and path; the second, everything else. */
+      .header-row {
+        flex-basis: 100%;
         display: flex;
-        gap: 8px;
         align-items: center;
-        margin-left: auto;
+        gap: 8px 12px;
+        min-width: 0;
+      }
+      .controls {
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
       }
       .comment-toggle::before { content: "✎ "; }
       .story.has-comment .comment-toggle {
@@ -819,14 +828,16 @@
         const pixels = pixelsOf(change);
         return `<details class="story kind-${change.kind} ${commented ? "has-comment" : ""}" id="${change.id}" data-id="${change.id}" data-theme="${themeOf(change)}" ${state.collapsed.has(change.id) ? "" : "open"}>
           <summary>
+            <span class="header-row">
             <span class="chevron" aria-hidden="true"></span>
             <span class="kind">${change.kind}</span>
             <span class="heading">
               <span class="title-line"><span class="title"><span class="group">${change.title} /</span> <span class="nowrap"><span class="name">${change.name}</span>
                 <button type="button" class="icon-button" data-copy="${storyTitle(change).replaceAll('"', "&quot;")}" title="Copy name" aria-label="Copy name">${copyIcon}</button></span></span></span>
-              <span class="meta">${storyLink(change)}${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}</span>
+              <span class="meta">${storyLink(change)}</span>
             </span>
-            <span class="actions"><button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
+            </span>
+            <span class="header-row controls">${pixels ? `<span>${pixels.toLocaleString("en-US")} px changed</span>` : ""}<button type="button" class="pill comment-toggle">Comment</button>${themeSwitch(change)}</span>
             <div class="comment-box" ${commentShown ? "" : "hidden"}>
               <textarea rows="2" placeholder="What should change in this story? Saved in this browser as you type." aria-label="Comment on ${storyTitle(change).replaceAll('"', "&quot;")}"></textarea>
               <button type="button" class="text-button hide-comment" title="The comment is kept; Comment opens it again">Hide</button>
