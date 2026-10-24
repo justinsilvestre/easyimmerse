@@ -466,8 +466,9 @@
         background: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
       }
       /* The viewer's background takes the tone of the dimmed area around the changes, so that area blends into it. */
-      #viewer[data-shot-theme="light"] .viewer-body { background: #aeaeae; }
-      #viewer[data-shot-theme="dark"] .viewer-body { background: #2a2c31; }
+      #viewer[data-shot-theme="light"] :is(.viewer-body, .viewer-comment) { background: #aeaeae; }
+      #viewer[data-shot-theme="dark"] :is(.viewer-body, .viewer-comment) { background: #2a2c31; }
+      #viewer[data-shot-theme="dark"] .viewer-comment textarea { color: #eee; background: #1d1f23; border-color: #44474d; }
       /* Holds the whole screenshot; zooming moves and enlarges it so that the frame shows only the changed area. */
       .viewer-canvas { position: absolute; }
 
