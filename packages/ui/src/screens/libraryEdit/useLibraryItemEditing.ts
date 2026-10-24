@@ -82,19 +82,24 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
             ),
       ),
     uploadCover: (file: File) =>
-      run("The cover picture couldn't be uploaded. Try again in a moment.", () =>
-        registry === null
-          ? Promise.reject(unreachableFile)
-          : uploadFromRegistry(registry, file, (picked) =>
-              uploadCover({ itemId, file: picked }).unwrap(),
-            ),
+      run(
+        "The cover picture couldn't be uploaded. Try again in a moment.",
+        () =>
+          registry === null
+            ? Promise.reject(unreachableFile)
+            : uploadFromRegistry(registry, file, (picked) =>
+                uploadCover({ itemId, file: picked }).unwrap(),
+              ),
       ),
     chooseCoverFrame: (atMs: number) =>
-      run("The cover couldn't be taken from that frame. Try again in a moment.", () =>
-        chooseCoverFrame({ itemId, atMs }).unwrap(),
+      run(
+        "The cover couldn't be taken from that frame. Try again in a moment.",
+        () => chooseCoverFrame({ itemId, atMs }).unwrap(),
       ),
     resetCover: () =>
-      run("The cover couldn't be changed. Try again in a moment.", () => resetCover(itemId).unwrap()),
+      run("The cover couldn't be changed. Try again in a moment.", () =>
+        resetCover(itemId).unwrap(),
+      ),
     replaceSubtitles: (files: LibrarySubtitleFiles) =>
       run(
         "The subtitles couldn't be uploaded. Try again in a moment.",
@@ -106,15 +111,18 @@ export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
       ),
     /** Adds the item to the project given, or to a new one when null, and opens it there in the player or the reader. */
     openWords: (projectId: string | null) =>
-      run("The item couldn't be opened for editing. Try again in a moment.", async () => {
-        const opened = await add({ itemId, projectId }).unwrap();
-        dispatch(
-          actions.openMediaFileRequested(
-            opened.project_id,
-            opened.media_file_id,
-          ),
-        );
-      }),
+      run(
+        "The item couldn't be opened for editing. Try again in a moment.",
+        async () => {
+          const opened = await add({ itemId, projectId }).unwrap();
+          dispatch(
+            actions.openMediaFileRequested(
+              opened.project_id,
+              opened.media_file_id,
+            ),
+          );
+        },
+      ),
     proposeWords: () =>
       run(
         "The words couldn't be filled in from your dictionaries. Try again in a moment.",

@@ -36,7 +36,9 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
     return (
       <ScreenLayout onBack={manage} backLabel="Manage library">
         {item.isError ? (
-          <p role="alert">This library item couldn't be loaded. Try again in a moment.</p>
+          <p role="alert">
+            This library item couldn't be loaded. Try again in a moment.
+          </p>
         ) : (
           <p role="status" className="text-sm text-fg-muted">
             Loading the item…
