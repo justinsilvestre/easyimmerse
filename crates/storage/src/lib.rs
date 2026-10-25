@@ -13,6 +13,7 @@ mod error;
 mod flashcards;
 mod library_items;
 mod library_segments;
+mod library_settings;
 mod media_copies;
 #[cfg(test)]
 mod media_copies_tests;
@@ -71,7 +72,7 @@ use easyimmerse_core::dictionary::{
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::library::{
     LibraryCover, LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus,
-    LibrarySegment, LibraryText, LibraryWord,
+    LibrarySegment, LibrarySettings, LibraryText, LibraryWord,
 };
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
@@ -1106,7 +1107,20 @@ impl Storage {
         self.read(|conn| sync::remote_copies::remote_copy_size(conn, remote_id, media_file_id))
     }
 
-    /// Creates a draft library item with no file and no text.
+    pub fn get_library_settings(&self) -> Result<LibrarySettings, StorageError> {
+        self.read(library_settings::get_library_settings)
+    }
+
+    /// Replaces the library's settings, refusing with `LibraryHasItems` while the library has any item.
+    pub fn set_library_settings(
+        &self,
+        settings: &LibrarySettings,
+    ) -> Result<LibrarySettings, StorageError> {
+        self.write(|conn| library_settings::set_library_settings(conn, settings))
+    }
+
+    /// Creates a draft library item with no file and no text, refusing with `LibraryLanguageUnset`
+    /// while the library's language is unset.
     pub fn create_library_item(
         &self,
         draft: &LibraryItemDraft,
@@ -1199,6 +1213,25 @@ impl Storage {
         self.write(|conn| library_items::set_library_duration(conn, id, duration_ms))
     }
 
+    /// Returns the tracks that learners of the library item play, as the JSON of a `TrackSelection`, or None for the default tracks.
+    pub fn get_library_track_selection_json(
+        &self,
+        id: &LibraryItemId,
+    ) -> Result<Option<String>, StorageError> {
+        self.read(|conn| library_items::get_library_track_selection_json(conn, id))
+    }
+
+    /// Records the tracks that learners of the library item play; None leaves the choice to the default tracks.
+    pub fn set_library_track_selection_json(
+        &self,
+        id: &LibraryItemId,
+        track_selection_json: Option<&str>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            library_items::set_library_track_selection_json(conn, id, track_selection_json)
+        })
+    }
+
     /// Replaces a library item's segments and chapter titles with the given text.
     pub fn replace_library_segments(
         &self,
@@ -1249,6 +1282,26 @@ impl Storage {
         item_id: &LibraryItemId,
     ) -> Result<Option<MediaFile>, StorageError> {
         self.read(|conn| media_files::find_library_media_file(conn, project_id, item_id))
+    }
+
+    /// Finds the owner's media file of the library item in any of its projects, the one in the project opened last when there are several.
+    pub fn find_owners_library_media_file(
+        &self,
+        owner: &OwnerId,
+        item_id: &LibraryItemId,
+    ) -> Result<Option<MediaFile>, StorageError> {
+        self.read(|conn| media_files::find_owners_library_media_file(conn, owner, item_id))
+    }
+
+    /// Stores the track choice of every media file of the library item, in any project; `None` clears it.
+    pub fn set_library_media_track_selection_json(
+        &self,
+        item_id: &LibraryItemId,
+        track_selection_json: Option<&str>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            media_files::set_library_media_track_selection_json(conn, item_id, track_selection_json)
+        })
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

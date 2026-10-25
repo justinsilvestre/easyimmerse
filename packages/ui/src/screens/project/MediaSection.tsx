@@ -1,5 +1,5 @@
 import type { MediaImportSource } from "@easyimmerse/state";
-import { Link, Plus } from "lucide-react";
+import { Library, Link, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
@@ -14,8 +14,8 @@ import {
 } from "./mediaCategories.ts";
 
 /**
- * The project's media files, with the ways to add one: from a file, and through each installed
- * media-source plugin, whose button carries the plugin's own label.
+ * The project's media files, with the ways to add one: from a file, from the server's library,
+ * and through each installed media-source plugin, whose button carries the plugin's own label.
  * The heading is a menu that narrows the list to one kind of file, videos, audio or ebooks, each option counting its files.
  * Until the list has loaded, the section shows placeholders and offers nothing to choose.
  */
@@ -28,6 +28,7 @@ export function MediaSection({
   /** The installed media-source plugins, each offered as a button beside "Add media". */
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
+  onOpenLibrary: () => void;
   onImportMedia: (source: MediaImportSource) => void;
   onOpenMedia: (mediaId: string) => void;
   onDeleteMedia: (mediaId: string) => void;
@@ -52,6 +53,7 @@ function LoadedMedia({
   media,
   importSources,
   onAddMedia,
+  onOpenLibrary,
   onImportMedia,
   onOpenMedia,
   onDeleteMedia,
@@ -59,18 +61,27 @@ function LoadedMedia({
   media: readonly MediaItem[];
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
+  onOpenLibrary: () => void;
   onImportMedia: (source: MediaImportSource) => void;
   onOpenMedia: (mediaId: string) => void;
   onDeleteMedia: (mediaId: string) => void;
 }) {
   const [category, setCategory] = useState<MediaCategory>("all");
   const shown = mediaOfCategory(media, category);
-  const importButtons = importSources.map((source) => (
-    <Button key={source.name} onClick={() => onImportMedia(source)}>
-      <Link className="size-4" aria-hidden />
-      {source.label}
-    </Button>
-  ));
+  const otherButtons = (
+    <>
+      <Button onClick={onOpenLibrary}>
+        <Library className="size-4" aria-hidden />
+        From the library
+      </Button>
+      {importSources.map((source) => (
+        <Button key={source.name} onClick={() => onImportMedia(source)}>
+          <Link className="size-4" aria-hidden />
+          {source.label}
+        </Button>
+      ))}
+    </>
+  );
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
@@ -90,7 +101,7 @@ function LoadedMedia({
         </h2>
         {media.length > 0 && (
           <div className="flex flex-wrap justify-end gap-2">
-            {importButtons}
+            {otherButtons}
             <Button onClick={onAddMedia}>
               <Plus className="size-4" aria-hidden />
               Add media
@@ -108,7 +119,7 @@ function LoadedMedia({
                 <Plus className="size-4" aria-hidden />
                 Add media
               </Button>
-              {importButtons}
+              {otherButtons}
             </>
           }
         />

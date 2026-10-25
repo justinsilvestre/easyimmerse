@@ -4,7 +4,7 @@
 
 ## Media-source plugins
 
-A media-source plugin imports media and subtitles from an external source, such as a video site. The plugin never ships user interface code. Instead, it describes forms declaratively, with text fields, choices, toggles, notes and action buttons, and the app renders them.
+A media-source plugin imports media and subtitles from a source outside the app, which the plugin alone knows about. The plugin never ships user interface code. Instead, it describes forms declaratively, with text fields, choices, toggles, notes and action buttons, and the app renders them.
 
 The plugin has two interfaces, each a sequence of forms. The import interface starts with `import-form`. Each time the user presses an action, the host sends the action and the form's input to `import-step`, which answers with the next form or with the import to run. The host then calls `import`, granting the plugin a fresh directory to write the media and subtitle files into, and adds the media file to the project with the locator the plugin gave as its origin.
 

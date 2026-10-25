@@ -12,7 +12,6 @@ import { languageOptions } from "../../lib/formatting/languages.ts";
 import { libraryDifficultyLabels } from "../../lib/library/libraryLabels.ts";
 import { LibraryCoverPicker } from "./LibraryCoverPicker.tsx";
 import { libraryDraftOf } from "./libraryDraftOf.ts";
-import { libraryLockOf } from "./libraryLock.ts";
 
 const difficultyOptions = [
   { value: "", label: "Not set" },
@@ -27,9 +26,9 @@ function changed(draft: LibraryItemDraft, changes: Partial<LibraryItemDraft>) {
 }
 
 /**
- * The metadata of a library item: its title, description, languages, difficulty and tags, saved together,
+ * The metadata of a library item: its title, description, translation language, difficulty and tags, saved together,
  * and its cover picture, which changes at once. These can change whatever the item's status,
- * except the languages, which are fixed while the item is being prepared or is published.
+ * except the translation language, which is fixed while the item is being prepared or is published.
  */
 export function LibraryItemForm({
   item,
@@ -56,8 +55,7 @@ export function LibraryItemForm({
   onResetCover: () => void;
 }) {
   const [draft, change] = useReducer(changed, item, libraryDraftOf);
-  // The languages decide how the text was divided into words, so they change only with the words.
-  const areLanguagesLocked = libraryLockOf(item.status) !== null;
+  const translationLanguageHint = translationLanguageHintOf(item);
   return (
     <div className="flex flex-col gap-6">
       <form
@@ -81,19 +79,13 @@ export function LibraryItemForm({
           value={draft.description}
           onChange={(event) => change({ description: event.target.value })}
         />
-        <div className="grid items-start gap-3 sm:grid-cols-3">
-          <SelectField
-            label="Language"
-            options={languageOptions}
-            value={draft.language}
-            disabled={areLanguagesLocked}
-            onChange={(event) => change({ language: event.target.value })}
-          />
+        <div className="grid items-start gap-3 sm:grid-cols-2">
           <SelectField
             label="Translation language"
             options={languageOptions}
             value={draft.translation_language}
-            disabled={areLanguagesLocked}
+            hint={translationLanguageHint}
+            disabled={translationLanguageHint !== undefined}
             onChange={(event) =>
               change({ translation_language: event.target.value })
             }
@@ -138,4 +130,17 @@ export function LibraryItemForm({
       />
     </div>
   );
+}
+
+/** Why the translation language cannot change for now, or undefined while it can.
+ * Learners' projects of a published item were made for its translation language, so it stays as it is. */
+function translationLanguageHintOf(item: LibraryItem): string | undefined {
+  switch (item.status.kind) {
+    case "published":
+      return `Learners added “${item.title}” to their projects with this translation language, so it can't change now that it's published.`;
+    case "processing":
+      return `The translation language can't change while the server prepares “${item.title}” for learners.`;
+    default:
+      return undefined;
+  }
 }

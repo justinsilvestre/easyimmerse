@@ -26,6 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** As a learner sees it: no library section, since the library is reached from a project. */
 export const RecentProjects: Story = {};
 
 export const LibraryManager: Story = { args: { onManageLibrary: fn() } };

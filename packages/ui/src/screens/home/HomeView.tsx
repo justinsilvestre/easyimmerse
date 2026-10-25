@@ -13,7 +13,8 @@ export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
 
 /**
  * The home screen: a suggestion above all else, if there is one, then the server's library, then the recent projects, most recently opened first, with the way to a new one.
- * The library is left out while no server answers.
+ * The library section is for someone who manages the library; others reach the library from a project.
+ * It is left out while no server answers.
  */
 export function HomeView({
   status,
@@ -37,7 +38,7 @@ export function HomeView({
   onCreateProject: () => void;
   onContinueOffline: () => void;
   onOpenLibrary: () => void;
-  /** Opens the library management screen. Null for someone who cannot manage the library. */
+  /** Opens the library management screen. Null for someone who cannot manage the library, who then sees no library section. */
   onManageLibrary: (() => void) | null;
   /** A card suggesting another easyImmerse component, such as a way to back up the work. */
   suggestion?: ReactNode;
@@ -46,7 +47,7 @@ export function HomeView({
     <ScreenLayout>
       <h1 className="sr-only">Home</h1>
       {suggestion}
-      {status !== "offline" && (
+      {status !== "offline" && onManageLibrary && (
         <HomeLibrarySection
           onOpenLibrary={onOpenLibrary}
           onManageLibrary={onManageLibrary}

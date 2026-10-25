@@ -1,16 +1,21 @@
 import type { LibraryItem } from "@easyimmerse/types";
 import { LibraryItemCard } from "../../components/libraryItemCard/LibraryItemCard.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
+import { languageName } from "../../lib/formatting/languages.ts";
 import type { LibraryListStatus } from "../../lib/library/LibraryListStatus.ts";
 import {
   NewLibraryMediaForm,
-  type NewLibraryMediaLanguages,
   type NewLibraryMediaStatus,
 } from "./NewLibraryMediaForm.tsx";
 
-/** The library management screen: the way to add media to the library, and every item of the library, published or not, with its status. */
+/**
+ * The library management screen: the way to add media to the library, and every item of the library, published or not, with its status.
+ * While the library has no items, adding media asks for its language, which becomes the library's;
+ * once it has items, their language shows under the heading.
+ */
 export function LibraryManagementView({
   status,
+  language,
   items,
   coverUrlOf,
   addStatus,
@@ -19,17 +24,34 @@ export function LibraryManagementView({
   onBack,
 }: {
   status: LibraryListStatus;
+  /** The library's language, or null while it has none. */
+  language: string | null;
   items: readonly LibraryItem[];
   coverUrlOf: (item: LibraryItem) => string | null;
   addStatus: NewLibraryMediaStatus;
-  onAddMedia: (languages: NewLibraryMediaLanguages) => void;
+  /** Adds media in the chosen language, or in the library's language for null, with the translation language given. */
+  onAddMedia: (language: string | null, translationLanguage: string) => void;
   onEditItem: (itemId: string) => void;
   onBack: () => void;
 }) {
+  const isLanguageFixed = items.length > 0 && language !== null;
   return (
     <ScreenLayout onBack={onBack} backLabel="Library" wide>
-      <h1 className="text-xl font-semibold">Manage library</h1>
-      <NewLibraryMediaForm status={addStatus} onAddMedia={onAddMedia} />
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-semibold">Manage library</h1>
+        {status === "ready" && isLanguageFixed && (
+          <p className="text-sm text-fg-muted">
+            For learners of {languageName(language)}.
+          </p>
+        )}
+      </div>
+      {status === "ready" && (
+        <NewLibraryMediaForm
+          status={addStatus}
+          languageChoice={isLanguageFixed ? null : (language ?? "de")}
+          onAddMedia={onAddMedia}
+        />
+      )}
       {status === "loading" && (
         <p role="status" className="text-sm text-fg-muted">
           Loading the library…

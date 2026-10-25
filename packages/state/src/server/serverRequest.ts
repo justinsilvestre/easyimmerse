@@ -18,6 +18,7 @@ import type {
   LibraryItem,
   LibraryItemAdded,
   LibraryItemDraft,
+  LibrarySettings,
   LinkRemoteRequest,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
@@ -166,6 +167,8 @@ export type ServerRequest =
   | { kind: "uploadLibraryFile"; itemId: string; file: PickedMediaFile }
   /** Adds a library item to a project, or to a project made for it when `projectId` is null. */
   | { kind: "addLibraryItem"; itemId: string; projectId: string | null }
+  /** Replaces the library's settings, which the server refuses while the library has any item. */
+  | { kind: "putLibrarySettings"; settings: LibrarySettings }
   /** Deletes a flashcard. `purpose` comes back with the outcome and is not sent. */
   | {
       kind: "deleteFlashcard";
@@ -348,6 +351,7 @@ export type ServerResponses = {
   createLibraryItem: LibraryItem;
   uploadLibraryFile: LibraryItem;
   addLibraryItem: LibraryItemAdded;
+  putLibrarySettings: LibrarySettings;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;

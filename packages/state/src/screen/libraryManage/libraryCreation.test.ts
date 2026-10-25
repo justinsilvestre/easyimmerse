@@ -13,7 +13,18 @@ import {
   updateLibraryCreation,
 } from "./libraryCreation.ts";
 
-const settings = { language: "de", translationLanguage: "en", projectId: "p1" };
+const settings = {
+  translationLanguage: "en",
+  libraryLanguage: null,
+  projectId: "p1",
+};
+
+const settingsWithLanguage = { ...settings, libraryLanguage: "fr" };
+
+const languageRequest = {
+  kind: "putLibrarySettings",
+  settings: { language: "fr" },
+} satisfies ServerRequest;
 
 const video: PickedMediaFile = {
   name: "park.mp4",
@@ -25,7 +36,6 @@ const createRequest = {
   draft: {
     title: "park.mp4",
     description: "",
-    language: "de",
     translation_language: "en",
     kind: "video",
     difficulty: null,
@@ -75,6 +85,15 @@ function creationAfter(...done: AppAction[]) {
 
 const picking = [actions.libraryMediaPickRequested(settings)];
 const creating = [...picking, actions.mediaFileChosen(video)];
+const settingLanguage = [
+  actions.libraryMediaPickRequested(settingsWithLanguage),
+  actions.mediaFileChosen(video),
+];
+
+const languageSetWith = (
+  outcome: Parameters<typeof actions.requestSettled>[2],
+) =>
+  actions.requestSettled("libraryCreation/language", languageRequest, outcome);
 
 describe("updateLibraryCreation", () => {
   it("opens the media file picker when asked", () => {
@@ -165,6 +184,25 @@ describe("updateLibraryCreation", () => {
     ]);
   });
 
+  it("names the draft and tells to open it when the file can't be uploaded", () => {
+    const failed = actions.requestSettled(
+      "libraryCreation/upload",
+      uploadRequest,
+      { ok: false, error: serverError },
+    );
+    expect(creationAfter(...creating, created, failed).effects).toEqual([
+      {
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice(
+            "danger",
+            "“park.mp4” was added to the library as a draft, but the file couldn't be uploaded. Open the draft below to upload the file again.",
+          ),
+        ),
+      },
+    ]);
+  });
+
   it("ends when the file can't be uploaded", () => {
     const failed = actions.requestSettled(
       "libraryCreation/upload",
@@ -172,5 +210,44 @@ describe("updateLibraryCreation", () => {
       { ok: false, error: serverError },
     );
     expect(creationAfter(...creating, created, failed).creation).toBeNull();
+  });
+
+  describe("when a language for the library was chosen", () => {
+    it("sets the library's language before creating the item", () => {
+      expect(creationAfter(...settingLanguage).effects).toEqual([
+        {
+          type: "sendRequest",
+          id: "libraryCreation/language",
+          request: languageRequest,
+        },
+      ]);
+    });
+
+    it("creates the item once the library's language is set", () => {
+      const set = languageSetWith({ ok: true, data: { language: "fr" } });
+      expect(creationAfter(...settingLanguage, set).effects).toContainEqual({
+        type: "sendRequest",
+        id: "libraryCreation/create",
+        request: createRequest,
+      });
+    });
+
+    it("says why when items in another language were added meanwhile", () => {
+      const refused = languageSetWith({
+        ok: false,
+        error: { status: 409, message: "", code: "library_has_items" },
+      });
+      expect(creationAfter(...settingLanguage, refused).effects).toEqual([
+        {
+          type: "dispatch",
+          action: actions.noticeRequested(
+            transientNotice(
+              "danger",
+              "“park.mp4” couldn't be added to the library in that language, because items in another language were added to the library meanwhile. Reload this screen to see them, then add the file again.",
+            ),
+          ),
+        },
+      ]);
+    });
   });
 });

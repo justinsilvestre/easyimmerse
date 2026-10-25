@@ -20,7 +20,7 @@ export const runningImportStatus: ImportJobStatus = {
 export const runningMediaSourceJob: MediaSourceJob = {
   id: "j1",
   project_id: "p1",
-  plugin: "video-site",
+  plugin: "example-plugin",
   locator: "https://videos.example.com/abc",
   status: "running",
   progress: { fraction: 0.5, message: "downloading" },

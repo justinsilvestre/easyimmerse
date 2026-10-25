@@ -7,6 +7,7 @@ import {
   serverCacheWith,
   withEmptyServerCache,
 } from "../../server/serverCacheWith.ts";
+import { withLibraryVideoFor } from "../libraryPreparationTestSupport.ts";
 import {
   exampleCopyPlayback,
   exampleTracksOneEach,
@@ -54,7 +55,7 @@ describe("updatePlaybackDialog", () => {
     ).toEqual({ kind: "trackChoice", selection: null, stage: "choosing" });
   });
 
-  it("leaves the track choice closed for a file from the library", () => {
+  it("leaves the track choice closed for a learner's file from the library", () => {
     const app = stateAfter(
       actions.openMediaFileRequested("p1", "m1"),
       actions.preferencesLoaded({}),
@@ -70,6 +71,22 @@ describe("updatePlaybackDialog", () => {
         { ...app, backend },
       ),
     ).toBeNull();
+  });
+
+  it("opens the track choice for a file from the library while its library manager prepares the draft", () => {
+    const app = stateAfter(
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.preferencesLoaded({}),
+      mediaFilesListed(),
+    );
+    const backend = withLibraryVideoFor({ kind: "launch" }, { kind: "draft" });
+    expect(
+      updatePlaybackDialog(
+        app.screen.dialog,
+        tracksSettled(exampleTracksTwoAudio),
+        { ...app, backend },
+      ),
+    ).toEqual({ kind: "trackChoice", selection: null, stage: "choosing" });
   });
 
   it("leaves the track choice closed when a choice is saved", () => {

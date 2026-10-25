@@ -34,7 +34,7 @@ const addToProject = async () =>
   );
 
 describe("LibraryItemScreen", () => {
-  it("offers the person's projects in the item's language, and a new project", async () => {
+  it("offers the person's projects in the library's language, and a new project", async () => {
     renderItem();
     const choice = (await screen.findByLabelText(
       "Add to",
@@ -72,7 +72,7 @@ describe("LibraryItemScreen", () => {
     );
   });
 
-  it("tells why the server refused to add the item", async () => {
+  it("names the project and tells why the server refused to add the item", async () => {
     renderItem({
       "POST /library/items/i1/add": fakeFailure({
         status: 409,
@@ -82,17 +82,30 @@ describe("LibraryItemScreen", () => {
     });
     await addToProject();
     expect((await screen.findByRole("alert")).textContent).toBe(
-      "This server has no place set aside for uploaded files, so it can't hold a library. Whoever runs the server can set one up.",
+      "“Im Park” couldn't be added to “Alpha”. This server has no place set aside for uploaded files, so it can't hold a library. Whoever runs the server can set one up.",
     );
   });
 
-  it("names the item it could not add when the server gives no reason", async () => {
+  it("names the item and the project it could not add it to when the server gives no reason", async () => {
     renderItem({
       "POST /library/items/i1/add": fakeFailure({ status: 500, message: "" }),
     });
     await addToProject();
     expect((await screen.findByRole("alert")).textContent).toBe(
-      "“Im Park” couldn't be added to the project. Try again in a moment.",
+      "“Im Park” couldn't be added to “Alpha”. Try again in a moment.",
+    );
+  });
+
+  it("says a new project when that is where the item could not be added", async () => {
+    renderItem({
+      "POST /library/items/i1/add": fakeFailure({ status: 500, message: "" }),
+    });
+    fireEvent.change(await screen.findByLabelText("Add to"), {
+      target: { value: "" },
+    });
+    await addToProject();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "“Im Park” couldn't be added to a new project. Try again in a moment.",
     );
   });
 

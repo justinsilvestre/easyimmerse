@@ -55,7 +55,8 @@ export function LibraryEditView({
   onUploadCover: (file: File) => void;
   onChooseCoverFrame: (atMs: number) => void;
   onResetCover: () => void;
-  onReplaceFile: (file: File) => void;
+  /** Opens the file picker, to replace the item's file with one from this device. */
+  onReplaceFile: () => void;
   /** Opens the item in the player or the reader, where its words are chosen. */
   onOpenWords: () => void;
   onProposeWords: () => void;

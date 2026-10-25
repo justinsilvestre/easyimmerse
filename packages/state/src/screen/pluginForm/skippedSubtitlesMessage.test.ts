@@ -8,7 +8,7 @@ import {
 } from "./skippedSubtitlesMessage.ts";
 
 const form: PluginForm = {
-  title: "Add from a video site",
+  title: "Add with Example plugin",
   description: null,
   fields: [
     {

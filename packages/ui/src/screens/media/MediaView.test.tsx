@@ -104,21 +104,21 @@ describe("MediaView", () => {
     const media = {
       title: "Episode 1",
       projectName: "Alpha",
-      source: { title: "Video site", isAvailable: true },
+      source: { title: "Example plugin", isAvailable: true },
     };
 
     it("opens the plugin's media interface from the chip named after it", () => {
       const onOpenSource = vi.fn();
       renderView({ media, onOpenSource });
-      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
+      fireEvent.click(screen.getByRole("button", { name: "Example plugin" }));
       expect(onOpenSource).toHaveBeenCalledOnce();
     });
 
     it("opens nothing from the chip while the plugin is not installed", () => {
       const onOpenSource = vi.fn();
-      const source = { title: "downloader", isAvailable: false };
+      const source = { title: "example-plugin", isAvailable: false };
       renderView({ media: { ...media, source }, onOpenSource });
-      fireEvent.click(screen.getByRole("button", { name: "downloader" }));
+      fireEvent.click(screen.getByRole("button", { name: "example-plugin" }));
       expect(onOpenSource).not.toHaveBeenCalled();
     });
   });

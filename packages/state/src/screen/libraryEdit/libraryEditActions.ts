@@ -1,3 +1,4 @@
+import type { LibraryItemKind } from "@easyimmerse/types";
 import type { NewLibraryItemSettings } from "../libraryManage/libraryCreation.ts";
 import type { LibraryDeletion, LibraryWordPlace } from "./libraryEditState.ts";
 
@@ -15,6 +16,9 @@ export const libraryEditActions = {
   /** The library manager asked to pick the media file or text of a new library item, which is made with these settings. */
   libraryMediaPickRequested: (settings: NewLibraryItemSettings) =>
     ({ type: "libraryMediaPickRequested", settings }) as const,
+  /** The library manager asked to pick a device file to replace the file of a library item, which is of the kind given. */
+  libraryFileReplacePickRequested: (itemId: string, kind: LibraryItemKind) =>
+    ({ type: "libraryFileReplacePickRequested", itemId, kind }) as const,
 };
 
 /** An action of the library screens' own choices. */

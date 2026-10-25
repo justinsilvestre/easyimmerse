@@ -14,13 +14,12 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     status: "ready",
+    language: "de",
     items: exampleLibraryItems,
-    languages: ["de", "ja"],
     tags: ["conversation", "everyday", "news", "stories"],
-    filter: { language: null, tags: [] },
+    filter: { tags: [] },
     canManage: false,
     coverUrlOf: () => null,
-    onChooseLanguage: fn(),
     onToggleTag: fn(),
     onOpenItem: fn(),
     onManage: fn(),
@@ -36,15 +35,20 @@ export const Browsing: Story = {};
 export const Filtered: Story = {
   args: {
     items: exampleLibraryItems.slice(1, 2),
-    filter: { language: "de", tags: ["news"] },
+    filter: { tags: ["news"] },
   },
 };
 
 export const NothingMatches: Story = {
-  args: { items: [], filter: { language: "ja", tags: ["news"] } },
+  args: { items: [], filter: { tags: ["news", "stories"] } },
 };
 
-export const Empty: Story = { args: { items: [], languages: [], tags: [] } };
+export const Empty: Story = { args: { items: [], tags: [] } };
+
+/** A library whose manager has not yet set its language. */
+export const WithoutLanguage: Story = {
+  args: { language: null, items: [], tags: [] },
+};
 
 export const Manager: Story = {
   args: { items: exampleManagedLibraryItems, canManage: true },

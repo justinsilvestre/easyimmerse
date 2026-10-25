@@ -27,16 +27,17 @@ export function cuesOfLibraryText(text: LibraryText) {
 /**
  * Returns the book a document item's segments make, as the reader shows it: one paragraph per segment, in the chapter the segment names,
  * or in the first chapter when it names none, and the chapters titled as the item's text titles them.
+ * The book names no language, so the reader takes the project's, which is the library's language for a project the item was added to.
  */
 export function documentOfLibraryText(
   text: LibraryText,
-  item: Pick<LibraryItem, "title" | "language">,
+  item: Pick<LibraryItem, "title">,
 ): Document {
   const chapters = libraryChaptersOf(text).map((segments, index) => ({
     title: text.chapter_titles[index] ?? null,
     paragraphs: segments.map((segment) => segment.text),
   })) satisfies Chapter[];
-  return { title: item.title, language: item.language, chapters };
+  return { title: item.title, language: null, chapters };
 }
 
 /**

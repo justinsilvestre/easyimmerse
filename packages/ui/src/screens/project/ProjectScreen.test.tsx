@@ -3,6 +3,7 @@ import {
   actions,
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
+  selectRoute,
 } from "@easyimmerse/state";
 import type {
   ImportStepRequest,
@@ -204,21 +205,29 @@ describe("ProjectScreen", () => {
     );
   });
 
+  it("opens the library when From the library is clicked", async () => {
+    const { store } = renderProject();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "From the library" }),
+    );
+    expect(selectRoute(store.getState())).toEqual({ screen: "library" });
+  });
+
   it("offers no import button while no media-source plugin is installed", async () => {
     renderProject();
     await screen.findByRole("button", { name: "Add media" });
-    expect(screen.queryByRole("button", { name: /Add from/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Add with/ })).toBeNull();
   });
 
   it("labels a media-source plugin's button with its title when it names no label", async () => {
     renderImport({}, [{ ...fixtureMediaSourcePlugin, import_label: null }]);
     expect(
-      await screen.findByRole("button", { name: "Video site" }),
+      await screen.findByRole("button", { name: "Example plugin" }),
     ).toBeDefined();
   });
 
   const urlForm: PluginForm = {
-    title: "Add from a video site",
+    title: "Add with Example plugin",
     description: null,
     fields: [
       {
@@ -300,7 +309,7 @@ describe("ProjectScreen", () => {
   /** Goes through the fake plugin's forms up to the start of the fetch. */
   async function startImport() {
     fireEvent.click(
-      await screen.findByRole("button", { name: "Add from a video site" }),
+      await screen.findByRole("button", { name: "Add with Example plugin" }),
     );
     fireEvent.change(await screen.findByLabelText("URL or video ID"), {
       target: { value: "https://videos.example.com/abc" },
@@ -330,12 +339,12 @@ describe("ProjectScreen", () => {
       .map(stepRequestOf);
     expect(steps).toEqual([
       {
-        plugin: "video-site",
+        plugin: "example-plugin",
         action: "look-up",
         input: [{ field: "url", values: ["https://videos.example.com/abc"] }],
       },
       {
-        plugin: "video-site",
+        plugin: "example-plugin",
         action: "add",
         input: [{ field: "subtitles", values: ["en"] }],
       },

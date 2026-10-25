@@ -3,30 +3,33 @@ import {
   useAddLibraryItemMutation,
   useGetCurrentPrincipalQuery,
   useGetLibraryItemQuery,
+  useGetLibrarySettingsQuery,
   useListProjectsQuery,
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   libraryFailureMessage,
   selectLibraryAddTarget,
   selectServerConfig,
 } from "@easyimmerse/state";
+import type { Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { useNavigate } from "../../useNavigate.ts";
 import { LibraryItemView } from "./LibraryItemView.tsx";
 
 /**
- * One item of the library, which the person adds to one of their projects in its language, or to a new project made for it.
+ * One item of the library, which the person adds to one of their projects in the library's language, or to a new project made for it.
  * Once added, the item opens in that project.
  */
 export function LibraryItemScreen({ itemId }: { itemId: string }) {
   const dispatch = useAppDispatch();
   const go = useNavigate();
   const item = useGetLibraryItemQuery(itemId);
+  const settings = useGetLibrarySettingsQuery();
   const projectList = useListProjectsQuery();
   const projects = projectList.data?.projects ?? [];
   const principal = useGetCurrentPrincipalQuery("self").data;
@@ -36,7 +39,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
     selectLibraryAddTarget(state, itemId),
   );
   const back = () => go({ type: "openLibrary" });
-  if (item.isError)
+  if (item.isError || settings.isError)
     return (
       <ScreenLayout onBack={back} backLabel="Library">
         <p role="alert">
@@ -45,8 +48,8 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         </p>
       </ScreenLayout>
     );
-  // The "Add to" choice starts on the first project, so it waits for the projects.
-  if (!item.data || projectList.isLoading)
+  // The "Add to" choice starts on the first project in the library's language, so it waits for both.
+  if (!item.data || !settings.data || projectList.isLoading)
     return (
       <ScreenLayout onBack={back} backLabel="Library">
         <LoadingStatus label="Loading the item" className="flex flex-col gap-4">
@@ -55,13 +58,15 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         </LoadingStatus>
       </ScreenLayout>
     );
-  const { language } = item.data;
+  // An item exists only once a library manager has set the library's language.
+  const language = settings.data.language ?? "";
   const projectsInLanguage = projects.filter(
     ({ settings }) => settings.target_language === language,
   );
   return (
     <LibraryItemView
       item={item.data}
+      libraryLanguage={language}
       coverUrl={buildLibraryCoverUrl(server, item.data)}
       projects={projectsInLanguage}
       chosenProjectId={
@@ -73,8 +78,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
         added.isError
           ? libraryFailureMessage(
               added.error,
-              `“${item.data.title}” couldn't be added to the project. Try again in a moment.`,
-              `“${item.data.title}”`,
+              `“${item.data.title}” couldn't be added to ${targetNameOf(added.originalArgs?.projectId ?? null, projects)}.`,
             )
           : null
       }
@@ -96,4 +100,14 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
       onBack={back}
     />
   );
+}
+
+/** Names the project an item was being added to, or says it was a new one when none is given. */
+function targetNameOf(
+  projectId: string | null,
+  projects: readonly Project[],
+): string {
+  if (projectId === null) return "a new project";
+  const project = projects.find(({ id }) => id === projectId);
+  return project ? `“${project.settings.name}”` : "that project";
 }

@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Screens } from "../../Screens.tsx";
-import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+} from "../../testSupport/createFakeBackendClient.ts";
 import {
   exampleLibraryItem,
   exampleLibraryMediaFile,
@@ -31,8 +34,11 @@ const draft = exampleLibraryItem({
 
 const subtitles = "1\n00:00:01,000 --> 00:00:02,000\nHallo, Hund.";
 
-/** Renders the library management screen for the server's owner, a library manager, over a server that makes the draft item i1. */
-function renderManagement() {
+/**
+ * Renders the library management screen for the server's owner, a library manager, over a server that makes the draft item i1
+ * in a German library, unless answered otherwise.
+ */
+function renderManagement(responses: Record<string, FakeResponse> = {}) {
   const registry = createBrowserFileRegistry<File>();
   const client = createFakeBackendClient(
     {
@@ -56,6 +62,7 @@ function renderManagement() {
         format: "srt",
         sample: "Hallo, Hund.",
       },
+      ...responses,
     },
     directPlaybackRoutes,
   );
@@ -97,6 +104,53 @@ describe("LibraryManageScreen", () => {
     );
   });
 
+  describe("while the library has no items", () => {
+    it("asks for the language of the media", async () => {
+      renderManagement();
+      expect(
+        (await screen.findByLabelText<HTMLSelectElement>("Language")).value,
+      ).toBe("de");
+    });
+
+    it("gives the library the language chosen for the first media", async () => {
+      const rendered = renderManagement({
+        "PUT /library/settings": { language: "fr" },
+      });
+      fireEvent.change(await screen.findByLabelText("Language"), {
+        target: { value: "fr" },
+      });
+      await addVideo(rendered);
+      expect(
+        bodyOf(
+          requestsTo(rendered.client.requests, "PUT", "/library/settings")[0],
+        ),
+      ).toEqual({ language: "fr" });
+    });
+
+    it("keeps the library's language when it is the one chosen", async () => {
+      const rendered = renderManagement();
+      await addVideo(rendered);
+      expect(
+        requestsTo(rendered.client.requests, "PUT", "/library/settings"),
+      ).toHaveLength(0);
+    });
+  });
+
+  describe("once the library has items", () => {
+    const withItems = { "GET /library/items": { items: [draft] } };
+
+    it("names their language under the heading", async () => {
+      renderManagement(withItems);
+      expect(await screen.findByText("For learners of German.")).toBeDefined();
+    });
+
+    it("no longer asks for a language", async () => {
+      renderManagement(withItems);
+      await screen.findByText("For learners of German.");
+      expect(screen.queryByLabelText("Language")).toBeNull();
+    });
+  });
+
   describe("when a video is picked", () => {
     it("makes a draft named after the file", async () => {
       const rendered = renderManagement();
@@ -105,7 +159,11 @@ describe("LibraryManageScreen", () => {
         bodyOf(
           requestsTo(rendered.client.requests, "POST", "/library/items")[0],
         ),
-      ).toMatchObject({ title: "park.mp4", kind: "video", language: "de" });
+      ).toMatchObject({
+        title: "park.mp4",
+        kind: "video",
+        translation_language: "en",
+      });
     });
 
     it("uploads the file to the draft", async () => {

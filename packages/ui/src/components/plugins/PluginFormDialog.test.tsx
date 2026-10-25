@@ -18,7 +18,7 @@ function renderDialog(
   const dialog = (shown: PluginForm | null) => (
     <PluginFormDialog
       form={shown}
-      fallbackTitle="Add from a video site"
+      fallbackTitle="Add with Example plugin"
       loadingMessage="Loading…"
       error={null}
       isBusy={isBusy}
@@ -48,14 +48,14 @@ describe("PluginFormDialog", () => {
   it("is named after the form", () => {
     renderDialog();
     expect(screen.getByRole("dialog").getAttribute("aria-labelledby")).toBe(
-      screen.getByRole("heading", { name: "Import from a video site" }).id,
+      screen.getByRole("heading", { name: "Import with Example plugin" }).id,
     );
   });
 
   it("is named after the fallback title while there is no form", () => {
     renderDialog(null);
     expect(
-      screen.getByRole("heading", { name: "Add from a video site" }),
+      screen.getByRole("heading", { name: "Add with Example plugin" }),
     ).toBeTruthy();
   });
 

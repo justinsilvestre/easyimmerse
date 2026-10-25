@@ -87,8 +87,11 @@ function updateShownScreen(
     );
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (main.kind === "libraryManage") {
-    const [creation, effects] = updateLibraryCreation(main.creation, action);
-    return updated({ ...main, creation }, ...effects);
+    const [creation, creationEffects] = updateLibraryCreation(
+      main.creation,
+      action,
+    );
+    return updated({ ...main, creation }, ...creationEffects);
   }
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));

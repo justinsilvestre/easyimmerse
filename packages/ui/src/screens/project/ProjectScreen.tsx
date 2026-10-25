@@ -7,13 +7,13 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
 import type { MediaFile, Project } from "@easyimmerse/types";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
-import { canManageLibrary } from "../../lib/library/canManageLibrary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { MediaScreen } from "../media/MediaScreen.tsx";
@@ -100,7 +100,7 @@ function OpenFileScreen({
 
 /**
  * The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive.
- * A library manager who opens an item that is not published, and is not being published, prepares its words there for learners.
+ * A library manager who opens an item that is not being published prepares its words there for learners, who see them at once when the item is published.
  */
 function LibraryFileScreen({
   project,
@@ -134,9 +134,7 @@ function LibraryFileScreen({
   const library = {
     item: item.data,
     text: text.data,
-    isEditing:
-      canManageLibrary(principal) &&
-      (status.kind === "draft" || status.kind === "failed"),
+    isEditing: canManageLibrary(principal) && status.kind !== "processing",
   };
   return item.data.kind === "document" ? (
     <ReaderScreen

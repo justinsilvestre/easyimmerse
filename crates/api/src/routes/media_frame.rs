@@ -14,7 +14,7 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::principal::Principal;
-use crate::routes::library_files::preprocessed_frame;
+use crate::library_cues::preprocessed_frame;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
     chosen_video_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
@@ -41,7 +41,7 @@ pub struct FrameQuery {
 
 /// Returns the frame of the chosen video track at the given time, else of the default video track,
 /// as a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues
-/// is served, from the screenshot rendered when the item was published.
+/// is served, from the screenshot rendered for that cue.
 #[utoipa::path(
     get,
     path = "/projects/{id}/media/{media_id}/frame",
@@ -77,7 +77,7 @@ pub async fn get_media_frame(
 
 /// Grabs the frame of the media file's chosen video track, else its default video track, at `at_ms` in player time,
 /// as a JPEG image at most 640 pixels wide.
-/// A media file from the library answers with the screenshot its item's publish rendered at that time.
+/// A media file from the library answers with the screenshot rendered for its item's cue at that time.
 pub async fn render_frame(
     state: &AppState,
     principal: &Principal,

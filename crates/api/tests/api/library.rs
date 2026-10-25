@@ -17,15 +17,30 @@ use crate::sync::send_as;
 
 const DOCUMENT_TEXT: &str = "Der Hund schläft.\n\nDie Katze frisst.\n";
 
-/// A server with open sign-up that keeps library files in a new directory, which lives as long as the `TempDir`.
+/// A server with open sign-up whose library is for learners of German,
+/// and which keeps library files in a new directory that lives as long as the `TempDir`.
 pub(crate) async fn library_server() -> (TestServer, TempDir) {
+    let (server, dir) = library_server_without_language().await;
+    let response = put_library_language(&server, json!("de")).await;
+    assert_eq!(response.status, 200, "{}", response.text());
+    (server, dir)
+}
+
+/// A server as `library_server` makes one, but whose library has no language yet.
+async fn library_server_without_language() -> (TestServer, TempDir) {
     let dir = tempfile::tempdir().unwrap();
     let server = library_server_on(Storage::open_in_memory().unwrap(), &dir).await;
     (server, dir)
 }
 
+async fn put_library_language(server: &TestServer, language: Value) -> TestResponse {
+    server
+        .put_json("/library/settings", &json!({ "language": language }))
+        .await
+}
+
 /// A server with open sign-up on the storage that keeps library files in the directory.
-async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
+pub(crate) async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
     let uploads = UploadsConfig {
         dir: dir.path().join("uploads"),
         account_quota_bytes: Some(1_000_000),
@@ -39,11 +54,10 @@ async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
     spawn_configured_test_server(configure, storage, ServeOptions::default()).await
 }
 
-fn draft(kind: &str) -> Value {
+pub(crate) fn draft(kind: &str) -> Value {
     json!({
         "title": "Der Hund",
         "description": "A short text",
-        "language": "de",
         "translation_language": "en",
         "kind": kind,
         "difficulty": "A1",
@@ -89,7 +103,7 @@ pub(crate) async fn document_item(server: &TestServer) -> String {
     item_id
 }
 
-fn word(start: u32, end: u32, term: &str) -> Value {
+pub(crate) fn word(start: u32, end: u32, term: &str) -> Value {
     json!({
         "start": start,
         "end": end,
@@ -97,7 +111,7 @@ fn word(start: u32, end: u32, term: &str) -> Value {
     })
 }
 
-async fn put_words(server: &TestServer, item_id: &str, words: Value) -> TestResponse {
+pub(crate) async fn put_words(server: &TestServer, item_id: &str, words: Value) -> TestResponse {
     let path = format!("/library/items/{item_id}/segments/0/words");
     server.put_json(&path, &words).await
 }
@@ -130,7 +144,7 @@ pub(crate) async fn published_document(server: &TestServer) -> String {
     item_id
 }
 
-async fn add_item(
+pub(crate) async fn add_item(
     server: &TestServer,
     token: &str,
     item_id: &str,
@@ -172,6 +186,11 @@ async fn flag_library_manager(server: &TestServer, user_id: &str) -> TestRespons
 async fn manager_route_statuses(server: &TestServer, token: &str, item_id: &str) -> Vec<u16> {
     let item = format!("/library/items/{item_id}");
     let requests: Vec<(&'static str, String, Option<Value>)> = vec![
+        (
+            "PUT",
+            "/library/settings".to_string(),
+            Some(json!({ "language": "fr" })),
+        ),
         (
             "POST",
             "/library/items".to_string(),
@@ -227,7 +246,7 @@ async fn a_library_user_is_forbidden_every_manager_route() {
     let item_id = document_item(&server).await;
     let token = sign_up(&server, "learner@example.com").await;
     let statuses = manager_route_statuses(&server, &token, &item_id).await;
-    assert_eq!(statuses, vec![403; 13]);
+    assert_eq!(statuses, vec![403; 14]);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -244,6 +263,49 @@ async fn a_flagged_library_user_creates_an_item() {
     )
     .await;
     assert_eq!(response.status, 201);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_new_library_has_no_language() {
+    let (server, _dir) = library_server_without_language().await;
+    let settings = server.get("/library/settings").await.json();
+    assert_eq!(settings, json!({ "language": null }));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_learner_reads_the_librarys_language() {
+    let (server, _dir) = library_server().await;
+    let token = sign_up(&server, "learner@example.com").await;
+    let settings = send_as(&server, &token, "GET", "/library/settings", None).await;
+    assert_eq!(settings.json()["language"], "de");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_language_of_an_empty_library_changes() {
+    let (server, _dir) = library_server().await;
+    let response = put_library_language(&server, json!("fr")).await;
+    assert_eq!(response.json()["language"], "fr");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_language_of_a_library_with_items_cannot_change() {
+    let (server, _dir) = library_server().await;
+    create_item(&server, "document").await;
+    let response = put_library_language(&server, json!("fr")).await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (409, json!("library_has_items"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn no_item_is_created_while_the_library_has_no_language() {
+    let (server, _dir) = library_server_without_language().await;
+    let response = server.post_json("/library/items", &draft("video")).await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (409, json!("library_language_unset"))
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -322,6 +384,7 @@ async fn an_uploaded_document_is_divided_into_its_paragraphs() {
 #[tokio::test(flavor = "multi_thread")]
 async fn an_upload_without_an_uploads_directory_conflicts() {
     let server = crate::support::spawn_test_server_with_accounts(true).await;
+    put_library_language(&server, json!("de")).await;
     let item_id = create_item(&server, "document").await;
     let response = upload(&server, &item_id, "hund.txt", b"Hund".to_vec()).await;
     assert_eq!(
@@ -357,33 +420,22 @@ async fn overlapping_words_are_refused() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn the_words_of_a_published_item_cannot_change() {
-    let (server, _dir) = library_server().await;
-    let item_id = published_document(&server).await;
-    let response = put_words(&server, &item_id, json!([])).await;
-    assert_eq!(
-        (response.status, response.json()["code"].clone()),
-        (409, json!("item_published"))
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn the_language_of_a_published_item_cannot_change() {
+async fn the_translation_language_of_a_published_item_cannot_change() {
     let (server, _dir) = library_server().await;
     let item_id = published_document(&server).await;
     let mut changed = draft("document");
-    changed["language"] = json!("fr");
+    changed["translation_language"] = json!("fr");
     let response = server
         .put_json(&format!("/library/items/{item_id}"), &changed)
         .await;
     assert_eq!(
         (response.status, response.json()["code"].clone()),
-        (409, json!("item_published"))
+        (409, json!("fixed_while_published"))
     );
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn the_language_of_a_draft_changes() {
+async fn the_translation_language_of_a_draft_changes() {
     let (server, _dir) = library_server().await;
     let item_id = create_item(&server, "document").await;
     let mut changed = draft("document");
@@ -423,7 +475,7 @@ async fn applying_an_entry_changes_every_word_with_its_text_and_no_other() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn applying_an_entry_to_a_published_item_is_refused() {
+async fn applying_an_entry_to_a_published_item_changes_its_words() {
     let (server, _dir) = library_server().await;
     let item_id = published_document(&server).await;
     let entry =
@@ -432,7 +484,10 @@ async fn applying_an_entry_to_a_published_item_is_refused() {
     let response = server
         .post_json(&format!("/library/items/{item_id}/apply-entry"), &body)
         .await;
-    assert_eq!(response.json()["code"], "item_published");
+    assert_eq!(
+        response.json()["segments"][0]["words"][0]["entry"]["l1_definition"],
+        "a dog"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -476,7 +531,7 @@ async fn adding_an_item_to_a_project_twice_yields_one_media_file() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn adding_an_item_without_a_project_names_the_new_project_after_its_language() {
+async fn adding_an_item_without_a_project_names_a_learners_new_project_after_the_language() {
     let (server, _dir) = library_server().await;
     let (token, project_id, _) = learner_media(&server).await;
     let project = send_as(
@@ -488,6 +543,25 @@ async fn adding_an_item_without_a_project_names_the_new_project_after_its_langua
     )
     .await;
     assert_eq!(project.json()["settings"]["name"], "German library");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adding_an_item_without_a_project_names_a_managers_new_project_library() {
+    let (server, _dir) = library_server().await;
+    let item_id = document_item(&server).await;
+    let added = add_item(&server, TOKEN, &item_id, Value::Null).await.json();
+    let path = format!("/projects/{}", added["project_id"].as_str().unwrap());
+    let project = server.get(&path).await.json();
+    assert_eq!(project["settings"]["name"], "Library");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adding_an_item_without_a_project_makes_one_for_the_librarys_language() {
+    let (server, _dir) = library_server().await;
+    let (token, project_id, _) = learner_media(&server).await;
+    let path = format!("/projects/{project_id}");
+    let project = send_as(&server, &token, "GET", &path, None).await;
+    assert_eq!(project.json()["settings"]["target_language"], "de");
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -637,6 +711,8 @@ async fn a_library_flashcard_cannot_be_replaced_by_an_ordinary_one() {
 async fn a_publish_the_server_stopped_during_is_failed_at_startup() {
     let dir = tempfile::tempdir().unwrap();
     let storage = Storage::open_in_memory().unwrap();
+    let german = serde_json::from_value(json!({ "language": "de" })).unwrap();
+    storage.set_library_settings(&german).unwrap();
     let item = storage
         .create_library_item(&serde_json::from_value(draft("video")).unwrap())
         .unwrap();

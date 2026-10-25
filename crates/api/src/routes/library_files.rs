@@ -1,5 +1,4 @@
-//! The files of library items: uploading an item's file and serving it,
-//! and the clips and screenshots that a publish rendered for the item's cues.
+//! The files of library items: uploading an item's file and serving it.
 
 use std::fs::File;
 
@@ -10,8 +9,9 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::Response;
 use easyimmerse_core::document::parse_document;
 use easyimmerse_core::library::{
-    LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibrarySegment,
+    LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibraryItemStatus, LibraryText,
 };
+use easyimmerse_media::TrackKind;
 use serde::Deserialize;
 use utoipa::IntoParams;
 
@@ -20,12 +20,14 @@ use crate::auth::library_manager::LibraryManager;
 use crate::auth::principal::Principal;
 use crate::body_files::{BodyFileError, write_body_to_file};
 use crate::library_covers::{refresh_cover, remove_cover};
+use crate::library_cues::begin_cue_change;
 use crate::library_paths::LibraryItemPaths;
 use crate::library_segments::text_of_document;
 use crate::routes::library_support::{
-    item_paths, load_editable_item, load_item, load_published_item, load_visible_item, source_path,
+    item_paths, load_editable_item, load_item, load_visible_item, source_path,
 };
 use crate::routes::media_stream::serve_file;
+use crate::routes::media_support::probe_media;
 use crate::routes::stored_copies::{content_length, length_required};
 use crate::state::AppState;
 
@@ -49,7 +51,8 @@ pub struct LibraryMediaQuery {
 
 /// Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.
 /// A document item's file is parsed at once into one segment per paragraph, which replace the item's text.
-/// Unless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.
+/// A published video or audio item keeps its old file unless the new one can be probed, and learners play the new one at once.
+/// Unless a cover was uploaded, the cover of the old file goes. An EPUB file's own cover takes its place, as does a published video's cover frame from the new file.
 #[utoipa::path(
     put,
     path = "/library/items/{item_id}/file",
@@ -60,13 +63,14 @@ pub struct LibraryMediaQuery {
     request_body(description = "The file's bytes", content(("application/octet-stream"))),
     responses(
         (status = 200, description = "The item with its new file", body = LibraryItem),
-        (status = 400, description = "The file name is empty, the body was not as long as its `Content-Length`, or a document could not be parsed", body = ApiError),
+        (status = 400, description = "The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed (`unreadable_file`) or has no audio track (`no_audio_track`)", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published; or `uploads_unavailable`: this server keeps no library files", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files", body = ApiError),
         (status = 411, description = "`length_required`: the request has no `Content-Length`", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
+        (status = 503, description = "A published video or audio item, and this server cannot probe media (code `conversion_unavailable`)", body = ApiError),
     ),
 )]
 pub async fn upload_library_file(
@@ -92,6 +96,16 @@ pub async fn upload_library_file(
     stored.map(Json)
 }
 
+/// What the new file gives the item besides itself.
+enum UploadContent {
+    /// A document's text.
+    Text(LibraryText),
+    /// The probed length of a published video or audio item's file.
+    Duration(Option<u64>),
+    /// Nothing yet: a draft's video or audio is probed when it is published.
+    Nothing,
+}
+
 async fn store_upload(
     state: &AppState,
     item: &LibraryItem,
@@ -102,25 +116,92 @@ async fn store_upload(
 ) -> Result<LibraryItem, ApiFailure> {
     let file = create_upload_file(paths).await?;
     write_upload(body, file, length).await?;
-    let text = match item.kind {
-        LibraryItemKind::Document => Some(read_document(paths).await?),
-        LibraryItemKind::Video | LibraryItemKind::Audio => None,
+    let content = read_upload(state, item, paths).await?;
+    let change = begin_cue_change(state, &item.id).await?;
+    // An item that was published while the file was being received needs the probe a published item gets.
+    let content = match content {
+        UploadContent::Nothing if change.item.status == LibraryItemStatus::Published => {
+            read_upload(state, &change.item, paths).await?
+        }
+        content => content,
     };
-    replace_source(paths, item, file_name).await?;
+    replace_source(paths, &change.item, file_name).await?;
     let (item_id, file_name) = (item.id.clone(), file_name.to_string());
     let stored = state
         .with_storage(move |storage| {
-            if let Some(text) = &text {
-                storage.replace_library_segments(&item_id, text)?;
+            match &content {
+                UploadContent::Text(text) => {
+                    storage.replace_library_segments(&item_id, text)?;
+                }
+                UploadContent::Duration(duration_ms) => {
+                    storage.set_library_duration(&item_id, *duration_ms)?;
+                }
+                UploadContent::Nothing => {}
             }
             storage.set_library_file(&item_id, &file_name, length)
         })
         .await?;
-    match (stored.cover, stored.kind) {
-        (LibraryCover::Uploaded, _) => Ok(stored),
-        (_, LibraryItemKind::Document) => refresh_cover(state, &stored).await,
-        (_, LibraryItemKind::Video | LibraryItemKind::Audio) => remove_cover(state, &stored).await,
+    drop(change);
+    Ok(cover_new_file(state, stored).await)
+}
+
+async fn read_upload(
+    state: &AppState,
+    item: &LibraryItem,
+    paths: &LibraryItemPaths,
+) -> Result<UploadContent, ApiFailure> {
+    match (item.kind, &item.status) {
+        (LibraryItemKind::Document, _) => Ok(UploadContent::Text(read_document(paths).await?)),
+        (_, LibraryItemStatus::Published) => {
+            let upload = paths.upload().to_string_lossy().into_owned();
+            let probed = probe_media(state, &upload)
+                .await
+                .map_err(unreadable_upload)?;
+            if probed.tracks_of_kind(TrackKind::Audio).next().is_none() {
+                return Err(ApiFailure::new(
+                    StatusCode::BAD_REQUEST,
+                    "no_audio_track",
+                    "the file has no audio track, so learners could not hear its clips",
+                ));
+            }
+            Ok(UploadContent::Duration(probed.duration_ms))
+        }
+        _ => Ok(UploadContent::Nothing),
     }
+}
+
+/// A file that cannot be probed is the person's to fix, whatever ffprobe answered; only a missing ffprobe is the server's.
+fn unreadable_upload(failure: ApiFailure) -> ApiFailure {
+    if failure.status == StatusCode::SERVICE_UNAVAILABLE {
+        return failure;
+    }
+    ApiFailure::new(
+        StatusCode::BAD_REQUEST,
+        "unreadable_file",
+        format!(
+            "the file could not be read as video or audio: {}",
+            failure.error.message
+        ),
+    )
+}
+
+/// Puts the cover of the new file in place. The file is stored by then, so a cover that cannot be made leaves the item without one rather than failing the upload.
+async fn cover_new_file(state: &AppState, stored: LibraryItem) -> LibraryItem {
+    let covered = match (stored.cover, stored.kind, &stored.status) {
+        (LibraryCover::Uploaded, _, _) => return stored,
+        (_, LibraryItemKind::Document, _) | (_, _, LibraryItemStatus::Published) => {
+            refresh_cover(state, &stored).await
+        }
+        _ => remove_cover(state, &stored).await,
+    };
+    covered.unwrap_or_else(|failure| {
+        tracing::warn!(
+            "the cover of library item {} could not be made: {}",
+            stored.id.0,
+            failure.error.message
+        );
+        stored
+    })
 }
 
 async fn create_upload_file(paths: &LibraryItemPaths) -> Result<File, ApiFailure> {
@@ -146,9 +227,7 @@ async fn write_upload(body: Body, file: File, length: u64) -> Result<(), ApiFail
     }
 }
 
-async fn read_document(
-    paths: &LibraryItemPaths,
-) -> Result<easyimmerse_core::library::LibraryText, ApiFailure> {
+async fn read_document(paths: &LibraryItemPaths) -> Result<LibraryText, ApiFailure> {
     let bytes = tokio::fs::read(paths.upload())
         .await
         .map_err(|error| internal(format!("the uploaded file could not be read: {error}")))?;
@@ -208,58 +287,4 @@ pub async fn visible_source_path(
 ) -> Result<String, ApiFailure> {
     let item = load_visible_item(state, principal, item_id).await?;
     source_path(&item_paths(state, item_id)?, &item)
-}
-
-/// The clip a publish rendered for the cue of the item that runs exactly from `start_ms` to `end_ms`.
-pub async fn preprocessed_clip(
-    state: &AppState,
-    item_id: &LibraryItemId,
-    start_ms: u64,
-    end_ms: u64,
-) -> Result<Vec<u8>, ApiFailure> {
-    let is_window = |segment: &LibrarySegment| {
-        segment.start_ms == Some(start_ms) && segment.end_ms == Some(end_ms)
-    };
-    let index = preprocessed_segment(state, item_id, is_window).await?;
-    read_preprocessed(&item_paths(state, item_id)?.clip(index)).await
-}
-
-/// The screenshot a publish rendered for the cue of the item whose screenshot time is `at_ms`.
-pub async fn preprocessed_frame(
-    state: &AppState,
-    item_id: &LibraryItemId,
-    at_ms: u64,
-) -> Result<Vec<u8>, ApiFailure> {
-    let is_moment = |segment: &LibrarySegment| segment.screenshot_at_ms == Some(at_ms);
-    let index = preprocessed_segment(state, item_id, is_moment).await?;
-    read_preprocessed(&item_paths(state, item_id)?.screenshot(index)).await
-}
-
-async fn preprocessed_segment(
-    state: &AppState,
-    item_id: &LibraryItemId,
-    matches: impl Fn(&LibrarySegment) -> bool,
-) -> Result<u32, ApiFailure> {
-    load_published_item(state, item_id).await?;
-    let id = item_id.clone();
-    let text = state
-        .with_storage(move |storage| storage.get_library_text(&id))
-        .await?;
-    text.segments
-        .iter()
-        .find(|segment| matches(segment))
-        .map(|segment| segment.index)
-        .ok_or_else(not_preprocessed)
-}
-
-async fn read_preprocessed(path: &std::path::Path) -> Result<Vec<u8>, ApiFailure> {
-    tokio::fs::read(path).await.map_err(|_| not_preprocessed())
-}
-
-fn not_preprocessed() -> ApiFailure {
-    ApiFailure::new(
-        StatusCode::NOT_FOUND,
-        "not_preprocessed",
-        "the library prepared no clip or screenshot for that time",
-    )
 }

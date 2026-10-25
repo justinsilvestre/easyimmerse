@@ -2,9 +2,8 @@ import type { PluginForm } from "@easyimmerse/types";
 
 /** A form with one field of every control kind and an action of every style. */
 export const exampleImportForm: PluginForm = {
-  title: "Import from a video site",
-  description:
-    "The media and its subtitles are fetched through a media downloader.",
+  title: "Import with Example plugin",
+  description: "The plugin fetches the media and its subtitles.",
   fields: [
     {
       id: "locator",
@@ -86,9 +85,9 @@ export const exampleNoticeForm: PluginForm = {
   actions: [{ id: "retry", label: "Try again", style: "primary" }],
 };
 
-/** The second form of a video site's import interface, after the URL was looked up. */
+/** The second form of a media-source plugin's import interface, after the URL was looked up. */
 export const exampleLookedUpForm: PluginForm = {
-  title: "Add from a video site",
+  title: "Add with Example plugin",
   description: null,
   fields: [
     {
@@ -133,7 +132,7 @@ export const exampleLookedUpForm: PluginForm = {
   ],
 };
 
-/** The media interface of a video site, for a file that holds one of its subtitle tracks. */
+/** The media interface of a media-source plugin, for a file that holds one of its subtitle tracks. */
 export const exampleSourceMediaForm: PluginForm = {
   title: "A walk through the old town",
   description: null,

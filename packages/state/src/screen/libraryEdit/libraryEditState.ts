@@ -1,6 +1,10 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppRoot } from "../../app/createAppStore.ts";
 import { updated } from "../../app/updated.ts";
+import {
+  type LibraryFileReplacement,
+  updateLibraryFileReplacement,
+} from "./libraryFileReplacement.ts";
 
 /** Something the user asked to delete on a library screen, waiting for confirmation. */
 export type LibraryDeletion =
@@ -18,12 +22,14 @@ export type LibraryWordPlace = {
   end: number | null;
 };
 
-/** The choices the library screens keep: what waits for deletion, the text chosen to give an entry, and the "Add to" project. */
+/** The choices the library screens keep: what waits for deletion, the text chosen to give an entry, the "Add to" project, and the file being replaced. */
 export type LibraryEditState = {
   deletion: LibraryDeletion | null;
   selectedWord: LibraryWordPlace | null;
   /** The project chosen to add an item to, null for a new one; unset while the user has chosen none for the item. */
   addTarget: { itemId: string; projectId: string | null } | null;
+  /** The file of an item being replaced by one picked on this device. */
+  fileReplacement: LibraryFileReplacement | null;
 };
 
 /** The choices as the app starts. */
@@ -31,6 +37,7 @@ export const initialLibraryEdit: LibraryEditState = {
   deletion: null,
   selectedWord: null,
   addTarget: null,
+  fileReplacement: null,
 };
 
 /**
@@ -38,6 +45,17 @@ export const initialLibraryEdit: LibraryEditState = {
  * closing the dictionary pop-up drops the chosen text; confirming a flashcard's deletion drops it from waiting.
  */
 export function updateLibraryEdit(state: LibraryEditState, action: AppAction) {
+  const [fileReplacement, effects] = updateLibraryFileReplacement(
+    state.fileReplacement,
+    action,
+  );
+  const [choices] = updateChoices(state, action);
+  if (fileReplacement === state.fileReplacement)
+    return updated(choices, ...effects);
+  return updated({ ...choices, fileReplacement }, ...effects);
+}
+
+function updateChoices(state: LibraryEditState, action: AppAction) {
   switch (action.type) {
     case "libraryDeletionAsked":
       return updated({ ...state, deletion: action.deletion });
@@ -81,4 +99,13 @@ export function selectLibraryAddTarget(
 ): string | null | undefined {
   const target = root.app.screen.libraryEdit.addTarget;
   return target?.itemId === itemId ? target.projectId : undefined;
+}
+
+/** Returns how the file of an item is being replaced, or null when it is not. */
+export function selectLibraryFileReplacement(
+  root: AppRoot,
+  itemId: string,
+): LibraryFileReplacement | null {
+  const replacement = root.app.screen.libraryEdit.fileReplacement;
+  return replacement?.itemId === itemId ? replacement : null;
 }

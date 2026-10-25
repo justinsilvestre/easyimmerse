@@ -1,14 +1,13 @@
 import { Library, Settings2 } from "lucide-react";
 import { Button } from "../../components/common/Button.tsx";
 
-/** The home screen's way into the server's library, with the way to manage it for someone who may. */
+/** The home screen's way into the server's library and into managing it, for someone who may manage it. */
 export function HomeLibrarySection({
   onOpenLibrary,
   onManageLibrary,
 }: {
   onOpenLibrary: () => void;
-  /** Opens the library management screen. Null for someone who cannot manage the library. */
-  onManageLibrary: (() => void) | null;
+  onManageLibrary: () => void;
 }) {
   return (
     <section
@@ -20,18 +19,15 @@ export function HomeLibrarySection({
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold">Library</h2>
           <p className="text-sm text-fg-muted">
-            Videos, audio, and texts prepared on this server, ready to add to
-            your projects.
+            Videos, audio, and texts prepared for learners on this server.
           </p>
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {onManageLibrary && (
-          <Button onClick={onManageLibrary}>
-            <Settings2 className="size-4" aria-hidden />
-            Manage library
-          </Button>
-        )}
+        <Button onClick={onManageLibrary}>
+          <Settings2 className="size-4" aria-hidden />
+          Manage library
+        </Button>
         <Button onClick={onOpenLibrary}>Browse the library</Button>
       </div>
     </section>

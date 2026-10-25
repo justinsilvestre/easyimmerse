@@ -6,7 +6,6 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     id: "i1",
     title: "Im Park",
     description: "Two friends talk in a park.",
-    language: "de",
     translation_language: "en",
     kind: "video",
     difficulty: "A1",

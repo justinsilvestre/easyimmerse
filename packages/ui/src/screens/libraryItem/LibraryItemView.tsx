@@ -16,11 +16,12 @@ const newProject = "";
 
 /**
  * One item of the library: its cover, full description and details, and the way to add it to one of the person's projects
- * in its language or to a new project made for it. A library manager also gets an Edit button,
+ * in the library's language or to a new project made for it. A library manager also gets an Edit button,
  * and an item that is not published yet says it must be published before it can be added.
  */
 export function LibraryItemView({
   item,
+  libraryLanguage,
   coverUrl,
   projects,
   chosenProjectId,
@@ -33,8 +34,10 @@ export function LibraryItemView({
   onBack,
 }: {
   item: LibraryItem;
+  /** The language of every item of the library, which a new project is for. */
+  libraryLanguage: string;
   coverUrl: string | null;
-  /** The person's projects in the item's language, which it can be added to. */
+  /** The person's projects in the library's language, which the item can be added to. */
   projects: readonly Project[];
   /** The project the "Add to" choice shows, or null for a new project. */
   chosenProjectId: string | null;
@@ -70,7 +73,6 @@ export function LibraryItemView({
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">
           <span>{libraryKindLabels[item.kind]}</span>
-          <span>{languageName(item.language)}</span>
           {item.duration_ms !== null && (
             <span>{formatLibraryDuration(item.duration_ms)}</span>
           )}
@@ -111,7 +113,7 @@ export function LibraryItemView({
               })),
               {
                 value: newProject,
-                label: `New ${languageName(item.language)} project`,
+                label: `New ${languageName(libraryLanguage)} project`,
               },
             ]}
             onChange={(event) => onChooseProject(event.target.value || null)}

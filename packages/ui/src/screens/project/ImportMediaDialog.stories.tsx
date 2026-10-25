@@ -17,7 +17,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   decorators: [withAppStore],
   args: {
-    label: "Add from a video site",
+    label: "Add with Example plugin",
     form: exampleImportForm,
     isBusy: false,
     job: null,
@@ -60,5 +60,5 @@ export const CouldNotStart: Story = {
 };
 
 export const FormUnavailable: Story = {
-  args: { form: null, error: "The plugin “video-site” is not installed." },
+  args: { form: null, error: "The plugin “example-plugin” is not installed." },
 };

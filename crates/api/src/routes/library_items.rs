@@ -11,7 +11,7 @@ use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::auth::library_manager::LibraryManager;
 use crate::auth::principal::Principal;
 use crate::routes::library_support::{
-    item_paths, item_processing, load_item, load_visible_item, require_editable,
+    item_paths, item_processing, load_item, load_visible_item, require_unfixed,
 };
 use crate::state::AppState;
 
@@ -61,7 +61,7 @@ pub async fn get_library_item(
     Ok(Json(load_visible_item(&state, &principal, &item_id).await?))
 }
 
-/// Creates a draft item with no file and no text.
+/// Creates a draft item with no file and no text, in the library's language.
 #[utoipa::path(
     post,
     path = "/library/items",
@@ -73,6 +73,7 @@ pub async fn get_library_item(
         (status = 201, description = "The new draft item", body = LibraryItem),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
+        (status = 409, description = "`library_language_unset`: the library has no language yet", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -87,7 +88,7 @@ pub async fn create_library_item(
     Ok((StatusCode::CREATED, Json(item)))
 }
 
-/// Changes an item's metadata in any status, except its kind and languages once it is published or being published.
+/// Changes an item's metadata in any status, except its kind and translation language once it is published or being published.
 #[utoipa::path(
     put,
     path = "/library/items/{item_id}",
@@ -101,7 +102,7 @@ pub async fn create_library_item(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change", body = ApiError),
+        (status = 409, description = "`fixed_while_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -112,11 +113,10 @@ pub async fn update_library_item(
     Json(draft): Json<LibraryItemDraft>,
 ) -> Result<Json<LibraryItem>, ApiFailure> {
     let item = load_item(&state, &item_id).await?;
-    let changes_what_learners_study = draft.kind != item.kind
-        || draft.language != item.language
-        || draft.translation_language != item.translation_language;
+    let changes_what_learners_study =
+        draft.kind != item.kind || draft.translation_language != item.translation_language;
     if changes_what_learners_study {
-        require_editable(&item)?;
+        require_unfixed(&item)?;
     }
     let item = state
         .with_storage(move |storage| storage.update_library_item(&item_id, &draft))

@@ -7,7 +7,7 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_media_ffmpeg::FfmpegPaths;
 use easyimmerse_storage::{Storage, StorageError};
 
-use tokio::sync::Semaphore;
+use tokio::sync::{RwLock, Semaphore};
 
 use crate::accounts::{AccountsError, LoginThrottle, MailThrottle, PendingRefreshes};
 use crate::auth::error_body::{ApiFailure, internal};
@@ -58,6 +58,9 @@ pub struct AppState {
     pub sync: Arc<SyncEngine>,
     /// The active pairing code and the recent failed claims of one.
     pub pairing_code: Arc<PairingCodeState>,
+    /// Keeps the rendered clips and screenshots of library items in step with their files, segments and track choices:
+    /// a change to any of those holds it for writing, and rendering a clip or screenshot holds it for reading.
+    pub library_cues: Arc<RwLock<()>>,
 }
 
 impl AppState {
@@ -88,6 +91,7 @@ impl AppState {
             confirmation_mails: Arc::default(),
             owners_fitting_review_parameters: Arc::default(),
             pairing_code: Arc::default(),
+            library_cues: Arc::default(),
         }
     }
 

@@ -50,4 +50,8 @@ export const Opening: Story = { args: { isOpening: true } };
 
 export const Published: Story = { args: { item: exampleLibraryItem() } };
 
+export const Preparing: Story = {
+  args: { item: exampleLibraryItem({ status: { kind: "processing" } }) },
+};
+
 export const LoadingText: Story = { args: { text: null } };

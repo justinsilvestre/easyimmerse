@@ -84,6 +84,41 @@ pub fn find_library_media_file(
         .optional()?)
 }
 
+/// Finds the owner's media file of the library item in any of its projects, the one in the project opened last when there are several.
+pub fn find_owners_library_media_file(
+    conn: &Connection,
+    owner: &OwnerId,
+    item_id: &LibraryItemId,
+) -> Result<Option<MediaFile>, StorageError> {
+    Ok(conn
+        .query_row(
+            &format!(
+                "SELECT {SELECTED_COLUMNS} FROM media_files \
+                 WHERE source_kind = 'library' AND source_path = ?2 \
+                 AND project_id IN (SELECT id FROM projects WHERE owner_id = ?1) \
+                 ORDER BY (SELECT last_opened_at_ms FROM projects p WHERE p.id = media_files.project_id) DESC, \
+                 created_at_ms DESC, rowid DESC LIMIT 1"
+            ),
+            params![owner.0, item_id.0],
+            read_media_file,
+        )
+        .optional()?)
+}
+
+/// Stores the track choice of every media file of the library item, in any project; `None` clears it.
+pub fn set_library_media_track_selection_json(
+    conn: &Connection,
+    item_id: &LibraryItemId,
+    track_selection_json: Option<&str>,
+) -> Result<(), StorageError> {
+    conn.execute(
+        "UPDATE media_files SET track_selection_json = ?2 \
+         WHERE source_kind = 'library' AND source_path = ?1",
+        params![item_id.0, track_selection_json],
+    )?;
+    Ok(())
+}
+
 /// Adds a media file to a project and returns it with its new id and creation time.
 pub fn add_media_file(
     conn: &Connection,
@@ -458,6 +493,60 @@ mod tests {
             )
             .unwrap();
         assert_eq!(found, None);
+    }
+
+    #[test]
+    fn finds_the_owners_media_file_of_a_library_item() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        let found = storage
+            .find_owners_library_media_file(
+                &OwnerId::launch(),
+                &LibraryItemId("item-1".to_string()),
+            )
+            .unwrap();
+        assert_eq!(found, Some(added));
+    }
+
+    #[test]
+    fn finds_no_media_file_of_a_library_item_for_another_owner() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "Film", &library_source())
+            .unwrap();
+        let other = crate::review_test_support::account_owner(&storage);
+        let found = storage
+            .find_owners_library_media_file(&other, &LibraryItemId("item-1".to_string()))
+            .unwrap();
+        assert_eq!(found, None);
+    }
+
+    #[test]
+    fn stores_the_track_choice_of_every_media_file_of_a_library_item() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(
+                &ProjectId("placeholder-2".to_string()),
+                "Film",
+                &library_source(),
+            )
+            .unwrap();
+        let json = r#"{"video":0,"audio":2}"#;
+        storage
+            .set_library_media_track_selection_json(
+                &LibraryItemId("item-1".to_string()),
+                Some(json),
+            )
+            .unwrap();
+        assert_eq!(
+            storage
+                .get_media_file(&added.id)
+                .unwrap()
+                .track_selection_json,
+            Some(json.to_string())
+        );
     }
 
     #[test]

@@ -1,6 +1,6 @@
 import type { RootState } from "../../app/createAppStore.ts";
 import { cacheEntry } from "../../server/cacheEntry.ts";
-import { cachedLibraryItemIdOf } from "../cachedLibrary.ts";
+import { isCachedLibraryFileLocked } from "../cachedLibrary.ts";
 import { needsTrackChoice } from "./playbackMethodRules.ts";
 import { selectPathPlayback } from "./playbackSelectors.ts";
 import { selectOpenPlayedMediaFile } from "./playedMediaFile.ts";
@@ -21,21 +21,22 @@ function openFileOf(root: RootState) {
 
 /**
  * Tells whether the open media file has several tracks of a kind to choose among, once its tracks are in the cache.
- * A media file from the library plays the tracks its library manager prepared, so it offers no choice.
+ * A media file from the library offers no choice except to the library manager preparing its item,
+ * as `isCachedLibraryFileLocked` describes.
  */
 export function selectCanChooseTracks(root: RootState): boolean {
   const file = openFileOf(root);
-  if (file === null || isFromLibrary(root, file)) return false;
+  if (file === null || isLocked(root, file)) return false;
   const tracks = cacheEntry(root.backend, "getMediaTracks", file)?.data;
   return tracks !== undefined && needsTrackChoice(tracks.container, null);
 }
 
-function isFromLibrary(
+function isLocked(
   root: RootState,
   file: { projectId: string; mediaFileId: string },
 ): boolean {
   const { projectId, mediaFileId } = file;
-  return cachedLibraryItemIdOf(root.backend, projectId, mediaFileId) !== null;
+  return isCachedLibraryFileLocked(root.backend, projectId, mediaFileId);
 }
 
 /** Returns the cache entry of the open file's tracks once the media screen has asked for them, or undefined. */

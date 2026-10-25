@@ -1,5 +1,5 @@
 import { actions } from "@easyimmerse/state";
-import type { Flashcard } from "@easyimmerse/types";
+import type { Flashcard, LibraryItemStatus } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -362,5 +362,27 @@ describe("ProjectScreen with an unpublished library item open for its library ma
         "/projects/p1/media/m3/library-flashcards",
       ),
     ).toEqual([]);
+  });
+});
+
+describe("ProjectScreen with a library item open for its library manager", () => {
+  /** Renders the video item i1 in the status for the server's owner. */
+  function renderForManager(status: LibraryItemStatus) {
+    return renderLibraryVideo([], {
+      "GET /auth/me": { kind: "launch" },
+      "GET /library/items/i1": exampleLibraryItem({ status }),
+    });
+  }
+
+  it("prepares the words of a published item, making every word clickable", async () => {
+    renderForManager({ kind: "published" });
+    expect(await findPanelWord("Nacht")).toBeDefined();
+  });
+
+  it("does not prepare the words of an item being published", async () => {
+    renderForManager({ kind: "processing" });
+    await findPanelWord("Hund");
+    const list = screen.getByRole("list", { name: "Subtitles" });
+    expect(within(list).queryByRole("button", { name: "Nacht" })).toBeNull();
   });
 });

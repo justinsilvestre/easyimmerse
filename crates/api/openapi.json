@@ -2204,7 +2204,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Creates a draft item with no file and no text.",
+        "summary": "Creates a draft item with no file and no text, in the library's language.",
         "operationId": "createLibraryItem",
         "requestBody": {
           "content": {
@@ -2239,6 +2239,16 @@
           },
           "403": {
             "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`library_language_unset`: the library has no language yet",
             "content": {
               "application/json": {
                 "schema": {
@@ -2334,7 +2344,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Changes an item's metadata in any status, except its kind and languages once it is published or being published.",
+        "summary": "Changes an item's metadata in any status, except its kind and translation language once it is published or being published.",
         "operationId": "updateLibraryItem",
         "parameters": [
           {
@@ -2399,7 +2409,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the kind and languages of an item that is published or being published cannot change",
+            "description": "`fixed_while_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change",
             "content": {
               "application/json": {
                 "schema": {
@@ -2509,7 +2519,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Adds an item to one of the principal's projects, or to a new project for the item's languages\nnamed after its language. A project that already has the item keeps its media file, which is returned.\nAnyone may add a published item; a library manager may also add an unpublished one,\nto prepare its words in the player or the reader that learners use.",
+        "summary": "Adds an item to one of the principal's projects, or to a new project for the library's language\nand the item's translation language: named \"Library\" for a library manager, who prepares items there,\nand after the language, as in \"German library\", for anyone else.\nA project that already has the item keeps its media file, which is returned.\nA new media file plays the tracks the library manager chose when the item was published.\nAnyone may add a published item; a library manager may also add an unpublished one,\nto prepare its words in the player or the reader that learners use.",
         "operationId": "addLibraryItem",
         "parameters": [
           {
@@ -2555,6 +2565,16 @@
           },
           "404": {
             "description": "No such item, one the principal may not see, or no such project of the principal's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`library_language_unset`: no project is given and the library has no language yet",
             "content": {
               "application/json": {
                 "schema": {
@@ -2651,7 +2671,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3213,7 +3233,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.\nUnless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.",
+        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.\nA published video or audio item keeps its old file unless the new one can be probed, and learners play the new one at once.\nUnless a cover was uploaded, the cover of the old file goes. An EPUB file's own cover takes its place, as does a published video's cover frame from the new file.",
         "operationId": "uploadLibraryFile",
         "parameters": [
           {
@@ -3253,7 +3273,7 @@
             }
           },
           "400": {
-            "description": "The file name is empty, the body was not as long as its `Content-Length`, or a document could not be parsed",
+            "description": "The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed (`unreadable_file`) or has no audio track (`no_audio_track`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3293,7 +3313,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published; or `uploads_unavailable`: this server keeps no library files",
+            "description": "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files",
             "content": {
               "application/json": {
                 "schema": {
@@ -3314,6 +3334,16 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A published video or audio item, and this server cannot probe media (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3390,7 +3420,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3422,7 +3452,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Starts preparing the clip and screenshot of every cue, and the cover, in the background.\nThe item is shown to learners once that is done; until then its status is `processing`.\nThe item needs a file and at least one segment.",
+        "summary": "Starts preparing the clip and screenshot of every cue, and the cover, in the background.\nThe item is shown to learners once that is done; until then its status is `processing`.\nLearners play the audio and video tracks the manager chose in their own media file of the item.\nThe item needs a file and at least one segment.",
         "operationId": "publishLibraryItem",
         "parameters": [
           {
@@ -3618,7 +3648,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3650,7 +3680,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.\nAn automatic cover goes, to be rendered again from the new first cue when the item is published.",
+        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.\nLearners of a published item see the new segments at once.",
         "operationId": "putLibrarySubtitles",
         "parameters": [
           {
@@ -3725,7 +3755,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3879,6 +3909,125 @@
           },
           "409": {
             "description": "`item_processing`: the item is being published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/library/settings": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "operationId": "getLibrarySettings",
+        "responses": {
+          "200": {
+            "description": "The library's settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Replaces the library's settings. The language can change only while the library has no items,\nsince their texts and words are in the language they were made for.",
+        "operationId": "putLibrarySettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibrarySettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The library's settings as they now stand",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarySettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: the principal does not manage the library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`library_has_items`: the library has items, so its language cannot change",
             "content": {
               "application/json": {
                 "schema": {
@@ -6387,7 +6536,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,\nfrom the clip rendered when the item was published.",
+        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,\nfrom the clip rendered for that cue.",
         "operationId": "getMediaClip",
         "parameters": [
           {
@@ -6644,7 +6793,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Returns the frame of the chosen video track at the given time, else of the default video track,\nas a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues\nis served, from the screenshot rendered when the item was published.",
+        "summary": "Returns the frame of the chosen video track at the given time, else of the default video track,\nas a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues\nis served, from the screenshot rendered for that cue.",
         "operationId": "getMediaFrame",
         "parameters": [
           {
@@ -7735,7 +7884,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -7924,7 +8073,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8183,8 +8332,28 @@
               }
             }
           },
+          "403": {
+            "description": "The media file is from the library and the principal does not manage it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8249,8 +8418,28 @@
               }
             }
           },
+          "403": {
+            "description": "The media file is from the library and the principal does not manage it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -10749,7 +10938,7 @@
             "oneOf": [
               {
                 "$ref": "#/components/schemas/ProjectId",
-                "description": "The project to add the item to. Null to create a project for the item's language."
+                "description": "The project to add the item to. Null to create a project for the library's language."
               },
               {
                 "type": "null"
@@ -13265,7 +13454,6 @@
           "id",
           "title",
           "description",
-          "language",
           "translation_language",
           "kind",
           "tags",
@@ -13325,9 +13513,6 @@
           "kind": {
             "$ref": "#/components/schemas/LibraryItemKind"
           },
-          "language": {
-            "type": "string"
-          },
           "segment_count": {
             "type": "integer",
             "format": "int32",
@@ -13377,7 +13562,6 @@
         "required": [
           "title",
           "description",
-          "language",
           "translation_language",
           "kind",
           "tags"
@@ -13398,9 +13582,6 @@
           },
           "kind": {
             "$ref": "#/components/schemas/LibraryItemKind"
-          },
-          "language": {
-            "type": "string"
           },
           "tags": {
             "type": "array",
@@ -13571,6 +13752,19 @@
             "items": {
               "$ref": "#/components/schemas/LibraryWord"
             }
+          }
+        }
+      },
+      "LibrarySettings": {
+        "type": "object",
+        "description": "What holds for the whole library. A library manager sets its language while the library has no items.",
+        "properties": {
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language the library's media are in, which its learners study. Null until a library manager sets it."
           }
         }
       },
