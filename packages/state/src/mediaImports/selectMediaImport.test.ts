@@ -4,12 +4,12 @@ import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import { selectMediaImport } from "./selectMediaImport.ts";
 
-const source = { name: "video-site", label: "Add from a video site" };
+const source = { name: "example-plugin", label: "Add with Example plugin" };
 const input = [{ field: "url", values: ["https://videos.example.com/abc"] }];
 const stepRequest = {
   kind: "submitImportStep",
   projectId: "p1",
-  request: { plugin: "video-site", action: "add", input },
+  request: { plugin: "example-plugin", action: "add", input },
 } as const;
 const statusRequest = {
   kind: "getMediaSourceJob",

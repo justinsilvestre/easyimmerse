@@ -1,5 +1,5 @@
 import { libraryChaptersOf } from "@easyimmerse/state";
-import type { LibraryText } from "@easyimmerse/types";
+import type { TextSpan as BookSpan, LibraryText } from "@easyimmerse/types";
 import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import type { TextSpan } from "./wordAt.ts";
 
@@ -13,6 +13,20 @@ export type StoredWords = readonly (readonly (readonly WordSpan[])[])[];
 export function storedWordsOf(text: LibraryText): StoredWords {
   return libraryChaptersOf(text).map((segments) =>
     segments.map((segment) => segment.words),
+  );
+}
+
+/** Returns the stored words of a library document as spans of the book `documentOfLibraryText` builds, for marking them. */
+export function storedWordSpansOf(text: LibraryText): BookSpan[] {
+  return storedWordsOf(text).flatMap((paragraphs, chapter_index) =>
+    paragraphs.flatMap((words, paragraph_index) =>
+      words.map(({ start, end }) => ({
+        chapter_index,
+        paragraph_index,
+        start,
+        end,
+      })),
+    ),
   );
 }
 

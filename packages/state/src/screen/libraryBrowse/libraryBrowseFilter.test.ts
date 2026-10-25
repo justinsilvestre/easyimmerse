@@ -10,13 +10,7 @@ const openLibrary = actions.navigated({ type: "openLibrary" });
 
 describe("the library browse filter", () => {
   it("shows every item at first", () => {
-    expect(filterAfter(openLibrary)).toEqual({ language: null, tags: [] });
-  });
-
-  it("takes the chosen language", () => {
-    expect(
-      filterAfter(openLibrary, actions.libraryLanguageChosen("de")).language,
-    ).toBe("de");
+    expect(filterAfter(openLibrary)).toEqual({ tags: [] });
   });
 
   it("turns a tag on", () => {
@@ -39,10 +33,10 @@ describe("the library browse filter", () => {
     expect(
       filterAfter(
         openLibrary,
-        actions.libraryLanguageChosen("de"),
+        actions.libraryTagToggled("news"),
         actions.navigated({ type: "openLibraryItem", itemId: "i1" }),
         openLibrary,
-      ).language,
-    ).toBe("de");
+      ).tags,
+    ).toEqual(["news"]);
   });
 });

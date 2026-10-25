@@ -1,6 +1,5 @@
 import type { LibraryItem } from "@easyimmerse/types";
 import { FileText, Film, Music } from "lucide-react";
-import { languageName } from "../../lib/formatting/languages.ts";
 import {
   formatLibraryDuration,
   libraryDifficultyLabels,
@@ -19,7 +18,7 @@ const statusTones = {
 } as const;
 
 /**
- * One item of the library: its cover, title, kind, language, length, difficulty, tags, and the start of its description.
+ * One item of the library: its cover, title, kind, length, difficulty, tags, and the start of its description.
  * `showsStatus` adds the item's status, for library managers, who see items that are not published yet.
  */
 export function LibraryItemCard({
@@ -62,7 +61,6 @@ export function LibraryItemCard({
             <KindIcon className="size-3" aria-hidden />
             {libraryKindLabels[item.kind]}
           </span>
-          <span>{languageName(item.language)}</span>
           {item.duration_ms !== null && (
             <span>{formatLibraryDuration(item.duration_ms)}</span>
           )}

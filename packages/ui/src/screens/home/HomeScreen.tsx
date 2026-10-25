@@ -1,7 +1,9 @@
 import {
+  useGetCurrentPrincipalQuery,
   useListProjectsQuery,
   useListReviewCountsQuery,
 } from "@easyimmerse/backend";
+import { canManageLibrary } from "@easyimmerse/state";
 import { useNavigate } from "../../useNavigate.ts";
 import { ConnectedBackupNudgeCard } from "./ConnectedBackupNudgeCard.tsx";
 import { ConnectedEncoderNotice } from "./ConnectedEncoderNotice.tsx";
@@ -30,6 +32,7 @@ export function HomeScreen({
   const reviewCounts = useListReviewCountsQuery(undefined, {
     refetchOnMountOrArgChange: true,
   }).data?.projects;
+  const principal = useGetCurrentPrincipalQuery("self").data;
   return (
     <>
       <HomeView
@@ -41,6 +44,11 @@ export function HomeScreen({
         onCreateProject={onCreateProject}
         onContinueOffline={onContinueOffline}
         onOpenLibrary={() => navigate({ type: "openLibrary" })}
+        onManageLibrary={
+          canManageLibrary(principal)
+            ? () => navigate({ type: "manageLibrary" })
+            : null
+        }
         suggestion={<ConnectedBackupNudgeCard />}
       />
       <ConnectedEncoderNotice />

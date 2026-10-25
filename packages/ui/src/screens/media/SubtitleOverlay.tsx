@@ -41,6 +41,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   display,
   appearance,
   flashcardWordRanges,
+  markedTitle,
   words,
   activeWord,
   cursor,
@@ -53,6 +54,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   appearance: SubtitleAppearance;
   /** Where the target cue's text holds the words that flashcards were made from. */
   flashcardWordRanges?: readonly Range[];
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedTitle?: string;
   /** The only words of the target cue to make clickable, as a library item stores them; unset to find them in its text. */
   words?: readonly WordSpan[];
   activeWord?: ActiveCueWord;
@@ -95,6 +98,7 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
             activeWord={activeWordIn(activeWord, targetCue)}
             cursor={cursorIn(cursor, targetCue)}
             markedRanges={flashcardWordRanges}
+            markedTitle={markedTitle}
             words={words}
             gestures={gesturesForCue(wordGestures, targetCue)}
           />

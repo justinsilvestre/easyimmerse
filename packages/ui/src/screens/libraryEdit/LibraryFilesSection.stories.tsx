@@ -12,7 +12,6 @@ const meta = {
     item: draft,
     isUploading: false,
     onReplaceFile: fn(),
-    onReplaceSubtitles: fn(),
   },
 } satisfies Meta<typeof LibraryFilesSection>;
 

@@ -10,11 +10,11 @@ function line(
   return { at_ms: startedAtMs + secondsIn * 1000, level, message };
 }
 
-/** A fetch through a video-site plugin, halfway through its download. */
+/** A fetch through a media-source plugin, halfway through its download. */
 export const exampleRunningJob: MediaSourceJob = {
   id: "job-1",
   project_id: "p1",
-  plugin: "video-site-media-source",
+  plugin: "example-plugin",
   locator: "https://videos.example.com/watch/abc123def45",
   status: "running",
   progress: { fraction: 0.45, message: "downloading the video and subtitles" },
@@ -26,7 +26,7 @@ export const exampleRunningJob: MediaSourceJob = {
     line(
       2,
       "info",
-      'running video-site --no-playlist -f "bv*[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]/b" …',
+      'running example-plugin --no-playlist -f "bv*[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]/b" …',
     ),
     line(
       3,
@@ -60,23 +60,23 @@ export const exampleFailedJob: MediaSourceJob = {
   log: [
     line(0, "info", "downloader 2026.08.19"),
     line(0, "info", "reading the video's description"),
-    line(0, "info", "running video-site --no-playlist --skip-download …"),
+    line(0, "info", "running example-plugin --no-playlist --skip-download …"),
     line(
       1,
       "output",
-      "ERROR: [video-site] abc123def45: Private video. Sign in if you've been granted access to this video",
+      "ERROR: [example-plugin] abc123def45: Private video. Sign in if you've been granted access to this video",
     ),
-    line(1, "warn", "video-site finished with exit code 1 after 1.2 s"),
+    line(1, "warn", "example-plugin finished with exit code 1 after 1.2 s"),
     line(
       1,
       "error",
-      "ERROR: [video-site] abc123def45: Private video. Sign in if you've been granted access to this video",
+      "ERROR: [example-plugin] abc123def45: Private video. Sign in if you've been granted access to this video",
     ),
   ],
   error: {
     code: "media_source_failed",
     message:
-      "ERROR: [video-site] abc123def45: Private video. Sign in if you've been granted access to this video",
+      "ERROR: [example-plugin] abc123def45: Private video. Sign in if you've been granted access to this video",
   },
   finished_at_ms: startedAtMs + 1200,
 };

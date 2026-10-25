@@ -6,8 +6,10 @@ import {
   fireEvent,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { exampleResults } from "../../components/dictionaryPopup/exampleLookup.ts";
 import { exampleFlashcard } from "../../components/flashcards/exampleFlashcard.ts";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import {
@@ -31,6 +33,7 @@ import { paragraphAttribute } from "./textOffsets.ts";
 const library = {
   item: exampleLibraryItem({ kind: "document", file_name: "story.txt" }),
   text: exampleLibraryDocumentText,
+  isEditing: false,
 };
 
 const libraryFlashcard: Flashcard = {
@@ -89,8 +92,11 @@ function click(detail = 1) {
   fireEvent.click(text, { ...point, detail });
 }
 
-/** Renders the reader on the library document i1, added to project p1 as m3, over a server with German dictionaries. */
-async function renderLibraryReader() {
+/**
+ * Renders the reader on the library document i1, added to project p1 as m3, over a server with German dictionaries,
+ * for a learner or, while `isEditing`, for the library manager preparing it, whose dictionaries find the example results.
+ */
+async function renderLibraryReader(isEditing = false) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
     "GET /projects/p1/media": { media_files: [exampleLibraryMediaFile] },
@@ -98,12 +104,19 @@ async function renderLibraryReader() {
       dictionaries: [dictionarySummary("wiktionary-de-en", "de", "en")],
     },
     [`POST ${flashcardPath}`]: libraryFlashcard,
+    "GET /dictionaries/lookup": {
+      results: [...exampleResults],
+      kanji: [],
+      stylesheets: [],
+    },
+    "PUT /library/items/i1/segments/1/words":
+      exampleLibraryDocumentText.segments[1],
   });
   const rendered = renderWithAppStore(
     <ReaderScreen
       project={fixtureProject}
       mediaFileId="m3"
-      library={library}
+      library={{ ...library, isEditing }}
     />,
     client,
   );
@@ -190,6 +203,45 @@ describe("ReaderScreen with a document from the library", () => {
     fireEvent.keyDown(document.body, { key: "e" });
     await waitFor(() =>
       expect(createdFlashcard(client)).toMatchObject({ word_start: 4 }),
+    );
+  });
+});
+
+describe("ReaderScreen with a library document its library manager prepares", () => {
+  /** Selects the text of the paragraph holding `text` from one offset to another, and ends the selection with a click. */
+  function selectIn(text: string, from: number, to: number) {
+    const paragraph = [
+      ...document.querySelectorAll(`[${paragraphAttribute}]`),
+    ].find((element) => element.textContent?.includes(text));
+    const node = paragraph?.firstChild as Text;
+    const range = document.createRange();
+    range.setStart(node, from);
+    range.setEnd(node, to);
+    document.getSelection()?.removeAllRanges();
+    document.getSelection()?.addRange(range);
+    fireEvent.click(screen.getByRole("main"), { ...point, detail: 1 });
+  }
+
+  it("looks up a word the library stores no word for", async () => {
+    await renderLibraryReader(true);
+    pointAt("Er");
+    click();
+    expect(await findPopup()).toBeDefined();
+  });
+
+  it("gives selected text the entry chosen for learners", async () => {
+    const client = await renderLibraryReader(true);
+    selectIn("Er träumt", 0, 9);
+    const popup = await findPopup();
+    const [use] = await within(popup).findAllByRole("button", {
+      name: "Use this entry for learners",
+    });
+    fireEvent.click(use as HTMLElement);
+    const path = "/library/items/i1/segments/1/words";
+    await waitFor(() =>
+      expect(bodyOf(requestsTo(client.requests, "PUT", path)[0])).toMatchObject(
+        [{ start: 0, end: 9, entry: { term: "fressen" } }],
+      ),
     );
   });
 });

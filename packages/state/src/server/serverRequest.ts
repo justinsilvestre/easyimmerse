@@ -15,6 +15,10 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  LibraryItem,
+  LibraryItemAdded,
+  LibraryItemDraft,
+  LibrarySettings,
   LinkRemoteRequest,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
@@ -157,6 +161,14 @@ export type ServerRequest =
       mediaFileId: string;
       flashcard: NewLibraryFlashcard;
     }
+  /** Creates a draft item of the library, as only a library manager may. */
+  | { kind: "createLibraryItem"; draft: LibraryItemDraft }
+  /** Sends the media or text file of a library item, which a browser holds. */
+  | { kind: "uploadLibraryFile"; itemId: string; file: PickedMediaFile }
+  /** Adds a library item to a project, or to a project made for it when `projectId` is null. */
+  | { kind: "addLibraryItem"; itemId: string; projectId: string | null }
+  /** Replaces the library's settings, which the server refuses while the library has any item. */
+  | { kind: "putLibrarySettings"; settings: LibrarySettings }
   /** Deletes a flashcard. `purpose` comes back with the outcome and is not sent. */
   | {
       kind: "deleteFlashcard";
@@ -221,6 +233,13 @@ export type ServerRequest =
   | { kind: "createUser"; via: AccountVia; request: CreateUserRequest }
   /** Gives an account on the server that `via` names another role, as only an administrator may. */
   | { kind: "setUserRole"; via: AccountVia; userId: string; role: AccountRole }
+  /** Lets an account on the server that `via` names manage the library, or stops it, as only an administrator may. */
+  | {
+      kind: "setLibraryManager";
+      via: AccountVia;
+      userId: string;
+      managesLibrary: boolean;
+    }
   /** Deletes an account on the server that `via` names, and its sessions, as only an administrator may. */
   | { kind: "deleteUser"; via: AccountVia; userId: string }
   /** Fetches anew who the token used on the server that `via` names belongs to, as after the account's email address is confirmed. */
@@ -329,6 +348,10 @@ export type ServerResponses = {
   setTranslationDocument: MediaFile;
   saveFlashcard: Flashcard;
   createLibraryFlashcard: Flashcard;
+  createLibraryItem: LibraryItem;
+  uploadLibraryFile: LibraryItem;
+  addLibraryItem: LibraryItemAdded;
+  putLibrarySettings: LibrarySettings;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;
@@ -345,6 +368,7 @@ export type ServerResponses = {
   logOut: void;
   createUser: AccountUser;
   setUserRole: AccountUser;
+  setLibraryManager: AccountUser;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteUser: void;
   getCurrentPrincipal: CurrentPrincipal;

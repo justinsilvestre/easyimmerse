@@ -1,11 +1,15 @@
 //! Where the files of a library item live: `<uploads>/library/<item id>/`, holding the uploaded `source.<ext>`,
-//! the `cues/<segment index>.m4a` clips and `cues/<segment index>.jpg` screenshots rendered at publish, and `cover.jpg`.
+//! the `cues/<segment index>.m4a` clips and `cues/<segment index>.jpg` screenshots rendered at publish or on request,
+//! and the cover picture, `cover.<ext>` with the extension of its type.
 
 use std::path::{Path, PathBuf};
 
+use easyimmerse_core::image_media_type::image_extension;
 use easyimmerse_core::library::LibraryItemId;
 
 use crate::media_copy_files::extension_of;
+
+const COVER_MEDIA_TYPES: [&str; 4] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 /// The files of one library item inside the uploads directory.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,8 +51,17 @@ impl LibraryItemPaths {
         self.cues_dir().join(format!("{segment_index}.jpg"))
     }
 
-    pub fn cover(&self) -> PathBuf {
-        self.dir.join("cover.jpg")
+    /// The cover picture of the given media type, or None for a type the server does not keep covers in.
+    pub fn cover(&self, media_type: &str) -> Option<PathBuf> {
+        image_extension(media_type).map(|extension| self.dir.join(format!("cover.{extension}")))
+    }
+
+    /// Every place a cover picture of the item may be, one per type of picture.
+    pub fn covers(&self) -> Vec<PathBuf> {
+        COVER_MEDIA_TYPES
+            .iter()
+            .filter_map(|media_type| self.cover(media_type))
+            .collect()
     }
 }
 
@@ -80,6 +93,16 @@ mod tests {
     #[test]
     fn names_a_source_without_an_extension_plainly() {
         assert_eq!(paths().source("film"), in_item_dir("source"));
+    }
+
+    #[test]
+    fn names_the_cover_after_its_type() {
+        assert_eq!(paths().cover("image/png"), Some(in_item_dir("cover.png")));
+    }
+
+    #[test]
+    fn keeps_no_cover_of_another_type() {
+        assert_eq!(paths().cover("image/svg+xml"), None);
     }
 
     #[test]

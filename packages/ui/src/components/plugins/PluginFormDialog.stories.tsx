@@ -10,7 +10,7 @@ const meta = {
   decorators: [withAppStore],
   args: {
     form: exampleImportForm,
-    fallbackTitle: "Add from a video site",
+    fallbackTitle: "Add with Example plugin",
     loadingMessage: "Asking the plugin what it needs…",
     error: null,
     isBusy: false,

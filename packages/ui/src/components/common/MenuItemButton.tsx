@@ -15,6 +15,8 @@ export type MenuItem = {
   isSelected?: boolean;
   /** Closes the menu when a checkbox item is chosen, as for choices of which only one can be checked. */
   closesOnSelect?: boolean;
+  /** Keeps the item in the menu, where the focus can still reach it, but makes choosing it do nothing. */
+  isDisabled?: boolean;
   onSelect: () => void;
 };
 
@@ -37,15 +39,19 @@ export function MenuItemButton({
       type="button"
       role={menuItemRole(item)}
       aria-checked={isChecked}
+      aria-disabled={item.isDisabled || undefined}
       onClick={() => {
+        if (item.isDisabled) return;
         if (closes) onClose();
         item.onSelect();
       }}
       className={clsx(
         "flex w-full items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap focus-visible:outline-none",
-        item.isDestructive
-          ? "text-danger-fg hover:bg-danger-soft focus-visible:bg-danger-soft"
-          : "hover:bg-surface-muted focus-visible:bg-surface-muted",
+        item.isDisabled
+          ? "cursor-default text-fg-faint focus-visible:bg-surface-muted"
+          : item.isDestructive
+            ? "text-danger-fg hover:bg-danger-soft focus-visible:bg-danger-soft"
+            : "hover:bg-surface-muted focus-visible:bg-surface-muted",
       )}
     >
       {isChecked !== undefined && (

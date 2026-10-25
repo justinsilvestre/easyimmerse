@@ -18,6 +18,7 @@ import {
   initialLibraryEdit,
   type LibraryEditState,
 } from "./libraryEdit/libraryEditState.ts";
+import type { LibraryCreation } from "./libraryManage/libraryCreation.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
 import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
@@ -78,7 +79,8 @@ export type MainScreenState =
   | { kind: "projectSettings" }
   | { kind: "library" }
   | { kind: "libraryItem" }
-  | { kind: "libraryManage" }
+  /** The library management screen, with the new item on its way, if any. */
+  | { kind: "libraryManage"; creation: LibraryCreation | null }
   | { kind: "libraryEdit" }
   | OfflineScreenState
   | ProjectScreenState
@@ -133,9 +135,10 @@ export function initialMainScreen(
     case "projectSettings":
     case "library":
     case "libraryItem":
-    case "libraryManage":
     case "libraryEdit":
       return { kind: route.screen };
+    case "libraryManage":
+      return { kind: "libraryManage", creation: null };
     case "offline":
       return { kind: "offline", cues: [], hasFailed: false };
     case "project":

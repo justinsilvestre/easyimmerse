@@ -50,6 +50,12 @@ export const flashcardActions = {
   flashcardClosed: () => ({ type: "flashcardClosed" }) as const,
   flashcardDeleteRequested: () =>
     ({ type: "flashcardDeleteRequested" }) as const,
+  /** The user confirmed deleting a flashcard that is not open in the form, such as one made from the library. */
+  flashcardDeleteConfirmed: (projectId: string, flashcardId: string) =>
+    ({ type: "flashcardDeleteConfirmed", projectId, flashcardId }) as const,
+  /** The user asked to leave a flashcard out of the review until they unsuspend it. */
+  flashcardSuspendRequested: (projectId: string, flashcardId: string) =>
+    ({ type: "flashcardSuspendRequested", projectId, flashcardId }) as const,
   /** The user asked to bring a flashcard they suspended back into the review. */
   flashcardUnsuspendRequested: (projectId: string, flashcardId: string) =>
     ({ type: "flashcardUnsuspendRequested", projectId, flashcardId }) as const,

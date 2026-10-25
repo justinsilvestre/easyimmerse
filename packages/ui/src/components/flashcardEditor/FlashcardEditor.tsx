@@ -98,8 +98,7 @@ export function FlashcardEditor({
           if (!isSaveInert) onSave();
         }}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-          <h2 className="font-semibold">Flashcard</h2>
+        <div className="flex items-center justify-end gap-2 border-b border-line px-4 py-2">
           <IconButton
             label="Close without saving"
             aria-disabled={isSaveInert || undefined}

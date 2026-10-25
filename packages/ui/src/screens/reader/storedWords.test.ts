@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { exampleLibraryDocumentText } from "../../testSupport/exampleLibrary.ts";
-import { storedWordsAroundCaret, storedWordsOf } from "./storedWords.ts";
+import {
+  storedWordSpansOf,
+  storedWordsAroundCaret,
+  storedWordsOf,
+} from "./storedWords.ts";
 
 const words = [
   { start: 0, end: 3 },
@@ -12,6 +16,18 @@ describe("storedWordsOf", () => {
     expect(storedWordsOf(exampleLibraryDocumentText)[0]?.[1]).toEqual(
       exampleLibraryDocumentText.segments[1]?.words,
     );
+  });
+});
+
+describe("storedWordSpansOf", () => {
+  it("places each stored word in its chapter and paragraph", () => {
+    const [first] = exampleLibraryDocumentText.segments[1]?.words ?? [];
+    expect(storedWordSpansOf(exampleLibraryDocumentText)).toContainEqual({
+      chapter_index: 0,
+      paragraph_index: 1,
+      start: first?.start,
+      end: first?.end,
+    });
   });
 });
 

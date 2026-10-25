@@ -1,14 +1,15 @@
 import type {
-  AccountRole,
+  AccountUser,
   ServerAuthInfo,
   SessionCreated,
 } from "@easyimmerse/types";
 import type { RequestFailure } from "../server/serverRequest.ts";
+import type { AccountVia } from "../server/serverSelectors.ts";
 import type { MailedLinkFields } from "./mailedLinkFlow.ts";
 import type { MailedLink } from "./readMailedLink.ts";
 import type { SignInOutcome } from "./signInAttempt.ts";
 import type { SignInFields } from "./signInForm.ts";
-import type { NewUserForm } from "./userManagement.ts";
+import type { NewUserForm, UserAccess } from "./userManagement.ts";
 
 /** The action creators of the account. */
 export const accountActions = {
@@ -70,18 +71,23 @@ export const accountActions = {
   newUserFormChanged: (
     changes: Partial<Pick<NewUserForm, "email" | "password" | "role">>,
   ) => ({ type: "newUserFormChanged", changes }) as const,
-  /** The administrator sent the form that creates an account. */
-  newUserSubmitted: () => ({ type: "newUserSubmitted" }) as const,
-  /** The administrator chose another role for an account. */
-  userRoleChosen: (userId: string, role: AccountRole) =>
-    ({ type: "userRoleChosen", userId, role }) as const,
+  /** The administrator sent the form that creates an account on the server that `via` names. */
+  newUserSubmitted: (via: AccountVia) =>
+    ({ type: "newUserSubmitted", via }) as const,
+  /** The administrator typed in the field that filters the server's accounts by email address. */
+  userSearchChanged: (query: string) =>
+    ({ type: "userSearchChanged", query }) as const,
+  /** The administrator checked or unchecked one kind of access of an account, as it was listed, on the server that `via` names. */
+  userAccessToggled: (via: AccountVia, user: AccountUser, access: UserAccess) =>
+    ({ type: "userAccessToggled", via, user, access }) as const,
   /** The administrator asked to delete an account, which waits for them to confirm it. */
   userDeletionAsked: (userId: string) =>
     ({ type: "userDeletionAsked", userId }) as const,
   /** The administrator kept the account they had asked to delete. */
   userDeletionCancelled: () => ({ type: "userDeletionCancelled" }) as const,
-  /** The administrator confirmed the deletion they had asked for. */
-  userDeletionConfirmed: () => ({ type: "userDeletionConfirmed" }) as const,
+  /** The administrator confirmed the deletion they had asked for, of an account on the server that `via` names. */
+  userDeletionConfirmed: (via: AccountVia) =>
+    ({ type: "userDeletionConfirmed", via }) as const,
 };
 
 /** An action of the account. */

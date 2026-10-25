@@ -12,12 +12,12 @@ import {
 } from "@easyimmerse/state";
 import type { AccountUser } from "@easyimmerse/types";
 import { Button } from "../../components/common/Button.tsx";
+import { accountAccessSummary } from "../../lib/accountAccessSummary.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
-import { accountRoleName } from "./accountRoleName.ts";
 import { DeviceList } from "./DeviceList.tsx";
 import { EmailConfirmation } from "./EmailConfirmation.tsx";
-import { UserManagement } from "./users/UserManagement.tsx";
+import { ManageUsersButton } from "./ManageUsersButton.tsx";
 
 /** Tells who the app's server knows it as: an account, which may log out, or the server's owner, who needs none. */
 export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
@@ -30,18 +30,24 @@ export function ConnectedAccount({ serverUrl }: { serverUrl: string }) {
         Checking which account this app uses…
       </p>
     );
-  if (principal.data.kind === "launch") return <LaunchAccount />;
+  if (principal.data.kind === "launch")
+    return <LaunchAccount serverUrl={serverUrl} />;
   return <AccountDetails user={principal.data.user} serverUrl={serverUrl} />;
 }
 
 /** The server's owner, who needs no account, and who manages the server's accounts when it has any. */
-function LaunchAccount() {
+function LaunchAccount({ serverUrl }: { serverUrl: string }) {
   const authInfo = useGetServerAuthInfoQuery("self");
+  const serverName = useAppSelector((state) =>
+    selectServerName(state, serverUrl),
+  );
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <p className="text-sm text-fg-muted">{launchText}</p>
-      {authInfo.data?.accounts === true && <UserManagement />}
-    </>
+      {authInfo.data?.accounts === true && (
+        <ManageUsersButton via="self" serverName={serverName} />
+      )}
+    </div>
   );
 }
 
@@ -59,6 +65,9 @@ function AccountDetails({
   const isCloud = useAppSelector((state) =>
     selectIsCloudServer(state, serverUrl),
   );
+  const serverName = useAppSelector((state) =>
+    selectServerName(state, serverUrl),
+  );
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
@@ -68,8 +77,8 @@ function AccountDetails({
             {user.email}
             <EmailConfirmation user={user} />
           </dd>
-          <dt className="text-fg-muted">Role</dt>
-          <dd>{accountRoleName(user.role)}</dd>
+          <dt className="text-fg-muted">Access</dt>
+          <dd>{accountAccessSummary(user)}</dd>
           {!isCloud && (
             <>
               <dt className="text-fg-muted">Server</dt>
@@ -80,7 +89,9 @@ function AccountDetails({
         <LogOut serverUrl={serverUrl} />
       </div>
       <DeviceList />
-      {user.role === "administrator" && <UserManagement />}
+      {user.role === "administrator" && (
+        <ManageUsersButton via="self" serverName={serverName} />
+      )}
     </div>
   );
 }

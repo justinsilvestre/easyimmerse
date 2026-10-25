@@ -11,6 +11,7 @@ export {
   selectPasswordStrength,
   selectSignInForm,
 } from "./account/accountSelectors.ts";
+export { canManageLibrary } from "./account/canManageLibrary.ts";
 export {
   selectConfirmationEmailMessage,
   selectHasSentConfirmationEmail,
@@ -41,12 +42,14 @@ export type {
   SignInMode,
   SignInServerChoice,
 } from "./account/signInForm.ts";
+export type { UserAccess } from "./account/userManagement.ts";
 export {
   type NewUserFormView,
   selectDeletionToConfirm,
   selectNewUserForm,
   selectUserChangeFailureMessage,
   selectUserChangeInFlight,
+  selectUserSearch,
 } from "./account/userManagementSelectors.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
@@ -265,16 +268,22 @@ export {
   selectLibraryBrowseFilter,
 } from "./screen/libraryBrowse/libraryBrowseFilter.ts";
 export { libraryItemsShown } from "./screen/libraryBrowse/libraryItemsShown.ts";
-export { libraryLanguagesOf } from "./screen/libraryBrowse/libraryLanguagesOf.ts";
 export { libraryTagsOf } from "./screen/libraryBrowse/libraryTagsOf.ts";
 export {
   type LibraryDeletion,
   type LibraryEditState,
-  type LibraryUpload,
   type LibraryWordPlace,
   selectLibraryAddTarget,
   selectLibraryEdit,
+  selectLibraryFileReplacement,
+  selectLibraryWordPlace,
 } from "./screen/libraryEdit/libraryEditState.ts";
+export { libraryFailureMessage } from "./screen/libraryEdit/libraryFailureMessage.ts";
+export type { LibraryFileReplacement } from "./screen/libraryEdit/libraryFileReplacement.ts";
+export {
+  type NewLibraryItemSettings,
+  selectIsCreatingLibraryItem,
+} from "./screen/libraryManage/libraryCreation.ts";
 export {
   cuesOfLibraryText,
   documentOfLibraryText,

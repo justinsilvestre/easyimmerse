@@ -4,7 +4,6 @@ import clsx from "clsx";
 import { Library, Settings2 } from "lucide-react";
 import { Button } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
-import { SelectField } from "../../components/common/SelectField.tsx";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { LibraryItemCard } from "../../components/libraryItemCard/LibraryItemCard.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
@@ -12,34 +11,32 @@ import { languageName } from "../../lib/formatting/languages.ts";
 import type { LibraryListStatus } from "../../lib/library/LibraryListStatus.ts";
 
 /**
- * The library: a select of the items' languages, a button for each tag that turns it on and off, and the items the filter keeps.
+ * The library: the language its learners study, a button for each tag that turns it on and off, and the items the filter keeps.
  * A library manager also sees each item's status and a "Manage library" button.
  */
 export function LibraryView({
   status,
+  language,
   items,
-  languages,
   tags,
   filter,
   canManage,
   coverUrlOf,
-  onChooseLanguage,
   onToggleTag,
   onOpenItem,
   onManage,
   onBack,
 }: {
   status: LibraryListStatus;
+  /** The library's language, or null while no library manager has set it. */
+  language: string | null;
   /** The items the filter keeps. */
   items: readonly LibraryItem[];
-  /** The languages of every item, which the select offers. */
-  languages: readonly string[];
   /** The tags of every item, each with its button. */
   tags: readonly string[];
   filter: LibraryBrowseFilter;
   canManage: boolean;
   coverUrlOf: (item: LibraryItem) => string | null;
-  onChooseLanguage: (language: string | null) => void;
   onToggleTag: (tag: string) => void;
   onOpenItem: (itemId: string) => void;
   onManage: () => void;
@@ -48,7 +45,14 @@ export function LibraryView({
   return (
     <ScreenLayout onBack={onBack} backLabel="Projects" wide>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Library</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold">Library</h1>
+          {language !== null && (
+            <p className="text-sm text-fg-muted">
+              For learners of {languageName(language)}.
+            </p>
+          )}
+        </div>
         {canManage && (
           <Button onClick={onManage}>
             <Settings2 className="size-4" aria-hidden />
@@ -56,34 +60,15 @@ export function LibraryView({
           </Button>
         )}
       </div>
-      {status === "ready" && (languages.length > 1 || tags.length > 0) && (
-        <div className="flex flex-col gap-3">
-          {languages.length > 1 && (
-            <SelectField
-              label="Language"
-              className="max-w-xs"
-              value={filter.language ?? ""}
-              options={[
-                { value: "", label: "Every language" },
-                ...languages.map((code) => ({
-                  value: code,
-                  label: languageName(code),
-                })),
-              ]}
-              onChange={(event) => onChooseLanguage(event.target.value || null)}
-            />
-          )}
-          {tags.length > 0 && (
-            <TagChips tags={tags} chosen={filter.tags} onToggle={onToggleTag} />
-          )}
-        </div>
+      {status === "ready" && tags.length > 0 && (
+        <TagChips tags={tags} chosen={filter.tags} onToggle={onToggleTag} />
       )}
       <Items
         status={status}
         items={items}
         canManage={canManage}
         coverUrlOf={coverUrlOf}
-        isFiltered={filter.language !== null || filter.tags.length > 0}
+        isFiltered={filter.tags.length > 0}
         onOpenItem={onOpenItem}
       />
     </ScreenLayout>
@@ -153,7 +138,11 @@ function Items({
         </LoadingStatus>
       );
     case "failed":
-      return <p role="alert">Could not load the library.</p>;
+      return (
+        <p role="alert">
+          The library couldn't be loaded. Try again in a moment.
+        </p>
+      );
     case "ready":
       if (items.length === 0)
         return (
@@ -162,7 +151,7 @@ function Items({
             title={isFiltered ? "Nothing matches" : "The library is empty"}
             description={
               isFiltered
-                ? "No item is in this language with every tag chosen."
+                ? "Nothing in the library has every tag chosen."
                 : "Nothing has been added to this server's library yet."
             }
           />

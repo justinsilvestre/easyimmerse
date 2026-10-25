@@ -16,6 +16,7 @@ import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { useTimer } from "../../components/wordLookup/useTimer.ts";
 import type { WordHit } from "../../components/wordLookup/useWordGestures.ts";
 import { useWordClickMemory } from "../../components/wordLookup/wordClickMemoryContext.tsx";
+import { readerSelectionIn } from "./readerSelection.ts";
 import { type ReaderWord, wordAtPoint } from "./wordAtPoint.ts";
 
 export type { ReaderWord } from "./wordAtPoint.ts";
@@ -49,6 +50,11 @@ export type ReaderWordGestures = {
   ) => Promise<number | null> | null;
   /** A touch, or the mouse button, held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
+  /**
+   * Text selected with the mouse within one paragraph, as a word that looks up exactly that text, with where it ends,
+   * reported as the click that ends the selection. Without it, selecting text does nothing but select it.
+   */
+  onTextSelect?: (word: ReaderWord, end: number) => void;
 };
 
 type WordPointerCallbacks = ReaderWordGestures & {
@@ -166,6 +172,16 @@ export function useWordPointer(
     },
     onClick: (event: MouseEvent<HTMLElement>) => {
       if (press.takeHeld()) return;
+      const { onTextSelect } = latest.current;
+      // A double-click selects its word as well, and stays a double-click.
+      const selected =
+        onTextSelect && event.detail === 1
+          ? readerSelectionIn(chapterIndex, language)
+          : null;
+      if (selected) {
+        hoverTimer.cancel();
+        return onTextSelect?.(selected.word, selected.end);
+      }
       const origin = press.origin();
       const moved = Math.hypot(
         event.clientX - origin.x,

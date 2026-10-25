@@ -8,22 +8,22 @@ import {
 } from "@easyimmerse/state";
 import type { SyncLink } from "@easyimmerse/types";
 import { Button } from "../../components/common/Button.tsx";
+import { accountAccessSummary } from "../../lib/accountAccessSummary.ts";
 import { deviceNames } from "../../lib/sync/deviceNames.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { cloudStorageSectionId } from "../settings/CloudStorageSection.tsx";
-import { accountRoleName } from "./accountRoleName.ts";
 import { DeviceList } from "./DeviceList.tsx";
 import { EmailConfirmation } from "./EmailConfirmation.tsx";
 import { formatCopyTime } from "./formatCopyTime.ts";
+import { ManageUsersButton } from "./ManageUsersButton.tsx";
 import { SyncConflictsNotice } from "./SyncConflictsNotice.tsx";
 import { SyncLinkProblem } from "./SyncLinkProblem.tsx";
 import { SyncStateLine } from "./SyncStateLine.tsx";
-import { UserManagement } from "./users/UserManagement.tsx";
 
 /**
  * The account on the server that the built-in server keeps a copy of the work on: who it is, how copying fares,
- * a link to the media files it keeps, and, while that server answers for it, its devices, its email confirmation and, for an administrator, the server's accounts.
+ * a link to the media files it keeps, and, while that server answers for it, what it may do there, its devices, its email confirmation and, for a server admin, the way to the Users page.
  */
 export function RemoteAccountDetails({
   link,
@@ -49,8 +49,7 @@ export function RemoteAccountDetails({
             {link.account_email}
             {answersForAccount && <RemoteEmailConfirmation />}
           </dd>
-          <dt className="text-fg-muted">Role</dt>
-          <dd>{accountRoleName(link.account_role)}</dd>
+          {answersForAccount && <RemoteAccess />}
           {!isCloud && (
             <>
               <dt className="text-fg-muted">Server</dt>
@@ -89,9 +88,21 @@ export function RemoteAccountDetails({
       </div>
       {answersForAccount && <DeviceList />}
       {answersForAccount && link.account_role === "administrator" && (
-        <UserManagement />
+        <ManageUsersButton via="linkedRemote" serverName={serverName} />
       )}
     </div>
+  );
+}
+
+/** What the account may do on the linked server, as that server tells. */
+function RemoteAccess() {
+  const principal = useGetCurrentPrincipalQuery("linkedRemote");
+  if (principal.data?.kind !== "account") return null;
+  return (
+    <>
+      <dt className="text-fg-muted">Access</dt>
+      <dd>{accountAccessSummary(principal.data.user)}</dd>
+    </>
   );
 }
 

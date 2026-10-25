@@ -9,6 +9,7 @@ import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
 import { hoverMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
 import { runLookupStartAt } from "./runLookupStarts.ts";
+import type { TextSelection } from "./textSelection.ts";
 import { useTimer } from "./useTimer.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
 import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
@@ -56,6 +57,11 @@ export type WordGestures = {
    * and the click that ends such a press is not reported.
    */
   onWordMouseHold?: (hit: WordHit) => void;
+  /**
+   * Text selected with the mouse within the text, reported as the click that ends the selection, which no word then receives.
+   * Without this handler, selecting text does nothing but select it.
+   */
+  onTextSelect?: (selection: TextSelection) => void;
 };
 
 /**

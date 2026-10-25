@@ -80,6 +80,26 @@ describe("navigate", () => {
     });
   });
 
+  it("opens the users page of the app's own server on top of the server page", () => {
+    const server = navigate(project, { type: "openServerSettings" });
+    expect(navigate(server, { type: "openUsers", via: "self" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["server", "users"],
+    });
+  });
+
+  it("opens the users page of the linked server on top of the account settings", () => {
+    const account = navigate(project, { type: "openAccountSettings" });
+    expect(
+      navigate(account, { type: "openUsers", via: "linkedRemote" }),
+    ).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["account", "linkedRemoteUsers"],
+    });
+  });
+
   it("opens the account settings screen by itself over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",

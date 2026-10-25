@@ -189,6 +189,22 @@ export const requestEndpoints = {
       { projectId, mediaFileId, card: flashcard },
       { track: false },
     ),
+  createLibraryItem: ({ draft }) =>
+    backendApi.endpoints.createLibraryItem.initiate(draft, { track: false }),
+  uploadLibraryFile: ({ itemId, file }) =>
+    backendApi.endpoints.uploadLibraryFile.initiate(
+      { itemId, file },
+      { track: false },
+    ),
+  addLibraryItem: ({ itemId, projectId }) =>
+    backendApi.endpoints.addLibraryItem.initiate(
+      { itemId, projectId },
+      { track: false },
+    ),
+  putLibrarySettings: ({ settings }) =>
+    backendApi.endpoints.putLibrarySettings.initiate(settings, {
+      track: false,
+    }),
   deleteFlashcard: ({ projectId, flashcardId }) =>
     backendApi.endpoints.deleteFlashcard.initiate(
       { projectId, flashcardId },
@@ -243,6 +259,11 @@ export const requestEndpoints = {
   setUserRole: ({ via, userId, role }) =>
     backendApi.endpoints.setUserRole.initiate(
       { via, userId, body: { role } },
+      { track: false },
+    ),
+  setLibraryManager: ({ via, userId, managesLibrary }) =>
+    backendApi.endpoints.setLibraryManager.initiate(
+      { via, userId, managesLibrary },
       { track: false },
     ),
   deleteUser: ({ via, userId }) =>

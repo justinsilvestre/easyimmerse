@@ -11,13 +11,11 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     status: "ready",
+    language: "de",
     items: exampleManagedLibraryItems,
     coverUrlOf: () => null,
-    upload: "media",
-    onChooseUpload: fn(),
-    isCreating: false,
-    createFailure: null,
-    onCreate: fn(),
+    addStatus: "ready",
+    onAddMedia: fn(),
     onEditItem: fn(),
     onBack: fn(),
   },
@@ -28,9 +26,14 @@ type Story = StoryObj<typeof meta>;
 
 export const EveryStatus: Story = {};
 
+/** A library with no items yet, whose language is chosen when media is added. */
 export const Empty: Story = { args: { items: [] } };
 
-export const Creating: Story = { args: { isCreating: true } };
+/** A new library, which has no language until its first media is added. */
+export const WithoutLanguage: Story = { args: { language: null, items: [] } };
+
+/** A picked file being uploaded, before the new item opens in the player or the reader. */
+export const Adding: Story = { args: { addStatus: "adding" } };
 
 export const Loading: Story = { args: { status: "loading", items: [] } };
 

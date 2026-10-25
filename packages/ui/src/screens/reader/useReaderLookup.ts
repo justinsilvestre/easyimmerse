@@ -31,7 +31,8 @@ export type ReaderSentenceRowSource = SentenceRowSource & {
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
  * the rectangle of the word the pop-up stands beside, the word it highlights, which is the cursor's while the keyboard
  * placed it and otherwise the pop-up's, and the text whose translation its sentence row shows.
- * Given a library item's words, the pop-up shows their stored entries, as `useWordLookup` describes.
+ * Given a library item's words, the pop-up shows their stored entries, as `useWordLookup` describes;
+ * while a library manager prepares the item, text selected in a paragraph opens the pop-up on exactly that text.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
@@ -90,6 +91,9 @@ export function useReaderLookup(
       matchedLengthAhead(dispatch, lookup.wordOf(word.text, word.lookup).query),
     onWordDoubleClick: (word) => lookup.startFlashcardFor(chosenFor(word)),
     onWordHold: (word) => lookup.holdWord(chosenFor(word)),
+    onTextSelect: library?.isEditing
+      ? (word, end) => lookup.selectText(chosenFor(word), end)
+      : undefined,
   };
   return {
     popup,

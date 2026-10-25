@@ -28,6 +28,7 @@ import { licenseNoticesStateOf } from "./screens/settings/licenseNoticesStateOf.
 import { SettingsScreen } from "./screens/settings/SettingsScreen.tsx";
 import { useConversionCacheControls } from "./screens/settings/useConversionCacheControls.ts";
 import { useFfmpegBuildControls } from "./screens/settings/useFfmpegBuildControls.ts";
+import { UsersScreen } from "./screens/users/UsersScreen.tsx";
 import { useAppDispatch } from "./useAppDispatch.ts";
 import { useAppSelector } from "./useAppSelector.ts";
 import { useNavigate } from "./useNavigate.ts";
@@ -125,6 +126,10 @@ function SettingsPage({ page }: { page: SettingsPageName }) {
       return <ConnectedPairingScreen onBack={onBack} />;
     case "server":
       return <ServerScreen onBack={onBack} />;
+    case "users":
+      return <UsersScreen via="self" onBack={onBack} />;
+    case "linkedRemoteUsers":
+      return <UsersScreen via="linkedRemote" onBack={onBack} />;
   }
 }
 

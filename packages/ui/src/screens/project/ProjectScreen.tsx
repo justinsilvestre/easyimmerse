@@ -1,4 +1,5 @@
 import {
+  useGetCurrentPrincipalQuery,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,
   useGetProjectQuery,
@@ -6,6 +7,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  canManageLibrary,
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
@@ -96,7 +98,10 @@ function OpenFileScreen({
   return <MediaScreen project={project} mediaFileId={mediaFileId} />;
 }
 
-/** The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive. */
+/**
+ * The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive.
+ * A library manager who opens an item that is not being published prepares its words there for learners, who see them at once when the item is published.
+ */
 function LibraryFileScreen({
   project,
   mediaFile,
@@ -109,6 +114,7 @@ function LibraryFileScreen({
   const dispatch = useAppDispatch();
   const item = useGetLibraryItemQuery(itemId);
   const text = useGetLibraryTextQuery(itemId);
+  const principal = useGetCurrentPrincipalQuery("self").data;
   const error = item.error ?? text.error;
   if (error)
     return (
@@ -118,13 +124,18 @@ function LibraryFileScreen({
       >
         <p role="alert">
           {isNotFound(error)
-            ? "This library item is no longer available."
-            : "This library item could not be loaded."}
+            ? "This item is no longer in the library. It may have been deleted, or taken out of the library for now."
+            : "This library item couldn't be loaded. Try again in a moment."}
         </p>
       </ScreenLayout>
     );
   if (!item.data || !text.data) return <OpeningFile project={project} />;
-  const library = { item: item.data, text: text.data };
+  const { status } = item.data;
+  const library = {
+    item: item.data,
+    text: text.data,
+    isEditing: canManageLibrary(principal) && status.kind !== "processing",
+  };
   return item.data.kind === "document" ? (
     <ReaderScreen
       project={project}

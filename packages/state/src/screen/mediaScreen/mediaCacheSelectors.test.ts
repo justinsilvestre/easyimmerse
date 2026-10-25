@@ -3,6 +3,10 @@ import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import { serverCacheWith } from "../../server/serverCacheWith.ts";
 import {
+  learner,
+  withLibraryVideoFor,
+} from "../libraryPreparationTestSupport.ts";
+import {
   exampleTracksOneEach,
   exampleTracksTwoAudio,
 } from "./examplePlayback.ts";
@@ -32,6 +36,26 @@ describe("selectCanChooseTracks", () => {
       exampleTracksOneEach,
     );
     expect(selectCanChooseTracks({ app: opened, backend })).toBe(false);
+  });
+
+  it("is false for a learner's file from the library, which plays the tracks its library manager chose", () => {
+    const backend = serverCacheWith(
+      "getMediaTracks",
+      file,
+      exampleTracksTwoAudio,
+      withLibraryVideoFor(learner, { kind: "published" }),
+    );
+    expect(selectCanChooseTracks({ app: opened, backend })).toBe(false);
+  });
+
+  it("is true for a file from the library while its library manager prepares the draft", () => {
+    const backend = serverCacheWith(
+      "getMediaTracks",
+      file,
+      exampleTracksTwoAudio,
+      withLibraryVideoFor({ kind: "launch" }, { kind: "draft" }),
+    );
+    expect(selectCanChooseTracks({ app: opened, backend })).toBe(true);
   });
 
   it("is false outside the media screen", () => {

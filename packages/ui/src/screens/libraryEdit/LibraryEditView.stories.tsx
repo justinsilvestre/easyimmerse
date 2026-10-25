@@ -10,8 +10,10 @@ import { LibraryEditView } from "./LibraryEditView.tsx";
 
 const idle = {
   isSaving: false,
+  isChangingCover: false,
   isUploading: false,
   isPublishing: false,
+  isOpening: false,
   failure: null,
 };
 
@@ -23,18 +25,16 @@ const meta = {
   args: {
     item: exampleLibraryItem({ status: { kind: "draft" } }),
     text: exampleLibraryVideoText,
+    coverUrl: null,
     previewUrl: null,
     activity: idle,
     isConfirmingDelete: false,
-    selectedWord: null,
-    isOnlyUndefinedShown: false,
     onSave: fn(),
+    onUploadCover: fn(),
+    onChooseCoverFrame: fn(),
+    onResetCover: fn(),
     onReplaceFile: fn(),
-    onReplaceSubtitles: fn(),
-    onSelectWord: fn(),
-    onShowOnlyUndefined: fn(),
-    onSaveWords: fn(async () => true),
-    onApplyEverywhere: fn(async () => true),
+    onOpenWords: fn(),
     onProposeWords: fn(),
     onPublish: fn(),
     onUnpublish: fn(),
@@ -75,20 +75,21 @@ export const Failed: Story = {
 
 export const Published: Story = { args: { item: exampleLibraryItem() } };
 
-export const ChangeRefused: Story = {
+export const ChangeRefusedWhilePreparing: Story = {
   args: {
-    item: exampleLibraryItem(),
+    item: exampleLibraryItem({ status: { kind: "processing" } }),
     activity: {
       ...idle,
-      failure: "Unpublish the item to change its file, subtitles, or words.",
+      failure:
+        "The file of “Im Park” couldn't be replaced. The server is still preparing it for learners. Wait until its status changes, then try again.",
     },
   },
 };
 
 export const ConfirmingDelete: Story = { args: { isConfirmingDelete: true } };
 
-export const WordSelected: Story = {
-  args: { selectedWord: { segmentIndex: 1, start: 13 } },
+export const Opening: Story = {
+  args: { activity: { ...idle, isOpening: true } },
 };
 
 export const LoadingText: Story = { args: { text: null } };

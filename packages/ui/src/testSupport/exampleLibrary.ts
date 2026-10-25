@@ -14,14 +14,13 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
     title: "Im Park",
     description:
       "Two friends meet in a park on a sunny afternoon and talk about their dogs, their work, and their plans for the weekend.",
-    language: "de",
     translation_language: "en",
     kind: "video",
-    difficulty: "beginner",
+    difficulty: "A1",
     tags: ["conversation", "everyday"],
     file_name: "park.mp4",
     duration_ms: 95_000,
-    cover_at_ms: null,
+    cover: { kind: "automatic" },
     has_cover: false,
     segment_count: 2,
     status: { kind: "published" },
@@ -31,7 +30,14 @@ export function exampleLibraryItem(changes: Partial<LibraryItem> = {}) {
   } satisfies LibraryItem;
 }
 
-/** Items of several languages, kinds and tags, as the library lists them to a learner. */
+/** A picture of a sunny park, for stories that show a cover. */
+export const exampleCoverUrl =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><rect width='16' height='9' fill='%2359a14f'/><circle cx='12' cy='3' r='1.5' fill='%23f2d16b'/></svg>";
+
+/** The sample video among the fixtures that Storybook serves, for stories that preview a video item's file. */
+export const exampleVideoUrl = "/fixtures/sample.mp4";
+
+/** Items of several kinds and tags, as the library lists them to a learner. */
 export const exampleLibraryItems: readonly LibraryItem[] = [
   exampleLibraryItem(),
   exampleLibraryItem({
@@ -39,20 +45,19 @@ export const exampleLibraryItems: readonly LibraryItem[] = [
     title: "Nachrichten am Morgen",
     description: "A short radio news bulletin, read slowly.",
     kind: "audio",
-    difficulty: "intermediate",
+    difficulty: "B1",
     tags: ["news"],
     file_name: "news.mp3",
     duration_ms: 240_000,
   }),
   exampleLibraryItem({
     id: "i3",
-    title: "桃太郎",
-    description: "The folk tale of the boy born from a peach.",
-    language: "ja",
+    title: "Rotkäppchen",
+    description: "The folk tale of the girl in the red cap and the wolf.",
     kind: "document",
-    difficulty: "advanced",
+    difficulty: "C1",
     tags: ["stories"],
-    file_name: "momotaro.txt",
+    file_name: "rotkaeppchen.txt",
     duration_ms: null,
   }),
 ];

@@ -21,6 +21,7 @@ const cue: Cue = {
 const library: LibraryWords = {
   item: exampleLibraryItem(),
   text: exampleLibraryVideoText,
+  isEditing: false,
   projectId: "p1",
   mediaFileId: "m3",
   wordlessSource: null,

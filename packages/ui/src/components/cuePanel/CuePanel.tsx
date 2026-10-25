@@ -13,6 +13,8 @@ import { useStableCallbacks } from "../../lib/useStableCallbacks.ts";
 import { useVisibleItemSpan } from "../../lib/useVisibleItemSpan.ts";
 import { Button } from "../common/Button.tsx";
 import { EmptyState } from "../common/EmptyState.tsx";
+import { MenuButton } from "../common/MenuButton.tsx";
+import type { MenuItem } from "../common/MenuItemButton.tsx";
 import {
   type ActiveWord,
   ClickableText,
@@ -46,6 +48,7 @@ export function CuePanel({
   activeCueIndex,
   flashcardCueIndexes,
   flashcardWordRanges,
+  markedTitle,
   libraryWords,
   activeWord,
   cursor,
@@ -54,6 +57,7 @@ export function CuePanel({
   onAddSubtitlesFile,
   onGenerateSubtitles,
   onOpenFlashcardForCue,
+  flashcardMenus,
   onVisibleCuesChange,
 }: {
   cues: readonly Cue[];
@@ -65,6 +69,8 @@ export function CuePanel({
    * A card renders again when its own entry changes identity.
    */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedTitle?: string;
   /** The words of each cue a library item stores, by cue index, which alone are clickable; unset for any other media file. */
   libraryWords?: ReadonlyMap<number, readonly WordSpan[]>;
   activeWord?: ActiveCueWord;
@@ -73,10 +79,16 @@ export function CuePanel({
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
-  onAddSubtitlesFile: () => void;
-  onGenerateSubtitles: () => void;
+  /** Offers a subtitles file for a file that has none; without it and `onGenerateSubtitles`, the panel offers nothing. */
+  onAddSubtitlesFile?: () => void;
+  onGenerateSubtitles?: () => void;
   /** Opens the flashcard made from a cue. Without it, a card only marks that it has one. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /**
+   * The actions on the flashcard made from each cue, by cue index, which its mark offers in a menu instead of opening it,
+   * as for a flashcard made from the library, which cannot be edited. A card renders again when its own entry changes identity.
+   */
+  flashcardMenus?: ReadonlyMap<number, readonly MenuItem[]>;
   /** Receives the positions in `cues` of the cards in view, each time they change, and null once the panel is gone. */
   onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
@@ -119,18 +131,25 @@ export function CuePanel({
       <div className="p-3">
         <EmptyState
           title="No subtitles"
-          description="Add a subtitles file, or have them generated from the audio."
+          description={
+            onAddSubtitlesFile &&
+            onGenerateSubtitles &&
+            "Add a subtitles file, or have them generated from the audio."
+          }
           actions={
-            <>
-              <Button onClick={onAddSubtitlesFile}>
-                <FilePlus className="size-4" aria-hidden />
-                Add a file
-              </Button>
-              <Button variant="primary" onClick={onGenerateSubtitles}>
-                <Sparkles className="size-4" aria-hidden />
-                Generate
-              </Button>
-            </>
+            onAddSubtitlesFile &&
+            onGenerateSubtitles && (
+              <>
+                <Button onClick={onAddSubtitlesFile}>
+                  <FilePlus className="size-4" aria-hidden />
+                  Add a file
+                </Button>
+                <Button variant="primary" onClick={onGenerateSubtitles}>
+                  <Sparkles className="size-4" aria-hidden />
+                  Generate
+                </Button>
+              </>
+            )
           }
         />
       </div>
@@ -155,6 +174,7 @@ export function CuePanel({
             flashcardWordRanges={
               flashcardWordRanges?.get(cue.index) ?? noRanges
             }
+            markedTitle={markedTitle}
             words={libraryWordsOf(libraryWords, cue)}
             activeWord={activeWordIn(activeWord, cue)}
             cursor={cursorIn(cursor, cue)}
@@ -163,6 +183,7 @@ export function CuePanel({
             onOpenFlashcardForCue={
               onOpenFlashcardForCue && handlers.openFlashcardForCue
             }
+            flashcardMenu={flashcardMenus?.get(cue.index)}
           />
         ))}
       </ol>
@@ -194,18 +215,21 @@ const CueCard = memo(function CueCard({
   isActive,
   hasFlashcard,
   flashcardWordRanges,
+  markedTitle,
   words,
   activeWord,
   cursor,
   onSeek,
   wordGestures,
   onOpenFlashcardForCue,
+  flashcardMenu,
 }: {
   cue: Cue;
   translation: Cue | null;
   isActive: boolean;
   hasFlashcard: boolean;
   flashcardWordRanges: readonly Range[];
+  markedTitle?: string;
   /** The only words to make clickable, as a library item stores them; unset to find them in the cue's text. */
   words?: readonly WordSpan[];
   /** The word the pop-up shows, when it lies in this cue. */
@@ -216,6 +240,8 @@ const CueCard = memo(function CueCard({
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /** The actions on the cue's flashcard, offered in a menu on its mark instead of opening it. */
+  flashcardMenu?: readonly MenuItem[];
 }) {
   const seekOnClick = (event: MouseEvent<HTMLLIElement>) => {
     if (
@@ -256,7 +282,16 @@ const CueCard = memo(function CueCard({
           {formatTimestamp(cue.start_ms)}
         </button>
         {hasFlashcard &&
-          (onOpenFlashcardForCue ? (
+          (flashcardMenu ? (
+            <div className="-my-2 flex">
+              <MenuButton
+                label="Flashcard actions"
+                icon={<Layers className="size-3 text-accent-fg" aria-hidden />}
+                items={flashcardMenu}
+                align="start"
+              />
+            </div>
+          ) : onOpenFlashcardForCue ? (
             <button
               type="button"
               aria-label="Open the flashcard"
@@ -281,6 +316,7 @@ const CueCard = memo(function CueCard({
           activeWord={activeWord}
           cursor={cursor}
           markedRanges={flashcardWordRanges}
+          markedTitle={markedTitle}
           words={words}
           gestures={gesturesForCue(wordGestures, cue)}
         />

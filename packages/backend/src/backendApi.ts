@@ -44,7 +44,7 @@ import type {
   LibraryItemDraft,
   LibraryListing,
   LibrarySegment,
-  LibrarySubtitles,
+  LibrarySettings,
   LibraryText,
   LibraryWord,
   LinkRemoteRequest,
@@ -121,6 +121,10 @@ import {
   isQuerySubscribed,
   type SubscriptionActions,
 } from "./isQuerySubscribed.ts";
+import {
+  type LibraryCoverUploadArgs,
+  uploadLibraryCover,
+} from "./libraryCoverUpload.ts";
 import {
   type LibraryFileUploadArgs,
   uploadLibraryFile,
@@ -231,11 +235,11 @@ type ReviewHoldArgs = {
 
 type LibraryItemArgs = { itemId: string; draft: LibraryItemDraft };
 
+type LibraryCoverFrameArgs = { itemId: string; atMs: number };
+
 type AddLibraryItemArgs = { itemId: string; projectId: string | null };
 
 type LibraryFlashcardArgs = MediaFileArgs & { card: NewLibraryFlashcard };
-
-type LibrarySubtitlesArgs = { itemId: string; subtitles: LibrarySubtitles };
 
 type LibraryWordsArgs = {
   itemId: string;
@@ -245,7 +249,11 @@ type LibraryWordsArgs = {
 
 type ApplyLibraryEntryArgs = { itemId: string; apply: ApplyLibraryEntry };
 
-type LibraryManagerArgs = { userId: string; managesLibrary: boolean };
+type LibraryManagerArgs = {
+  via: AccountVia;
+  userId: string;
+  managesLibrary: boolean;
+};
 
 type AnkiExportedArgs = {
   projectId: string;
@@ -274,6 +282,13 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
+
+/**
+ * The tags a change of a media file's subtitle tracks invalidates.
+ * A media file from the library that its manager prepares takes the item's text from them, so the library is fetched again too.
+ */
+const subtitleChangeTags = (args: MediaFileArgs) =>
+  [...subtitleTracksTag(args), "Library"] as const;
 
 const alignmentsTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "Alignments", id: mediaFileId }] as const;
@@ -397,6 +412,8 @@ const libraryItemPath = (itemId: string) =>
 
 /** The tag of the library's listing, which every change to an item makes stale. */
 const libraryListTag = { type: "Library", id: "list" } as const;
+
+const librarySettingsTag = { type: "Library", id: "settings" } as const;
 
 const libraryItemTag = (itemId: string) =>
   ({ type: "Library", id: itemId }) as const;
@@ -965,7 +982,7 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/subtitles`,
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+      invalidatesTags: (_result, _error, args) => subtitleChangeTags(args),
     }),
     getSubtitleCues: build.query<TimedTextTrack, SubtitleTrackArgs>({
       query: ({ trackId, ...args }) => ({
@@ -995,7 +1012,7 @@ export const backendApi = createApi({
         );
         await queryFulfilled.catch(patch.undo);
       },
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+      invalidatesTags: (_result, _error, args) => subtitleChangeTags(args),
     }),
     /** A document's alignments with its audio and its translation, newest first. */
     listAlignments: build.query<AlignmentsResponse, MediaFileArgs>({
@@ -1309,6 +1326,30 @@ export const backendApi = createApi({
         path: accountPath(via, "/auth/server"),
       }),
     }),
+    /** What holds for the whole library, such as the language its media are in. */
+    getLibrarySettings: build.query<LibrarySettings, void>({
+      query: () => ({ method: "GET", path: "/library/settings" }),
+      providesTags: [librarySettingsTag],
+    }),
+    /** Replaces the library's settings, which the server refuses while the library has any item, and caches the answer at once. */
+    putLibrarySettings: build.mutation<LibrarySettings, LibrarySettings>({
+      query: (settings) => ({
+        method: "PUT",
+        path: "/library/settings",
+        body: { kind: "json", value: settings },
+      }),
+      async onQueryStarted(_settings, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result === null) return;
+        dispatch(
+          backendApi.util.upsertQueryData(
+            "getLibrarySettings",
+            undefined,
+            result.data,
+          ),
+        );
+      },
+    }),
     /** The library's items: the published ones, or every item for a library manager. */
     listLibraryItems: build.query<LibraryListing, void>({
       query: () => ({ method: "GET", path: "/library/items" }),
@@ -1393,7 +1434,7 @@ export const backendApi = createApi({
       },
       invalidatesTags: [libraryListTag],
     }),
-    /** Changes the title, description, languages, kind, difficulty, tags or cover time of a library item. */
+    /** Changes the title, description, translation language, kind, difficulty or tags of a library item. */
     updateLibraryItem: build.mutation<LibraryItem, LibraryItemArgs>({
       query: ({ itemId, draft }) => ({
         method: "PUT",
@@ -1419,20 +1460,37 @@ export const backendApi = createApi({
         libraryTextTag(itemId),
       ],
     }),
-    /** Replaces a video or audio item's segments with the cues of its subtitles, each paired with the translation cue that overlaps it most. */
-    putLibrarySubtitles: build.mutation<LibraryText, LibrarySubtitlesArgs>({
-      query: ({ itemId, subtitles }) => ({
-        method: "PUT",
-        path: `${libraryItemPath(itemId)}/subtitles`,
-        body: { kind: "json", value: subtitles },
-      }),
-      async onQueryStarted({ itemId }, { dispatch, queryFulfilled }) {
-        await cacheLibraryText(dispatch, itemId, queryFulfilled);
+    /** Makes a picture that a browser holds the cover of a library item. */
+    uploadLibraryCover: build.mutation<LibraryItem, LibraryCoverUploadArgs>({
+      queryFn: (args, api, _options, baseQuery) =>
+        uploadLibraryCover(args, api.extra as BackendThunkExtra, baseQuery),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
       },
-      invalidatesTags: (_result, _error, { itemId }) => [
-        libraryListTag,
-        libraryItemTag(itemId),
-      ],
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Takes a video item's cover from the frame at the given time. */
+    setLibraryCoverFrame: build.mutation<LibraryItem, LibraryCoverFrameArgs>({
+      query: ({ itemId, atMs }) => ({
+        method: "PUT",
+        path: `${libraryItemPath(itemId)}/cover/frame`,
+        body: { kind: "json", value: { at_ms: atMs } },
+      }),
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
+    }),
+    /** Gives a library item its automatic cover again: a video's first line, or an EPUB file's own cover. */
+    resetLibraryCover: build.mutation<LibraryItem, string>({
+      query: (itemId) => ({
+        method: "DELETE",
+        path: `${libraryItemPath(itemId)}/cover`,
+      }),
+      async onQueryStarted(_itemId, { dispatch, queryFulfilled }) {
+        await cacheLibraryItem(dispatch, queryFulfilled);
+      },
+      invalidatesTags: [libraryListTag],
     }),
     /** Fills the segments that have no words yet with words from the library manager's own dictionaries. */
     proposeLibraryWords: build.mutation<LibraryText, string>({
@@ -1522,11 +1580,14 @@ export const backendApi = createApi({
       // The account may be the app's own, whose role the account settings screen shows.
       invalidatesTags: ["Users", "CurrentPrincipal"],
     }),
-    /** Lets an account manage the library, or stops it, as only an administrator may. */
+    /** Lets an account on the server that `via` names manage the library, or stops it, as only an administrator may. */
     setLibraryManager: build.mutation<AccountUser, LibraryManagerArgs>({
-      query: ({ userId, managesLibrary }) => ({
+      query: ({ via, userId, managesLibrary }) => ({
         method: "PUT",
-        path: `/users/${encodeURIComponent(userId)}/library-manager`,
+        path: accountPath(
+          via,
+          `/users/${encodeURIComponent(userId)}/library-manager`,
+        ),
         body: {
           kind: "json",
           value: {
@@ -1683,6 +1744,8 @@ export const {
   useListReviewCountsQuery,
   useCurrentPairingCodeQuery,
   useIssuePairingCodeMutation,
+  useGetLibrarySettingsQuery,
+  usePutLibrarySettingsMutation,
   useListLibraryItemsQuery,
   useGetLibraryItemQuery,
   useGetLibraryTextQuery,
@@ -1691,13 +1754,14 @@ export const {
   useUpdateLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useUploadLibraryFileMutation,
-  usePutLibrarySubtitlesMutation,
+  useUploadLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
+  useResetLibraryCoverMutation,
   useProposeLibraryWordsMutation,
   useApplyLibraryEntryMutation,
   usePutLibraryWordsMutation,
   usePublishLibraryItemMutation,
   useUnpublishLibraryItemMutation,
-  useSetLibraryManagerMutation,
 } = backendApi;
 
 type BackendState = Parameters<

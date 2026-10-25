@@ -80,6 +80,7 @@ export function ProjectOverview({
           media={media.items}
           importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
+          onOpenLibrary={() => navigate({ type: "openLibrary" })}
           onImportMedia={(source) =>
             dispatch(actions.mediaImportOpened(source))
           }

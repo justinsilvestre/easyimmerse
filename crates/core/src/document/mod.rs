@@ -1,12 +1,14 @@
 //! Ebooks and plain text, parsed into chapters of paragraphs.
 
 mod epub;
+mod epub_cover;
 mod error;
 mod opf;
 mod plain_text;
 mod xhtml_text;
 
 pub use epub::parse_epub;
+pub use epub_cover::{BookPicture, epub_cover};
 pub use error::DocumentError;
 pub use plain_text::parse_plain_text;
 

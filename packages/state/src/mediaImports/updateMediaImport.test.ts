@@ -8,17 +8,17 @@ import { showingForm, subtitlesForm } from "./exampleMediaImport.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 import { updateMediaImport } from "./updateMediaImport.ts";
 
-const source = { name: "video-site", label: "Add from a video site" };
+const source = { name: "example-plugin", label: "Add with Example plugin" };
 const formRequest = {
   kind: "getImportForm",
   projectId: "p1",
-  request: { plugin: "video-site" },
+  request: { plugin: "example-plugin" },
 } as const;
 const input = [{ field: "subtitles", values: ["en"] }];
 const stepRequest = {
   kind: "submitImportStep",
   projectId: "p1",
-  request: { plugin: "video-site", action: "add", input },
+  request: { plugin: "example-plugin", action: "add", input },
 } as const;
 const awaitingStep: MediaImportWizard = {
   ...showingForm,

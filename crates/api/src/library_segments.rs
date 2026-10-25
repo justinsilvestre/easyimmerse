@@ -4,6 +4,8 @@ use easyimmerse_core::document::Document;
 use easyimmerse_core::library::{LibrarySegment, LibraryText};
 use easyimmerse_core::timed_text::Cue;
 
+use crate::library_covers::midpoint;
+
 /// One segment per paragraph of the document, in order, with the titles of its chapters.
 pub fn text_of_document(document: &Document) -> LibraryText {
     let paragraphs = document
@@ -69,6 +71,33 @@ pub fn text_of_subtitles(target: &[Cue], translation: &[Cue]) -> LibraryText {
     }
 }
 
+/// Gives every cue with a time window its screenshot time, the midpoint of the window.
+pub fn with_screenshot_times(segments: Vec<LibrarySegment>) -> Vec<LibrarySegment> {
+    segments
+        .into_iter()
+        .map(|segment| LibrarySegment {
+            screenshot_at_ms: segment.start_ms.zip(segment.end_ms).map(midpoint),
+            ..segment
+        })
+        .collect()
+}
+
+/// Gives each new segment the words of the old segment it repeats: one with the same text at the same times.
+/// A change of translation alone thus keeps the words set so far.
+pub fn with_words_kept(mut text: LibraryText, old: &[LibrarySegment]) -> LibraryText {
+    for segment in &mut text.segments {
+        let repeated = old.iter().find(|previous| {
+            previous.text == segment.text
+                && previous.start_ms == segment.start_ms
+                && previous.end_ms == segment.end_ms
+        });
+        if let Some(previous) = repeated {
+            segment.words = previous.words.clone();
+        }
+    }
+    text
+}
+
 /// The index of the target cue that shares the most time with the cue, when any shares some. The first wins a tie.
 fn most_overlapped(target: &[Cue], cue: &Cue) -> Option<usize> {
     let overlaps = target.iter().map(|candidate| {
@@ -104,6 +133,7 @@ pub fn strip_markup(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use easyimmerse_core::document::Chapter;
+    use easyimmerse_core::library::{LibraryEntry, LibraryWord};
 
     use super::*;
 
@@ -182,6 +212,53 @@ mod tests {
             text.segments[0].translation.as_deref(),
             Some("Hello,\nyou.")
         );
+    }
+
+    fn worded(segment: &LibrarySegment) -> LibrarySegment {
+        LibrarySegment {
+            words: vec![LibraryWord {
+                start: 0,
+                end: 5,
+                entry: LibraryEntry {
+                    term: "Hallo".to_string(),
+                    reading: None,
+                    l1_definition: "hello".to_string(),
+                    l2_definition: String::new(),
+                },
+            }],
+            ..segment.clone()
+        }
+    }
+
+    #[test]
+    fn keeps_the_words_of_a_segment_whose_text_and_times_stay() {
+        let old = text_of_subtitles(&[cue(1, 0, 1_000, "Hallo.")], &[]);
+        let new = text_of_subtitles(&[cue(1, 0, 1_000, "Hallo.")], &[cue(1, 0, 1_000, "Hi.")]);
+        let kept = with_words_kept(new, &[worded(&old.segments[0])]);
+        assert_eq!(kept.segments[0].words.len(), 1);
+    }
+
+    #[test]
+    fn drops_the_words_of_a_segment_whose_times_move() {
+        let old = text_of_subtitles(&[cue(1, 0, 1_000, "Hallo.")], &[]);
+        let new = text_of_subtitles(&[cue(1, 500, 1_000, "Hallo.")], &[]);
+        let kept = with_words_kept(new, &[worded(&old.segments[0])]);
+        assert!(kept.segments[0].words.is_empty());
+    }
+
+    #[test]
+    fn takes_the_screenshot_at_the_midpoint_of_the_cue() {
+        let text = text_of_subtitles(&[cue(1, 1_000, 2_001, "Hallo.")], &[]);
+        assert_eq!(
+            with_screenshot_times(text.segments)[0].screenshot_at_ms,
+            Some(1_500)
+        );
+    }
+
+    #[test]
+    fn takes_no_screenshot_of_a_segment_without_times() {
+        let segments = text_of_document(&document()).segments;
+        assert_eq!(with_screenshot_times(segments)[0].screenshot_at_ms, None);
     }
 
     #[test]

@@ -124,6 +124,13 @@ describe("updateFlashcardForm", () => {
     ).toMatchObject({ flashcardId: "f2" });
   });
 
+  it("leaves a flashcard made from the library closed", () => {
+    const fromLibrary = { ...hund, is_from_library: true };
+    expect(
+      formUpdate(appAfter(), actions.flashcardOpened("h", fromLibrary)).form,
+    ).toBeNull();
+  });
+
   it("when a saved card is reopened while its save is under way, keeps it open once that save lands", () => {
     const app = applied(hundSaving(), openHund);
     const saved = exampleListedFlashcard("h", "Hündin", 2);

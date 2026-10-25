@@ -1,106 +1,143 @@
 import {
-  useApplyLibraryEntryMutation,
+  useAddLibraryItemMutation,
   useDeleteLibraryItemMutation,
   useProposeLibraryWordsMutation,
   usePublishLibraryItemMutation,
-  usePutLibrarySubtitlesMutation,
-  usePutLibraryWordsMutation,
+  useResetLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
   useUnpublishLibraryItemMutation,
   useUpdateLibraryItemMutation,
-  useUploadLibraryFileMutation,
+  useUploadLibraryCoverMutation,
 } from "@easyimmerse/backend";
-import type {
-  LibraryEntry,
-  LibraryItemDraft,
-  LibraryWord,
-} from "@easyimmerse/types";
+import {
+  actions,
+  type LibraryFileReplacement,
+  libraryFailureMessage,
+  selectLibraryFileReplacement,
+} from "@easyimmerse/state";
+import type { LibraryItemDraft, LibraryItemKind } from "@easyimmerse/types";
 import { useState } from "react";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
-import { libraryFailureMessage } from "../../lib/library/libraryFailureMessage.ts";
-import type { LibrarySubtitleFiles } from "../../lib/library/libraryUploads.ts";
 import {
-  librarySubtitlesOf,
   unreachableFile,
   uploadFromRegistry,
 } from "../../lib/library/libraryUploads.ts";
+import { useAppDispatch } from "../../useAppDispatch.ts";
+import { useAppSelector } from "../../useAppSelector.ts";
 import type { LibraryEditActivity } from "./LibraryEditView.tsx";
-import { createSaveQueue } from "./saveQueue.ts";
 
 /**
  * The changes the library edit screen makes to an item through the server, with what is under way and why the last one failed.
- * Each change resolves to whether it was made. Saves of one segment's words go one after another.
- * `onDeleted` is called once the item is deleted.
+ * `title` names the item in the failures, quoted, as in "“Im Park”".
+ * Each change resolves to whether it was made. `onDeleted` is called once the item is deleted.
  */
-export function useLibraryItemEditing(itemId: string, onDeleted: () => void) {
+export function useLibraryItemEditing(
+  itemId: string,
+  title: string,
+  onDeleted: () => void,
+) {
+  const dispatch = useAppDispatch();
   const registry = useBrowserFileRegistry();
   const [update, updated] = useUpdateLibraryItemMutation();
-  const [upload, uploaded] = useUploadLibraryFileMutation();
-  const [putSubtitles, subtitlesPut] = usePutLibrarySubtitlesMutation();
-  const [putWords] = usePutLibraryWordsMutation();
-  const [applyEntry] = useApplyLibraryEntryMutation();
+  const replacement = useAppSelector((state) =>
+    selectLibraryFileReplacement(state, itemId),
+  );
+  const [uploadCover, coverUploaded] = useUploadLibraryCoverMutation();
+  const [chooseCoverFrame, coverFrameChosen] =
+    useSetLibraryCoverFrameMutation();
+  const [resetCover, coverReset] = useResetLibraryCoverMutation();
+  const [add, added] = useAddLibraryItemMutation();
   const [propose, proposed] = useProposeLibraryWordsMutation();
   const [publish, published] = usePublishLibraryItemMutation();
   const [unpublish, unpublished] = useUnpublishLibraryItemMutation();
   const [remove] = useDeleteLibraryItemMutation();
   const [failure, setFailure] = useState<string | null>(null);
-  const [wordSaves] = useState(createSaveQueue);
-  const run = (fallback: string, change: () => Promise<unknown>) => {
+  const run = (didntHappen: string, change: () => Promise<unknown>) => {
     setFailure(null);
     return change().then(
       () => true,
       (error) => {
-        setFailure(libraryFailureMessage(error, fallback));
+        setFailure(libraryFailureMessage(error, didntHappen));
         return false;
       },
     );
   };
   const activity: LibraryEditActivity = {
     isSaving: updated.isLoading,
-    isUploading: uploaded.isLoading || subtitlesPut.isLoading,
+    isChangingCover:
+      coverUploaded.isLoading ||
+      coverFrameChosen.isLoading ||
+      coverReset.isLoading,
+    isUploading: replacement?.stage === "uploading",
     isPublishing:
       proposed.isLoading || published.isLoading || unpublished.isLoading,
-    failure,
+    isOpening: added.isLoading,
+    failure: failure ?? failureOfReplacement(replacement, title),
   };
   return {
     activity,
     save: (draft: LibraryItemDraft) =>
-      run("Could not save the details.", () =>
+      run(`The details of ${title} couldn't be saved.`, () =>
         update({ itemId, draft }).unwrap(),
       ),
-    replaceFile: (file: File) =>
-      run("Could not upload the file.", () =>
+    /** Opens the file picker, then uploads the file picked in place of the item's file. */
+    replaceFile: (kind: LibraryItemKind) =>
+      dispatch(actions.libraryFileReplacePickRequested(itemId, kind)),
+    uploadCover: (file: File) =>
+      run(`The cover picture of ${title} couldn't be uploaded.`, () =>
         registry === null
           ? Promise.reject(unreachableFile)
           : uploadFromRegistry(registry, file, (picked) =>
-              upload({ itemId, file: picked }).unwrap(),
+              uploadCover({ itemId, file: picked }).unwrap(),
             ),
       ),
-    replaceSubtitles: (files: LibrarySubtitleFiles) =>
-      run("Could not upload the subtitles.", async () =>
-        putSubtitles({
-          itemId,
-          subtitles: await librarySubtitlesOf(files),
-        }).unwrap(),
+    chooseCoverFrame: (atMs: number) =>
+      run(`The cover of ${title} couldn't be taken from that frame.`, () =>
+        chooseCoverFrame({ itemId, atMs }).unwrap(),
       ),
-    saveWords: (segmentIndex: number, words: LibraryWord[]) =>
-      run("Could not save the words.", () =>
-        wordSaves.run(segmentIndex, () =>
-          putWords({ itemId, segmentIndex, words }).unwrap(),
-        ),
+    resetCover: () =>
+      run(`The cover of ${title} couldn't be changed.`, () =>
+        resetCover(itemId).unwrap(),
       ),
-    applyEverywhere: (text: string, entry: LibraryEntry) =>
-      run("Could not save the entry.", () =>
-        applyEntry({ itemId, apply: { word_text: text, entry } }).unwrap(),
+    /** Adds the item to the project given, or to a new one when null, and opens it there in the player or the reader. */
+    openWords: (projectId: string | null) =>
+      run(
+        `${title} couldn't be opened in the player or the reader.`,
+        async () => {
+          const opened = await add({ itemId, projectId }).unwrap();
+          dispatch(
+            actions.openMediaFileRequested(
+              opened.project_id,
+              opened.media_file_id,
+            ),
+          );
+        },
       ),
     proposeWords: () =>
-      run("Could not propose words.", () => propose(itemId).unwrap()),
+      run(
+        `The words of ${title} couldn't be filled in from your dictionaries.`,
+        () => propose(itemId).unwrap(),
+      ),
     publish: () =>
-      run("Could not publish the item.", () => publish(itemId).unwrap()),
+      run(`${title} couldn't be published.`, () => publish(itemId).unwrap()),
     unpublish: () =>
-      run("Could not unpublish the item.", () => unpublish(itemId).unwrap()),
+      run(`${title} couldn't be unpublished.`, () =>
+        unpublish(itemId).unwrap(),
+      ),
     remove: () =>
-      run("Could not delete the item.", () =>
+      run(`${title} couldn't be deleted.`, () =>
         remove(itemId).unwrap().then(onDeleted),
       ),
   };
+}
+
+function failureOfReplacement(
+  replacement: LibraryFileReplacement | null,
+  title: string,
+) {
+  if (replacement?.stage !== "failed") return null;
+  return libraryFailureMessage(
+    replacement.error,
+    `The file of ${title} couldn't be replaced.`,
+  );
 }

@@ -1,7 +1,12 @@
 import type { LibraryItem } from "@easyimmerse/types";
 import { Badge } from "../../components/common/Badge.tsx";
 import { Button } from "../../components/common/Button.tsx";
+import { ModalDialog } from "../../components/common/ModalDialog.tsx";
 import { libraryStatusLabels } from "../../lib/library/libraryLabels.ts";
+import {
+  libraryDeletionText,
+  libraryStatusText,
+} from "./libraryPublicationTexts.ts";
 
 const statusTones = {
   draft: "neutral",
@@ -10,20 +15,10 @@ const statusTones = {
   failed: "danger",
 } as const;
 
-/** What each status tells the library manager. */
-const statusTexts = {
-  draft: "Learners can't see the item until it is published.",
-  processing:
-    "The server is preparing a clip and a screenshot for every line. The item is shown to learners once that is done.",
-  published:
-    "Learners can see the item. Flashcards they made from it are kept if it is unpublished.",
-  failed: "The item could not be prepared for publishing.",
-};
-
 /**
- * Where a library item stands, with why its last publishing failed, and the actions that move it on:
- * "Propose words", which fills the lines that have no words from the manager's dictionaries, "Publish", "Unpublish",
- * and "Delete", which asks for confirmation first and is not offered while the item is being prepared.
+ * Where a library item stands, with what that means for learners and why its last publishing failed, and the actions that move it on:
+ * "Fill in words from your dictionaries", which fills the subtitles that have no words yet, "Publish" for an item not yet published, "Unpublish",
+ * and "Delete", which asks for confirmation in a dialog first. While the item is being prepared, none of them is offered.
  */
 export function LibraryPublication({
   item,
@@ -49,7 +44,7 @@ export function LibraryPublication({
   onDelete: () => void;
 }) {
   const { status } = item;
-  const isEditable = status.kind === "draft" || status.kind === "failed";
+  const isPublishable = status.kind === "draft" || status.kind === "failed";
   const act = (action: () => void) => () => {
     if (!isBusy) action();
   };
@@ -61,31 +56,41 @@ export function LibraryPublication({
           {libraryStatusLabels[status.kind]}
         </Badge>
       </div>
-      <p className="text-sm text-fg-muted">{statusTexts[status.kind]}</p>
+      <p
+        role={status.kind === "failed" ? "alert" : undefined}
+        className={
+          status.kind === "failed"
+            ? "text-sm text-danger-fg"
+            : "text-sm text-fg-muted"
+        }
+      >
+        {libraryStatusText(status.kind, item.kind)}
+      </p>
       {status.kind === "failed" && (
-        <p role="alert" className="text-sm text-danger-fg">
-          {status.message}
-        </p>
+        <details className="text-sm text-fg-muted">
+          <summary className="cursor-pointer">What the server reported</summary>
+          <p className="mt-1">{status.message}</p>
+        </details>
       )}
       <div className="flex flex-wrap gap-2">
-        {isEditable && (
-          <>
-            <Button
-              aria-disabled={isBusy || undefined}
-              onClick={act(onProposeWords)}
-            >
-              Propose words
-            </Button>
-            <Button
-              variant="primary"
-              aria-disabled={isBusy || item.file_name === null || undefined}
-              onClick={act(() => {
-                if (item.file_name !== null) onPublish();
-              })}
-            >
-              Publish
-            </Button>
-          </>
+        {status.kind !== "processing" && (
+          <Button
+            aria-disabled={isBusy || undefined}
+            onClick={act(onProposeWords)}
+          >
+            Fill in words from your dictionaries
+          </Button>
+        )}
+        {isPublishable && (
+          <Button
+            variant="primary"
+            aria-disabled={isBusy || item.file_name === null || undefined}
+            onClick={act(() => {
+              if (item.file_name !== null) onPublish();
+            })}
+          >
+            Publish
+          </Button>
         )}
         {status.kind === "published" && (
           <Button
@@ -102,20 +107,21 @@ export function LibraryPublication({
         )}
       </div>
       {isConfirmingDelete && status.kind !== "processing" && (
-        <fieldset
-          aria-label={`Delete ${item.title}?`}
-          className="flex flex-wrap items-center gap-2 rounded-md border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger-fg"
-        >
-          <p className="flex-1">
-            {`Delete ${item.title} from the library? Learners who added it keep their flashcards, but can no longer play or read it.`}
-          </p>
-          <Button size="sm" variant="danger" onClick={act(onDelete)}>
-            Delete item
-          </Button>
-          <Button size="sm" onClick={onCancelDelete}>
-            Keep
-          </Button>
-        </fieldset>
+        <ModalDialog
+          title={`Delete “${item.title}”?`}
+          description={libraryDeletionText(item.kind)}
+          onCancel={onCancelDelete}
+          footer={
+            <>
+              <Button autoFocus onClick={onCancelDelete}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={act(onDelete)}>
+                Delete
+              </Button>
+            </>
+          }
+        />
       )}
     </section>
   );

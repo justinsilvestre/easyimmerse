@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleLibraryItem } from "../../testSupport/exampleLibrary.ts";
+import {
+  exampleCoverUrl,
+  exampleLibraryItem,
+} from "../../testSupport/exampleLibrary.ts";
 import { LibraryItemCard } from "./LibraryItemCard.tsx";
 
 const meta = {
@@ -27,8 +30,7 @@ export const Video: Story = {};
 
 export const WithCover: Story = {
   args: {
-    coverUrl:
-      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><rect width='16' height='9' fill='%2359a14f'/><circle cx='12' cy='3' r='1.5' fill='%23f2d16b'/></svg>",
+    coverUrl: exampleCoverUrl,
   },
 };
 
@@ -36,10 +38,9 @@ export const Text: Story = {
   args: {
     item: exampleLibraryItem({
       kind: "document",
-      title: "桃太郎",
-      language: "ja",
+      title: "Rotkäppchen",
       duration_ms: null,
-      difficulty: "advanced",
+      difficulty: "C1",
     }),
   },
 };

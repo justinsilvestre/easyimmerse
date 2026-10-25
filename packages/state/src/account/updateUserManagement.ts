@@ -4,26 +4,26 @@ import { updated } from "../app/updated.ts";
 import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { isAborted } from "../server/isAborted.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import { accountViaOf } from "../server/serverSelectors.ts";
+import { userAccessRequests } from "./userAccessRequests.ts";
 import {
   canSubmitNewUser,
   createUserRequestId,
   deleteUserRequestId,
   initialNewUserForm,
+  setLibraryManagerRequestId,
   setUserRoleRequestId,
   type UserManagementState,
 } from "./userManagement.ts";
 
 /**
- * Keeps the form that creates an account and the deletion waiting to be confirmed,
- * sends the creations, role changes and confirmed deletions, and keeps why the last of them failed.
+ * Keeps the form that creates an account, the search through the accounts and the deletion waiting to be confirmed,
+ * sends the creations, changes of access and confirmed deletions, and keeps why the last of them failed.
  */
 export function updateUserManagement(
   users: UserManagementState,
   action: AppAction,
-  { operations, server }: Pick<ReadableState, "operations" | "server">,
+  { operations }: Pick<ReadableState, "operations">,
 ) {
-  const via = accountViaOf(server.config);
   switch (action.type) {
     case "newUserFormChanged":
       return updated({
@@ -42,24 +42,26 @@ export function updateUserManagement(
         id: createUserRequestId,
         request: {
           kind: "createUser",
-          via,
+          via: action.via,
           request: { email, password, role },
         },
       });
     }
-    case "userRoleChosen":
+    case "userSearchChanged":
+      return updated({ ...users, search: action.query });
+    case "userAccessToggled":
       return updated(
         { ...users, changeFailure: null },
-        {
-          type: "sendRequest",
-          id: setUserRoleRequestId(action.userId),
-          request: {
-            kind: "setUserRole",
-            via,
-            userId: action.userId,
-            role: action.role,
-          },
-        },
+        ...userAccessRequests(action.via, action.user, action.access).map(
+          (request) => ({
+            type: "sendRequest" as const,
+            id:
+              request.kind === "setUserRole"
+                ? setUserRoleRequestId(request.userId)
+                : setLibraryManagerRequestId(request.userId),
+            request,
+          }),
+        ),
       );
     case "userDeletionAsked":
       return updated({ ...users, deletionToConfirm: action.userId });
@@ -73,7 +75,7 @@ export function updateUserManagement(
         {
           type: "sendRequest",
           id: deleteUserRequestId(userId),
-          request: { kind: "deleteUser", via, userId },
+          request: { kind: "deleteUser", via: action.via, userId },
         },
       );
     }
@@ -97,7 +99,9 @@ function settled(
         : { ...users.newUser, failure: outcome.error },
     };
   if (
-    (request.kind === "setUserRole" || request.kind === "deleteUser") &&
+    (request.kind === "setUserRole" ||
+      request.kind === "setLibraryManager" ||
+      request.kind === "deleteUser") &&
     !outcome.ok
   )
     return {

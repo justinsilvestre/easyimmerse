@@ -8,21 +8,21 @@ const failure = (status: number, code: string) => ({
 });
 
 describe("userManagementFailureMessage", () => {
-  it("tells that the only administrator cannot be deleted", () => {
+  it("tells that the only server admin cannot be deleted", () => {
     expect(
       userManagementFailureMessage(
         failure(409, "last_administrator"),
         "deleteUser",
       ),
     ).toBe(
-      "You can't delete the server's only administrator. Make another account an administrator first.",
+      "You can't delete the server's only server admin. Make another account a server admin first.",
     );
   });
 
-  it("tells that only an administrator may manage accounts", () => {
+  it("tells that only a server admin may manage accounts", () => {
     expect(
       userManagementFailureMessage(failure(403, "forbidden"), "setUserRole"),
-    ).toBe("Only an administrator may manage this server's accounts.");
+    ).toBe("Only a server admin may manage this server's accounts.");
   });
 
   it("tells of a password too short", () => {

@@ -1314,14 +1314,13 @@ const parkItem = (status: LibraryItemStatus): LibraryItem => ({
   id: "i1",
   title: "Im Park",
   description: "",
-  language: "de",
   translation_language: "en",
   kind: "video",
   difficulty: null,
   tags: [],
   file_name: "park.mp4",
   duration_ms: null,
-  cover_at_ms: null,
+  cover: { kind: "automatic" },
   has_cover: false,
   segment_count: 1,
   status,
@@ -1332,12 +1331,10 @@ const parkItem = (status: LibraryItemStatus): LibraryItem => ({
 const parkDraft = {
   title: "Im Park",
   description: "",
-  language: "de",
   translation_language: "en",
   kind: "video",
   difficulty: null,
   tags: [],
-  cover_at_ms: null,
 } satisfies LibraryItemDraft;
 
 const hundWord = {
@@ -1543,28 +1540,6 @@ describe("the library endpoints", () => {
     ).toEqual([{ method: "DELETE", path: "/library/items/i1" }]);
   });
 
-  it("put the subtitle texts for putLibrarySubtitles", async () => {
-    const subtitles = {
-      target_text: "WEBVTT",
-      translation_text: null,
-      format: null,
-    };
-    expect(
-      await libraryRequests(
-        backendApi.endpoints.putLibrarySubtitles.initiate({
-          itemId: "i1",
-          subtitles,
-        }),
-      ),
-    ).toEqual([
-      {
-        method: "PUT",
-        path: "/library/items/i1/subtitles",
-        body: { kind: "json", value: subtitles },
-      },
-    ]);
-  });
-
   it("send POST .../proposed-words for proposeLibraryWords", async () => {
     expect(
       await libraryRequests(
@@ -1609,6 +1584,31 @@ describe("the library endpoints", () => {
     ]);
   });
 
+  it("put the time of the frame for setLibraryCoverFrame", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.setLibraryCoverFrame.initiate({
+          itemId: "i1",
+          atMs: 12_000,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/cover/frame",
+        body: { kind: "json", value: { at_ms: 12_000 } },
+      },
+    ]);
+  });
+
+  it("send DELETE .../cover for resetLibraryCover", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.resetLibraryCover.initiate("i1"),
+      ),
+    ).toEqual([{ method: "DELETE", path: "/library/items/i1/cover" }]);
+  });
+
   it("send POST .../publish for publishLibraryItem", async () => {
     expect(
       await libraryRequests(
@@ -1629,6 +1629,7 @@ describe("the library endpoints", () => {
     expect(
       await libraryRequests(
         backendApi.endpoints.setLibraryManager.initiate({
+          via: "self",
           userId: "u1",
           managesLibrary: true,
         }),
@@ -1640,6 +1641,17 @@ describe("the library endpoints", () => {
         body: { kind: "json", value: { manages_library: true } },
       },
     ]);
+  });
+
+  it("put the flag for setLibraryManager through the built-in server to the linked remote", async () => {
+    const [request] = await libraryRequests(
+      backendApi.endpoints.setLibraryManager.initiate({
+        via: "linkedRemote",
+        userId: "u1",
+        managesLibrary: true,
+      }),
+    );
+    expect(request?.path).toBe("/sync/remote/users/u1/library-manager");
   });
 
   it("fetch an item being prepared again every two seconds until it is published", async () => {

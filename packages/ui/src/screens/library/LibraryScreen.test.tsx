@@ -24,6 +24,7 @@ function renderLibrary(principal: CurrentPrincipal) {
     ...fixtureResponses,
     "GET /auth/me": principal,
     "GET /library/items": { items: exampleLibraryItems },
+    "GET /library/settings": { language: "de" },
   });
   return renderWithAppStore(<LibraryScreen />, client);
 }
@@ -42,7 +43,7 @@ describe("LibraryScreen", () => {
     expect(await itemTitles()).toEqual([
       "Im Park",
       "Nachrichten am Morgen",
-      "桃太郎",
+      "Rotkäppchen",
     ]);
   });
 
@@ -52,12 +53,9 @@ describe("LibraryScreen", () => {
     expect(await itemTitles()).toEqual(["Nachrichten am Morgen"]);
   });
 
-  it("hides the items in other languages once a language is chosen", async () => {
+  it("names the library's language under its heading", async () => {
     renderLibrary({ kind: "account", user: learner });
-    fireEvent.change(await screen.findByLabelText("Language"), {
-      target: { value: "ja" },
-    });
-    expect(await itemTitles()).toEqual(["桃太郎"]);
+    expect(await screen.findByText("For learners of German.")).toBeDefined();
   });
 
   describe("for someone who cannot manage the library", () => {

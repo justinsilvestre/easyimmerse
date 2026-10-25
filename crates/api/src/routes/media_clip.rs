@@ -14,7 +14,7 @@ use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::principal::Principal;
-use crate::routes::library_files::preprocessed_clip;
+use crate::library_cues::preprocessed_clip;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
     chosen_audio_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
@@ -45,7 +45,7 @@ pub struct ClipQuery {
 
 /// Returns the window of the chosen audio track, else of the default audio track,
 /// encoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,
-/// from the clip rendered when the item was published.
+/// from the clip rendered for that cue.
 #[utoipa::path(
     get,
     path = "/projects/{id}/media/{media_id}/clip",
@@ -88,7 +88,7 @@ pub async fn get_media_clip(
 
 /// Encodes the window from `start_ms` to `end_ms` in player time of the media file's chosen audio track,
 /// else its default audio track, as AAC in a fragmented MP4 file.
-/// A media file from the library answers with the clip its item's publish rendered for that window.
+/// A media file from the library answers with the clip rendered for its item's cue of that window.
 pub async fn render_clip(
     state: &AppState,
     principal: &Principal,
