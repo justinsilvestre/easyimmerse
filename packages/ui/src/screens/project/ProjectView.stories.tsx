@@ -72,7 +72,9 @@ function sections(
         media={mediaItems}
         onAddMedia={fn()}
         onOpenLibrary={fn()}
-        importSources={[{ name: "example-plugin", label: "Add with Example plugin" }]}
+        importSources={[
+          { name: "example-plugin", label: "Add with Example plugin" },
+        ]}
         onImportMedia={fn()}
         onOpenMedia={fn()}
         onDeleteMedia={fn()}

@@ -3,8 +3,7 @@ import type { PluginForm } from "@easyimmerse/types";
 /** A form with one field of every control kind and an action of every style. */
 export const exampleImportForm: PluginForm = {
   title: "Import with Example plugin",
-  description:
-    "The plugin fetches the media and its subtitles.",
+  description: "The plugin fetches the media and its subtitles.",
   fields: [
     {
       id: "locator",

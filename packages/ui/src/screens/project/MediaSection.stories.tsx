@@ -110,6 +110,8 @@ export const Empty: Story = {
 export const EmptyWithAnImportSource: Story = {
   args: {
     media: [],
-    importSources: [{ name: "example-plugin", label: "Add with Example plugin" }],
+    importSources: [
+      { name: "example-plugin", label: "Add with Example plugin" },
+    ],
   },
 };

@@ -26,8 +26,8 @@ export function UnsupportedFormatDialog({
     >
       <p className="text-sm">
         Browsers don't support the format of <strong>{fileName}</strong>, but
-        the desktop app can play it. Your projects and flashcards will be
-        there too.
+        the desktop app can play it. Your projects and flashcards will be there
+        too.
       </p>
     </ModalDialog>
   );

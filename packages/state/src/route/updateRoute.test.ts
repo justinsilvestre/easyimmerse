@@ -113,7 +113,10 @@ const fetchStatusRequest = {
 
 const fetchStarted = [
   actions.navigated({ type: "openProject", projectId: "p1" }),
-  actions.mediaImportOpened({ name: "example-plugin", label: "Example plugin" }),
+  actions.mediaImportOpened({
+    name: "example-plugin",
+    label: "Example plugin",
+  }),
   actions.mediaImportStepTaken("add", []),
   actions.requestSettled(
     "project/p1/mediaImport/step",

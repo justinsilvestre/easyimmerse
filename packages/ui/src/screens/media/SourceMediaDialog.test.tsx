@@ -36,7 +36,9 @@ describe("SourceMediaDialog", () => {
 
   it("is named after the plugin until the form arrives", () => {
     renderDialog({ form: null });
-    expect(screen.getByRole("heading", { name: "Example plugin" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Example plugin" }),
+    ).toBeTruthy();
   });
 
   it("sends the pressed action with the form's input", () => {
