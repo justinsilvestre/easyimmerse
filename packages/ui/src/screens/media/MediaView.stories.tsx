@@ -330,7 +330,7 @@ export const ImportedThroughAPlugin: Story = {
     media: {
       projectName: "German series",
       title: "Eine Stadtführung durch die Altstadt",
-      source: { title: "Video site", isAvailable: true },
+      source: { title: "Example plugin", isAvailable: true },
     },
   },
 };
@@ -340,7 +340,7 @@ export const ImportedThroughAMissingPlugin: Story = {
     media: {
       projectName: "German series",
       title: "Eine Stadtführung durch die Altstadt",
-      source: { title: "downloader", isAvailable: false },
+      source: { title: "example-plugin", isAvailable: false },
     },
   },
 };

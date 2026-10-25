@@ -44,8 +44,8 @@ export const WithMedia: Story = {};
 export const WithImportSources: Story = {
   args: {
     importSources: [
-      { name: "downloader", label: "Add from a video site" },
-      { name: "podcast-feed", label: "Add from a podcast" },
+      { name: "example-plugin", label: "Add with Example plugin" },
+      { name: "second-plugin", label: "Add with Second plugin" },
     ],
   },
 };
@@ -110,6 +110,6 @@ export const Empty: Story = {
 export const EmptyWithAnImportSource: Story = {
   args: {
     media: [],
-    importSources: [{ name: "downloader", label: "Add from a video site" }],
+    importSources: [{ name: "example-plugin", label: "Add with Example plugin" }],
   },
 };

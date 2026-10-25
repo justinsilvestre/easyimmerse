@@ -20,7 +20,7 @@ import { subtitlesForm } from "./exampleMediaImport.ts";
 import { mediaImportsFeature } from "./mediaImportsFeature.ts";
 
 const goHome = actions.navigated({ type: "goHome" });
-const source = { name: "video-site", label: "Video site" };
+const source = { name: "example-plugin", label: "Example plugin" };
 const fetchDone = mediaFetchChecked({
   status: "done",
   media_file: exampleMediaFile("m1", "a.mkv"),

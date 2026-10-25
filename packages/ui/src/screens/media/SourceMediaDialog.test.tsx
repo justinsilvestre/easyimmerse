@@ -13,7 +13,7 @@ function renderDialog(
   const actions: [string, FormInput[]][] = [];
   render(
     <SourceMediaDialog
-      title="Video site"
+      title="Example plugin"
       form={exampleSourceMediaForm}
       isBusy={false}
       error={null}
@@ -36,7 +36,7 @@ describe("SourceMediaDialog", () => {
 
   it("is named after the plugin until the form arrives", () => {
     renderDialog({ form: null });
-    expect(screen.getByRole("heading", { name: "Video site" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Example plugin" })).toBeTruthy();
   });
 
   it("sends the pressed action with the form's input", () => {

@@ -10,7 +10,7 @@ const meta = {
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
-    title: "Video site",
+    title: "Example plugin",
     form: exampleSourceMediaForm,
     isBusy: false,
     error: null,

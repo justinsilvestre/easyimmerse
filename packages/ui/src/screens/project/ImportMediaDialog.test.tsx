@@ -17,7 +17,7 @@ function renderDialog(
   const actions: [string, FormInput[]][] = [];
   renderWithAppStore(
     <ImportMediaDialog
-      label="Add from a video site"
+      label="Add with Example plugin"
       form={exampleLookedUpForm}
       isBusy={false}
       job={null}
@@ -44,7 +44,7 @@ describe("ImportMediaDialog", () => {
   it("is named after the import button until the form arrives", () => {
     renderDialog({ form: null });
     expect(
-      screen.getByRole("heading", { name: "Add from a video site" }),
+      screen.getByRole("heading", { name: "Add with Example plugin" }),
     ).toBeTruthy();
   });
 

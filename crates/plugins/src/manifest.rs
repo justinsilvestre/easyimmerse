@@ -32,7 +32,7 @@ impl PluginManifest {
         let label = || {
             self.import_label
                 .clone()
-                .unwrap_or_else(|| format!("Add from {}", self.title()))
+                .unwrap_or_else(|| format!("Add with {}", self.title()))
         };
         (self.kind == PluginKind::MediaSource).then(label)
     }
@@ -147,10 +147,10 @@ interface_version = "0.1.0"
 
     #[test]
     fn labels_the_import_button_after_the_title_by_default() {
-        let text = with_line(MEDIA_SOURCE_MANIFEST, "title = \"Video Site\"");
+        let text = with_line(MEDIA_SOURCE_MANIFEST, "title = \"Example Plugin\"");
         assert_eq!(
             parse_manifest(&text).unwrap().import_label(),
-            Some("Add from Video Site".to_string())
+            Some("Add with Example Plugin".to_string())
         );
     }
 

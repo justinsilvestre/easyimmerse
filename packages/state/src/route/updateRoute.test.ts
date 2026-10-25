@@ -113,14 +113,14 @@ const fetchStatusRequest = {
 
 const fetchStarted = [
   actions.navigated({ type: "openProject", projectId: "p1" }),
-  actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
+  actions.mediaImportOpened({ name: "example-plugin", label: "Example plugin" }),
   actions.mediaImportStepTaken("add", []),
   actions.requestSettled(
     "project/p1/mediaImport/step",
     {
       kind: "submitImportStep",
       projectId: "p1",
-      request: { plugin: "video-site", action: "add", input: [] },
+      request: { plugin: "example-plugin", action: "add", input: [] },
     },
     { ok: true, data: { kind: "job", job: runningMediaSourceJob } },
   ),

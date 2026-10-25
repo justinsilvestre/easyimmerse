@@ -72,7 +72,7 @@ function sections(
         media={mediaItems}
         onAddMedia={fn()}
         onOpenLibrary={fn()}
-        importSources={[{ name: "downloader", label: "Add from a video site" }]}
+        importSources={[{ name: "example-plugin", label: "Add with Example plugin" }]}
         onImportMedia={fn()}
         onOpenMedia={fn()}
         onDeleteMedia={fn()}
