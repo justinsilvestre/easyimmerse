@@ -104,68 +104,50 @@ describe("LibraryManageScreen", () => {
     );
   });
 
-  describe("while the library has no language", () => {
-    const noLanguage = { "GET /library/settings": { language: null } };
-
-    it("asks which language the library is for", async () => {
-      renderManagement(noLanguage);
+  describe("while the library has no items", () => {
+    it("asks for the language of the media", async () => {
+      renderManagement();
       expect(
-        await screen.findByRole("form", { name: "Library language" }),
-      ).toBeDefined();
+        (await screen.findByLabelText<HTMLSelectElement>("Language")).value,
+      ).toBe("de");
     });
 
-    it("offers no way to add media", async () => {
-      renderManagement(noLanguage);
-      await screen.findByRole("form", { name: "Library language" });
-      expect(screen.queryByRole("button", { name: "Add media" })).toBeNull();
-    });
-
-    it("saves the chosen language", async () => {
-      const { client } = renderManagement({
-        ...noLanguage,
+    it("gives the library the language chosen for the first media", async () => {
+      const rendered = renderManagement({
         "PUT /library/settings": { language: "fr" },
       });
       fireEvent.change(await screen.findByLabelText("Language"), {
         target: { value: "fr" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Set language" }));
-      await waitFor(() =>
-        expect(
-          bodyOf(requestsTo(client.requests, "PUT", "/library/settings")[0]),
-        ).toEqual({ language: "fr" }),
-      );
+      await addVideo(rendered);
+      expect(
+        bodyOf(
+          requestsTo(rendered.client.requests, "PUT", "/library/settings")[0],
+        ),
+      ).toEqual({ language: "fr" });
     });
 
-    it("names the language once it is saved", async () => {
-      renderManagement({
-        ...noLanguage,
-        "PUT /library/settings": { language: "fr" },
-      });
-      fireEvent.change(await screen.findByLabelText("Language"), {
-        target: { value: "fr" },
-      });
-      fireEvent.click(screen.getByRole("button", { name: "Set language" }));
-      expect(await screen.findByText("For learners of French.")).toBeDefined();
+    it("keeps the library's language when it is the one chosen", async () => {
+      const rendered = renderManagement();
+      await addVideo(rendered);
+      expect(
+        requestsTo(rendered.client.requests, "PUT", "/library/settings"),
+      ).toHaveLength(0);
     });
   });
 
-  describe("once the library has a language", () => {
-    it("names it under the heading", async () => {
-      renderManagement();
+  describe("once the library has items", () => {
+    const withItems = { "GET /library/items": { items: [draft] } };
+
+    it("names their language under the heading", async () => {
+      renderManagement(withItems);
       expect(await screen.findByText("For learners of German.")).toBeDefined();
     });
 
-    it("lets it change while the library has no items", async () => {
-      renderManagement();
-      expect(
-        await screen.findByRole("button", { name: "Change" }),
-      ).toBeDefined();
-    });
-
-    it("keeps it fixed once the library has items", async () => {
-      renderManagement({ "GET /library/items": { items: [draft] } });
+    it("no longer asks for a language", async () => {
+      renderManagement(withItems);
       await screen.findByText("For learners of German.");
-      expect(screen.queryByRole("button", { name: "Change" })).toBeNull();
+      expect(screen.queryByLabelText("Language")).toBeNull();
     });
   });
 

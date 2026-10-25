@@ -7,7 +7,6 @@ import {
 import {
   actions,
   selectIsCreatingLibraryItem,
-  selectLibraryLanguageForm,
   selectServerConfig,
 } from "@easyimmerse/state";
 import { libraryProjectOf } from "../../lib/library/libraryProjectOf.ts";
@@ -17,14 +16,13 @@ import { useNavigate } from "../../useNavigate.ts";
 import { LibraryManagementView } from "./LibraryManagementView.tsx";
 
 /**
- * The library management screen, which only library managers reach: the library's language, every item, published or not,
- * and the way to add media. A new item opens in the manager's library project, which adding it makes when there is none yet.
+ * The library management screen, which only library managers reach: every item, published or not,
+ * and the way to add media, which sets the library's language while it has no items. A new item opens in the manager's library project, which adding it makes when there is none yet.
  */
 export function LibraryManageScreen() {
   const go = useNavigate();
   const dispatch = useAppDispatch();
   const isCreating = useAppSelector(selectIsCreatingLibraryItem);
-  const languageForm = useAppSelector(selectLibraryLanguageForm);
   const server = useAppSelector(selectServerConfig);
   const listing = useListLibraryItemsQuery();
   const settings = useGetLibrarySettingsQuery();
@@ -40,29 +38,23 @@ export function LibraryManageScreen() {
             : "loading"
       }
       language={language}
-      languageForm={languageForm}
       items={listing.data?.items ?? []}
       coverUrlOf={(item) => buildLibraryCoverUrl(server, item)}
       // Adding waits for the projects, so that the item opens in the library project made before.
       addStatus={
         isCreating ? "adding" : projects === undefined ? "waiting" : "ready"
       }
-      onSetLanguage={(chosen) =>
-        dispatch(actions.libraryLanguageSubmitted(chosen))
-      }
-      onChangeLanguage={(asks) =>
-        dispatch(actions.libraryLanguageChangeAsked(asks))
-      }
-      onAddMedia={(translationLanguage) =>
-        projects &&
-        language !== null &&
+      onAddMedia={(chosen, translationLanguage) => {
+        const itemsLanguage = chosen ?? language;
+        if (!projects || itemsLanguage === null) return;
         dispatch(
           actions.libraryMediaPickRequested({
             translationLanguage,
-            projectId: libraryProjectOf(projects, language),
+            libraryLanguage: itemsLanguage === language ? null : itemsLanguage,
+            projectId: libraryProjectOf(projects, itemsLanguage),
           }),
-        )
-      }
+        );
+      }}
       onEditItem={(itemId) => go({ type: "editLibraryItem", itemId })}
       onBack={() => go({ type: "openLibrary" })}
     />

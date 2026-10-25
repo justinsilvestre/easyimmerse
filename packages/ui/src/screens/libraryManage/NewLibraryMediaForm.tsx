@@ -7,16 +7,20 @@ import { languageOptions } from "../../lib/formatting/languages.ts";
 export type NewLibraryMediaStatus = "ready" | "waiting" | "adding";
 
 /**
- * The way to add media to the library: the translation language of the new item, and the "Add media" button,
+ * The way to add media to the library: the language of the media while the library has no items, which becomes the library's language,
+ * the translation language of the new item, and the "Add media" button,
  * which opens the file picker for a video, an audio file or a text, as a project's button does.
  */
 export function NewLibraryMediaForm({
   status,
+  languageChoice,
   onAddMedia,
 }: {
   status: NewLibraryMediaStatus;
-  /** Adds media whose translations and definitions are in the given language. */
-  onAddMedia: (translationLanguage: string) => void;
+  /** The language first chosen in the "Language" select, or null for no select, once the library's language is fixed. */
+  languageChoice: string | null;
+  /** Adds media in the chosen language, or in the library's fixed language for null, with translations and definitions in the translation language. */
+  onAddMedia: (language: string | null, translationLanguage: string) => void;
 }) {
   return (
     <form
@@ -25,18 +29,32 @@ export function NewLibraryMediaForm({
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
+        const chosen = form.get("language");
         if (status === "ready")
-          onAddMedia(String(form.get("translationLanguage")));
+          onAddMedia(
+            chosen === null ? null : String(chosen),
+            String(form.get("translationLanguage")),
+          );
       }}
     >
-      <SelectField
-        label="Translation language"
-        name="translationLanguage"
-        className="max-w-xs"
-        hint="Translations and definitions in this language."
-        options={languageOptions}
-        defaultValue="en"
-      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        {languageChoice !== null && (
+          <SelectField
+            label="Language"
+            name="language"
+            hint="The language of every video, audio file and text in the library."
+            options={languageOptions}
+            defaultValue={languageChoice}
+          />
+        )}
+        <SelectField
+          label="Translation language"
+          name="translationLanguage"
+          hint="Translations and definitions in this language."
+          options={languageOptions}
+          defaultValue="en"
+        />
+      </div>
       <div>
         <Button
           type="submit"

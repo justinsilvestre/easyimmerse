@@ -285,10 +285,6 @@ export {
   selectIsCreatingLibraryItem,
 } from "./screen/libraryManage/libraryCreation.ts";
 export {
-  type LibraryLanguageForm,
-  selectLibraryLanguageForm,
-} from "./screen/libraryManage/libraryLanguageForm.ts";
-export {
   cuesOfLibraryText,
   documentOfLibraryText,
   libraryChaptersOf,
