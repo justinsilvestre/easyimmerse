@@ -15,6 +15,12 @@ describe("libraryStatusText", () => {
     expect(libraryStatusText("processing", "document")).not.toContain("clip");
   });
 
+  it("tells that learners see changes to a published text at once", () => {
+    expect(libraryStatusText("published", "document")).toContain(
+      "they see your changes to it at once",
+    );
+  });
+
   it("tells what to do next when a video failed to be prepared", () => {
     expect(libraryStatusText("failed", "video")).toContain(
       "then publish again",

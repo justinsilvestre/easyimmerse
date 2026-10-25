@@ -27,6 +27,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Video: Story = {};
 
+export const Draft: Story = {
+  args: {
+    item: exampleLibraryItem({ has_cover: true, status: { kind: "draft" } }),
+  },
+};
+
 export const Text: Story = {
   args: {
     item: exampleLibraryItem({ kind: "document", difficulty: null, tags: [] }),

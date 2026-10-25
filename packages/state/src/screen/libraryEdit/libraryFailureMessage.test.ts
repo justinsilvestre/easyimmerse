@@ -19,11 +19,19 @@ describe("libraryFailureMessage", () => {
       expect(message.startsWith(`${didntHappen} `)).toBe(true);
     });
 
-    it("tells why and to unpublish it before changing it", () => {
+    it("tells that it is already published", () => {
       expect(message).toBe(
-        "“Im Park” couldn't be saved. It is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+        "“Im Park” couldn't be saved. It is already published.",
       );
     });
+  });
+
+  it("tells why the kind and translation language of a published item stay", () => {
+    expect(
+      messageFor({ status: 409, code: "fixed_while_published", message: "" }),
+    ).toBe(
+      "“Im Park” couldn't be saved. Learners added it to their projects with its kind and translation language, so these can't change while it is published.",
+    );
   });
 
   it("tells to wait while the item is being prepared", () => {

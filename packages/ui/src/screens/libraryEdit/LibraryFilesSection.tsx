@@ -1,11 +1,11 @@
 import type { LibraryItem } from "@easyimmerse/types";
 import { Button } from "../../components/common/Button.tsx";
 import { pluralize } from "../../lib/formatting/pluralize.ts";
-import { libraryLockOf, libraryLockText } from "./libraryLock.ts";
+import { isLibraryItemLocked, libraryLockText } from "./libraryLock.ts";
 
 /**
  * The file a library item was made from, which a button replaces by one picked on this device,
- * and for a video or audio item, where its subtitles are chosen. The file cannot change while the item is being prepared or is published.
+ * and for a video or audio item, where its subtitles are chosen. The file cannot change while the item is being prepared.
  */
 export function LibraryFilesSection({
   item,
@@ -16,7 +16,6 @@ export function LibraryFilesSection({
   isUploading: boolean;
   onReplaceFile: () => void;
 }) {
-  const lock = libraryLockOf(item.status);
   const isMedia = item.kind !== "document";
   const fileName = item.file_name;
   return (
@@ -27,9 +26,9 @@ export function LibraryFilesSection({
           ? "No file is uploaded yet."
           : `Made from ${fileName}, with ${pluralize(item.segment_count, isMedia ? "subtitle" : "paragraph")}.`}
       </p>
-      {lock ? (
+      {isLibraryItemLocked(item.status) ? (
         <p className="text-sm text-fg-muted">
-          {libraryLockText(lock, "replace its file", item.title)}
+          {libraryLockText("replace its file", item.title)}
         </p>
       ) : (
         <>

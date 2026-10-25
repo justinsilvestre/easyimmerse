@@ -1,8 +1,9 @@
 /** Why, and what to do next, for each failure the library's requests can end in, by the failure's code or status.
  * Each reads on from a sentence that names the library item, so "it" is the item. */
 const messages: Record<string, string> = {
-  item_published:
-    "It is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+  item_published: "It is already published.",
+  fixed_while_published:
+    "Learners added it to their projects with its kind and translation language, so these can't change while it is published.",
   item_processing:
     "The server is still preparing it for learners. Wait until its status changes, then try again.",
   uploads_unavailable:

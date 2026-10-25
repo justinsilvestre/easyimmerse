@@ -17,11 +17,11 @@ const statusTexts = {
   },
   published: {
     video:
-      "Learners can find this video in the library and add it to their projects. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
+      "Learners can find this video in the library and add it to their projects, and they see your changes to it at once. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
     audio:
-      "Learners can find this recording in the library and add it to their projects. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
+      "Learners can find this recording in the library and add it to their projects, and they see your changes to it at once. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
     document:
-      "Learners can find this text in the library and add it to their projects. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
+      "Learners can find this text in the library and add it to their projects, and they see your changes to it at once. Unpublishing it takes it away from them, but they keep the flashcards they made from it.",
   },
   failed: {
     video:

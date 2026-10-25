@@ -100,7 +100,7 @@ function OpenFileScreen({
 
 /**
  * The reader for a document item of the library, and the media screen for a video or audio item, once the item and its text arrive.
- * A library manager who opens an item that is not published, and is not being published, prepares its words there for learners.
+ * A library manager who opens an item that is not being published prepares its words there for learners, who see them at once when the item is published.
  */
 function LibraryFileScreen({
   project,
@@ -134,9 +134,7 @@ function LibraryFileScreen({
   const library = {
     item: item.data,
     text: text.data,
-    isEditing:
-      canManageLibrary(principal) &&
-      (status.kind === "draft" || status.kind === "failed"),
+    isEditing: canManageLibrary(principal) && status.kind !== "processing",
   };
   return item.data.kind === "document" ? (
     <ReaderScreen

@@ -12,7 +12,6 @@ import { languageOptions } from "../../lib/formatting/languages.ts";
 import { libraryDifficultyLabels } from "../../lib/library/libraryLabels.ts";
 import { LibraryCoverPicker } from "./LibraryCoverPicker.tsx";
 import { libraryDraftOf } from "./libraryDraftOf.ts";
-import { libraryLockOf } from "./libraryLock.ts";
 
 const difficultyOptions = [
   { value: "", label: "Not set" },
@@ -56,8 +55,7 @@ export function LibraryItemForm({
   onResetCover: () => void;
 }) {
   const [draft, change] = useReducer(changed, item, libraryDraftOf);
-  // The translation language is the language of the words' definitions, so it changes only with the words.
-  const isTranslationLanguageLocked = libraryLockOf(item.status) !== null;
+  const translationLanguageHint = translationLanguageHintOf(item);
   return (
     <div className="flex flex-col gap-6">
       <form
@@ -86,7 +84,8 @@ export function LibraryItemForm({
             label="Translation language"
             options={languageOptions}
             value={draft.translation_language}
-            disabled={isTranslationLanguageLocked}
+            hint={translationLanguageHint}
+            disabled={translationLanguageHint !== undefined}
             onChange={(event) =>
               change({ translation_language: event.target.value })
             }
@@ -131,4 +130,17 @@ export function LibraryItemForm({
       />
     </div>
   );
+}
+
+/** Why the translation language cannot change for now, or undefined while it can.
+ * Learners' projects of a published item were made for its translation language, so it stays as it is. */
+function translationLanguageHintOf(item: LibraryItem): string | undefined {
+  switch (item.status.kind) {
+    case "published":
+      return `Learners added “${item.title}” to their projects with this translation language, so it can't change now that it's published.`;
+    case "processing":
+      return `The translation language can't change while the server prepares “${item.title}” for learners.`;
+    default:
+      return undefined;
+  }
 }

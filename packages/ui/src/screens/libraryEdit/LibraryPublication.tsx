@@ -17,8 +17,8 @@ const statusTones = {
 
 /**
  * Where a library item stands, with what that means for learners and why its last publishing failed, and the actions that move it on:
- * "Fill in words from your dictionaries", which fills the subtitles that have no words yet, "Publish", "Unpublish",
- * and "Delete", which asks for confirmation in a dialog first and is not offered while the item is being prepared.
+ * "Fill in words from your dictionaries", which fills the subtitles that have no words yet, "Publish" for an item not yet published, "Unpublish",
+ * and "Delete", which asks for confirmation in a dialog first. While the item is being prepared, none of them is offered.
  */
 export function LibraryPublication({
   item,
@@ -44,7 +44,7 @@ export function LibraryPublication({
   onDelete: () => void;
 }) {
   const { status } = item;
-  const isEditable = status.kind === "draft" || status.kind === "failed";
+  const isPublishable = status.kind === "draft" || status.kind === "failed";
   const act = (action: () => void) => () => {
     if (!isBusy) action();
   };
@@ -73,24 +73,24 @@ export function LibraryPublication({
         </details>
       )}
       <div className="flex flex-wrap gap-2">
-        {isEditable && (
-          <>
-            <Button
-              aria-disabled={isBusy || undefined}
-              onClick={act(onProposeWords)}
-            >
-              Fill in words from your dictionaries
-            </Button>
-            <Button
-              variant="primary"
-              aria-disabled={isBusy || item.file_name === null || undefined}
-              onClick={act(() => {
-                if (item.file_name !== null) onPublish();
-              })}
-            >
-              Publish
-            </Button>
-          </>
+        {status.kind !== "processing" && (
+          <Button
+            aria-disabled={isBusy || undefined}
+            onClick={act(onProposeWords)}
+          >
+            Fill in words from your dictionaries
+          </Button>
+        )}
+        {isPublishable && (
+          <Button
+            variant="primary"
+            aria-disabled={isBusy || item.file_name === null || undefined}
+            onClick={act(() => {
+              if (item.file_name !== null) onPublish();
+            })}
+          >
+            Publish
+          </Button>
         )}
         {status.kind === "published" && (
           <Button

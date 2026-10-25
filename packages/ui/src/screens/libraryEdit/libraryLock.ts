@@ -1,22 +1,11 @@
 import type { LibraryItemStatus } from "@easyimmerse/types";
 
-/** Why an item's file, subtitles and words cannot change: it is being prepared, or it is published; null while they can. */
-export type LibraryLock = "processing" | "published" | null;
-
-/** Returns why an item in a status cannot have its file, subtitles or words changed. */
-export function libraryLockOf(status: LibraryItemStatus): LibraryLock {
-  return status.kind === "processing" || status.kind === "published"
-    ? status.kind
-    : null;
+/** Whether an item's file, subtitles and words cannot change for now, as while the server prepares the item for learners. */
+export function isLibraryItemLocked(status: LibraryItemStatus): boolean {
+  return status.kind === "processing";
 }
 
 /** What a locked item, whose title is given, asks of the library manager before `change` can be made, such as "change its words". */
-export function libraryLockText(
-  lock: Exclude<LibraryLock, null>,
-  change: string,
-  title: string,
-) {
-  return lock === "processing"
-    ? `Wait until the server has prepared “${title}” for learners, then unpublish it to ${change}.`
-    : `Unpublish “${title}” to ${change}.`;
+export function libraryLockText(change: string, title: string) {
+  return `Wait until the server has prepared “${title}” for learners, then ${change}.`;
 }

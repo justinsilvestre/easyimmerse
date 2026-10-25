@@ -75,13 +75,13 @@ export const Failed: Story = {
 
 export const Published: Story = { args: { item: exampleLibraryItem() } };
 
-export const ChangeRefused: Story = {
+export const ChangeRefusedWhilePreparing: Story = {
   args: {
-    item: exampleLibraryItem(),
+    item: exampleLibraryItem({ status: { kind: "processing" } }),
     activity: {
       ...idle,
       failure:
-        "The file of “Im Park” couldn't be replaced. It is published, so its file, subtitles and words can't change while learners use it. Unpublish it, make the change, then publish it again.",
+        "The file of “Im Park” couldn't be replaced. The server is still preparing it for learners. Wait until its status changes, then try again.",
     },
   },
 };
