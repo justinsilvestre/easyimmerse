@@ -4,6 +4,10 @@ const messages: Record<string, string> = {
   item_published: "It is already published.",
   fixed_while_published:
     "Learners added it to their projects with its kind and translation language, so these can't change while it is published.",
+  unreadable_file:
+    "The new file couldn't be read as video or audio, so it keeps its old file. Check that the new file plays, then try again.",
+  no_audio_track:
+    "The new file has no sound, so learners couldn't hear its clips. It keeps its old file. Choose a file with sound.",
   item_processing:
     "The server is still preparing it for learners. Wait until its status changes, then try again.",
   uploads_unavailable:

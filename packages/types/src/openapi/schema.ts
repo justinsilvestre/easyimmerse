@@ -6768,7 +6768,7 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryItem"];
                 };
             };
-            /** @description The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed */
+            /** @description The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed (`unreadable_file`) or has no audio track (`no_audio_track`) */
             400: {
                 headers: {
                     [name: string]: unknown;

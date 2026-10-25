@@ -154,6 +154,31 @@ async fn a_published_video_keeps_its_file_when_the_new_one_cannot_be_read() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn a_published_video_refuses_a_new_file_that_cannot_be_read_as_unreadable() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _dir) = library_server().await;
+    let (item, _) = published_video(&server).await;
+    let item_id = item["id"].as_str().unwrap();
+    let response = upload(&server, item_id, "broken.mp4", b"not a video".to_vec()).await;
+    assert_eq!(response.json()["code"], "unreadable_file");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_published_video_refuses_a_new_file_without_sound() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _dir) = library_server().await;
+    let (item, _) = published_video(&server).await;
+    let item_id = item["id"].as_str().unwrap();
+    let silent = read_fixture("sample-silent.mp4");
+    let response = upload(&server, item_id, "silent.mp4", silent).await;
+    assert_eq!(response.json()["code"], "no_audio_track");
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn the_words_of_an_item_being_published_cannot_change() {
     let dir = tempfile::tempdir().unwrap();
     let database = dir.path().join("easyimmerse.db");

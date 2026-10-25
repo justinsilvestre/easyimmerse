@@ -11,6 +11,7 @@ use easyimmerse_core::document::parse_document;
 use easyimmerse_core::library::{
     LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibraryItemStatus, LibraryText,
 };
+use easyimmerse_media::TrackKind;
 use serde::Deserialize;
 use utoipa::IntoParams;
 
@@ -62,7 +63,7 @@ pub struct LibraryMediaQuery {
     request_body(description = "The file's bytes", content(("application/octet-stream"))),
     responses(
         (status = 200, description = "The item with its new file", body = LibraryItem),
-        (status = 400, description = "The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed", body = ApiError),
+        (status = 400, description = "The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed (`unreadable_file`) or has no audio track (`no_audio_track`)", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
@@ -117,6 +118,13 @@ async fn store_upload(
     write_upload(body, file, length).await?;
     let content = read_upload(state, item, paths).await?;
     let change = begin_cue_change(state, &item.id).await?;
+    // An item that was published while the file was being received needs the probe a published item gets.
+    let content = match content {
+        UploadContent::Nothing if change.item.status == LibraryItemStatus::Published => {
+            read_upload(state, &change.item, paths).await?
+        }
+        content => content,
+    };
     replace_source(paths, &change.item, file_name).await?;
     let (item_id, file_name) = (item.id.clone(), file_name.to_string());
     let stored = state
@@ -149,6 +157,13 @@ async fn read_upload(
             let probed = probe_media(state, &upload)
                 .await
                 .map_err(unreadable_upload)?;
+            if probed.tracks_of_kind(TrackKind::Audio).next().is_none() {
+                return Err(ApiFailure::new(
+                    StatusCode::BAD_REQUEST,
+                    "no_audio_track",
+                    "the file has no audio track, so learners could not hear its clips",
+                ));
+            }
             Ok(UploadContent::Duration(probed.duration_ms))
         }
         _ => Ok(UploadContent::Nothing),
@@ -160,10 +175,14 @@ fn unreadable_upload(failure: ApiFailure) -> ApiFailure {
     if failure.status == StatusCode::SERVICE_UNAVAILABLE {
         return failure;
     }
-    bad_request(format!(
-        "the file could not be read as video or audio: {}",
-        failure.error.message
-    ))
+    ApiFailure::new(
+        StatusCode::BAD_REQUEST,
+        "unreadable_file",
+        format!(
+            "the file could not be read as video or audio: {}",
+            failure.error.message
+        ),
+    )
 }
 
 /// Puts the cover of the new file in place. The file is stored by then, so a cover that cannot be made leaves the item without one rather than failing the upload.

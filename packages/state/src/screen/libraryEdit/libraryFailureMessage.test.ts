@@ -34,6 +34,22 @@ describe("libraryFailureMessage", () => {
     );
   });
 
+  it("tells to choose a file with sound when the new file has none", () => {
+    expect(
+      messageFor({ status: 400, code: "no_audio_track", message: "" }),
+    ).toBe(
+      "“Im Park” couldn't be saved. The new file has no sound, so learners couldn't hear its clips. It keeps its old file. Choose a file with sound.",
+    );
+  });
+
+  it("tells to check a new file that can't be read", () => {
+    expect(
+      messageFor({ status: 400, code: "unreadable_file", message: "" }),
+    ).toBe(
+      "“Im Park” couldn't be saved. The new file couldn't be read as video or audio, so it keeps its old file. Check that the new file plays, then try again.",
+    );
+  });
+
   it("tells to wait while the item is being prepared", () => {
     expect(
       messageFor({ status: 409, code: "item_processing", message: "" }),
