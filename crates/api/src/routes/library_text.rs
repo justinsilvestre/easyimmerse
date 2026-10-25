@@ -3,15 +3,17 @@
 use axum::extract::{Path, State};
 use axum::{Extension, Json};
 use easyimmerse_core::library::{
-    ApplyLibraryEntry, LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind, LibrarySegment,
-    LibrarySubtitles, LibraryText, LibraryWord, validate_words,
+    ApplyLibraryEntry, LibraryCover, LibraryItem, LibraryItemId, LibraryItemKind,
+    LibraryItemStatus, LibrarySegment, LibrarySubtitles, LibraryText, LibraryWord, validate_words,
 };
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::library_manager::LibraryManager;
 use crate::auth::principal::Principal;
+use crate::library_covers::refresh_cover;
+use crate::library_cues::begin_cue_change;
 use crate::library_proposals::propose_words;
-use crate::library_segments::text_of_subtitles;
+use crate::library_segments::{text_of_subtitles, with_screenshot_times};
 use crate::routes::library_support::{load_editable_item, load_visible_item};
 use crate::routes::subtitles::parse_subtitle_text;
 use crate::state::AppState;
@@ -44,7 +46,7 @@ pub async fn get_library_text(
 
 /// Replaces the segments of a video or audio item with the cues of the subtitles, without words.
 /// Each cue of the translation subtitles is joined to the target cue it overlaps most.
-/// An automatic cover goes, to be rendered again from the new first cue when the item is published.
+/// Learners of a published item see the new segments at once.
 #[utoipa::path(
     put,
     path = "/library/items/{item_id}/subtitles",
@@ -59,7 +61,7 @@ pub async fn get_library_text(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -84,23 +86,47 @@ pub async fn put_library_subtitles(
     Ok(Json(store_library_text(&state, &item, text).await?))
 }
 
-/// Replaces the segments of a video or audio item. An automatic cover goes, to be rendered again from the new first cue when the item is published.
+/// Replaces the segments of a video or audio item, giving each cue of a video its screenshot time.
+/// A published item's learners see the new segments at once, and its automatic cover is rendered again from the new first cue;
+/// an unpublished item's automatic cover goes, to be rendered again when the item is published.
 pub async fn store_library_text(
     state: &AppState,
     item: &LibraryItem,
     text: LibraryText,
 ) -> Result<LibraryText, ApiFailure> {
+    let change = begin_cue_change(state, &item.id).await?;
+    let item = change.item.clone();
+    let text = match item.kind {
+        LibraryItemKind::Video => LibraryText {
+            segments: with_screenshot_times(text.segments),
+            ..text
+        },
+        LibraryItemKind::Audio | LibraryItemKind::Document => text,
+    };
     // The automatic cover of a video is taken at its first cue, which the new subtitles may move.
-    let drops_cover = item.cover == LibraryCover::Automatic;
+    let is_automatic = item.cover == LibraryCover::Automatic;
+    let is_published = item.status == LibraryItemStatus::Published;
     let item_id = item.id.clone();
-    state
+    let stored = state
         .with_storage(move |storage| {
-            if drops_cover {
+            if is_automatic && !is_published {
                 storage.set_library_cover(&item_id, None)?;
             }
             storage.replace_library_segments(&item_id, &text)
         })
-        .await
+        .await?;
+    drop(change);
+    if is_automatic
+        && is_published
+        && let Err(failure) = refresh_cover(state, &item).await
+    {
+        tracing::warn!(
+            "the cover of library item {} could not be made: {}",
+            item.id.0,
+            failure.error.message
+        );
+    }
+    Ok(stored)
 }
 
 /// Divides the segments that have no words yet into words, by the longest match at each place in the manager's own dictionaries.
@@ -117,7 +143,7 @@ pub async fn store_library_text(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -149,7 +175,7 @@ pub async fn propose_library_words(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item, or no such segment of it", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -188,7 +214,7 @@ pub async fn put_library_words(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "`forbidden`: the principal does not manage the library", body = ApiError),
         (status = 404, description = "No such item", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the item is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the item is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]

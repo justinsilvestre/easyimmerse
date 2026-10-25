@@ -77,7 +77,7 @@ pub async fn list_subtitle_tracks(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths, or the media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project, or no file at the given path", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the media file is from a library item that is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -211,7 +211,7 @@ pub async fn get_subtitle_cues(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project, or a named track is not on it", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the media file is from a library item that is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]

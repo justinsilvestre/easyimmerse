@@ -9,7 +9,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::auth::library_manager::LibraryManager;
 use crate::auth::principal::Principal;
 use crate::library_publish::start_library_publish;
-use crate::routes::library_support::{item_processing, load_editable_item, load_item};
+use crate::routes::library_support::{item_processing, load_item, require_publishable};
 use crate::state::AppState;
 
 /// Starts preparing the clip and screenshot of every cue, and the cover, in the background.
@@ -40,7 +40,8 @@ pub async fn publish_library_item(
     Extension(principal): Extension<Principal>,
     Path(item_id): Path<LibraryItemId>,
 ) -> Result<(StatusCode, Json<LibraryItem>), ApiFailure> {
-    let item = load_editable_item(&state, &item_id).await?;
+    let item = load_item(&state, &item_id).await?;
+    require_publishable(&item)?;
     if item.file_name.is_none() {
         return Err(bad_request("the item needs a file before it is published"));
     }

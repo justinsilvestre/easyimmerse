@@ -1,5 +1,5 @@
 //! Where the files of a library item live: `<uploads>/library/<item id>/`, holding the uploaded `source.<ext>`,
-//! the `cues/<segment index>.m4a` clips and `cues/<segment index>.jpg` screenshots rendered at publish,
+//! the `cues/<segment index>.m4a` clips and `cues/<segment index>.jpg` screenshots rendered at publish or on request,
 //! and the cover picture, `cover.<ext>` with the extension of its type.
 
 use std::path::{Path, PathBuf};

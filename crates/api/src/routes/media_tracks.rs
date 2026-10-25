@@ -14,7 +14,7 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, internal};
 use crate::auth::principal::Principal;
-use crate::library_tracks::editable_library_item_of;
+use crate::library_tracks::save_track_selection;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{probe_media, resolve_source_path};
 use crate::state::AppState;
@@ -113,7 +113,7 @@ pub async fn list_embedded_subtitle_tracks(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the media file is from a library item that is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -123,13 +123,10 @@ pub async fn set_media_track_selection(
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(selection): Json<TrackSelection>,
 ) -> Result<StatusCode, ApiFailure> {
-    let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
-    editable_library_item_of(&state, &principal, &media_file).await?;
+    let media_file = load_media_file(&state, project_id, media_id).await?;
     let json = serde_json::to_string(&selection)
         .map_err(|error| internal(format!("could not encode the track selection: {error}")))?;
-    state
-        .with_storage(move |storage| storage.set_track_selection_json(&media_id, Some(&json)))
-        .await?;
+    save_track_selection(&state, &principal, &media_file, Some(json)).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -148,7 +145,7 @@ pub async fn set_media_track_selection(
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
-        (status = 409, description = "`item_published` or `item_processing`: the media file is from a library item that is published or being published", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -157,10 +154,7 @@ pub async fn clear_media_track_selection(
     Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<StatusCode, ApiFailure> {
-    let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
-    editable_library_item_of(&state, &principal, &media_file).await?;
-    state
-        .with_storage(move |storage| storage.set_track_selection_json(&media_id, None))
-        .await?;
+    let media_file = load_media_file(&state, project_id, media_id).await?;
+    save_track_selection(&state, &principal, &media_file, None).await?;
     Ok(StatusCode::NO_CONTENT)
 }

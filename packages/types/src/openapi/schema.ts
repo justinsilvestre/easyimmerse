@@ -657,7 +657,8 @@ export interface paths {
         /**
          * Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.
          *     A document item's file is parsed at once into one segment per paragraph, which replace the item's text.
-         *     Unless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.
+         *     A published video or audio item keeps its old file unless the new one can be probed, and learners play the new one at once.
+         *     Unless a cover was uploaded, the cover of the old file goes. An EPUB file's own cover takes its place, as does a published video's cover frame from the new file.
          */
         put: operations["uploadLibraryFile"];
         post?: never;
@@ -737,7 +738,7 @@ export interface paths {
         /**
          * Replaces the segments of a video or audio item with the cues of the subtitles, without words.
          *     Each cue of the translation subtitles is joined to the target cue it overlaps most.
-         *     An automatic cover goes, to be rendered again from the new first cue when the item is published.
+         *     Learners of a published item see the new segments at once.
          */
         put: operations["putLibrarySubtitles"];
         post?: never;
@@ -1308,7 +1309,7 @@ export interface paths {
         /**
          * Returns the window of the chosen audio track, else of the default audio track,
          *     encoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,
-         *     from the clip rendered when the item was published.
+         *     from the clip rendered for that cue.
          */
         get: operations["getMediaClip"];
         put?: never;
@@ -1345,7 +1346,7 @@ export interface paths {
         /**
          * Returns the frame of the chosen video track at the given time, else of the default video track,
          *     as a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues
-         *     is served, from the screenshot rendered when the item was published.
+         *     is served, from the screenshot rendered for that cue.
          */
         get: operations["getMediaFrame"];
         put?: never;
@@ -6110,7 +6111,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change */
+            /** @description `fixed_while_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6311,7 +6312,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the item is published or being published */
+            /** @description `item_processing`: the item is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6767,7 +6768,7 @@ export interface operations {
                     "application/json": components["schemas"]["LibraryItem"];
                 };
             };
-            /** @description The file name is empty, the body was not as long as its `Content-Length`, or a document could not be parsed */
+            /** @description The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6803,7 +6804,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the item is published or being published; or `uploads_unavailable`: this server keeps no library files */
+            /** @description `item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6823,6 +6824,15 @@ export interface operations {
             };
             /** @description Unexpected Host header */
             421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description A published video or audio item, and this server cannot probe media (code `conversion_unavailable`) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6880,7 +6890,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the item is published or being published */
+            /** @description `item_processing`: the item is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7049,7 +7059,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the item is published or being published */
+            /** @description `item_processing`: the item is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7130,7 +7140,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the item is published or being published */
+            /** @description `item_processing`: the item is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10154,7 +10164,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            /** @description `item_processing`: the media file is from a library item that is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10289,7 +10299,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            /** @description `item_processing`: the media file is from a library item that is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10485,7 +10495,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            /** @description `item_processing`: the media file is from a library item that is being published */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10553,7 +10563,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description `item_published` or `item_processing`: the media file is from a library item that is published or being published */
+            /** @description `item_processing`: the media file is from a library item that is being published */
             409: {
                 headers: {
                     [name: string]: unknown;

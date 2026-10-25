@@ -10,10 +10,12 @@ use easyimmerse_storage::{OwnerId, Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::auth::principal::Principal;
-use crate::library_covers::{midpoint, refresh_cover};
+use crate::library_covers::refresh_cover;
+use crate::library_cues::remove_cues;
 use crate::library_paths::LibraryItemPaths;
+use crate::library_segments::with_screenshot_times;
 use crate::routes::library_support::{
-    item_paths, item_processing, load_item, require_editable, source_path,
+    item_paths, item_processing, load_item, require_publishable, source_path,
 };
 use crate::routes::media_clip::render_clip_at;
 use crate::routes::media_frame::render_frame_at;
@@ -36,6 +38,8 @@ pub async fn start_library_publish(
         locate_ffmpeg(state)?;
     }
     let (id, owner) = (item.id.clone(), principal.owner_id());
+    // A change to the item's file, segments or tracks that is under way finishes before the publish reads them.
+    let guard = state.library_cues.write().await;
     let begun = state
         .with_storage(move |storage| {
             let begun = storage.begin_library_publish(&id)?;
@@ -45,11 +49,14 @@ pub async fn start_library_publish(
             Ok(begun)
         })
         .await?;
+    drop(guard);
     let Some(processing) = begun else {
-        require_editable(&load_item(state, &item.id).await?)?;
+        require_publishable(&load_item(state, &item.id).await?)?;
         return Err(item_processing());
     };
-    let task_state = state.clone();
+    // The file may have been replaced while the publish waited for the lock.
+    let source = source_path(&paths, &processing).unwrap_or(source);
+    let (task_state, item) = (state.clone(), processing.clone());
     tokio::spawn(async move {
         let outcome = run_publish(task_state.clone(), item.clone(), paths, source).await;
         record_outcome(&task_state, &item, outcome).await;
@@ -129,6 +136,7 @@ async fn publish(
         path: source,
         selection: selection.as_deref(),
     };
+    remove_cues(paths).await?;
     create_dir(&paths.cues_dir()).await?;
     render_clips(state, paths, &source, &text.segments).await?;
     if item.kind == LibraryItemKind::Video {
@@ -183,17 +191,6 @@ async fn render_screenshots(
     Ok(())
 }
 
-/// Gives every cue with a time window its screenshot time, the midpoint of the window.
-fn with_screenshot_times(segments: Vec<LibrarySegment>) -> Vec<LibrarySegment> {
-    segments
-        .into_iter()
-        .map(|segment| LibrarySegment {
-            screenshot_at_ms: segment.start_ms.zip(segment.end_ms).map(midpoint),
-            ..segment
-        })
-        .collect()
-}
-
 async fn create_dir(dir: &Path) -> Result<(), ApiFailure> {
     tokio::fs::create_dir_all(dir)
         .await
@@ -204,34 +201,4 @@ async fn write_file(path: &Path, bytes: &[u8]) -> Result<(), ApiFailure> {
     tokio::fs::write(path, bytes)
         .await
         .map_err(|error| internal(format!("{} could not be written: {error}", path.display())))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn segment(index: u32, window: Option<(u64, u64)>) -> LibrarySegment {
-        LibrarySegment {
-            index,
-            chapter_index: None,
-            start_ms: window.map(|(start, _)| start),
-            end_ms: window.map(|(_, end)| end),
-            screenshot_at_ms: None,
-            text: "Hallo.".to_string(),
-            translation: None,
-            words: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn takes_the_screenshot_at_the_midpoint_of_the_cue() {
-        let segments = with_screenshot_times(vec![segment(0, Some((1_000, 2_001)))]);
-        assert_eq!(segments[0].screenshot_at_ms, Some(1_500));
-    }
-
-    #[test]
-    fn takes_no_screenshot_of_a_segment_without_times() {
-        let segments = with_screenshot_times(vec![segment(0, None)]);
-        assert_eq!(segments[0].screenshot_at_ms, None);
-    }
 }

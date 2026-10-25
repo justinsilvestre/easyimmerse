@@ -1,5 +1,5 @@
-//! The audio and video tracks of a library item: the library manager chooses them in their own media file of the item
-//! while the item is a draft, and learners play them without choosing others. The test that publishes a video skips when ffmpeg and ffprobe are not found.
+//! The audio and video tracks of a library item: the library manager chooses them in their own media file of the item,
+//! and learners play them without choosing others. The test that publishes a video skips when ffmpeg and ffprobe are not found.
 
 use serde_json::{Value, json};
 
@@ -177,16 +177,22 @@ async fn a_library_manager_chooses_the_tracks_of_a_draft() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn a_library_manager_may_not_choose_the_tracks_of_a_published_item() {
+async fn a_learner_plays_the_tracks_the_manager_chooses_after_publishing() {
     let (server, _dir) = library_server().await;
     let item_id = document_item(&server).await;
     let (project_id, media_id) = add_as_manager(&server, &item_id).await;
     publish(&server, &item_id).await;
-    let body: Value = serde_json::from_str(SECOND_AUDIO).unwrap();
-    let path = track_selection_path(&project_id, &media_id);
-    let response = server.put_json(&path, &body).await;
+    let token = sign_up(&server, "learner@example.com").await;
+    let path = format!("/library/items/{item_id}/add");
+    let body = json!({ "project_id": null });
+    let added = send_as(&server, &token, "POST", &path, Some(&body))
+        .await
+        .json();
+    choose_second_audio(&server, &project_id, &media_id).await;
+    let media = format!("/projects/{}/media", added["project_id"].as_str().unwrap());
+    let listed = send_as(&server, &token, "GET", &media, None).await.json();
     assert_eq!(
-        (response.status, response.json()["code"].clone()),
-        (409, json!("item_published"))
+        listed["media_files"][0]["track_selection_json"],
+        json!(SECOND_AUDIO)
     );
 }

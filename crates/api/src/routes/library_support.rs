@@ -1,4 +1,4 @@
-//! What the library routes share: loading an item as the principal may see it, refusing edits to a published item,
+//! What the library routes share: loading an item as the principal may see it, refusing changes the item's status does not allow,
 //! and finding the item's files.
 
 use axum::http::StatusCode;
@@ -54,7 +54,7 @@ pub async fn load_published_item(
     }
 }
 
-/// Loads an item whose file, text or words may change: one that is neither published nor being published.
+/// Loads an item whose file, text or words may change: any item that is not being published.
 pub async fn load_editable_item(
     state: &AppState,
     item_id: &LibraryItemId,
@@ -64,10 +64,34 @@ pub async fn load_editable_item(
     Ok(item)
 }
 
-/// Refuses a change to the file, text or words of an item that is published or being published.
+/// Refuses a change to the file, text or words of an item that is being published.
 pub fn require_editable(item: &LibraryItem) -> Result<(), ApiFailure> {
     match item.status {
+        LibraryItemStatus::Processing => Err(item_processing()),
+        LibraryItemStatus::Draft
+        | LibraryItemStatus::Failed { .. }
+        | LibraryItemStatus::Published => Ok(()),
+    }
+}
+
+/// Refuses to publish an item that is already published or being published.
+pub fn require_publishable(item: &LibraryItem) -> Result<(), ApiFailure> {
+    match item.status {
         LibraryItemStatus::Published => Err(item_published()),
+        LibraryItemStatus::Processing => Err(item_processing()),
+        LibraryItemStatus::Draft | LibraryItemStatus::Failed { .. } => Ok(()),
+    }
+}
+
+/// Refuses to change the kind or translation language of an item that is published or being published,
+/// since learners' projects of the item were made for them.
+pub fn require_unfixed(item: &LibraryItem) -> Result<(), ApiFailure> {
+    match item.status {
+        LibraryItemStatus::Published => Err(ApiFailure::new(
+            StatusCode::CONFLICT,
+            "fixed_while_published",
+            "the kind and translation language of a published item cannot change",
+        )),
         LibraryItemStatus::Processing => Err(item_processing()),
         LibraryItemStatus::Draft | LibraryItemStatus::Failed { .. } => Ok(()),
     }
@@ -77,7 +101,7 @@ pub fn item_published() -> ApiFailure {
     ApiFailure::new(
         StatusCode::CONFLICT,
         "item_published",
-        "the item is published; unpublish it before changing its file, text or words",
+        "the item is already published",
     )
 }
 

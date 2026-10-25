@@ -2409,7 +2409,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change",
+            "description": "`fixed_while_published` or `item_processing`: the kind and translation language of an item that is published or being published cannot change",
             "content": {
               "application/json": {
                 "schema": {
@@ -2671,7 +2671,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3233,7 +3233,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.\nUnless a cover was uploaded, the cover of the old file goes, and an EPUB file's own cover takes its place.",
+        "summary": "Stores the request body as the item's file, replacing any earlier one. `Content-Length` is required.\nA document item's file is parsed at once into one segment per paragraph, which replace the item's text.\nA published video or audio item keeps its old file unless the new one can be probed, and learners play the new one at once.\nUnless a cover was uploaded, the cover of the old file goes. An EPUB file's own cover takes its place, as does a published video's cover frame from the new file.",
         "operationId": "uploadLibraryFile",
         "parameters": [
           {
@@ -3273,7 +3273,7 @@
             }
           },
           "400": {
-            "description": "The file name is empty, the body was not as long as its `Content-Length`, or a document could not be parsed",
+            "description": "The file name is empty, the body was not as long as its `Content-Length`, a document could not be parsed, or the file of a published video or audio item could not be probed",
             "content": {
               "application/json": {
                 "schema": {
@@ -3313,7 +3313,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published; or `uploads_unavailable`: this server keeps no library files",
+            "description": "`item_processing`: the item is being published; or `uploads_unavailable`: this server keeps no library files",
             "content": {
               "application/json": {
                 "schema": {
@@ -3334,6 +3334,16 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A published video or audio item, and this server cannot probe media (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3410,7 +3420,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3638,7 +3648,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -3670,7 +3680,7 @@
         "tags": [
           "library"
         ],
-        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.\nAn automatic cover goes, to be rendered again from the new first cue when the item is published.",
+        "summary": "Replaces the segments of a video or audio item with the cues of the subtitles, without words.\nEach cue of the translation subtitles is joined to the target cue it overlaps most.\nLearners of a published item see the new segments at once.",
         "operationId": "putLibrarySubtitles",
         "parameters": [
           {
@@ -3745,7 +3755,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the item is published or being published",
+            "description": "`item_processing`: the item is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -6526,7 +6536,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,\nfrom the clip rendered when the item was published.",
+        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file. For a media file from the library, only the exact window of one of its cues is served,\nfrom the clip rendered for that cue.",
         "operationId": "getMediaClip",
         "parameters": [
           {
@@ -6783,7 +6793,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Returns the frame of the chosen video track at the given time, else of the default video track,\nas a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues\nis served, from the screenshot rendered when the item was published.",
+        "summary": "Returns the frame of the chosen video track at the given time, else of the default video track,\nas a JPEG image at most 640 pixels wide. For a media file from the library, only the screenshot time of one of its cues\nis served, from the screenshot rendered for that cue.",
         "operationId": "getMediaFrame",
         "parameters": [
           {
@@ -7874,7 +7884,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8063,7 +8073,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8343,7 +8353,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {
@@ -8429,7 +8439,7 @@
             }
           },
           "409": {
-            "description": "`item_published` or `item_processing`: the media file is from a library item that is published or being published",
+            "description": "`item_processing`: the media file is from a library item that is being published",
             "content": {
               "application/json": {
                 "schema": {

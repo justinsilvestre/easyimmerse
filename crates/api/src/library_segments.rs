@@ -4,6 +4,8 @@ use easyimmerse_core::document::Document;
 use easyimmerse_core::library::{LibrarySegment, LibraryText};
 use easyimmerse_core::timed_text::Cue;
 
+use crate::library_covers::midpoint;
+
 /// One segment per paragraph of the document, in order, with the titles of its chapters.
 pub fn text_of_document(document: &Document) -> LibraryText {
     let paragraphs = document
@@ -67,6 +69,17 @@ pub fn text_of_subtitles(target: &[Cue], translation: &[Cue]) -> LibraryText {
         segments,
         chapter_titles: Vec::new(),
     }
+}
+
+/// Gives every cue with a time window its screenshot time, the midpoint of the window.
+pub fn with_screenshot_times(segments: Vec<LibrarySegment>) -> Vec<LibrarySegment> {
+    segments
+        .into_iter()
+        .map(|segment| LibrarySegment {
+            screenshot_at_ms: segment.start_ms.zip(segment.end_ms).map(midpoint),
+            ..segment
+        })
+        .collect()
 }
 
 /// Gives each new segment the words of the old segment it repeats: one with the same text at the same times.
@@ -231,6 +244,21 @@ mod tests {
         let new = text_of_subtitles(&[cue(1, 500, 1_000, "Hallo.")], &[]);
         let kept = with_words_kept(new, &[worded(&old.segments[0])]);
         assert!(kept.segments[0].words.is_empty());
+    }
+
+    #[test]
+    fn takes_the_screenshot_at_the_midpoint_of_the_cue() {
+        let text = text_of_subtitles(&[cue(1, 1_000, 2_001, "Hallo.")], &[]);
+        assert_eq!(
+            with_screenshot_times(text.segments)[0].screenshot_at_ms,
+            Some(1_500)
+        );
+    }
+
+    #[test]
+    fn takes_no_screenshot_of_a_segment_without_times() {
+        let segments = text_of_document(&document()).segments;
+        assert_eq!(with_screenshot_times(segments)[0].screenshot_at_ms, None);
     }
 
     #[test]

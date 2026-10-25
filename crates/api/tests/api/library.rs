@@ -40,7 +40,7 @@ async fn put_library_language(server: &TestServer, language: Value) -> TestRespo
 }
 
 /// A server with open sign-up on the storage that keeps library files in the directory.
-async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
+pub(crate) async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
     let uploads = UploadsConfig {
         dir: dir.path().join("uploads"),
         account_quota_bytes: Some(1_000_000),
@@ -54,7 +54,7 @@ async fn library_server_on(storage: Storage, dir: &TempDir) -> TestServer {
     spawn_configured_test_server(configure, storage, ServeOptions::default()).await
 }
 
-fn draft(kind: &str) -> Value {
+pub(crate) fn draft(kind: &str) -> Value {
     json!({
         "title": "Der Hund",
         "description": "A short text",
@@ -103,7 +103,7 @@ pub(crate) async fn document_item(server: &TestServer) -> String {
     item_id
 }
 
-fn word(start: u32, end: u32, term: &str) -> Value {
+pub(crate) fn word(start: u32, end: u32, term: &str) -> Value {
     json!({
         "start": start,
         "end": end,
@@ -111,7 +111,7 @@ fn word(start: u32, end: u32, term: &str) -> Value {
     })
 }
 
-async fn put_words(server: &TestServer, item_id: &str, words: Value) -> TestResponse {
+pub(crate) async fn put_words(server: &TestServer, item_id: &str, words: Value) -> TestResponse {
     let path = format!("/library/items/{item_id}/segments/0/words");
     server.put_json(&path, &words).await
 }
@@ -144,7 +144,7 @@ pub(crate) async fn published_document(server: &TestServer) -> String {
     item_id
 }
 
-async fn add_item(
+pub(crate) async fn add_item(
     server: &TestServer,
     token: &str,
     item_id: &str,
@@ -420,17 +420,6 @@ async fn overlapping_words_are_refused() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn the_words_of_a_published_item_cannot_change() {
-    let (server, _dir) = library_server().await;
-    let item_id = published_document(&server).await;
-    let response = put_words(&server, &item_id, json!([])).await;
-    assert_eq!(
-        (response.status, response.json()["code"].clone()),
-        (409, json!("item_published"))
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
 async fn the_translation_language_of_a_published_item_cannot_change() {
     let (server, _dir) = library_server().await;
     let item_id = published_document(&server).await;
@@ -441,7 +430,7 @@ async fn the_translation_language_of_a_published_item_cannot_change() {
         .await;
     assert_eq!(
         (response.status, response.json()["code"].clone()),
-        (409, json!("item_published"))
+        (409, json!("fixed_while_published"))
     );
 }
 
@@ -486,7 +475,7 @@ async fn applying_an_entry_changes_every_word_with_its_text_and_no_other() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn applying_an_entry_to_a_published_item_is_refused() {
+async fn applying_an_entry_to_a_published_item_changes_its_words() {
     let (server, _dir) = library_server().await;
     let item_id = published_document(&server).await;
     let entry =
@@ -495,7 +484,10 @@ async fn applying_an_entry_to_a_published_item_is_refused() {
     let response = server
         .post_json(&format!("/library/items/{item_id}/apply-entry"), &body)
         .await;
-    assert_eq!(response.json()["code"], "item_published");
+    assert_eq!(
+        response.json()["segments"][0]["words"][0]["entry"]["l1_definition"],
+        "a dog"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
