@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use easyimmerse_api::pairing_codes::PairingCodeState;
-use easyimmerse_api::{ApiConfig, AppState, build_router};
+use easyimmerse_api::{API_PATH_PREFIX, ApiConfig, AppState, build_router};
 use serde_json::json;
 use tokio::net::TcpListener;
 
@@ -124,7 +124,7 @@ async fn a_wrong_code_is_not_found() {
 #[tokio::test(flavor = "multi_thread")]
 async fn an_expired_code_is_not_found() {
     let base_url = spawn_server_with_expiring_codes().await;
-    let issued = TestRequest::to("POST", format!("{base_url}/pairing/code"))
+    let issued = TestRequest::to("POST", format!("{base_url}{API_PATH_PREFIX}/pairing/code"))
         .with_token(TOKEN)
         .send()
         .await;
@@ -132,7 +132,7 @@ async fn an_expired_code_is_not_found() {
         .as_str()
         .unwrap_or_default()
         .to_string();
-    let response = TestRequest::to("POST", format!("{base_url}/pairing/claim"))
+    let response = TestRequest::to("POST", format!("{base_url}{API_PATH_PREFIX}/pairing/claim"))
         .json(&json!({ "code": code }))
         .send()
         .await;

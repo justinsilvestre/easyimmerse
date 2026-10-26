@@ -7,10 +7,10 @@ import {
 const server = { serverUrl: "http://127.0.0.1:8787", token: "secret" };
 
 describe("buildConversionFileUrl", () => {
-  it("joins the playlist path onto the server URL", () => {
+  it("joins the playlist path onto the URL of the server's API", () => {
     expect(
       buildConversionFileUrl(server, "/conversions/abc123/index.m3u8"),
-    ).toBe("http://127.0.0.1:8787/conversions/abc123/index.m3u8");
+    ).toBe("http://127.0.0.1:8787/api/conversions/abc123/index.m3u8");
   });
 
   it("puts no token in the query string", () => {

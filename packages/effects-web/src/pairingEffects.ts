@@ -1,4 +1,4 @@
-import type { Effects } from "@easyimmerse/state";
+import { apiPathOf, type Effects } from "@easyimmerse/state";
 import { requestJson } from "./accountEffects.ts";
 
 /** The effects through which a browser pairs with a desktop app on the local network. */
@@ -14,7 +14,7 @@ export type PairingEffects = Pick<
 export function createPairingEffects(fetchFn: typeof fetch): PairingEffects {
   return {
     claimPairingCode: (serverUrl, code) =>
-      requestJson(fetchFn, new URL("/pairing/claim", serverUrl), {
+      requestJson(fetchFn, new URL(apiPathOf("/pairing/claim"), serverUrl), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code }),

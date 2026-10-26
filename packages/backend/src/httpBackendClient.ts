@@ -1,3 +1,4 @@
+import { apiPathOf } from "@easyimmerse/state";
 import type { ApiError } from "@easyimmerse/types";
 import type {
   BackendClient,
@@ -37,7 +38,7 @@ export function createHttpBackendClient(
 }
 
 function buildUrl(serverUrl: string, request: BackendRequest): string {
-  const url = new URL(request.path, serverUrl);
+  const url = new URL(apiPathOf(request.path), serverUrl);
   for (const [name, value] of Object.entries(request.query ?? {}))
     url.searchParams.set(name, value);
   return url.toString();

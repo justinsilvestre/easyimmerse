@@ -3315,7 +3315,7 @@ export interface components {
         };
         PlaybackMethodResponse: {
             method: components["schemas"]["PlaybackMethod"];
-            /** @description The path of the HLS playlist, present only when the method converts. */
+            /** @description The path of the HLS playlist under the API path prefix, present only when the method converts. */
             playlist_path?: string | null;
         };
         /** @description A form a plugin asks the app to show. The app adds a way to close it. */

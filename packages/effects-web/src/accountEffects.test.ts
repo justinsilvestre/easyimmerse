@@ -91,7 +91,7 @@ describe("createAccountEffects", () => {
       );
       await effectsOver(fetchFn).effects.fetchServerAuthInfo(serverUrl);
       expect(sent.map(({ url }) => url)).toEqual([
-        "https://books.example.org/auth/server",
+        "https://books.example.org/api/auth/server",
       ]);
     });
 
@@ -127,7 +127,7 @@ describe("createAccountEffects", () => {
       await effectsOver(fetchFn).effects.createSession(attempt);
       expect(sent).toEqual([
         {
-          url: "https://books.example.org/auth/signup",
+          url: "https://books.example.org/api/auth/signup",
           init: {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -170,7 +170,7 @@ describe("createAccountEffects", () => {
       await effectsOver(fetchFn).effects.confirmEmail(serverUrl, "t1");
       expect(sent).toEqual([
         {
-          url: "https://books.example.org/auth/confirm-email",
+          url: "https://books.example.org/api/auth/confirm-email",
           init: postingJson({ token: "t1" }),
         },
       ]);
@@ -202,7 +202,7 @@ describe("createAccountEffects", () => {
       );
       expect(sent).toEqual([
         {
-          url: "https://books.example.org/auth/password-reset",
+          url: "https://books.example.org/api/auth/password-reset",
           init: postingJson({ email: "someone@example.com" }),
         },
       ]);
@@ -229,7 +229,7 @@ describe("createAccountEffects", () => {
       );
       expect(sent).toEqual([
         {
-          url: "https://books.example.org/auth/password",
+          url: "https://books.example.org/api/auth/password",
           init: postingJson({ token: "t1", password: "correct horse" }),
         },
       ]);

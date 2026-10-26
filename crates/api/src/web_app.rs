@@ -1,4 +1,4 @@
-//! Serves the files of the built web app at every path the API does not use.
+//! Serves the files of the built web app at every path outside the API's prefix.
 
 use std::convert::Infallible;
 use std::path::{Path, PathBuf};

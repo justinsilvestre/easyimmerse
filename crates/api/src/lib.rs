@@ -55,6 +55,6 @@ pub use config::{
     SmtpSecurity, UploadsConfig,
 };
 pub use plugins::PluginRegistry;
-pub use router::{build_router, openapi_document};
+pub use router::{API_PATH_PREFIX, build_router, openapi_document};
 pub use serve::{ListenerHandle, ServeError, ServeOptions, ServerHandle, serve};
 pub use state::AppState;

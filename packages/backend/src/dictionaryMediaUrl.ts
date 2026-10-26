@@ -1,4 +1,4 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL an image element loads a file stored with a dictionary from.
@@ -11,7 +11,9 @@ export function buildDictionaryMediaUrl(
   path: string,
 ): string {
   const url = new URL(
-    `/dictionaries/${encodeURIComponent(dictionaryId)}/media/${encodeURIComponent(path)}`,
+    apiPathOf(
+      `/dictionaries/${encodeURIComponent(dictionaryId)}/media/${encodeURIComponent(path)}`,
+    ),
     server.serverUrl,
   );
   url.searchParams.set("token", server.token);

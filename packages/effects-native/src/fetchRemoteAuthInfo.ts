@@ -1,6 +1,11 @@
 import { buildAuthorizationHeader } from "@easyimmerse/backend";
 import { requestJson } from "@easyimmerse/effects-web";
-import type { Effects, RequestFailure, ServerConfig } from "@easyimmerse/state";
+import {
+  apiPathOf,
+  type Effects,
+  type RequestFailure,
+  type ServerConfig,
+} from "@easyimmerse/state";
 
 type FetchServerAuthInfo = Effects["fetchServerAuthInfo"];
 
@@ -21,7 +26,7 @@ export function createRemoteAuthInfoFetch(
   fetchFn: typeof fetch = globalThis.fetch,
 ): FetchServerAuthInfo {
   return async (serverUrl) => {
-    const url = new URL("/sync/remote-auth-info", server.serverUrl);
+    const url = new URL(apiPathOf("/sync/remote-auth-info"), server.serverUrl);
     url.searchParams.set("server_url", serverUrl);
     const outcome = await requestJson<ServerAuthInfo>(fetchFn, url, {
       headers: { authorization: buildAuthorizationHeader(server) },

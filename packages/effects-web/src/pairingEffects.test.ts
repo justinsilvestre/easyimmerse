@@ -24,7 +24,7 @@ describe("createPairingEffects", () => {
     it("sends the claim to the pairing route", async () => {
       const { fetchFn, requests } = answering({ token: "launch-token" });
       await createPairingEffects(fetchFn).claimPairingCode(serverUrl, "123456");
-      expect(requests[0]?.url).toBe(`${serverUrl}/pairing/claim`);
+      expect(requests[0]?.url).toBe(`${serverUrl}/api/pairing/claim`);
     });
 
     it("resolves with the token the server gives", async () => {

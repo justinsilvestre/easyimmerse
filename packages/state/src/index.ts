@@ -415,6 +415,7 @@ export {
   selectPlayerDuration,
   selectPlayerFailure,
 } from "./screen/screenSelectors.ts";
+export { apiPathOf } from "./server/apiPathOf.ts";
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";

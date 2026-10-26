@@ -6,7 +6,7 @@ const server = { serverUrl: "http://127.0.0.1:8787", token: "secret" };
 describe("buildDictionaryMediaUrl", () => {
   it("addresses the media route of the dictionary", () => {
     expect(buildDictionaryMediaUrl(server, "d1", "cat.png")).toBe(
-      "http://127.0.0.1:8787/dictionaries/d1/media/cat.png?token=secret",
+      "http://127.0.0.1:8787/api/dictionaries/d1/media/cat.png?token=secret",
     );
   });
 

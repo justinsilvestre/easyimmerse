@@ -4,7 +4,7 @@ import type { FakeHlsInstance } from "./fakeHls.ts";
 import { createFakeHls } from "./fakeHls.ts";
 
 const source = {
-  url: "http://127.0.0.1:1/conversions/k/index.m3u8",
+  url: "http://127.0.0.1:1/api/conversions/k/index.m3u8",
   authorization: "Bearer t0k3n",
 };
 

@@ -32,7 +32,7 @@ describe("createRemoteAuthInfoFetch", () => {
     const { sent, fetchFn } = answering(200, offer);
     await createRemoteAuthInfoFetch(builtInServer, fetchFn)(remoteUrl);
     expect(sent.map(({ url }) => url)).toEqual([
-      "http://127.0.0.1:4000/sync/remote-auth-info?server_url=https%3A%2F%2Fcloud.example.org%2F",
+      "http://127.0.0.1:4000/api/sync/remote-auth-info?server_url=https%3A%2F%2Fcloud.example.org%2F",
     ]);
   });
 

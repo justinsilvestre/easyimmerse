@@ -16,7 +16,7 @@ describe("createServerFetch", () => {
     });
     expect(calls).toEqual([
       {
-        url: "http://localhost:4000/projects/p1/media/m1/clip",
+        url: "http://localhost:4000/api/projects/p1/media/m1/clip",
         headers: {
           "content-type": "application/json",
           authorization: "Bearer secret",

@@ -2,6 +2,7 @@
 
 use std::net::{SocketAddr, TcpStream};
 
+use easyimmerse_api::API_PATH_PREFIX;
 use tokio::net::TcpListener;
 
 use crate::support::{TestRequest, spawn_test_server};
@@ -27,10 +28,13 @@ async fn a_second_listener_answers_the_health_route() {
         .expect("a second listener");
     // The server expects only the host of its first listener, so the request names that host.
     let first_host = server.base_url.trim_start_matches("http://").to_string();
-    let response = TestRequest::to("GET", format!("http://127.0.0.1:{port}/health"))
-        .header("Host", &first_host)
-        .send()
-        .await;
+    let response = TestRequest::to(
+        "GET",
+        format!("http://127.0.0.1:{port}{API_PATH_PREFIX}/health"),
+    )
+    .header("Host", &first_host)
+    .send()
+    .await;
     assert_eq!(response.status, 200);
 }
 
