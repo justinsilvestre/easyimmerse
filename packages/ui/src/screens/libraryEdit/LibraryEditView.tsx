@@ -1,3 +1,4 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import type {
   LibraryItem,
   LibraryItemDraft,
@@ -42,7 +43,6 @@ export function LibraryEditView({
   onAskDelete,
   onCancelDelete,
   onDelete,
-  onBack,
 }: {
   item: LibraryItem;
   /** The item's text, or null while it loads. */
@@ -65,10 +65,13 @@ export function LibraryEditView({
   onAskDelete: () => void;
   onCancelDelete: () => void;
   onDelete: () => void;
-  onBack: () => void;
 }) {
   return (
-    <ScreenLayout onBack={onBack} backLabel="Manage library" wide>
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "libraryManage" })}
+      backLabel="Manage library"
+      wide
+    >
       <h1 className="text-xl font-semibold">{item.title}</h1>
       {activity.failure && (
         <p role="alert" className="text-sm text-danger-fg">

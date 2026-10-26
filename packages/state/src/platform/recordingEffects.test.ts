@@ -144,6 +144,14 @@ describe("createRecordingEffects", () => {
     expect(links).toEqual([]);
   });
 
+  it("calls a link click listener with the path of each followed link", () => {
+    const effects = createRecordingEffects();
+    const paths: string[] = [];
+    effects.subscribeToLinkClicks((path) => paths.push(path));
+    effects.followLink("/library");
+    expect(paths).toEqual(["/library"]);
+  });
+
   describe("for the history", () => {
     const state = { previousPath: "/", origin: "app" } as const;
 

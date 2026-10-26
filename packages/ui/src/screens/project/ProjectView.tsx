@@ -1,6 +1,7 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 
 /**
@@ -9,24 +10,28 @@ import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
  * The sections below the name, such as the media list and the flashcards panel, come in as children.
  */
 export function ProjectView({
+  projectId,
   name,
-  onBack,
-  onEditSettings,
   children,
 }: {
+  projectId: string;
   name: string;
-  onBack: () => void;
-  onEditSettings: () => void;
   children: ReactNode;
 }) {
   return (
-    <ScreenLayout onBack={onBack} backLabel="Projects">
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "home" })}
+      backLabel="Projects"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="min-w-0 truncate text-xl font-semibold">{name}</h1>
-        <Button variant="subtle" onClick={onEditSettings}>
+        <ButtonLink
+          variant="subtle"
+          href={pathOfRoute({ screen: "projectSettings", projectId })}
+        >
           <Settings className="size-4" aria-hidden />
           Project settings
-        </Button>
+        </ButtonLink>
       </div>
       {children}
     </ScreenLayout>

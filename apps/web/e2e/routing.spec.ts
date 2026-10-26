@@ -7,7 +7,7 @@ async function openFirstProject(page: Page): Promise<string> {
   await page.goto("/");
   await page
     .getByRole("list", { name: "Projects" })
-    .getByRole("button")
+    .getByRole("link")
     .first()
     .click();
   await expect(page).toHaveURL(projectPath);
@@ -70,6 +70,30 @@ test("the browser's Back closes Settings opened over a project", async ({
   await expect(settingsHeading(page)).toHaveCount(0);
 });
 
+test.describe("a click on a project with Ctrl or Cmd held", () => {
+  /** Clicks the home screen's first project with the platform's modifier key and returns the tab it opens. */
+  async function modifierClickFirstProject(page: Page) {
+    await page.goto("/");
+    const opened = page.context().waitForEvent("page");
+    await page
+      .getByRole("list", { name: "Projects" })
+      .getByRole("link")
+      .first()
+      .click({ modifiers: ["ControlOrMeta"] });
+    return opened;
+  }
+
+  test("opens the project in a new tab", async ({ page }) => {
+    const tab = await modifierClickFirstProject(page);
+    await expect(tab).toHaveURL(projectPath);
+  });
+
+  test("leaves the home screen open in the current tab", async ({ page }) => {
+    await modifierClickFirstProject(page);
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
+  });
+});
+
 test("a link to a project that does not exist opens the home screen", async ({
   page,
 }) => {
@@ -83,7 +107,7 @@ test.describe("after the app's own Back", () => {
     page,
   }) => {
     await openFirstProject(page);
-    await page.getByRole("button", { name: "Projects", exact: true }).click();
+    await page.getByRole("link", { name: "Projects", exact: true }).click();
     await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
     await page.goBack();
     await expect(page).toHaveURL("about:blank");
@@ -94,7 +118,7 @@ test.describe("after the app's own Back", () => {
   }) => {
     await openFirstProject(page);
     await openSettings(page);
-    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await page.getByRole("link", { name: "Back", exact: true }).click();
     await expect(settingsHeading(page)).toHaveCount(0);
     await page.goForward();
     await expect(settingsHeading(page)).toBeVisible();
@@ -107,7 +131,7 @@ test.describe("after the app's own Back", () => {
     await openFirstProject(page);
     const linked = await context.newPage();
     await linked.goto(page.url());
-    await linked.getByRole("button", { name: "Projects", exact: true }).click();
+    await linked.getByRole("link", { name: "Projects", exact: true }).click();
     await expect(linked).toHaveURL(/^https?:\/\/[^/]+\/$/);
     await linked.goBack();
     await expect(linked).toHaveURL("about:blank");

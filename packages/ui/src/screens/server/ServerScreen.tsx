@@ -21,7 +21,7 @@ import { UnauthenticatedServerWarning } from "./UnauthenticatedServerWarning.tsx
  * The Server page of the desktop app's Settings: the server's status with the buttons that start and stop it, a warning while anyone on the local network can use it,
  * its settings, what accounts can do once it has them, and its log.
  */
-export function ServerScreen({ onBack }: { onBack: () => void }) {
+export function ServerScreen({ backHref }: { backHref: string }) {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectDesktopServerStatus);
   const isUnauthenticatedOnLan = useAppSelector(
@@ -34,7 +34,7 @@ export function ServerScreen({ onBack }: { onBack: () => void }) {
     form.status === "loaded" && form.fields.auth === "accounts";
   return (
     <ScreenLayout
-      onBack={onBack}
+      backHref={backHref}
       backLabel={useAppSelector(selectSettingsPageBackLabel)}
     >
       <h1 className="text-xl font-semibold">Server</h1>

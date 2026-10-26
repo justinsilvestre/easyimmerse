@@ -246,6 +246,7 @@ export { readEntryState } from "./route/readEntryState.ts";
 export type {
   MainRoute,
   NavigationStep,
+  Route,
   SettingsPage,
   SettingsSection,
 } from "./route/route.ts";
@@ -260,9 +261,11 @@ export { pathOfRoute, routeOfPath } from "./route/routePath.ts";
 export {
   selectCurrentMediaFileId,
   selectIsSettingsOpen,
+  selectPathOfStep,
   selectRoute,
   selectSettingsScrollTarget,
 } from "./route/routeSelectors.ts";
+export { upPathOf } from "./route/upRouteOf.ts";
 export {
   cachedLibraryItemIdOf,
   cachedLibraryText,

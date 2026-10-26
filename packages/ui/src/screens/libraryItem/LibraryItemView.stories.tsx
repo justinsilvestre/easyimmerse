@@ -21,8 +21,6 @@ const meta = {
     addFailure: null,
     onAdd: fn(),
     onChooseProject: fn(),
-    onEdit: fn(),
-    onBack: fn(),
   },
 } satisfies Meta<typeof LibraryItemView>;
 

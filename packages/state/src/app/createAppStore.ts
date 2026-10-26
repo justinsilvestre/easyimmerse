@@ -94,6 +94,9 @@ export function createAppStore(
     const path = pathOfAppLink(link);
     if (path !== null) store.dispatch(actions.linkOpened(path));
   });
+  effects.subscribeToLinkClicks((path) =>
+    store.dispatch(actions.linkFollowed(path)),
+  );
   store.dispatch(actions.appStarted());
   return store;
 }

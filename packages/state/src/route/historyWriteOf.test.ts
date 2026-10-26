@@ -176,4 +176,16 @@ describe("historyWriteOf", () => {
       "push",
     );
   });
+
+  it("returns to the previous entry for a followed link to the screen the current one belongs to, when that entry is its target", () => {
+    expect(historyWriteOf(project, home, actions.linkFollowed("/"), "/")).toBe(
+      "back",
+    );
+  });
+
+  it("pushes an entry for a followed link to another screen", () => {
+    expect(
+      historyWriteOf(home, library, actions.linkFollowed("/library"), null),
+    ).toBe("push");
+  });
 });

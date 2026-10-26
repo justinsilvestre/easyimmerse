@@ -69,7 +69,7 @@ async function openSampleBook(page: Page) {
   await page.goto("/");
   await page
     .getByRole("list", { name: "Projects" })
-    .getByRole("button")
+    .getByRole("link")
     .first()
     .click();
   const mediaChooser = page.waitForEvent("filechooser");

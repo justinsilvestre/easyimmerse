@@ -1,3 +1,4 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 import { LibraryItemCard } from "../../components/libraryItemCard/LibraryItemCard.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
@@ -20,8 +21,6 @@ export function LibraryManagementView({
   coverUrlOf,
   addStatus,
   onAddMedia,
-  onEditItem,
-  onBack,
 }: {
   status: LibraryListStatus;
   /** The library's language, or null while it has none. */
@@ -31,12 +30,14 @@ export function LibraryManagementView({
   addStatus: NewLibraryMediaStatus;
   /** Adds media in the chosen language, or in the library's language for null, with the translation language given. */
   onAddMedia: (language: string | null, translationLanguage: string) => void;
-  onEditItem: (itemId: string) => void;
-  onBack: () => void;
 }) {
   const isLanguageFixed = items.length > 0 && language !== null;
   return (
-    <ScreenLayout onBack={onBack} backLabel="Library" wide>
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "library" })}
+      backLabel="Library"
+      wide
+    >
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold">Manage library</h1>
         {status === "ready" && isLanguageFixed && (
@@ -76,7 +77,7 @@ export function LibraryManagementView({
                 item={item}
                 coverUrl={coverUrlOf(item)}
                 showsStatus
-                onOpen={onEditItem}
+                href={pathOfRoute({ screen: "libraryEdit", itemId: item.id })}
               />
             </li>
           ))}

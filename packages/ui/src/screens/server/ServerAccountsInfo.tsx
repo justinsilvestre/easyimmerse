@@ -1,6 +1,6 @@
-import { actions } from "@easyimmerse/state";
-import { LinkButton } from "../../components/common/LinkButton.tsx";
-import { useAppDispatch } from "../../useAppDispatch.ts";
+import { selectPathOfStep } from "@easyimmerse/state";
+import { TextLink } from "../../components/common/LinkButton.tsx";
+import { useAppSelector } from "../../useAppSelector.ts";
 
 const accesses = [
   {
@@ -55,14 +55,8 @@ export function ServerAccountsInfo({ isSaved }: { isSaved: boolean }) {
 }
 
 function UsersLink() {
-  const dispatch = useAppDispatch();
-  return (
-    <LinkButton
-      onClick={() =>
-        dispatch(actions.navigated({ type: "openUsers", via: "self" }))
-      }
-    >
-      Users
-    </LinkButton>
+  const href = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openUsers", via: "self" }),
   );
+  return <TextLink href={href}>Users</TextLink>;
 }

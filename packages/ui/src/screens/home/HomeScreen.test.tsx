@@ -39,24 +39,8 @@ function createManagerClient() {
   });
 }
 
-function renderHome(
-  callbacks: {
-    onOpenProject?: (projectId: string) => void;
-    onReviewProject?: (projectId: string) => void;
-    onCreateProject?: () => void;
-    onContinueOffline?: () => void;
-  } = {},
-  client?: BackendClient,
-) {
-  return renderWithAppStore(
-    <HomeScreen
-      onOpenProject={callbacks.onOpenProject ?? (() => undefined)}
-      onReviewProject={callbacks.onReviewProject ?? (() => undefined)}
-      onCreateProject={callbacks.onCreateProject ?? (() => undefined)}
-      onContinueOffline={callbacks.onContinueOffline ?? (() => undefined)}
-    />,
-    client,
-  );
+function renderHome(client?: BackendClient) {
+  return renderWithAppStore(<HomeScreen />, client);
 }
 
 describe("HomeScreen", () => {
@@ -71,15 +55,22 @@ describe("HomeScreen", () => {
       ).toEqual([true, false]);
     });
 
-    it("calls onOpenProject with the id of a clicked project", async () => {
-      const opened: string[] = [];
-      renderHome({ onOpenProject: (id) => opened.push(id) });
-      fireEvent.click(await screen.findByRole("button", { name: /Beta/ }));
-      expect(opened).toEqual(["p2"]);
+    it("links each project to its screen", async () => {
+      renderHome();
+      const link = await screen.findByRole("link", { name: /Beta/ });
+      expect(link.getAttribute("href")).toBe("/projects/p2");
     });
 
-    it("calls onReviewProject with the id of a project whose Review is clicked", async () => {
-      const reviewed: string[] = [];
+    it("opens a project when its card is clicked", async () => {
+      const { store } = renderHome();
+      fireEvent.click(await screen.findByRole("link", { name: /Beta/ }));
+      expect(selectRoute(store.getState())).toEqual({
+        screen: "project",
+        projectId: "p2",
+      });
+    });
+
+    it("opens the review of a project whose Review is clicked", async () => {
       const client = createFakeBackendClient({
         ...fixtureResponses,
         "GET /review/counts": {
@@ -88,29 +79,28 @@ describe("HomeScreen", () => {
           ],
         },
       });
-      renderHome({ onReviewProject: (id) => reviewed.push(id) }, client);
-      fireEvent.click(await screen.findByRole("button", { name: /^Review/ }));
-      expect(reviewed).toEqual(["p1"]);
+      const { store } = renderHome(client);
+      fireEvent.click(await screen.findByRole("link", { name: /^Review/ }));
+      expect(selectRoute(store.getState())).toEqual({
+        screen: "review",
+        projectId: "p1",
+      });
     });
 
-    it("calls onCreateProject when New project is clicked", async () => {
-      let created = false;
-      renderHome({ onCreateProject: () => (created = true) });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "New project" }),
-      );
-      expect(created).toBe(true);
+    it("opens the new project form when New project is clicked", async () => {
+      const { store } = renderHome();
+      fireEvent.click(await screen.findByRole("link", { name: "New project" }));
+      expect(selectRoute(store.getState())).toEqual({ screen: "newProject" });
     });
   });
 
   describe("when no server is configured", () => {
     it("offers to continue offline", async () => {
-      let offline = false;
-      renderHome({ onContinueOffline: () => (offline = true) }, offlineClient);
+      const { store } = renderHome(offlineClient);
       fireEvent.click(
-        await screen.findByRole("button", { name: "Continue offline" }),
+        await screen.findByRole("link", { name: "Continue offline" }),
       );
-      expect(offline).toBe(true);
+      expect(selectRoute(store.getState())).toEqual({ screen: "offline" });
     });
   });
 
@@ -128,22 +118,13 @@ describe("HomeScreen", () => {
         projects: [{ ...fixtureProject, flashcard_count: 1 }],
       },
     });
-    renderWithAppStore(
-      <HomeScreen
-        onOpenProject={() => undefined}
-        onReviewProject={() => undefined}
-        onCreateProject={() => undefined}
-        onContinueOffline={() => undefined}
-      />,
-      client,
-      {
-        server: {
-          serverUrl: "http://127.0.0.1:1",
-          token: "t",
-          bundledIn: "desktop",
-        },
+    renderWithAppStore(<HomeScreen />, client, {
+      server: {
+        serverUrl: "http://127.0.0.1:1",
+        token: "t",
+        bundledIn: "desktop",
       },
-    );
+    });
     const card = await screen.findByRole("region", {
       name: "Saved only on this computer",
     });
@@ -155,15 +136,15 @@ describe("HomeScreen", () => {
 
   describe("for someone who manages the library", () => {
     it("opens the library when Browse the library is clicked", async () => {
-      const { store } = renderHome({}, createManagerClient());
+      const { store } = renderHome(createManagerClient());
       fireEvent.click(
-        await screen.findByRole("button", { name: "Browse the library" }),
+        await screen.findByRole("link", { name: "Browse the library" }),
       );
       expect(selectRoute(store.getState())).toEqual({ screen: "library" });
     });
 
     it("shows the library above the projects", async () => {
-      renderHome({}, createManagerClient());
+      renderHome(createManagerClient());
       const library = await screen.findByRole("region", { name: "Library" });
       const projects = await screen.findByRole("list", { name: "Projects" });
       expect(
@@ -173,9 +154,9 @@ describe("HomeScreen", () => {
     });
 
     it("opens library management when Manage library is clicked", async () => {
-      const { store } = renderHome({}, createManagerClient());
+      const { store } = renderHome(createManagerClient());
       fireEvent.click(
-        await screen.findByRole("button", { name: "Manage library" }),
+        await screen.findByRole("link", { name: "Manage library" }),
       );
       expect(selectRoute(store.getState())).toEqual({
         screen: "libraryManage",
@@ -185,7 +166,6 @@ describe("HomeScreen", () => {
 
   it("shows no library section to someone who cannot manage the library", async () => {
     renderHome(
-      {},
       createFakeBackendClient({ ...fixtureResponses, "GET /auth/me": learner }),
     );
     await screen.findByRole("list", { name: "Projects" });

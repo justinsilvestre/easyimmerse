@@ -1,7 +1,8 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import type { Project, ReviewCounts } from "@easyimmerse/types";
 import { FolderOpen, Plus } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
 import { LoadingStatus } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
@@ -20,26 +21,15 @@ export function HomeView({
   status,
   projects,
   reviewCounts,
-  onOpenProject,
-  onReviewProject,
-  onCreateProject,
-  onContinueOffline,
-  onOpenLibrary,
-  onManageLibrary,
+  canManageLibrary,
   suggestion,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
   /** What waits in each project's review today. A project left out shows no way to review it. */
   reviewCounts: readonly ReviewCounts[];
-  onOpenProject: (projectId: string) => void;
-  /** Opens a project's review directly, without its screen. */
-  onReviewProject: (projectId: string) => void;
-  onCreateProject: () => void;
-  onContinueOffline: () => void;
-  onOpenLibrary: () => void;
-  /** Opens the library management screen. Null for someone who cannot manage the library, who then sees no library section. */
-  onManageLibrary: (() => void) | null;
+  /** Whether the person may manage the library. Someone who may not sees no library section. */
+  canManageLibrary: boolean;
   /** A card suggesting another easyImmerse component, such as a way to back up the work. */
   suggestion?: ReactNode;
 }) {
@@ -47,50 +37,35 @@ export function HomeView({
     <ScreenLayout>
       <h1 className="sr-only">Home</h1>
       {suggestion}
-      {status !== "offline" && onManageLibrary && (
-        <HomeLibrarySection
-          onOpenLibrary={onOpenLibrary}
-          onManageLibrary={onManageLibrary}
-        />
-      )}
+      {status !== "offline" && canManageLibrary && <HomeLibrarySection />}
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold">Projects</h2>
         {projects.length > 0 && (
-          <Button variant="primary" onClick={onCreateProject}>
+          <ButtonLink variant="primary" href={newProjectPath}>
             <Plus className="size-4" aria-hidden />
             New project
-          </Button>
+          </ButtonLink>
         )}
       </div>
       <Projects
         status={status}
         projects={projects}
         reviewCounts={reviewCounts}
-        onOpenProject={onOpenProject}
-        onReviewProject={onReviewProject}
-        onCreateProject={onCreateProject}
-        onContinueOffline={onContinueOffline}
       />
     </ScreenLayout>
   );
 }
 
+const newProjectPath = pathOfRoute({ screen: "newProject" });
+
 function Projects({
   status,
   projects,
   reviewCounts,
-  onOpenProject,
-  onReviewProject,
-  onCreateProject,
-  onContinueOffline,
 }: {
   status: ProjectListStatus;
   projects: readonly Project[];
   reviewCounts: readonly ReviewCounts[];
-  onOpenProject: (projectId: string) => void;
-  onReviewProject: (projectId: string) => void;
-  onCreateProject: () => void;
-  onContinueOffline: () => void;
 }) {
   switch (status) {
     case "loading":
@@ -109,7 +84,9 @@ function Projects({
           title="No server to load projects from"
           description="You can keep working with the files on this device."
           actions={
-            <Button onClick={onContinueOffline}>Continue offline</Button>
+            <ButtonLink href={pathOfRoute({ screen: "offline" })}>
+              Continue offline
+            </ButtonLink>
           }
         />
       );
@@ -121,10 +98,10 @@ function Projects({
             title="No projects yet"
             description="A project collects the media you learn from, in one language, and the flashcards you make from it."
             actions={
-              <Button variant="primary" onClick={onCreateProject}>
+              <ButtonLink variant="primary" href={newProjectPath}>
                 <Plus className="size-4" aria-hidden />
                 Create a project
-              </Button>
+              </ButtonLink>
             }
           />
         );
@@ -139,8 +116,6 @@ function Projects({
                     ({ project_id }) => project_id === project.id,
                   ) ?? null
                 }
-                onOpen={onOpenProject}
-                onReview={onReviewProject}
               />
             </li>
           ))}

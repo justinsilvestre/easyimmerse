@@ -141,6 +141,8 @@ export type RecordingEffects = Effects & {
    * A link opened while nothing listens waits for the first listener, as the link that starts an app does.
    */
   openLink(link: string): void;
+  /** Acts as a person following one of the app's own links within the app, by calling every subscribed listener with its path and query. */
+  followLink(path: string): void;
   /** Makes every later copy fail, as a platform that refuses clipboard access does. */
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
@@ -255,6 +257,7 @@ export function createRecordingEffects(
   const history = createRecordedHistory();
   const linkListeners = new Set<(link: string) => void>();
   let waitingLink: string | null = null;
+  const linkClickListeners = new Set<(path: string) => void>();
   let refusesCopies = false;
   let refusesConnections = false;
   return {
@@ -353,6 +356,10 @@ export function createRecordingEffects(
       if (waitingLink !== null) listener(waitingLink);
       waitingLink = null;
       return () => linkListeners.delete(listener);
+    },
+    subscribeToLinkClicks: (listener) => {
+      linkClickListeners.add(listener);
+      return () => linkClickListeners.delete(listener);
     },
     applyAppearance: (appearance) => {
       calls.push({ type: "applyAppearance", appearance });
@@ -464,6 +471,9 @@ export function createRecordingEffects(
     openLink: (link) => {
       if (linkListeners.size === 0) waitingLink = link;
       for (const listener of linkListeners) listener(link);
+    },
+    followLink: (path) => {
+      for (const listener of linkClickListeners) listener(path);
     },
     refuseCopies: () => {
       refusesCopies = true;

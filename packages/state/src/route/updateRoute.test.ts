@@ -98,6 +98,12 @@ describe("requestedRoute", () => {
     ).toEqual(settingsOver(project));
   });
 
+  it("asks for the screen a followed link names", () => {
+    expect(
+      requestedRoute(project, actions.linkFollowed("/projects/p1/media/m1")),
+    ).toEqual(media);
+  });
+
   it("moves home for routeUnreachable", () => {
     expect(requestedRoute(media, actions.routeUnreachable())).toEqual({
       screen: "home",

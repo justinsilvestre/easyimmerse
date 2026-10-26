@@ -1,5 +1,6 @@
 import type { AppRoot } from "../app/createAppStore.ts";
-import { mainScreenOf } from "./route.ts";
+import { mainScreenOf, type NavigationStep, navigate } from "./route.ts";
+import { pathOfRoute } from "./routePath.ts";
 
 /** Returns where the app is. */
 export const selectRoute = (state: AppRoot) => state.app.route;
@@ -19,3 +20,7 @@ export const selectSettingsScrollTarget = (state: AppRoot) =>
   state.app.route.screen === "settings"
     ? (state.app.route.scrollTarget ?? null)
     : null;
+
+/** Returns the path of the place a step leads from where the app is, for a link that takes the step. */
+export const selectPathOfStep = (state: AppRoot, step: NavigationStep) =>
+  pathOfRoute(navigate(state.app.route, step));

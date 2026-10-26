@@ -58,6 +58,13 @@ describe("routeHistoryFeature", () => {
       ).toBe("link");
     });
 
+    it("marks a screen opened by a link followed within the app as opened by the app", () => {
+      expect(
+        stateAfter(openedAtProject, actions.linkFollowed("/library"))
+          .routeHistory.origin,
+      ).toBe("app");
+    });
+
     it("keeps the origin while Settings open over the screen", () => {
       expect(
         stateAfter(openedAtProject, actions.settingsRequested()).routeHistory

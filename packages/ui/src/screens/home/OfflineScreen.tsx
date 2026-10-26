@@ -1,5 +1,6 @@
 import {
   actions,
+  pathOfRoute,
   selectOfflineCues,
   selectOfflineParseFailed,
   selectPendingFilePick,
@@ -16,14 +17,17 @@ import { useAppSelector } from "../../useAppSelector.ts";
  * What works without a server: reading a subtitles file from this device, parsed in the browser.
  * Projects, media, and flashcards are kept by a server, so they wait until one is connected.
  */
-export function OfflineScreen({ onBack }: { onBack: () => void }) {
+export function OfflineScreen() {
   const dispatch = useAppDispatch();
   const isPicking = useAppSelector(selectPendingFilePick);
   const cues = useAppSelector(selectOfflineCues);
   const hasFailed = useAppSelector(selectOfflineParseFailed);
   const openFile = () => dispatch(actions.subtitleFilePickRequested());
   return (
-    <ScreenLayout onBack={onBack} backLabel="Projects">
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "home" })}
+      backLabel="Projects"
+    >
       <h1 className="text-xl font-semibold">Working offline</h1>
       <p className="text-sm text-fg-muted">
         Projects, media, and flashcards are kept by a server. Until one is

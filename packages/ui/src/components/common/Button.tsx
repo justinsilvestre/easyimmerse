@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 
-type ButtonProps = ComponentProps<"button"> & {
+type ButtonStyle = {
   /** `overVideo` suits a button drawn over the black stage behind the video, in both themes. */
   variant?: "primary" | "secondary" | "subtle" | "danger" | "overVideo";
   size?: "sm" | "md";
@@ -17,23 +17,15 @@ export function Button({
   className,
   type = "button",
   ...rest
-}: ButtonProps) {
+}: ComponentProps<"button"> & ButtonStyle) {
   const isUnavailable =
     rest["aria-disabled"] === true || rest["aria-disabled"] === "true";
   return (
     <button
       type={type}
       className={clsx(
-        "inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50",
-        size === "md" && "px-3 py-1.5 text-sm",
-        size === "sm" && "px-2 py-1 text-xs",
-        variant === "primary" && "bg-accent text-on-accent",
-        variant === "secondary" && "border border-line-strong bg-surface",
-        variant === "subtle" && "text-fg-muted",
-        variant === "danger" && "border border-danger-line text-danger-fg",
-        variant === "overVideo" &&
-          "border border-gray-600 bg-black/50 text-white",
-        !isUnavailable && hoverStyles[variant],
+        classesOf(variant, size, isUnavailable),
+        "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...rest}
@@ -41,7 +33,37 @@ export function Button({
   );
 }
 
-const hoverStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
+/** A link to another screen, drawn as a button in one of the app's styles. */
+export function ButtonLink({
+  variant = "secondary",
+  size = "md",
+  className,
+  ...rest
+}: ComponentProps<"a"> & ButtonStyle & { href: string }) {
+  return (
+    <a className={clsx(classesOf(variant, size, false), className)} {...rest} />
+  );
+}
+
+function classesOf(
+  variant: NonNullable<ButtonStyle["variant"]>,
+  size: NonNullable<ButtonStyle["size"]>,
+  isUnavailable: boolean,
+) {
+  return clsx(
+    "inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-50",
+    size === "md" && "px-3 py-1.5 text-sm",
+    size === "sm" && "px-2 py-1 text-xs",
+    variant === "primary" && "bg-accent text-on-accent",
+    variant === "secondary" && "border border-line-strong bg-surface",
+    variant === "subtle" && "text-fg-muted",
+    variant === "danger" && "border border-danger-line text-danger-fg",
+    variant === "overVideo" && "border border-gray-600 bg-black/50 text-white",
+    !isUnavailable && hoverStyles[variant],
+  );
+}
+
+const hoverStyles: Record<NonNullable<ButtonStyle["variant"]>, string> = {
   primary: "hover:bg-accent-hover",
   secondary: "hover:bg-surface-muted",
   subtle: "hover:bg-surface-muted hover:text-fg",

@@ -23,6 +23,7 @@ const meta = {
       tags_media_name: true,
       fills_audio_with_tts: false,
     },
+    backHref: "/",
     onSubmit: fn(),
     onCancel: fn(),
   },
@@ -62,12 +63,17 @@ const editedSettings: ProjectSettings = {
 };
 
 export const EditingSettings: Story = {
-  args: { mode: "edit", initialValues: editedSettings },
+  args: {
+    mode: "edit",
+    backHref: "/projects/p1",
+    initialValues: editedSettings,
+  },
 };
 
 export const EditingSettingsWithoutTheDeletionList: Story = {
   args: {
     mode: "edit",
+    backHref: "/projects/p1",
     initialValues: { ...editedSettings, lists_anki_deletions: false },
   },
 };

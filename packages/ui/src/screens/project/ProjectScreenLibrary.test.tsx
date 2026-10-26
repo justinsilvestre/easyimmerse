@@ -83,11 +83,7 @@ function renderLibraryVideoWithStore(
     directPlaybackRoutes,
   );
   const rendered = renderWithAppStore(
-    <ProjectScreen
-      projectId="p1"
-      onBack={() => undefined}
-      onEditSettings={() => undefined}
-    />,
+    <ProjectScreen projectId="p1" />,
     client,
     { server: fakeServer },
   );

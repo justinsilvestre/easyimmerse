@@ -21,11 +21,22 @@ describe("ScreenLayout", () => {
   describe("with a way back", () => {
     it("shows only the Back button, named for where it leads", () => {
       renderWithAppStore(
-        <ScreenLayout onBack={() => undefined} backLabel="Projects">
+        <ScreenLayout backHref="/" backLabel="Projects">
           Content
         </ScreenLayout>,
       );
       expect(headerText()).toBe("Projects");
+    });
+
+    it("links Back to the path of the screen it leads to", () => {
+      renderWithAppStore(
+        <ScreenLayout backHref="/library" backLabel="Library">
+          Content
+        </ScreenLayout>,
+      );
+      expect(
+        screen.getByRole("link", { name: "Library" }).getAttribute("href"),
+      ).toBe("/library");
     });
   });
 

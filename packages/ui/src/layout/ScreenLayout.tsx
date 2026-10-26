@@ -1,24 +1,24 @@
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "../components/common/Button.tsx";
+import { ButtonLink } from "../components/common/Button.tsx";
 import { AppFooter } from "./AppFooter.tsx";
 import { ProfileMenu } from "./ProfileMenu.tsx";
 
 /**
  * Frames a screen with the app's header and footer. The header holds the Profile menu at its right,
- * and at its left the wordmark, or the Back button on a screen with a way back, which passes `onBack`.
+ * and at its left the wordmark, or the Back link on a screen with a way back, which passes `backHref`, the path of the screen it leads to.
  * `backLabel` names where Back leads, such as "Projects", and is hidden on a phone, where the arrow alone stands for it.
  * The wide layout suits forms with a side column. The footer stays at the bottom of the window.
  * On a phone with a notch or a home indicator, the header and footer keep clear of them.
  */
 export function ScreenLayout({
-  onBack,
+  backHref,
   backLabel = "Back",
   wide = false,
   children,
 }: {
-  onBack?: () => void;
+  backHref?: string | null;
   backLabel?: string;
   wide?: boolean;
   children: ReactNode;
@@ -33,11 +33,11 @@ export function ScreenLayout({
             width,
           )}
         >
-          {onBack ? (
-            <Button variant="subtle" aria-label={backLabel} onClick={onBack}>
+          {backHref ? (
+            <ButtonLink variant="subtle" aria-label={backLabel} href={backHref}>
               <ArrowLeft className="size-4" aria-hidden />
               <span className="hidden sm:inline">{backLabel}</span>
-            </Button>
+            </ButtonLink>
           ) : (
             <span className="text-base font-semibold tracking-tight">
               easy<span className="text-accent">Immerse</span>

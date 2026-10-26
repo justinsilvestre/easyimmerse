@@ -41,13 +41,13 @@ function renderAppRoot() {
 }
 
 async function openProject() {
-  fireEvent.click(await screen.findByRole("button", { name: /Alpha/ }));
+  fireEvent.click(await screen.findByRole("link", { name: /Alpha/ }));
 }
 
 async function openMediaFile() {
   await openProject();
   fireEvent.click(
-    await screen.findByRole("button", { name: "Video episode.mkv" }),
+    await screen.findByRole("link", { name: "Video episode.mkv" }),
   );
   await screen.findByRole("region", { name: "Player" });
 }
@@ -61,10 +61,10 @@ function openSettingsFromProfileMenu() {
 
 const findPlayer = () => screen.getByRole("region", { name: "Player" });
 
-/** The Back button a person can use: the one outside any inert screen beneath Settings. */
+/** The Back link a person can use: the one outside any inert screen beneath Settings. */
 function clickUsableBack() {
   const usable = screen
-    .getAllByRole("button", { name: "Back" })
+    .getAllByRole("link", { name: "Back" })
     .filter((button) => button.closest("[inert]") === null);
   fireEvent.click(usable[0] as HTMLElement);
 }
@@ -85,7 +85,7 @@ describe("AppRoot", () => {
     renderAppRoot();
     await openProject();
     await screen.findByRole("heading", { name: "Alpha" });
-    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
+    fireEvent.click(screen.getByRole("link", { name: "Projects" }));
     expect(
       await screen.findByRole("heading", { name: "Projects" }),
     ).toBeDefined();
@@ -99,7 +99,7 @@ describe("AppRoot", () => {
 
   it("opens the new project form from the home screen", async () => {
     renderAppRoot();
-    fireEvent.click(await screen.findByRole("button", { name: "New project" }));
+    fireEvent.click(await screen.findByRole("link", { name: "New project" }));
     expect(
       await screen.findByRole("heading", { name: "New project" }),
     ).toBeDefined();

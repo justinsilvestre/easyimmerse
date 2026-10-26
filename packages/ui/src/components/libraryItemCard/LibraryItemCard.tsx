@@ -25,19 +25,19 @@ export function LibraryItemCard({
   item,
   coverUrl,
   showsStatus = false,
-  onOpen,
+  href,
 }: {
   item: LibraryItem;
   /** The image of the item's cover, or null when it has none to show. */
   coverUrl: string | null;
   showsStatus?: boolean;
-  onOpen: (itemId: string) => void;
+  /** The path of the screen the card links to. */
+  href: string;
 }) {
   const KindIcon = kindIcons[item.kind];
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(item.id)}
+    <a
+      href={href}
       className="flex w-full flex-col overflow-hidden rounded-lg border border-line bg-surface text-left hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span className="flex aspect-video w-full items-center justify-center bg-surface-muted text-fg-faint">
@@ -83,6 +83,6 @@ export function LibraryItemCard({
           </span>
         )}
       </span>
-    </button>
+    </a>
   );
 }

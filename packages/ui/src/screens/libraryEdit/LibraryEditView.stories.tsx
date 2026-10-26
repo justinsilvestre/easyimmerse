@@ -41,7 +41,6 @@ const meta = {
     onAskDelete: fn(),
     onCancelDelete: fn(),
     onDelete: fn(),
-    onBack: fn(),
   },
 } satisfies Meta<typeof LibraryEditView>;
 

@@ -1,14 +1,12 @@
 import { useLicenseNoticesQuery } from "@easyimmerse/backend";
-import type {
-  MainRoute,
-  SettingsPage as SettingsPageName,
-} from "@easyimmerse/state";
+import type { MainRoute, Route } from "@easyimmerse/state";
 import {
   actions,
   mainScreenOf,
   selectDesktopPairingServer,
   selectRoute,
   settingsPageOf,
+  upPathOf,
 } from "@easyimmerse/state";
 import { AccountScreen } from "./screens/account/AccountScreen.tsx";
 import { DictionariesScreen } from "./screens/dictionaries/DictionariesScreen.tsx";
@@ -33,6 +31,8 @@ import { useAppDispatch } from "./useAppDispatch.ts";
 import { useAppSelector } from "./useAppSelector.ts";
 import { useNavigate } from "./useNavigate.ts";
 
+type SettingsRoute = Extract<Route, { screen: "settings" }>;
+
 /** The main screen, with Settings over it while they are open. */
 export function Screens() {
   const route = useAppSelector(selectRoute);
@@ -43,7 +43,7 @@ export function Screens() {
       </div>
       {route.screen === "settings" && (
         <SettingsOverlay>
-          <SettingsPage page={settingsPageOf(route)} />
+          <SettingsPage route={route} />
         </SettingsOverlay>
       )}
     </>
@@ -54,32 +54,16 @@ function MainScreen({ route }: { route: MainRoute }) {
   const go = useNavigate();
   const openProject = (projectId: string) =>
     go({ type: "openProject", projectId });
-  const goHome = () => go({ type: "goHome" });
   switch (route.screen) {
     case "home":
-      return (
-        <HomeScreen
-          onOpenProject={openProject}
-          onReviewProject={(projectId) => go({ type: "openReview", projectId })}
-          onCreateProject={() => go({ type: "createProject" })}
-          onContinueOffline={() => go({ type: "continueOffline" })}
-        />
-      );
+      return <HomeScreen />;
     case "offline":
-      return <OfflineScreen onBack={goHome} />;
+      return <OfflineScreen />;
     case "newProject":
-      return <NewProjectScreen onCancel={goHome} />;
+      return <NewProjectScreen onCancel={() => go({ type: "goHome" })} />;
     case "project":
     case "media":
-      return (
-        <ProjectScreen
-          projectId={route.projectId}
-          onBack={goHome}
-          onEditSettings={() =>
-            go({ type: "openProjectSettings", projectId: route.projectId })
-          }
-        />
-      );
+      return <ProjectScreen projectId={route.projectId} />;
     case "projectSettings":
       return (
         <ProjectSettingsScreen
@@ -105,40 +89,33 @@ function MainScreen({ route }: { route: MainRoute }) {
   }
 }
 
-/** The settings page on top of the settings stack. */
-function SettingsPage({ page }: { page: SettingsPageName }) {
-  const go = useNavigate();
-  const onBack = () => go({ type: "closeSettings" });
-  switch (page) {
+/** The settings page on top of the settings stack, whose Back link leads to the page below it or to the screen beneath Settings. */
+function SettingsPage({ route }: { route: SettingsRoute }) {
+  const backHref = upPathOf(route) ?? "/";
+  switch (settingsPageOf(route)) {
     case "general":
-      return (
-        <ConnectedSettingsScreen
-          onBack={onBack}
-          onOpenAccount={() => go({ type: "openAccountSettings" })}
-          onOpenDictionaries={() => go({ type: "openDictionaries" })}
-        />
-      );
+      return <ConnectedSettingsScreen backHref={backHref} />;
     case "account":
-      return <AccountScreen onBack={onBack} />;
+      return <AccountScreen backHref={backHref} />;
     case "dictionaries":
-      return <DictionariesScreen onBack={onBack} />;
+      return <DictionariesScreen backHref={backHref} />;
     case "pairing":
-      return <ConnectedPairingScreen onBack={onBack} />;
+      return <ConnectedPairingScreen backHref={backHref} />;
     case "server":
-      return <ServerScreen onBack={onBack} />;
+      return <ServerScreen backHref={backHref} />;
     case "users":
-      return <UsersScreen via="self" onBack={onBack} />;
+      return <UsersScreen via="self" backHref={backHref} />;
     case "linkedRemoteUsers":
-      return <UsersScreen via="linkedRemote" onBack={onBack} />;
+      return <UsersScreen via="linkedRemote" backHref={backHref} />;
   }
 }
 
 /** The pairing page with the desktop app's server, which its button starts where the local network reaches it. */
-function ConnectedPairingScreen({ onBack }: { onBack: () => void }) {
+function ConnectedPairingScreen({ backHref }: { backHref: string }) {
   const dispatch = useAppDispatch();
   return (
     <PairingScreen
-      onBack={onBack}
+      backHref={backHref}
       desktopServer={useAppSelector(selectDesktopPairingServer)}
       onStartDesktopServer={() =>
         dispatch(actions.desktopServerLanStartRequested())
@@ -148,20 +125,10 @@ function ConnectedPairingScreen({ onBack }: { onBack: () => void }) {
 }
 
 /** The Settings screen with the converted-videos status and the desktop app's ffmpeg build from the server, and the bundled license notices. */
-function ConnectedSettingsScreen({
-  onBack,
-  onOpenAccount,
-  onOpenDictionaries,
-}: {
-  onBack: () => void;
-  onOpenAccount: () => void;
-  onOpenDictionaries: () => void;
-}) {
+function ConnectedSettingsScreen({ backHref }: { backHref: string }) {
   return (
     <SettingsScreen
-      onBack={onBack}
-      onOpenAccount={onOpenAccount}
-      onOpenDictionaries={onOpenDictionaries}
+      backHref={backHref}
       conversionCache={useConversionCacheControls()}
       ffmpegBuild={useFfmpegBuildControls()}
       licenseNotices={licenseNoticesStateOf(useLicenseNoticesQuery())}

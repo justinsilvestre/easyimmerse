@@ -13,7 +13,7 @@ test("a dictionary added from a file appears in the dictionaries settings", asyn
   await page.getByRole("button", { name: "Profile", exact: true }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page
-    .getByRole("button", { name: /^Dictionaries Add and remove/ })
+    .getByRole("link", { name: /^Dictionaries Add and remove/ })
     .click();
   const fileChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Add from a file" }).first().click();

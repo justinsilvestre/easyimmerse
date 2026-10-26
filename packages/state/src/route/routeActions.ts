@@ -29,6 +29,11 @@ export const routeActions = {
    * A link from outside the app, such as an `easyimmerse://` link, opens through this action.
    */
   linkOpened: (path: string) => ({ type: "linkOpened", path }) as const,
+  /**
+   * A person followed one of the app's own links within the app, which asks to open the screen its path and query name, or the home screen when they name none.
+   * It moves as the app's own navigation does, so a link to the screen the current one belongs to returns to the previous entry when that entry is its target.
+   */
+  linkFollowed: (path: string) => ({ type: "linkFollowed", path }) as const,
   /** The screen a link opened turned out to be one the app cannot reach, so the home screen takes its place. */
   routeUnreachable: () => ({ type: "routeUnreachable" }) as const,
 };

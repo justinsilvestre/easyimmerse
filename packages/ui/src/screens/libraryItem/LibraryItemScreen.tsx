@@ -10,6 +10,7 @@ import {
   actions,
   canManageLibrary,
   libraryFailureMessage,
+  pathOfRoute,
   selectLibraryAddTarget,
   selectServerConfig,
 } from "@easyimmerse/state";
@@ -18,7 +19,6 @@ import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
-import { useNavigate } from "../../useNavigate.ts";
 import { LibraryItemView } from "./LibraryItemView.tsx";
 
 /**
@@ -27,7 +27,6 @@ import { LibraryItemView } from "./LibraryItemView.tsx";
  */
 export function LibraryItemScreen({ itemId }: { itemId: string }) {
   const dispatch = useAppDispatch();
-  const go = useNavigate();
   const item = useGetLibraryItemQuery(itemId);
   const settings = useGetLibrarySettingsQuery();
   const projectList = useListProjectsQuery();
@@ -38,10 +37,10 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
   const chosen = useAppSelector((state) =>
     selectLibraryAddTarget(state, itemId),
   );
-  const back = () => go({ type: "openLibrary" });
+  const back = pathOfRoute({ screen: "library" });
   if (item.isError || settings.isError)
     return (
-      <ScreenLayout onBack={back} backLabel="Library">
+      <ScreenLayout backHref={back} backLabel="Library">
         <p role="alert">
           This library item couldn't be loaded. Go back to the library and try
           again.
@@ -51,7 +50,7 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
   // The "Add to" choice starts on the first project in the library's language, so it waits for both.
   if (!item.data || !settings.data || projectList.isLoading)
     return (
-      <ScreenLayout onBack={back} backLabel="Library">
+      <ScreenLayout backHref={back} backLabel="Library">
         <LoadingStatus label="Loading the item" className="flex flex-col gap-4">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-24 w-full rounded-lg" />
@@ -96,8 +95,6 @@ export function LibraryItemScreen({ itemId }: { itemId: string }) {
       onChooseProject={(projectId) =>
         dispatch(actions.libraryAddTargetChosen(itemId, projectId))
       }
-      onEdit={() => go({ type: "editLibraryItem", itemId })}
-      onBack={back}
     />
   );
 }

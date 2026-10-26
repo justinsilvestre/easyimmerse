@@ -14,18 +14,18 @@ import { PairingScannerPanel } from "./PairingScannerPanel.tsx";
  * The desktop server's state comes from the caller; null means it is not known yet.
  */
 export function PairingScreen({
-  onBack,
+  backHref,
   desktopServer,
   onStartDesktopServer,
 }: {
-  onBack: () => void;
+  backHref: string;
   desktopServer: DesktopPairingServer | null;
   onStartDesktopServer: () => void;
 }) {
   const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
   return (
     <ScreenLayout
-      onBack={onBack}
+      backHref={backHref}
       backLabel={useAppSelector(selectSettingsPageBackLabel)}
     >
       <h1 className="text-xl font-semibold">Local network sync</h1>

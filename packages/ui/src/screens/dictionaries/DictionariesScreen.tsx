@@ -11,7 +11,7 @@ import { useAppSelector } from "../../useAppSelector.ts";
 import { DictionariesView } from "./DictionariesView.tsx";
 
 /** The dictionaries settings, backed by the dictionaries the server keeps. */
-export function DictionariesScreen({ onBack }: { onBack: () => void }) {
+export function DictionariesScreen({ backHref }: { backHref: string }) {
   const dispatch = useAppDispatch();
   const list = useListDictionariesQuery();
   const dictionaries = list.data?.dictionaries ?? [];
@@ -32,7 +32,7 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       unsupportedFile={imports.unsupportedFile}
       importFailure={imports.importFailure}
       pendingTable={imports.pendingTable}
-      onBack={onBack}
+      backHref={backHref}
       backLabel={useAppSelector(selectSettingsPageBackLabel)}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
       onRemove={(dictionaryId) =>

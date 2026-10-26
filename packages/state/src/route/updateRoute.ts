@@ -23,6 +23,7 @@ export function requestedRoute(route: Route, action: AppAction): Route {
         mediaFileId: action.mediaFileId,
       };
     case "linkOpened":
+    case "linkFollowed":
       return routeAtPath(route, action.path);
     case "routeUnreachable":
       return withMainRoute(route, () => ({ screen: "home" }));
