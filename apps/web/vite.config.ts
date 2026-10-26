@@ -11,6 +11,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,wasm}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // Every screen of the app has its own path, so a navigation to any of them loads the app's page;
+        // the server's API paths are left to the network.
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api(\/|$)/],
       },
       manifest: {
         name: "easyImmerse",

@@ -13,7 +13,8 @@ import { createOpenExternalUrl } from "./openExternalUrl.ts";
  * Builds the browser-extension implementation of the app's side effects.
  *
  * Everything is inherited from the web effects, except that external URLs open in a new
- * tab through the extension's tabs API, since `window.open` is unreliable from a side panel.
+ * tab through the extension's tabs API, since `window.open` is unreliable from a side panel,
+ * and that the side panel keeps no address: it has no address bar, and a path written there would not load on reopening.
  */
 export function createExtensionEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -26,6 +27,8 @@ export function createExtensionEffects(options: {
     openExternalUrl: createOpenExternalUrl((properties) =>
       browser.tabs.create(properties),
     ),
+    writeLocation: () => undefined,
+    subscribeToLocation: () => () => undefined,
   };
 }
 export { openMailedLink } from "@easyimmerse/effects-web";

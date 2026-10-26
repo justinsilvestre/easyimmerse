@@ -12,6 +12,7 @@ import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 import { downloadFile } from "./downloadFile.ts";
+import { createHistoryLocation } from "./historyLocation.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { createPairingEffects } from "./pairingEffects.ts";
 import { pickFile } from "./pickFile.ts";
@@ -61,6 +62,7 @@ export function createWebEffects(options: {
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
+    ...createHistoryLocation(window),
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
       window.matchMedia("(prefers-color-scheme: dark)"),
