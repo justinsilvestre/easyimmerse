@@ -1,47 +1,47 @@
-import type { Effects } from "@easyimmerse/state";
-
-/** The parts of a page that the app's address goes through. */
-type HistoryPage = Pick<
-  Window,
-  "location" | "history" | "addEventListener" | "removeEventListener"
->;
-
-/** What the app keeps in `history.state` with each entry it writes. */
-type EntryState = { previousPath: string | null };
+import type { Effects, LocationReport } from "@easyimmerse/state";
+import { readEntryState } from "@easyimmerse/state";
+import type { HistoryLocation, RouterHistory } from "@tanstack/history";
 
 /**
- * Builds the effects that keep the page's address in step with where the app is, through the History API.
- * They write each new address as a history entry or in place of the current one, keeping the previous entry's path in the entry's state,
- * which survives reloads, and report the entry at once and again after each move of the browser's Back or Forward.
+ * Builds the effects that keep where the app is in a history: the browser's, or one kept in memory.
+ * They write each new entry with the state the app keeps with it, return to the previous entry,
+ * and report the location at once and after every change the history notifies: the app's own writes, and every move through it.
  */
 export function createHistoryLocation(
-  page: HistoryPage,
+  history: RouterHistory,
 ): Pick<
   Effects,
   "writeLocation" | "returnToPreviousLocation" | "subscribeToLocation"
 > {
   return {
-    writeLocation: ({ path, previousPath }, write) => {
-      const state: EntryState = { previousPath };
-      if (write === "push") page.history.pushState(state, "", path);
-      else page.history.replaceState(state, "", path);
-    },
-    returnToPreviousLocation: () => page.history.back(),
+    writeLocation: ({ path, state }, write) =>
+      write === "push"
+        ? history.push(path, state)
+        : history.replace(path, state),
+    returnToPreviousLocation: () => history.back(),
     subscribeToLocation: (listener) => {
-      const report = () =>
-        listener({
-          path: `${page.location.pathname}${page.location.search}`,
-          previousPath: previousPathIn(page.history.state),
-        });
-      report();
-      page.addEventListener("popstate", report);
-      return () => page.removeEventListener("popstate", report);
+      listener(reportOf(history.location, "traversal"));
+      return history.subscribe(({ location, action }) =>
+        listener(
+          reportOf(
+            location,
+            action.type === "PUSH" || action.type === "REPLACE"
+              ? "write"
+              : "traversal",
+          ),
+        ),
+      );
     },
   };
 }
 
-/** Reads the previous path the app kept in an entry's state, or null for an entry it did not write. */
-function previousPathIn(state: unknown): string | null {
-  const previousPath = (state as Partial<EntryState> | null)?.previousPath;
-  return typeof previousPath === "string" ? previousPath : null;
+function reportOf(
+  location: HistoryLocation,
+  cause: LocationReport["cause"],
+): LocationReport {
+  return {
+    path: `${location.pathname}${location.search}`,
+    state: readEntryState(location.state),
+    cause,
+  };
 }

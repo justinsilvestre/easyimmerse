@@ -38,6 +38,9 @@ function serverAfter(
 
 const loaded = actions.desktopServerSettingsLoaded(lanSettings);
 
+/** The location the history reports once Settings open over the home screen, whichever control or menu item opened them. */
+const settingsOpened = actions.locationChanged("/?settings=general");
+
 describe("updateDesktopServer", () => {
   describe("when the app starts", () => {
     it("follows and reads the server's status and reads its settings on the desktop app", () => {
@@ -57,19 +60,11 @@ describe("updateDesktopServer", () => {
 
   describe("when Settings open", () => {
     it("reads the settings and the log on the desktop app", () => {
-      const [, effects] = serverAfter(
-        desktop,
-        actions.navigated({ type: "openSettings" }),
-      );
+      const [, effects] = serverAfter(desktop, settingsOpened);
       expect(effects).toEqual([
         { type: "readDesktopServerSettings" },
         { type: "readDesktopServerLogs" },
       ]);
-    });
-
-    it("reads them too when the platform asks for Settings", () => {
-      const [, effects] = serverAfter(desktop, actions.settingsRequested());
-      expect(effects).toHaveLength(2);
     });
 
     it("forgets unsaved changes", () => {
@@ -77,16 +72,13 @@ describe("updateDesktopServer", () => {
         desktop,
         loaded,
         actions.desktopServerSettingsChanged({ autostart: true }),
-        actions.navigated({ type: "openSettings" }),
+        settingsOpened,
       );
       expect(state.edits).toEqual({});
     });
 
     it("reads nothing on the web app", () => {
-      const [, effects] = serverAfter(
-        web,
-        actions.navigated({ type: "openSettings" }),
-      );
+      const [, effects] = serverAfter(web, settingsOpened);
       expect(effects).toEqual([]);
     });
 
@@ -94,7 +86,7 @@ describe("updateDesktopServer", () => {
       const [, effects] = serverAfter(
         desktop,
         actions.desktopServerRequestFailed("readStatus", "no shell"),
-        actions.navigated({ type: "openPairing" }),
+        actions.locationChanged("/?settings=pairing"),
       );
       expect(effects).toContainEqual({ type: "readDesktopServerStatus" });
     });

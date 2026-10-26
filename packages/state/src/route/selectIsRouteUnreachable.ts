@@ -9,10 +9,12 @@ import { mainScreenOf } from "./route.ts";
  * Tells whether the main screen, opened from a link, is one the app cannot reach:
  * a project, media file or library item the server says does not exist, the library management screens for someone who does not manage the library,
  * or a library screen while the app has no server.
- * It decides only once the answer it needs has arrived, and is false while that answer is on its way or for a screen the app navigated to itself.
+ * It decides only once the answer it needs has arrived, and is false while that answer is on its way, while a move is on its way,
+ * or for a screen the app navigated to itself.
  */
 export function selectIsRouteUnreachable({ app, backend }: RootState): boolean {
-  if (app.routeHistory.origin !== "link") return false;
+  const { origin, awaitsLocation } = app.routeHistory;
+  if (origin !== "link" || awaitsLocation) return false;
   const main = mainScreenOf(app.route);
   if (isLibraryScreen(main) && app.server.config === null) return true;
   return isMainScreenUnreachable(main, backend);

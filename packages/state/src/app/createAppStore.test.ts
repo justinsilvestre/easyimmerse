@@ -135,7 +135,10 @@ describe("createAppStore", () => {
     effects.openLink("easyimmerse://projects/p1");
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      entry: { path: "/projects/p1", previousPath: "/" },
+      entry: {
+        path: "/projects/p1",
+        state: { previousPath: "/", origin: "link" },
+      },
       write: "push",
     });
   });
@@ -153,7 +156,10 @@ describe("createAppStore", () => {
     store.dispatch(actions.navigated({ type: "openLibrary" }));
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      entry: { path: "/library", previousPath: "/" },
+      entry: {
+        path: "/library",
+        state: { previousPath: "/", origin: "app" },
+      },
       write: "push",
     });
   });
@@ -178,15 +184,13 @@ describe("createAppStore", () => {
     ).toHaveLength(1);
   });
 
-  it("keeps its route when the browser arrives at the entry the app's own Back returned to", () => {
+  it("moves to the previous entry's screen once the history returns to it for the app's own Back", () => {
     const effects = createRecordingEffects();
     effects.showAddress("/");
     const store = createAppStore(effects, createFakeServerStoreParts());
     store.dispatch(actions.navigated({ type: "openLibrary" }));
     store.dispatch(actions.navigated({ type: "goHome" }));
-    const route = store.getState().app.route;
-    effects.showAddress("/");
-    expect(store.getState().app.route).toBe(route);
+    expect(store.getState().app.route).toEqual({ screen: "home" });
   });
 
   it("replaces the entry of a screen opened at an address when the app's own Back leaves it", () => {
@@ -196,7 +200,10 @@ describe("createAppStore", () => {
     store.dispatch(actions.closeMedia());
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      entry: { path: "/projects/p1", previousPath: null },
+      entry: {
+        path: "/projects/p1",
+        state: { previousPath: null, origin: "app" },
+      },
       write: "replace",
     });
   });

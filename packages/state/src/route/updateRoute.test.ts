@@ -8,7 +8,7 @@ import {
   exampleProjectSettings,
 } from "../server/exampleProject.ts";
 import type { Route } from "./route.ts";
-import { nextRoute, routeAfter } from "./updateRoute.ts";
+import { destinationOf, requestedRoute, routeAfter } from "./updateRoute.ts";
 
 const project: Route = { screen: "project", projectId: "p1" };
 
@@ -22,12 +22,12 @@ const mediaFileRemoved = (mediaFileId: string) =>
   );
 
 const settingsOver = (beneath: Route): Route =>
-  nextRoute(beneath, actions.settingsRequested());
+  requestedRoute(beneath, actions.settingsRequested());
 
-describe("nextRoute", () => {
+describe("requestedRoute", () => {
   it("takes the navigation step for navigated", () => {
     expect(
-      nextRoute(
+      requestedRoute(
         { screen: "home" },
         actions.navigated({ type: "openProject", projectId: "p1" }),
       ),
@@ -35,7 +35,9 @@ describe("nextRoute", () => {
   });
 
   it("opens settings over the current screen for settingsRequested", () => {
-    expect(nextRoute({ screen: "home" }, actions.settingsRequested())).toEqual({
+    expect(
+      requestedRoute({ screen: "home" }, actions.settingsRequested()),
+    ).toEqual({
       screen: "settings",
       beneath: { screen: "home" },
       pages: ["general"],
@@ -44,13 +46,16 @@ describe("nextRoute", () => {
 
   it("opens the media file for openMediaFileRequested", () => {
     expect(
-      nextRoute({ screen: "home" }, actions.openMediaFileRequested("p1", "m1")),
+      requestedRoute(
+        { screen: "home" },
+        actions.openMediaFileRequested("p1", "m1"),
+      ),
     ).toEqual(media);
   });
 
   it("closes settings for openMediaFileRequested", () => {
     expect(
-      nextRoute(
+      requestedRoute(
         settingsOver(media),
         actions.openMediaFileRequested("p1", "m1"),
       ),
@@ -58,19 +63,19 @@ describe("nextRoute", () => {
   });
 
   it("returns to the project for closeMedia", () => {
-    expect(nextRoute(media, actions.closeMedia())).toEqual(project);
+    expect(requestedRoute(media, actions.closeMedia())).toEqual(project);
   });
 
   it("returns to the project once the open file's removal succeeds", () => {
-    expect(nextRoute(media, mediaFileRemoved("m1"))).toEqual(project);
+    expect(requestedRoute(media, mediaFileRemoved("m1"))).toEqual(project);
   });
 
   it("keeps the open media file once another file's removal succeeds", () => {
-    expect(nextRoute(media, mediaFileRemoved("m2"))).toBe(media);
+    expect(requestedRoute(media, mediaFileRemoved("m2"))).toBe(media);
   });
 
   it("leaves Settings over the project once the removal of the file beneath them succeeds", () => {
-    expect(nextRoute(settingsOver(media), mediaFileRemoved("m1"))).toEqual(
+    expect(requestedRoute(settingsOver(media), mediaFileRemoved("m1"))).toEqual(
       settingsOver(project),
     );
   });
@@ -81,47 +86,32 @@ describe("nextRoute", () => {
       { kind: "removeMediaFile", projectId: "p1", mediaFileId: "m1" },
       { ok: false, error: { status: 500, message: "down" } },
     );
-    expect(nextRoute(media, failed)).toBe(media);
-  });
-
-  it("moves to the screen the opened location names", () => {
-    expect(
-      nextRoute(project, actions.locationOpened("/projects/p1/media/m1")),
-    ).toEqual(media);
-  });
-
-  it("moves home for an opened location that names no screen", () => {
-    expect(nextRoute(project, actions.locationOpened("/elsewhere"))).toEqual({
-      screen: "home",
-    });
-  });
-
-  it("keeps the route itself for an opened location that names it", () => {
-    expect(nextRoute(project, actions.locationOpened("/projects/p1"))).toBe(
-      project,
-    );
+    expect(requestedRoute(media, failed)).toBe(media);
   });
 
   it("opens Settings over the screen an opened link names", () => {
     expect(
-      nextRoute(project, actions.linkOpened("/projects/p1?settings=general")),
+      requestedRoute(
+        project,
+        actions.linkOpened("/projects/p1?settings=general"),
+      ),
     ).toEqual(settingsOver(project));
   });
 
   it("moves home for routeUnreachable", () => {
-    expect(nextRoute(media, actions.routeUnreachable())).toEqual({
+    expect(requestedRoute(media, actions.routeUnreachable())).toEqual({
       screen: "home",
     });
   });
 
   it("keeps Settings open over the home screen for routeUnreachable", () => {
-    expect(nextRoute(settingsOver(media), actions.routeUnreachable())).toEqual(
-      settingsOver({ screen: "home" }),
-    );
+    expect(
+      requestedRoute(settingsOver(media), actions.routeUnreachable()),
+    ).toEqual(settingsOver({ screen: "home" }));
   });
 
   it("stays put for an action that does not move the app", () => {
-    expect(nextRoute(media, actions.playerTimeChanged(3))).toBe(media);
+    expect(requestedRoute(media, actions.playerTimeChanged(3))).toBe(media);
   });
 });
 
@@ -184,10 +174,10 @@ const created = actions.requestSettled(
   { ok: true, data: exampleProject("p3") },
 );
 
-describe("routeAfter", () => {
+describe("destinationOf", () => {
   it("opens the project the new project form created", () => {
     const app = stateAfter(actions.navigated({ type: "createProject" }));
-    expect(routeAfter(app, created)).toEqual({
+    expect(destinationOf(app, created)).toEqual({
       screen: "project",
       projectId: "p3",
     });
@@ -198,7 +188,7 @@ describe("routeAfter", () => {
       actions.navigated({ type: "createProject" }),
       actions.navigated({ type: "goHome" }),
     );
-    expect(routeAfter(app, created)).toEqual({ screen: "home" });
+    expect(destinationOf(app, created)).toEqual({ screen: "home" });
   });
 
   it("returns to the project once its settings are saved", () => {
@@ -214,7 +204,7 @@ describe("routeAfter", () => {
       },
       { ok: true, data: exampleProject("p1") },
     );
-    expect(routeAfter(app, saved)).toEqual(project);
+    expect(destinationOf(app, saved)).toEqual(project);
   });
 
   it("stays on the form when the creation failed", () => {
@@ -224,21 +214,21 @@ describe("routeAfter", () => {
       { kind: "createProject", settings: exampleProjectSettings },
       { ok: false, error: { status: 500, message: "down" } },
     );
-    expect(routeAfter(app, failed)).toEqual({ screen: "newProject" });
+    expect(destinationOf(app, failed)).toEqual({ screen: "newProject" });
   });
 
   it("opens the media file that a settled pick names", () => {
-    expect(routeAfter(stateAfter(...pickedInProject), added)).toEqual(media);
+    expect(destinationOf(stateAfter(...pickedInProject), added)).toEqual(media);
   });
 
   it("opens the media file that a settled pick names beneath Settings opened meanwhile", () => {
     const app = stateAfter(...pickedInProject, actions.settingsRequested());
-    expect(routeAfter(app, added)).toEqual(settingsOver(media));
+    expect(destinationOf(app, added)).toEqual(settingsOver(media));
   });
 
   it("opens the media file that a media-source fetch added", () => {
     const app = stateAfter(...fetchStarted);
-    expect(routeAfter(app, fetchDone)).toEqual(media);
+    expect(destinationOf(app, fetchDone)).toEqual(media);
   });
 
   it("stays on the project when a fetch ends without a media file", () => {
@@ -248,12 +238,41 @@ describe("routeAfter", () => {
       fetchStatusRequest,
       { ok: true, data: { ...runningMediaSourceJob, status: "failed" } },
     );
-    expect(routeAfter(app, failed)).toEqual(project);
+    expect(destinationOf(app, failed)).toEqual(project);
   });
 
   it("takes the route's own next step for any other action", () => {
-    expect(routeAfter(stateAfter(), actions.settingsRequested())).toEqual(
+    expect(destinationOf(stateAfter(), actions.settingsRequested())).toEqual(
       settingsOver({ screen: "home" }),
     );
+  });
+});
+
+describe("routeAfter", () => {
+  it("moves to the screen a reported location names", () => {
+    expect(
+      routeAfter(
+        { route: project },
+        actions.locationChanged("/projects/p1/media/m1"),
+      ),
+    ).toEqual(media);
+  });
+
+  it("moves home for a reported location that names no screen", () => {
+    expect(
+      routeAfter({ route: project }, actions.locationChanged("/elsewhere")),
+    ).toEqual({ screen: "home" });
+  });
+
+  it("keeps the route itself for a reported location that names it", () => {
+    expect(
+      routeAfter({ route: project }, actions.locationChanged("/projects/p1")),
+    ).toBe(project);
+  });
+
+  it("keeps the route for a request to move, which only the reported location performs", () => {
+    expect(
+      routeAfter({ route: project }, actions.navigated({ type: "goHome" })),
+    ).toBe(project);
   });
 });

@@ -6,6 +6,7 @@ import type {
   PlayerRegistry,
   ServerConfig,
 } from "@easyimmerse/state";
+import { createMemoryHistory } from "@tanstack/history";
 import { browser } from "@wxt-dev/browser";
 import { createOpenExternalUrl } from "./openExternalUrl.ts";
 
@@ -14,7 +15,8 @@ import { createOpenExternalUrl } from "./openExternalUrl.ts";
  *
  * Everything is inherited from the web effects, except that external URLs open in a new
  * tab through the extension's tabs API, since `window.open` is unreliable from a side panel,
- * and that the side panel keeps no address: it has no address bar, and a path written there would not load on reopening.
+ * and that the side panel keeps its history in memory: it has no address bar, and a path written into its address would not load on reopening.
+ * It starts at the home screen each time it opens.
  */
 export function createExtensionEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -23,13 +25,10 @@ export function createExtensionEffects(options: {
   server?: ServerConfig | null;
 }): Effects {
   return {
-    ...createWebEffects(options),
+    ...createWebEffects({ ...options, history: createMemoryHistory() }),
     openExternalUrl: createOpenExternalUrl((properties) =>
       browser.tabs.create(properties),
     ),
-    writeLocation: () => undefined,
-    returnToPreviousLocation: () => undefined,
-    subscribeToLocation: () => () => undefined,
   };
 }
 export { openMailedLink } from "@easyimmerse/effects-web";

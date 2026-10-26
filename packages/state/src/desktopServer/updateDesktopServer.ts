@@ -1,7 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Feature, ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
-import { nextRoute } from "../route/updateRoute.ts";
+import { routeAfter } from "../route/updateRoute.ts";
 import { lanBindOf, readBindAddress } from "./bindAddress.ts";
 import type { DesktopServerEffect } from "./desktopServerEffect.ts";
 import {
@@ -38,8 +38,7 @@ export function updateDesktopServer(
             { type: "readDesktopServerSettings" },
           )
         : updated(state);
-    case "navigated":
-    case "settingsRequested":
+    case "locationChanged":
       return opensSettings(app, action)
         ? updated(
             { ...state, edits: {} },
@@ -115,12 +114,12 @@ function isDesktop({ server }: Reads): boolean {
   return server.config?.bundledIn === "desktop";
 }
 
-/** Tells whether the action opens Settings over a main screen in the desktop app. */
+/** Tells whether the location the action reports opens Settings over a main screen in the desktop app. */
 function opensSettings(app: Reads, action: AppAction): boolean {
   return (
     isDesktop(app) &&
     app.route.screen !== "settings" &&
-    nextRoute(app.route, action).screen === "settings"
+    routeAfter(app, action).screen === "settings"
   );
 }
 

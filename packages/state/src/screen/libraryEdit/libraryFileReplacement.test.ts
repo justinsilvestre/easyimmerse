@@ -28,6 +28,9 @@ const uploading = { itemId: "i1", stage: "uploading" } as const;
 const settled = (outcome: Parameters<typeof actions.requestSettled>[2]) =>
   actions.requestSettled("libraryEdit/replaceFile/i1", uploadRequest, outcome);
 
+/** The location the history reports once the app moves to the library management screen. */
+const movedToManagement = actions.locationChanged("/library/manage");
+
 function replacementAfter(
   replacement: LibraryFileReplacement | null,
   action: AppAction,
@@ -135,10 +138,7 @@ describe("updateLibraryFileReplacement", () => {
   });
 
   it("drops a pick when the app moves elsewhere", () => {
-    expect(
-      replacementAfter(picking, actions.navigated({ type: "manageLibrary" }))
-        .replacement,
-    ).toBeNull();
+    expect(replacementAfter(picking, movedToManagement).replacement).toBeNull();
   });
 
   it("drops a failure when the app moves elsewhere", () => {
@@ -147,16 +147,12 @@ describe("updateLibraryFileReplacement", () => {
       stage: "failed",
       error: serverError,
     } as const;
-    expect(
-      replacementAfter(failed, actions.navigated({ type: "manageLibrary" }))
-        .replacement,
-    ).toBeNull();
+    expect(replacementAfter(failed, movedToManagement).replacement).toBeNull();
   });
 
   it("keeps an upload under way when the app moves elsewhere", () => {
-    expect(
-      replacementAfter(uploading, actions.navigated({ type: "manageLibrary" }))
-        .replacement,
-    ).toEqual(uploading);
+    expect(replacementAfter(uploading, movedToManagement).replacement).toEqual(
+      uploading,
+    );
   });
 });

@@ -242,6 +242,7 @@ export {
   selectReviewProjectId,
   selectReviewSession,
 } from "./review/selectReviewSession.ts";
+export { readEntryState } from "./route/readEntryState.ts";
 export type {
   MainRoute,
   NavigationStep,
@@ -249,7 +250,12 @@ export type {
   SettingsSection,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";
-export type { LocationEntry, LocationWrite } from "./route/routeEffect.ts";
+export type {
+  EntryState,
+  LocationEntry,
+  LocationReport,
+  LocationWrite,
+} from "./route/routeEffect.ts";
 export { pathOfRoute, routeOfPath } from "./route/routePath.ts";
 export {
   selectCurrentMediaFileId,

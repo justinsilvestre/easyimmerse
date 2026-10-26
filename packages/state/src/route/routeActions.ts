@@ -1,6 +1,10 @@
 import type { NavigationStep } from "./route.ts";
+import type { EntryState, LocationCause } from "./routeEffect.ts";
 
-/** The action creators that move the app from one place to another. */
+/**
+ * The action creators that move the app from one place to another.
+ * Each one but `locationChanged` asks for a move, which the history performs; the app then moves when the history reports the location.
+ */
 export const routeActions = {
   /** Takes a step from where the app is to another place. */
   navigated: (step: NavigationStep) => ({ type: "navigated", step }) as const,
@@ -12,14 +16,16 @@ export const routeActions = {
   /** Leaves the open media file for its project's overview. */
   closeMedia: () => ({ type: "closeMedia" }) as const,
   /**
-   * The platform shows an address, path and query: the one the app opened at, or one the browser's Back or Forward returned to,
-   * with the path of the history entry before it, when the app wrote that entry.
-   * The app moves to the screen it names, or to the home screen when it names none.
+   * The platform reports the location: after one of the app's own writes, at startup, or after the browser's Back or Forward.
+   * The app moves to the screen it names, or to the home screen when it names none. This is the only action that moves the app.
    */
-  locationOpened: (path: string, previousPath: string | null = null) =>
-    ({ type: "locationOpened", path, previousPath }) as const,
+  locationChanged: (
+    path: string,
+    state: EntryState | null = null,
+    cause: LocationCause = "traversal",
+  ) => ({ type: "locationChanged", path, state, cause }) as const,
   /**
-   * Opens the screen that a link's path and query name, as a new step from where the app is, or the home screen when they name none.
+   * Asks to open the screen that a link's path and query name, as a new step from where the app is, or the home screen when they name none.
    * A link from outside the app, such as an `easyimmerse://` link, opens through this action.
    */
   linkOpened: (path: string) => ({ type: "linkOpened", path }) as const,

@@ -74,9 +74,7 @@ describe("screenCommands", () => {
   });
 
   it("records that a project was opened when its overview opens", () => {
-    const effects = apply(
-      actions.navigated({ type: "openProject", projectId: "p1" }),
-    );
+    const effects = apply(actions.locationChanged("/projects/p1"));
     expect(effects).toContainEqual({
       type: "sendRequest",
       id: "project/p1/markOpened",

@@ -16,7 +16,7 @@ import type { SyncState } from "../sync/updateSync.ts";
 
 /** The app's own state, one slice per feature. */
 export type AppState = {
-  /** Where the app is. The address bar shows it as a path, as `pathOfRoute` writes it. */
+  /** Where the app is: the screen the location the history last reported names, as `routeAfter` reads it. */
   route: Route;
   /** How the app reached the route: from a link or by its own navigation, and from which history entry. */
   routeHistory: RouteHistory;

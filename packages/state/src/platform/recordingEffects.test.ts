@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { LocationReport } from "../route/routeEffect.ts";
 import type { PickedFile } from "./effects.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
 
@@ -141,5 +142,53 @@ describe("createRecordingEffects", () => {
     effects.subscribeToOpenedLinks(() => undefined);
     effects.subscribeToOpenedLinks((link) => links.push(link));
     expect(links).toEqual([]);
+  });
+
+  describe("for the history", () => {
+    const state = { previousPath: "/", origin: "app" } as const;
+
+    /** Subscribes to the history of recording effects that start at home, and returns the reports. */
+    function subscribedAtHome() {
+      const effects = createRecordingEffects();
+      effects.showAddress("/");
+      const reports: LocationReport[] = [];
+      effects.subscribeToLocation((report) => reports.push(report));
+      return { effects, reports };
+    }
+
+    it("reports the address shown at once", () => {
+      expect(subscribedAtHome().reports).toEqual([
+        { path: "/", state: null, cause: "traversal" },
+      ]);
+    });
+
+    it("reports each write at once", () => {
+      const { effects, reports } = subscribedAtHome();
+      effects.writeLocation({ path: "/library", state }, "push");
+      expect(reports.at(-1)).toEqual({
+        path: "/library",
+        state,
+        cause: "write",
+      });
+    });
+
+    it("reports the previous entry once it returns to it", () => {
+      const { effects, reports } = subscribedAtHome();
+      effects.writeLocation({ path: "/library", state }, "push");
+      effects.returnToPreviousLocation();
+      expect(reports.at(-1)).toEqual({
+        path: "/",
+        state: null,
+        cause: "traversal",
+      });
+    });
+
+    it("reports nothing before an address is shown or written", () => {
+      const reports: LocationReport[] = [];
+      createRecordingEffects().subscribeToLocation((report) =>
+        reports.push(report),
+      );
+      expect(reports).toEqual([]);
+    });
   });
 });

@@ -53,8 +53,8 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
  * The store opens Settings whenever the platform asks for them, follows the operating system's theme, and shows a notice each time the backup breaks, for as long as it lives.
- * It opens on the screen that the platform's address names, and moves to the screen of each address the browser's Back and Forward return to.
- * It opens the screen of each `easyimmerse://` link the platform opens the app with, as a new step from where the app is.
+ * The history decides where the app is. A request for a move, such as a navigation step or an `easyimmerse://` link the platform opens the app with,
+ * only writes the history; the store moves when the history reports the location: after its own writes, at startup, and after the browser's Back or Forward.
  * A screen opened from an address or a link which turns out to be unreachable gives way to the home screen.
  * `cloudUrl` is the address of the official easyImmerse server, which the app offers to log in to, or null while there is none.
  * Once created, it dispatches `appStarted`, which loads the stored preferences.
@@ -87,8 +87,8 @@ export function createAppStore(
   );
   watchBackupFaults(store);
   watchUnreachableRoute(store);
-  effects.subscribeToLocation(({ path, previousPath }) =>
-    store.dispatch(actions.locationOpened(path, previousPath)),
+  effects.subscribeToLocation(({ path, state, cause }) =>
+    store.dispatch(actions.locationChanged(path, state, cause)),
   );
   effects.subscribeToOpenedLinks((link) => {
     const path = pathOfAppLink(link);

@@ -73,7 +73,8 @@ export const initialAppState = Object.fromEntries(
  * Beside the features, the root update takes three fixed steps: it adds the platform, screen, flashcard and Anki commands, which change no state;
  * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
  * records the requests sent, and holds back those that must wait; it guards the app's closing whenever unsaved work
- * begins, and stops once none is left, as `closeGuardEffects` describes; and it keeps the flashcard saves at risk on the device, as `recoveryEffects` describes.
+ * begins, and stops once none is left, as `closeGuardEffects` describes; it keeps the flashcard saves at risk on the device, as `recoveryEffects` describes;
+ * and it puts the history's effects last, as `isNavigation` describes.
  */
 export const update: UpdateFunction<
   AppState,
@@ -100,11 +101,23 @@ export const update: UpdateFunction<
     operations === next.operations ? next : { ...next, operations };
   return updated(
     tracked,
-    ...performed,
+    ...performed.filter((effect) => !isNavigation(effect)),
     ...closeGuardEffects(state, tracked),
     ...recoveryEffects(state, tracked),
+    ...performed.filter(isNavigation),
   );
 };
+
+/**
+ * Tells whether an effect writes or moves through the history. Such effects run after the action's others,
+ * since the history reports the new location at once, and the update of that report must follow everything the action asked for.
+ */
+function isNavigation(effect: PerformedEffect): boolean {
+  return (
+    effect.type === "writeLocation" ||
+    effect.type === "returnToPreviousLocation"
+  );
+}
 
 function updateSlice<K extends keyof AppState>(
   name: K,

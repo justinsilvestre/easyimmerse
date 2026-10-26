@@ -145,7 +145,10 @@ describe("updateDialog", () => {
     });
 
     it("closes the dialog when the reader closes", () => {
-      const [dialog] = applyInReader(combining, actions.closeMedia());
+      const [dialog] = applyInReader(
+        combining,
+        actions.locationChanged("/projects/p1"),
+      );
       expect(dialog).toBeNull();
     });
   });
@@ -202,7 +205,7 @@ describe("updateDialog", () => {
     it("closes the question once the dictionaries page closes", () => {
       const [dialog] = applyDialog(
         asking,
-        actions.navigated({ type: "closeSettings" }),
+        actions.locationChanged("/?settings=general"),
       );
       expect(dialog).toBeNull();
     });

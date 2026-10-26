@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { reportedLocationOf, stateAfter } from "../app/stateAfter.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { updateStoredPlaces } from "./updateStoredPlaces.ts";
@@ -15,6 +15,10 @@ const apply = (action: AppAction, ...before: AppAction[]) => {
     withEmptyServerCache(app),
   );
 };
+
+/** Applies the location the history reports after the request to the stored places after the given earlier actions. */
+const applyMove = (request: AppAction, ...before: AppAction[]) =>
+  apply(reportedLocationOf(stateAfter(...before), request), ...before);
 
 const location = { chapterIndex: 1, paragraphIndex: 4, offset: 10 };
 
@@ -48,7 +52,7 @@ const bookAdded = actions.requestSettled(
 describe("updateStoredPlaces", () => {
   describe("for the reading location", () => {
     it("loads the reading place of a media file when it opens", () => {
-      const [, effects] = apply(actions.openMediaFileRequested("p1", "b1"));
+      const [, effects] = applyMove(actions.openMediaFileRequested("p1", "b1"));
       expect(effects).toContainEqual({
         type: "loadReadingLocation",
         mediaFileId: "b1",
@@ -56,7 +60,7 @@ describe("updateStoredPlaces", () => {
     });
 
     it("loads the reading place of a media file that an added pick opens", () => {
-      const [, effects] = apply(bookAdded, ...pickBook);
+      const [, effects] = applyMove(bookAdded, ...pickBook);
       expect(effects).toContainEqual({
         type: "loadReadingLocation",
         mediaFileId: "b1",
@@ -64,7 +68,7 @@ describe("updateStoredPlaces", () => {
     });
 
     it("does not load the reading place again when it is known", () => {
-      const [, effects] = apply(
+      const [, effects] = applyMove(
         actions.openMediaFileRequested("p1", "b1"),
         ...openBook(null),
         actions.closeMedia(),
@@ -161,21 +165,24 @@ describe("updateStoredPlaces", () => {
     });
 
     it("returns a saveReadingLocation effect with the last location for closeMedia", () => {
-      const [, effects] = apply(actions.closeMedia(), ...openBook(location));
+      const [, effects] = applyMove(
+        actions.closeMedia(),
+        ...openBook(location),
+      );
       expect(effects).toEqual([
         { type: "saveReadingLocation", mediaFileId: "b1", location },
       ]);
     });
 
     it("returns no effects for closeMedia when the open file has no reading location", () => {
-      const [, effects] = apply(actions.closeMedia(), ...openBook(null));
+      const [, effects] = applyMove(actions.closeMedia(), ...openBook(null));
       expect(effects).toEqual([]);
     });
   });
 
   describe("for the playback position", () => {
     it("loads the playback position of a media file when it opens", () => {
-      const [, effects] = apply(actions.openMediaFileRequested("p1", "m1"));
+      const [, effects] = applyMove(actions.openMediaFileRequested("p1", "m1"));
       expect(effects).toContainEqual({
         type: "loadPlaybackPosition",
         mediaFileId: "m1",
@@ -183,7 +190,7 @@ describe("updateStoredPlaces", () => {
     });
 
     it("does not load the playback position again when it is known", () => {
-      const [, effects] = apply(
+      const [, effects] = applyMove(
         actions.openMediaFileRequested("p1", "m1"),
         actions.playbackPositionLoaded("m1", null),
       );
@@ -231,19 +238,19 @@ describe("updateStoredPlaces", () => {
     });
 
     it("saves the position for closeMedia", () => {
-      const [, effects] = apply(actions.closeMedia(), ...playedTo14);
+      const [, effects] = applyMove(actions.closeMedia(), ...playedTo14);
       expect(effects).toEqual([
         { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
       ]);
     });
 
     it("remembers the saved position for closeMedia, so that reopening the file finds it", () => {
-      const [places] = apply(actions.closeMedia(), ...playedTo14);
+      const [places] = applyMove(actions.closeMedia(), ...playedTo14);
       expect(places.playback.m1).toBe(14_000);
     });
 
     it("saves nothing before the player has loaded the file", () => {
-      const [, effects] = apply(
+      const [, effects] = applyMove(
         actions.closeMedia(),
         actions.openMediaFileRequested("p1", "m1"),
         actions.playerTimeChanged(14),
@@ -252,7 +259,7 @@ describe("updateStoredPlaces", () => {
     });
 
     it("saves the position when another media file opens", () => {
-      const [, effects] = apply(
+      const [, effects] = applyMove(
         actions.openMediaFileRequested("p1", "m2"),
         ...playedTo14,
       );

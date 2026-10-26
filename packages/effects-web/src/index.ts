@@ -7,6 +7,7 @@ import type {
   ServerConfig,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
+import { createBrowserHistory, type RouterHistory } from "@tanstack/history";
 import { createAccountEffects } from "./accountEffects.ts";
 import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
@@ -34,6 +35,8 @@ export function createWebEffects(options: {
   writeDefinitionMarkdown: DefinitionWriter;
   /** The server the app is connected to, which keeps the preferences that follow the person; absent or null when there is none. */
   server?: ServerConfig | null;
+  /** The history that decides where the app is; the browser's own when absent. */
+  history?: RouterHistory;
 }): Effects {
   const deviceStore = createPreferenceStore();
   const preferences = createScopedPreferenceStore(
@@ -63,7 +66,7 @@ export function createWebEffects(options: {
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
     subscribeToOpenedLinks: ignoreOpenedLinks,
-    ...createHistoryLocation(window),
+    ...createHistoryLocation(options.history ?? createBrowserHistory()),
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
       window.matchMedia("(prefers-color-scheme: dark)"),

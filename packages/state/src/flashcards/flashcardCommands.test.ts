@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
+import { reportedLocationOf } from "../app/stateAfter.ts";
 import type { NoticeContent } from "../notices/noticesState.ts";
 import {
   cat,
@@ -632,7 +633,9 @@ describe("flashcardCommands", () => {
         hundFailed(),
         actions.failedSaveOpened("h", "p1", "m1"),
       );
-      expect(flashcardEffects(app, actions.closeMedia())).toContainEqual({
+      expect(
+        flashcardEffects(app, reportedLocationOf(app, actions.closeMedia())),
+      ).toContainEqual({
         type: "abortRequest",
         id: "flashcards/opening/h",
       });
@@ -791,7 +794,12 @@ describe("flashcardCommands", () => {
       ),
       close,
     );
-    expect(flashcardEffects(closed, actions.closeMedia())).toContainEqual({
+    expect(
+      flashcardEffects(
+        closed,
+        reportedLocationOf(closed, actions.closeMedia()),
+      ),
+    ).toContainEqual({
       type: "dispatch",
       action: actions.noticeWithdrawn("formDiscarded:f1"),
     });

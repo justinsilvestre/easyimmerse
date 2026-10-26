@@ -1,18 +1,15 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature } from "../app/feature.ts";
-import { updated } from "../app/updated.ts";
 import { editedFlashcardRoute } from "../review/editedFlashcardRoute.ts";
 import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
-import { type HistoryWrite, historyWriteOf } from "./historyWriteOf.ts";
-import type { MainRoute, Route } from "./route.ts";
-import { initialRoute, mainScreenOf, navigate } from "./route.ts";
-import type { RouteEffect } from "./routeEffect.ts";
-import { pathOfRoute, routeOfPath } from "./routePath.ts";
+import type { MainRoute, Route, SettingsSection } from "./route.ts";
+import { initialRoute, isSamePlace, mainScreenOf, navigate } from "./route.ts";
+import { routeOfPath } from "./routePath.ts";
 
-/** Returns where the app is after an action. */
-export function nextRoute(route: Route, action: AppAction): Route {
+/** Returns where a request asks the app to go from the route, which is the route itself for an action that asks for no move. */
+export function requestedRoute(route: Route, action: AppAction): Route {
   switch (action.type) {
     case "navigated":
       return navigate(route, action.step);
@@ -25,7 +22,6 @@ export function nextRoute(route: Route, action: AppAction): Route {
         projectId: action.projectId,
         mediaFileId: action.mediaFileId,
       };
-    case "locationOpened":
     case "linkOpened":
       return routeAtPath(route, action.path);
     case "routeUnreachable":
@@ -54,10 +50,11 @@ export function nextRoute(route: Route, action: AppAction): Route {
 export type RouteApp = Pick<AppState, "route" | "screen">;
 
 /**
- * Returns where the app is after an action, including the media file that a settled pick or fetch opens,
+ * Returns where an action asks the app to go, including the media file that a settled pick or fetch opens,
  * the project that a settled project form opens, and the media file of a card the review opens in the editor.
+ * It is the route itself for an action that asks for no move. The app goes there once the history reports the location.
  */
-export function routeAfter(app: RouteApp, action: AppAction): Route {
+export function destinationOf(app: RouteApp, action: AppAction): Route {
   const edited = editedFlashcardRoute(app, action);
   if (edited !== null) return withMainRoute(app.route, () => edited);
   const project = projectOpenedByForm(mainScreenOf(app.route), action);
@@ -68,7 +65,7 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
     }));
   const opened = mediaFileOpenedBy(app, action);
   return opened === null
-    ? nextRoute(app.route, action)
+    ? requestedRoute(app.route, action)
     : withMainRoute(app.route, (main) =>
         main.screen === "project"
           ? { ...main, screen: "media", mediaFileId: opened }
@@ -77,35 +74,23 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
 }
 
 /**
- * The route as a feature: where the app is, moved by navigation, by opening and closing media files, and by the addresses the platform shows.
- * Each move writes the browser's history as `historyWriteOf` decides.
+ * Returns where the app is after an action. Only a reported location moves it, to the screen the location names, or home when it names none;
+ * the route keeps its reference when the location names it already.
  */
-export const routeFeature: Feature<Route, keyof RouteApp | "routeHistory"> = {
-  initialState: initialRoute,
-  update: (route, action, app) => {
-    const next = routeAfter(app, action);
-    const { previousPath } = app.routeHistory;
-    const write = historyWriteOf(route, next, action, previousPath);
-    return updated(next, ...historyEffectsOf(write, route, next, previousPath));
-  },
-};
-
-/** Returns the effects that write the history as decided: a new entry after the route left, the current entry with its previous path kept, or a return to the previous entry. */
-function historyEffectsOf(
-  write: HistoryWrite | null,
-  before: Route,
-  after: Route,
-  previousPath: string | null,
-): RouteEffect[] {
-  if (write === null) return [];
-  if (write === "back") return [{ type: "returnToPreviousLocation" }];
-  const path = pathOfRoute(after);
-  const entry =
-    write === "push"
-      ? { path, previousPath: pathOfRoute(before) }
-      : { path, previousPath };
-  return [{ type: "writeLocation", entry, write }];
+export function routeAfter(
+  app: Pick<RouteApp, "route">,
+  action: AppAction,
+): Route {
+  return action.type === "locationChanged"
+    ? routeAtLocation(app.route, action.path, action.state?.scrollTarget)
+    : app.route;
 }
+
+/** The route as a feature: where the app is, which moves only when the history reports a location. */
+export const routeFeature: Feature<Route, "route"> = {
+  initialState: initialRoute,
+  update: (_route, action, app) => [routeAfter(app, action), []],
+};
 
 /** Changes the main screen, beneath Settings when they are open, and keeps the route itself when nothing changes. */
 function withMainRoute(
@@ -119,8 +104,21 @@ function withMainRoute(
 
 /** Returns the route the path names, or home when it names none, keeping the current route itself when the path names it. */
 function routeAtPath(route: Route, path: string): Route {
+  return routeAtLocation(route, path, undefined);
+}
+
+/** Returns the route a location names, with the settings section its entry scrolls to, keeping the current route itself when they name it. */
+function routeAtLocation(
+  route: Route,
+  path: string,
+  scrollTarget: SettingsSection | undefined,
+): Route {
   const named = routeOfPath(path) ?? initialRoute;
-  return pathOfRoute(named) === pathOfRoute(route) ? route : named;
+  const located =
+    named.screen === "settings" && scrollTarget !== undefined
+      ? { ...named, scrollTarget }
+      : named;
+  return isSamePlace(located, route) ? route : located;
 }
 
 function projectRouteOf(main: { projectId: string }): MainRoute {

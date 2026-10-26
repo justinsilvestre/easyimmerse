@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@easyimmerse/state": "workspace:*",
-    "@easyimmerse/types": "workspace:*"
+    "@easyimmerse/types": "workspace:*",
+    "@tanstack/history": "1.162.5"
   },
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",

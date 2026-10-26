@@ -44,7 +44,7 @@ export function updateLibraryFileReplacement(
     return updatePicking(replacement, action);
   if (replacement.stage === "uploading")
     return updateUploading(replacement, action);
-  return updated(action.type === "navigated" ? null : replacement);
+  return updated(action.type === "locationChanged" ? null : replacement);
 }
 
 function updatePicking(
@@ -54,7 +54,7 @@ function updatePicking(
   const { itemId } = replacement;
   switch (action.type) {
     case "mediaFilePickCancelled":
-    case "navigated":
+    case "locationChanged":
       return updated(null);
     case "mediaFileChosen":
       return updated(

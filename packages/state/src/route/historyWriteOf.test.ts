@@ -54,10 +54,10 @@ describe("historyWriteOf", () => {
     ).toBeNull();
   });
 
-  it("writes nothing for a move that changes only the section the settings scroll to", () => {
-    expect(
-      writeOfStep(settings, { type: "openMediaConversionSettings" }),
-    ).toBeNull();
+  it("replaces the entry for a move that changes only the section the settings scroll to, which its state holds", () => {
+    expect(writeOfStep(settings, { type: "openMediaConversionSettings" })).toBe(
+      "replace",
+    );
   });
 
   describe("for a step of the app's own Back controls", () => {
@@ -106,23 +106,6 @@ describe("historyWriteOf", () => {
         ),
       ).toBe("back");
     });
-  });
-
-  it("writes nothing for an address the platform shows", () => {
-    expect(
-      historyWriteOf(
-        home,
-        project,
-        actions.locationOpened("/projects/p1"),
-        null,
-      ),
-    ).toBeNull();
-  });
-
-  it("replaces an address the platform shows that names no screen", () => {
-    expect(
-      historyWriteOf(project, home, actions.locationOpened("/elsewhere"), null),
-    ).toBe("replace");
   });
 
   it("pushes an entry for an opened link", () => {
