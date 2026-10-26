@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){let t=Math.max(0,e),i=0;for(;n(t,i)>=1e3&&i<r.length-1;)t/=1e3,i+=1;return`${n(t,i)} ${r[i]}`}function n(e,t){let n=+(t>0&&e<10);return Number(e.toFixed(n))}var r;function i(){return(i=e((()=>{r=[`B`,`kB`,`MB`,`GB`,`TB`]})))()}export{i as n,t};
