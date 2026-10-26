@@ -96,6 +96,7 @@ import type {
   TracksResponse,
   TranslationDocumentSelection,
   UploadChoiceRequest,
+  UsersPage,
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
@@ -193,6 +194,9 @@ type TranslationDocumentArgs = MediaFileArgs & {
 
 type UploadChoiceArgs = MediaFileArgs & { isUploadChosen: boolean };
 
+/** A page of the accounts of the server that `via` names whose email address contains `search`, counting pages from zero. */
+type ListUsersArgs = { via: AccountVia; search: string; page: number };
+
 type CreateUserArgs = { via: AccountVia; request: CreateUserRequest };
 
 type UserRoleArgs = {
@@ -276,6 +280,9 @@ const lookupContextQuery = (
  * It outlasts the minute of playback that `prefetchLookups` looks ahead, so that a word looked up early is still cached when it comes up.
  */
 export const lookupCacheSeconds = 300;
+
+/** How many accounts `listUsers` asks for on a page. */
+export const usersPageSize = 50;
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
@@ -1558,9 +1565,17 @@ export const backendApi = createApi({
     logOut: build.mutation<void, void>({
       query: () => ({ method: "POST", path: "/auth/logout" }),
     }),
-    /** The accounts of the server that `via` names, which only an administrator may list. */
-    listUsers: build.query<AccountUser[], AccountVia>({
-      query: (via) => ({ method: "GET", path: accountPath(via, "/users") }),
+    /** A page of the accounts of the server that `via` names, which only an administrator may list. */
+    listUsers: build.query<UsersPage, ListUsersArgs>({
+      query: ({ via, search, page }) => ({
+        method: "GET",
+        path: accountPath(via, "/users"),
+        query: {
+          ...(search.trim() === "" ? {} : { search: search.trim() }),
+          offset: String(page * usersPageSize),
+          limit: String(usersPageSize),
+        },
+      }),
       providesTags: ["Users"],
     }),
     createUser: build.mutation<AccountUser, CreateUserArgs>({

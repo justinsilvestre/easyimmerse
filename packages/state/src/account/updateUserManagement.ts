@@ -16,7 +16,7 @@ import {
 } from "./userManagement.ts";
 
 /**
- * Keeps the form that creates an account, the search through the accounts and the deletion waiting to be confirmed,
+ * Keeps the form that creates an account, the search through the accounts, the page of them that shows and the deletion waiting to be confirmed,
  * sends the creations, changes of access and confirmed deletions, and keeps why the last of them failed.
  */
 export function updateUserManagement(
@@ -48,7 +48,9 @@ export function updateUserManagement(
       });
     }
     case "userSearchChanged":
-      return updated({ ...users, search: action.query });
+      return updated({ ...users, search: action.query, page: 0 });
+    case "userPageChanged":
+      return updated({ ...users, page: Math.max(0, action.page) });
     case "userAccessToggled":
       return updated(
         { ...users, changeFailure: null },

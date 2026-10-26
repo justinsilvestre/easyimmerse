@@ -261,6 +261,7 @@ export type * from "./TranslationRequest";
 export type * from "./TranslationResponse";
 export type * from "./UnsupportedReason";
 export type * from "./UploadChoiceRequest";
+export type * from "./UsersPage";
 export type * from "./VideoAction";
 export type * from "./VideoEncoder";
 export type * from "./VideoQuality";

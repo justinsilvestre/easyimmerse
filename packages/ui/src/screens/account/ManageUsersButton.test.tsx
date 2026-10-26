@@ -26,7 +26,7 @@ const account = (role: AccountUser["role"]): AccountUser => ({
 function renderWith(responses: Record<string, FakeResponse>) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
-    "GET /users": [],
+    "GET /users": { users: [], total: 0 },
     ...responses,
   });
   const rendered = renderWithAppStore(<AccountSection />, client, {

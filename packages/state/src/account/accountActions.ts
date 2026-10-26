@@ -77,6 +77,9 @@ export const accountActions = {
   /** The administrator typed in the field that filters the server's accounts by email address. */
   userSearchChanged: (query: string) =>
     ({ type: "userSearchChanged", query }) as const,
+  /** The administrator turned to another page of the accounts, counting from zero. */
+  userPageChanged: (page: number) =>
+    ({ type: "userPageChanged", page }) as const,
   /** The administrator checked or unchecked one kind of access of an account, as it was listed, on the server that `via` names. */
   userAccessToggled: (via: AccountVia, user: AccountUser, access: UserAccess) =>
     ({ type: "userAccessToggled", via, user, access }) as const,

@@ -13,6 +13,7 @@ import {
   type FakeResponse,
   fakeFailure,
 } from "../../testSupport/createFakeBackendClient.ts";
+import { fakeUsersPages } from "../../testSupport/fakeUsersPages.ts";
 import {
   fixtureResponses,
   fixtureSyncLink,
@@ -43,6 +44,11 @@ const severalUsers = [
   user("u3", "reader@example.com", "privileged"),
   user("u4", "librarian@example.com", "privileged", true),
 ];
+
+/** Enough accounts to fill three pages, whose email addresses are `user0@example.com` and so on. */
+const manyUsers = Array.from({ length: 120 }, (_, index) =>
+  user(`m${index}`, `user${index}@example.com`, "library_user"),
+);
 
 /** Answers an account creation with the account the form asked for. */
 const createdAccount = (request: { body?: { value: unknown } }) => ({
@@ -94,7 +100,7 @@ const meta = {
   component: UsersScreen,
   decorators: [withAppStore],
   args: { via: "self", onBack: fn() },
-  parameters: serverWith(severalUsers),
+  parameters: serverWith(fakeUsersPages(severalUsers)),
 } satisfies Meta<typeof UsersScreen>;
 
 export default meta;
@@ -123,8 +129,30 @@ export const NoAccountMatches: Story = {
   decorators: [withDispatchedActions(actions.userSearchChanged("nobody"))],
 };
 
+/** The first of the pages that a server with many accounts lists them on. */
+export const ManyPages: Story = {
+  parameters: serverWith(fakeUsersPages(manyUsers)),
+};
+
+export const LastPage: Story = {
+  parameters: serverWith(fakeUsersPages(manyUsers)),
+  decorators: [withDispatchedActions(actions.userPageChanged(2))],
+};
+
+/** A search that matches more accounts than one page holds. */
+export const SearchedManyPages: Story = {
+  parameters: serverWith(fakeUsersPages(manyUsers)),
+  decorators: [withDispatchedActions(actions.userSearchChanged("user1"))],
+};
+
+/** A page that a deletion emptied, after the last account on it was deleted. */
+export const PagePastTheEnd: Story = {
+  parameters: serverWith(fakeUsersPages(manyUsers.slice(0, 50))),
+  decorators: [withDispatchedActions(actions.userPageChanged(1))],
+};
+
 export const EmptyList: Story = {
-  parameters: serverWith([]),
+  parameters: serverWith(fakeUsersPages([])),
 };
 
 export const ListFailed: Story = {
@@ -134,14 +162,16 @@ export const ListFailed: Story = {
 };
 
 export const Creating: Story = {
-  parameters: serverWith(severalUsers, { "POST /users": neverAnswered }),
+  parameters: serverWith(fakeUsersPages(severalUsers), {
+    "POST /users": neverAnswered,
+  }),
   decorators: [
     withDispatchedActions(filledIn, actions.newUserSubmitted("self")),
   ],
 };
 
 export const CreationFailed: Story = {
-  parameters: serverWith(severalUsers, {
+  parameters: serverWith(fakeUsersPages(severalUsers), {
     "POST /users": fakeFailure({
       status: 409,
       code: "email_taken",
@@ -154,7 +184,9 @@ export const CreationFailed: Story = {
 };
 
 export const AccessChanging: Story = {
-  parameters: serverWith(severalUsers, { "PUT /users/u2/role": neverAnswered }),
+  parameters: serverWith(fakeUsersPages(severalUsers), {
+    "PUT /users/u2/role": neverAnswered,
+  }),
   decorators: [
     withDispatchedActions(
       actions.userAccessToggled("self", learner, "fullAccess"),
@@ -164,7 +196,7 @@ export const AccessChanging: Story = {
 
 /** Server admin unchecked for the server's only server admin, which the server refuses. */
 export const OnlyServerAdmin: Story = {
-  parameters: serverWith(severalUsers, {
+  parameters: serverWith(fakeUsersPages(severalUsers), {
     "PUT /users/u1/role": fakeFailure({
       status: 409,
       code: "last_administrator",
@@ -184,7 +216,9 @@ export const ConfirmingDeletion: Story = {
 };
 
 export const Deleting: Story = {
-  parameters: serverWith(severalUsers, { "DELETE /users/u2": neverAnswered }),
+  parameters: serverWith(fakeUsersPages(severalUsers), {
+    "DELETE /users/u2": neverAnswered,
+  }),
   decorators: [
     withDispatchedActions(
       actions.userDeletionAsked("u2"),
@@ -198,7 +232,9 @@ export const OnThisComputer: Story = {
   parameters: {
     appStore: {
       server: builtInServerOn("desktop"),
-      client: createBuiltInServerClient(null, { "GET /users": severalUsers }),
+      client: createBuiltInServerClient(null, {
+        "GET /users": fakeUsersPages(severalUsers),
+      }),
     },
   },
 };
@@ -211,7 +247,7 @@ export const OnTheLinkedServer: Story = {
       server: builtInServerOn("desktop"),
       client: createBuiltInServerClient(
         { ...fixtureSyncLink, account_role: "administrator" },
-        { "GET /sync/remote/users": severalUsers },
+        { "GET /sync/remote/users": fakeUsersPages(severalUsers) },
       ),
     },
   },

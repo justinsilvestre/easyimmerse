@@ -58,6 +58,9 @@ export const selectUserChangeFailureMessage = createSelector(
 /** Returns what the administrator typed to filter the accounts by email address. */
 export const selectUserSearch = (state: AppRoot) => selectUsers(state).search;
 
+/** Returns which page of the matching accounts shows, counting from zero. */
+export const selectUserPage = (state: AppRoot) => selectUsers(state).page;
+
 /** Returns the change under way to the account: its deletion, a change of its role or of its library permission, or null. */
 export function selectUserChangeInFlight(
   state: AppRoot,

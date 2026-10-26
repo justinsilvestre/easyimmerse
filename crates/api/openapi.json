@@ -10457,18 +10457,48 @@
         "tags": [
           "users"
         ],
-        "summary": "Lists every account, oldest first.",
+        "summary": "Lists a page of the accounts whose email address contains a search, oldest first.",
         "operationId": "listUsers",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Text that the email addresses of the listed accounts contain, in any letter case. Every account matches when it is missing or blank.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "How many of the matching accounts to skip. Zero when missing.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "How many accounts the page holds at most: 50 when missing, and never more than 200.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Every account",
+            "description": "A page of the matching accounts and how many match in all",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AccountUser"
-                  }
+                  "$ref": "#/components/schemas/UsersPage"
                 }
               }
             }
@@ -17102,6 +17132,28 @@
         "properties": {
           "is_upload_chosen": {
             "type": "boolean"
+          }
+        }
+      },
+      "UsersPage": {
+        "type": "object",
+        "description": "One page of the accounts whose email address contains a search, oldest first.",
+        "required": [
+          "users",
+          "total"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many accounts match the search on every page together.",
+            "minimum": 0
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountUser"
+            }
           }
         }
       },

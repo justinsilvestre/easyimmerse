@@ -1,4 +1,4 @@
-use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_core::account::{AccountRole, AccountUser, UsersPage};
 use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
 
 use crate::error::StorageError;
@@ -86,6 +86,35 @@ pub fn list_users(conn: &Connection) -> Result<Vec<AccountUser>, StorageError> {
         .query_map([], read_user)?
         .collect::<Result<_, _>>()?;
     Ok(users)
+}
+
+/// Which accounts match a search for an email address: those whose address contains `?1` in any ASCII letter case, or all of them when it is empty.
+const EMAIL_SEARCH: &str = "(?1 = '' OR instr(lower(u.email), lower(?1)) > 0)";
+
+/// Lists, oldest first, `limit` of the accounts whose email address contains the search, after skipping `offset` of them,
+/// together with how many match it in all.
+pub fn list_users_page(
+    conn: &Connection,
+    search: &str,
+    offset: u64,
+    limit: u64,
+) -> Result<UsersPage, StorageError> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT {USER_COLUMNS} FROM users u WHERE {EMAIL_SEARCH} \
+         ORDER BY u.created_at_ms, u.rowid LIMIT ?2 OFFSET ?3"
+    ))?;
+    let users = statement
+        .query_map(
+            params![search, to_stored_integer(limit), to_stored_integer(offset)],
+            read_user,
+        )?
+        .collect::<Result<_, _>>()?;
+    let total = conn.query_row(
+        &format!("SELECT count(*) FROM users u WHERE {EMAIL_SEARCH}"),
+        params![search],
+        |row| read_unsigned(row, 0),
+    )?;
+    Ok(UsersPage { users, total })
 }
 
 /// Changes an account's role, unless that would leave no administrator account.
@@ -213,7 +242,7 @@ pub fn read_user(row: &Row) -> rusqlite::Result<AccountUser> {
 
 #[cfg(test)]
 mod tests {
-    use easyimmerse_core::account::AccountRole;
+    use easyimmerse_core::account::{AccountRole, UsersPage};
     use rusqlite::TransactionBehavior;
 
     use crate::{Storage, StorageError};
@@ -274,6 +303,58 @@ mod tests {
             .map(|user| user.email)
             .collect();
         assert_eq!(emails, ["first@example.com", "second@example.com"]);
+    }
+
+    /// A storage with accounts whose email addresses are `user0@example.com` and so on, created in that order.
+    fn storage_with_users(count: usize) -> Storage {
+        let storage = Storage::open_in_memory().unwrap();
+        for index in 0..count {
+            storage
+                .create_user(
+                    &format!("user{index}@example.com"),
+                    "hash",
+                    AccountRole::LibraryUser,
+                )
+                .unwrap();
+        }
+        storage
+    }
+
+    fn emails_of(page: &UsersPage) -> Vec<&str> {
+        page.users.iter().map(|user| user.email.as_str()).collect()
+    }
+
+    #[test]
+    fn lists_a_page_of_users_after_the_offset() {
+        let storage = storage_with_users(5);
+        let page = storage.list_users_page("", 2, 2).unwrap();
+        assert_eq!(emails_of(&page), ["user2@example.com", "user3@example.com"]);
+    }
+
+    #[test]
+    fn counts_every_user_beside_a_page() {
+        let storage = storage_with_users(5);
+        assert_eq!(storage.list_users_page("", 2, 2).unwrap().total, 5);
+    }
+
+    #[test]
+    fn lists_the_users_whose_email_contains_the_search_in_any_letter_case() {
+        let storage = storage_with_users(12);
+        let page = storage.list_users_page("USER1", 0, 10).unwrap();
+        assert_eq!(
+            emails_of(&page),
+            [
+                "user1@example.com",
+                "user10@example.com",
+                "user11@example.com"
+            ]
+        );
+    }
+
+    #[test]
+    fn counts_only_the_users_matching_the_search() {
+        let storage = storage_with_users(12);
+        assert_eq!(storage.list_users_page("user1", 0, 1).unwrap().total, 3);
     }
 
     #[test]

@@ -64,7 +64,7 @@ pub use users::StoredUser;
 use std::collections::HashMap;
 use std::path::Path;
 
-use easyimmerse_core::account::{AccountRole, AccountUser};
+use easyimmerse_core::account::{AccountRole, AccountUser, UsersPage};
 use easyimmerse_core::alignment::{AddAlignmentRequest, Alignment, AlignmentId};
 use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
@@ -578,6 +578,17 @@ impl Storage {
     /// Lists every account, oldest first.
     pub fn list_users(&self) -> Result<Vec<AccountUser>, StorageError> {
         self.read(users::list_users)
+    }
+
+    /// Lists, oldest first, `limit` of the accounts whose email address contains the search, after skipping `offset` of them,
+    /// together with how many match it in all.
+    pub fn list_users_page(
+        &self,
+        search: &str,
+        offset: u64,
+        limit: u64,
+    ) -> Result<UsersPage, StorageError> {
+        self.read(|conn| users::list_users_page(conn, search, offset, limit))
     }
 
     pub fn set_user_role(&self, id: &str, role: AccountRole) -> Result<AccountUser, StorageError> {

@@ -8,6 +8,7 @@ import {
   selectNewUserForm,
   selectUserChangeFailureMessage,
   selectUserChangeInFlight,
+  selectUserPage,
   selectUserSearch,
 } from "./userManagementSelectors.ts";
 
@@ -152,6 +153,19 @@ describe("updateUserManagement", () => {
     const { store } = connectedStore();
     store.dispatch(actions.userSearchChanged("reader"));
     expect(selectUserSearch(store.getState())).toBe("reader");
+  });
+
+  it("turns to the page the administrator chose", () => {
+    const { store } = connectedStore();
+    store.dispatch(actions.userPageChanged(2));
+    expect(selectUserPage(store.getState())).toBe(2);
+  });
+
+  it("goes back to the first page when the search changes", () => {
+    const { store } = connectedStore();
+    store.dispatch(actions.userPageChanged(2));
+    store.dispatch(actions.userSearchChanged("reader"));
+    expect(selectUserPage(store.getState())).toBe(0);
   });
 
   describe("when an account's deletion is asked for", () => {

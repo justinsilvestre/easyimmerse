@@ -840,12 +840,40 @@ describe("the account endpoints", () => {
     expect(client.requests).toEqual([{ method: "POST", path: "/auth/logout" }]);
   });
 
-  it("send GET /users for listUsers", async () => {
+  it("send GET /users with the page's offset and size for listUsers", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.listUsers.initiate("self"),
+      backendApi.endpoints.listUsers.initiate({
+        via: "self",
+        search: "",
+        page: 2,
+      }),
     );
-    expect(client.requests).toEqual([{ method: "GET", path: "/users" }]);
+    expect(client.requests).toEqual([
+      {
+        method: "GET",
+        path: "/users",
+        query: { offset: "100", limit: "50" },
+      },
+    ]);
+  });
+
+  it("send the trimmed search with GET /users for listUsers", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listUsers.initiate({
+        via: "linkedRemote",
+        search: " reader ",
+        page: 0,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "GET",
+        path: "/sync/remote/users",
+        query: { search: "reader", offset: "0", limit: "50" },
+      },
+    ]);
   });
 
   it("post the new account for createUser", async () => {

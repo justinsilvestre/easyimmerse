@@ -49,6 +49,7 @@ export {
   selectNewUserForm,
   selectUserChangeFailureMessage,
   selectUserChangeInFlight,
+  selectUserPage,
   selectUserSearch,
 } from "./account/userManagementSelectors.ts";
 export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
