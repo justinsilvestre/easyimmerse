@@ -41,7 +41,8 @@ export type SettingsSection = "mediaConversion";
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it so that going back restores it, player state included.
  * The settings pages form a stack: Back leaves the top page, and the last page returns to the main screen.
- * A library router is planned; it will own history, links and deep links, and this value will then be fed from it or replaced by it.
+ * The route is the one source of where the app is: the address bar shows it as a path, as `pathOfRoute` writes it,
+ * and an address the browser returns to, or a link opened, sets it.
  */
 export type Route =
   | MainRoute

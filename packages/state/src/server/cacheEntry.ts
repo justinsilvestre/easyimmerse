@@ -90,7 +90,8 @@ export type CacheEntry<K extends keyof CachedQueries> =
   | {
       status: string;
       data?: CachedResponses[K];
-      error?: { code?: string; message?: string };
+      /** The failure the query was rejected with, whose status is an HTTP status or a marker for a request that never reached a server. */
+      error?: { status?: number | string; code?: string; message?: string };
       /** When the query last succeeded, in milliseconds since the Unix epoch. */
       fulfilledTimeStamp?: number;
     }

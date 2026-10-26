@@ -13,6 +13,7 @@ import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { recoveryEffects } from "../recovery/recoveryEffects.ts";
 import { recoveryFeature } from "../recovery/updateRecovery.ts";
 import { reviewCommands } from "../review/reviewCommands.ts";
+import { routeOriginFeature } from "../route/routeOrigin.ts";
 import { routeFeature } from "../route/updateRoute.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
@@ -43,6 +44,7 @@ type FeatureTable = {
 
 const features = {
   route: routeFeature,
+  routeOrigin: routeOriginFeature,
   screen: screenFeature,
   server: serverFeature,
   preferences: preferencesFeature,

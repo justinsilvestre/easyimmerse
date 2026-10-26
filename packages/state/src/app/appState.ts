@@ -8,6 +8,7 @@ import type { PairingForm } from "../pairing/pairingForm.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
 import type { RecoveryState } from "../recovery/updateRecovery.ts";
 import type { Route } from "../route/route.ts";
+import type { RouteOrigin } from "../route/routeOrigin.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
@@ -15,11 +16,9 @@ import type { SyncState } from "../sync/updateSync.ts";
 
 /** The app's own state, one slice per feature. */
 export type AppState = {
-  /**
-   * Where the app is. A library router such as React Router is planned; it will own history, links and deep links,
-   * and this field will then be fed from it or replaced by it.
-   */
+  /** Where the app is. The address bar shows it as a path, as `pathOfRoute` writes it. */
   route: Route;
+  routeOrigin: RouteOrigin;
   screen: ScreenState;
   server: ServerState;
   preferences: PreferencesState;
