@@ -90,6 +90,35 @@ describe("createAppStore", () => {
     expect(store.getState().app.preferences.systemTheme).toBe("dark");
   });
 
+  it("opens on the screen the platform's address names", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/projects/p1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    expect(store.getState().app.route).toEqual({
+      screen: "project",
+      projectId: "p1",
+    });
+  });
+
+  it("moves to the screen of an address the browser's Back returns to", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    effects.showAddress("/");
+    expect(store.getState().app.route).toEqual({ screen: "home" });
+  });
+
+  it("writes the address of each screen it moves to into the browser's history", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      path: "/library",
+      write: "push",
+    });
+  });
+
   it("dispatches appStarted once it is created", () => {
     const server = createFakeServerStoreParts();
     createAppStore(createRecordingEffects(), server);

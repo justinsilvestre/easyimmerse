@@ -6,6 +6,7 @@ import type { Effects } from "../platform/effects.ts";
 import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
 import { recoveryEffectRunners } from "../recovery/recoveryEffectRunners.ts";
+import { routeEffectRunners } from "../route/routeEffectRunners.ts";
 import { screenEffectRunners } from "../screen/screenEffectRunners.ts";
 import type { RequestTable } from "../server/requestTable.ts";
 import { serverEffectRunners } from "../server/serverEffectRunners.ts";
@@ -33,6 +34,7 @@ export type EffectRunners<E extends { type: string }> = {
 };
 
 const effectRunners = {
+  ...routeEffectRunners,
   ...screenEffectRunners,
   ...preferencesEffectRunners,
   ...storedPlacesEffectRunners,

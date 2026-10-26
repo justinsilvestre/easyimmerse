@@ -15,6 +15,7 @@ import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { LocationWrite } from "../route/routeEffect.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
@@ -57,6 +58,7 @@ type EffectCall =
   | { type: "openExternalUrl"; url: string }
   | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
+  | { type: "writeLocation"; path: string; write: LocationWrite }
   | { type: "applyAppearance"; appearance: Appearance }
   | { type: "fetchServerAuthInfo"; serverUrl: string }
   | { type: "createSession"; attempt: SignInAttempt }
@@ -122,6 +124,11 @@ export type RecordingEffects = Effects & {
   requestSettings(): void;
   /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
   changeSystemTheme(theme: Theme): void;
+  /**
+   * Acts as the browser showing an address, path and query, as it does at startup and after Back or Forward, by calling every subscribed listener.
+   * A listener subscribed later hears the address at once. Until an address is shown, a subscription hears nothing, as on a platform without an address bar.
+   */
+  showAddress(path: string): void;
   /** Makes every later copy fail, as a platform that refuses clipboard access does. */
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
@@ -233,6 +240,8 @@ export function createRecordingEffects(
     createPendingPick<SignInOutcome<SessionCreated>>("new password");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
+  const locationListeners = new Set<(path: string) => void>();
+  let shownAddress: string | null = null;
   let refusesCopies = false;
   let refusesConnections = false;
   return {
@@ -316,6 +325,14 @@ export function createRecordingEffects(
     subscribeToSettingsRequests: (listener) => {
       settingsListeners.add(listener);
       return () => settingsListeners.delete(listener);
+    },
+    writeLocation: (path, write) => {
+      calls.push({ type: "writeLocation", path, write });
+    },
+    subscribeToLocation: (listener) => {
+      locationListeners.add(listener);
+      if (shownAddress !== null) listener(shownAddress);
+      return () => locationListeners.delete(listener);
     },
     applyAppearance: (appearance) => {
       calls.push({ type: "applyAppearance", appearance });
@@ -422,6 +439,10 @@ export function createRecordingEffects(
     },
     changeSystemTheme: (theme) => {
       for (const listener of systemThemeListeners) listener(theme);
+    },
+    showAddress: (path) => {
+      shownAddress = path;
+      for (const listener of locationListeners) listener(path);
     },
     refuseCopies: () => {
       refusesCopies = true;

@@ -8,6 +8,7 @@ import type { PairingEffect } from "../pairing/pairingEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
 import type { RecoveryEffect } from "../recovery/recoveryEffects.ts";
+import type { RouteEffect } from "../route/routeEffect.ts";
 import type { ScreenEffect } from "../screen/screenEffect.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { StoredPlacesEffect } from "../storedPlaces/storedPlacesEffect.ts";
@@ -16,6 +17,7 @@ import type { DispatchEffect } from "./dispatchEffect.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
 export type Effect =
+  | RouteEffect
   | ScreenEffect
   | PreferencesEffect
   | StoredPlacesEffect

@@ -11,6 +11,18 @@ export const routeActions = {
   settingsRequested: () => ({ type: "settingsRequested" }) as const,
   /** Leaves the open media file for its project's overview. */
   closeMedia: () => ({ type: "closeMedia" }) as const,
+  /**
+   * The platform shows an address, path and query: the one the app opened at, or one the browser's Back or Forward returned to.
+   * The app moves to the screen it names, or to the home screen when it names none.
+   */
+  locationOpened: (path: string) => ({ type: "locationOpened", path }) as const,
+  /**
+   * Opens the screen that a link's path and query name, as a new step from where the app is, or the home screen when they name none.
+   * A link from outside the app, such as an `easyimmerse://` link, opens through this action.
+   */
+  linkOpened: (path: string) => ({ type: "linkOpened", path }) as const,
+  /** The screen a link opened turned out to be one the app cannot reach, so the home screen takes its place. */
+  routeUnreachable: () => ({ type: "routeUnreachable" }) as const,
 };
 
 /** An action that moves the app from one place to another. */

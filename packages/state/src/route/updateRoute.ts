@@ -1,11 +1,14 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import { editedFlashcardRoute } from "../review/editedFlashcardRoute.ts";
 import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
+import { historyWriteOf } from "./historyWriteOf.ts";
 import type { MainRoute, Route } from "./route.ts";
 import { initialRoute, mainScreenOf, navigate } from "./route.ts";
+import { pathOfRoute, routeOfPath } from "./routePath.ts";
 
 /** Returns where the app is after an action. */
 export function nextRoute(route: Route, action: AppAction): Route {
@@ -21,6 +24,11 @@ export function nextRoute(route: Route, action: AppAction): Route {
         projectId: action.projectId,
         mediaFileId: action.mediaFileId,
       };
+    case "locationOpened":
+    case "linkOpened":
+      return routeAtPath(route, action.path);
+    case "routeUnreachable":
+      return withMainRoute(route, () => ({ screen: "home" }));
     case "closeMedia":
       return withMainRoute(route, (main) =>
         main.screen === "media" ? projectRouteOf(main) : main,
@@ -67,10 +75,23 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
       );
 }
 
-/** The route as a feature: where the app is, moved by navigation and by opening and closing media files. */
+/**
+ * The route as a feature: where the app is, moved by navigation, by opening and closing media files, and by the addresses the platform shows.
+ * Each move writes the browser's history as `historyWriteOf` decides.
+ */
 export const routeFeature: Feature<Route, keyof RouteApp> = {
   initialState: initialRoute,
-  update: (_route, action, app) => [routeAfter(app, action), []],
+  update: (route, action, app) => {
+    const next = routeAfter(app, action);
+    const write = historyWriteOf(route, next, action);
+    return write === null
+      ? updated(next)
+      : updated(next, {
+          type: "writeLocation",
+          path: pathOfRoute(next),
+          write,
+        });
+  },
 };
 
 /** Changes the main screen, beneath Settings when they are open, and keeps the route itself when nothing changes. */
@@ -81,6 +102,12 @@ function withMainRoute(
   if (route.screen !== "settings") return change(route);
   const beneath = change(route.beneath);
   return beneath === route.beneath ? route : { ...route, beneath };
+}
+
+/** Returns the route the path names, or home when it names none, keeping the current route itself when the path names it. */
+function routeAtPath(route: Route, path: string): Route {
+  const named = routeOfPath(path) ?? initialRoute;
+  return pathOfRoute(named) === pathOfRoute(route) ? route : named;
 }
 
 function projectRouteOf(main: { projectId: string }): MainRoute {

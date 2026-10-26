@@ -13,6 +13,7 @@ import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
 import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type { LocationWrite } from "../route/routeEffect.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { Clock } from "../timers/clock.ts";
 
@@ -103,6 +104,17 @@ export interface Effects {
    * Returns a function that stops the calls.
    */
   subscribeToSettingsRequests(listener: () => void): () => void;
+  /**
+   * Shows the path and query in the address bar, as a new entry of the browser's history or in place of the current one.
+   * A platform without an address bar does nothing.
+   */
+  writeLocation(path: string, write: LocationWrite): void;
+  /**
+   * Calls the listener with the path and query the address bar shows, at once where the platform has one,
+   * and again whenever the browser's Back or Forward returns to another entry. A platform without an address bar never calls it.
+   * Returns a function that stops the calls.
+   */
+  subscribeToLocation(listener: (path: string) => void): () => void;
   /** Shows the document in the given theme and at the given text scale. */
   applyAppearance(appearance: Appearance): void;
   /**

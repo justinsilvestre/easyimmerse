@@ -84,6 +84,42 @@ describe("nextRoute", () => {
     expect(nextRoute(media, failed)).toBe(media);
   });
 
+  it("moves to the screen the opened location names", () => {
+    expect(
+      nextRoute(project, actions.locationOpened("/projects/p1/media/m1")),
+    ).toEqual(media);
+  });
+
+  it("moves home for an opened location that names no screen", () => {
+    expect(nextRoute(project, actions.locationOpened("/elsewhere"))).toEqual({
+      screen: "home",
+    });
+  });
+
+  it("keeps the route itself for an opened location that names it", () => {
+    expect(nextRoute(project, actions.locationOpened("/projects/p1"))).toBe(
+      project,
+    );
+  });
+
+  it("opens Settings over the screen an opened link names", () => {
+    expect(
+      nextRoute(project, actions.linkOpened("/projects/p1?settings=general")),
+    ).toEqual(settingsOver(project));
+  });
+
+  it("moves home for routeUnreachable", () => {
+    expect(nextRoute(media, actions.routeUnreachable())).toEqual({
+      screen: "home",
+    });
+  });
+
+  it("keeps Settings open over the home screen for routeUnreachable", () => {
+    expect(nextRoute(settingsOver(media), actions.routeUnreachable())).toEqual(
+      settingsOver({ screen: "home" }),
+    );
+  });
+
   it("stays put for an action that does not move the app", () => {
     expect(nextRoute(media, actions.playerTimeChanged(3))).toBe(media);
   });
