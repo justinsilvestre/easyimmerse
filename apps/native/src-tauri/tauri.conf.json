@@ -23,6 +23,12 @@
       }
     }
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["easyimmerse"] },
+      "mobile": [{ "scheme": ["easyimmerse"], "appLink": false }]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

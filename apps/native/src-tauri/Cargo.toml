@@ -38,6 +38,7 @@ rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { workspace = true }
+tauri-plugin-deep-link = { workspace = true }
 tauri-plugin-dialog = { workspace = true }
 tauri-plugin-notification = { workspace = true }
 tauri-plugin-opener = { workspace = true }
@@ -48,11 +49,13 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 ureq = { workspace = true }
 
-# The tray icon and the command line that runs the server's commands without a window exist only on desktop.
+# The tray icon, the command line that runs the server's commands without a window,
+# and the single running instance that a later launch hands its link to exist only on desktop.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 clap = { workspace = true }
 dirs = { workspace = true }
 tauri = { workspace = true, features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = { workspace = true }
 # The webdriver feature turns these on. The mobile end-to-end tests go through Appium instead.
 tauri-plugin-wdio = { workspace = true, optional = true }
 tauri-plugin-wdio-webdriver = { workspace = true, optional = true }
