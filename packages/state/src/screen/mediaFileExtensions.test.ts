@@ -3,6 +3,7 @@ import {
   documentFormatOf,
   isDocumentFileName,
   mediaFileExtensions,
+  videoAndAudioFileExtensions,
 } from "./mediaFileExtensions.ts";
 
 describe("mediaFileExtensions", () => {
@@ -10,6 +11,18 @@ describe("mediaFileExtensions", () => {
     expect(mediaFileExtensions).toEqual(
       expect.arrayContaining([".mp4", ".mp3", ".epub", ".txt"]),
     );
+  });
+});
+
+describe("videoAndAudioFileExtensions", () => {
+  it("offers video and audio containers", () => {
+    expect(videoAndAudioFileExtensions).toEqual(
+      expect.arrayContaining([".mp4", ".mp3"]),
+    );
+  });
+
+  it("offers no ebooks or text files", () => {
+    expect(videoAndAudioFileExtensions).not.toContain(".epub");
   });
 });
 

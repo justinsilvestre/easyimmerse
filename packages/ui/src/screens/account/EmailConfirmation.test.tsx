@@ -26,6 +26,7 @@ const unconfirmed: AccountUser = {
   role: "library_user",
   created_at_ms: 0,
   email_confirmed_at_ms: null,
+  manages_library: false,
 };
 
 /** Renders the section connected as the account, on a server that sends email or not, with the given answer to asking for another link. */
@@ -58,7 +59,7 @@ describe("EmailConfirmation", () => {
 
   it("tells nothing of confirmation on a server that sends no email", async () => {
     renderAccount(unconfirmed, false);
-    await screen.findByText("library user");
+    await screen.findByText("Learner");
     await act(async () => undefined);
     expect(screen.queryByText(/confirmed/i)).toBeNull();
   });

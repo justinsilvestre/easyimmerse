@@ -20,6 +20,7 @@ use tokio::process::Command;
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::principal::Principal;
 use crate::local_path::resolve_local_file;
+use crate::routes::library_files::visible_source_path;
 use crate::routes::stored_copies::stored_copy_path;
 use crate::state::AppState;
 
@@ -45,6 +46,8 @@ pub async fn resolve_source_path(
 }
 
 /// The media file's own path, once the token may read it and the file exists, without falling back to a copy.
+/// A media file from the library resolves to its item's uploaded file for anyone while the item is published,
+/// and for a library manager at any time.
 pub async fn resolve_own_path(
     state: &AppState,
     principal: &Principal,
@@ -53,6 +56,9 @@ pub async fn resolve_own_path(
     let path = match &media_file.source {
         MediaFileSource::Path { path } => path.clone(),
         MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
+        MediaFileSource::Library { item_id } => {
+            return visible_source_path(state, principal, item_id).await;
+        }
     };
     resolve_local_file(principal, &state.config, &path).await?;
     Ok(path)
@@ -91,21 +97,21 @@ pub async fn probe_media(state: &AppState, path: &str) -> Result<Arc<ContainerIn
         })
 }
 
-/// The saved audio track when the container has it, else the default audio track.
+/// The audio track of the saved track selection when the container has it, else the default audio track.
 pub fn chosen_audio_track<'a>(
     container: &'a ContainerInfo,
-    media_file: &MediaFile,
+    track_selection_json: Option<&str>,
 ) -> Option<&'a TrackInfo> {
-    let saved = saved_track_selection(media_file).and_then(|selection| selection.audio);
+    let saved = saved_track_selection(track_selection_json).and_then(|selection| selection.audio);
     chosen_track(container, saved, TrackKind::Audio)
 }
 
-/// The saved video track when the container has it, else the default video track.
+/// The video track of the saved track selection when the container has it, else the default video track.
 pub fn chosen_video_track<'a>(
     container: &'a ContainerInfo,
-    media_file: &MediaFile,
+    track_selection_json: Option<&str>,
 ) -> Option<&'a TrackInfo> {
-    let saved = saved_track_selection(media_file).and_then(|selection| selection.video);
+    let saved = saved_track_selection(track_selection_json).and_then(|selection| selection.video);
     chosen_track(container, saved, TrackKind::Video)
 }
 
@@ -127,11 +133,8 @@ fn chosen_track(
     })
 }
 
-fn saved_track_selection(media_file: &MediaFile) -> Option<TrackSelection> {
-    media_file
-        .track_selection_json
-        .as_deref()
-        .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
+fn saved_track_selection(track_selection_json: Option<&str>) -> Option<TrackSelection> {
+    track_selection_json.and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
 }
 
 /// Converts a time in milliseconds to the microseconds ffmpeg takes, saturating at the largest value.
@@ -212,8 +215,6 @@ pub fn conversion_failure(error: ConversionError) -> ApiFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use easyimmerse_core::media_file::MediaFileId;
-    use easyimmerse_core::project::ProjectId;
     use easyimmerse_media::ContainerFormat;
 
     fn track(index: u32, kind: TrackKind) -> TrackInfo {
@@ -234,25 +235,8 @@ mod tests {
         }
     }
 
-    fn media_file_saving(selection_json: &str) -> MediaFile {
-        MediaFile {
-            id: MediaFileId("m".to_owned()),
-            project_id: ProjectId("p".to_owned()),
-            name: "m".to_owned(),
-            source: MediaFileSource::Path {
-                path: "m.mkv".to_owned(),
-            },
-            origin: None,
-            created_at_ms: 0,
-            track_selection_json: Some(selection_json.to_owned()),
-            translation_media_file_id: None,
-            is_upload_chosen: false,
-            has_stored_copy: false,
-        }
-    }
-
     fn chosen_audio_index(selection_json: &str) -> Option<u32> {
-        chosen_audio_track(&container(), &media_file_saving(selection_json)).map(|t| t.index)
+        chosen_audio_track(&container(), Some(selection_json)).map(|t| t.index)
     }
 
     #[test]
@@ -267,9 +251,9 @@ mod tests {
 
     #[test]
     fn chooses_the_default_video_track_when_the_saved_one_is_missing() {
-        let media_file = media_file_saving(r#"{"video":9,"audio":null}"#);
-        let chosen = chosen_video_track(&container(), &media_file).map(|t| t.index);
-        assert_eq!(chosen, Some(0));
+        let container = container();
+        let chosen = chosen_video_track(&container, Some(r#"{"video":9,"audio":null}"#));
+        assert_eq!(chosen.map(|t| t.index), Some(0));
     }
 
     #[test]

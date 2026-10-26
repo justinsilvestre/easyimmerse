@@ -161,9 +161,13 @@ export function listedCache(
   ids: readonly string[] = ["a", "b", "c"],
   fetchedAtMs = 1,
   words: Record<string, string> = {},
+  fromLibrary: readonly string[] = [],
 ): ServerCacheSlice {
   const listed = serverCacheWith("listFlashcards", "p1", {
-    flashcards: ids.map((id) => exampleListedFlashcard(id, words[id] ?? id)),
+    flashcards: ids.map((id) => ({
+      ...exampleListedFlashcard(id, words[id] ?? id),
+      is_from_library: fromLibrary.includes(id),
+    })),
   });
   const key = cacheKey("listFlashcards", "p1");
   const entry = listed.queries[key];

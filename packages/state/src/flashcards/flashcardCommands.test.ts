@@ -325,6 +325,31 @@ describe("flashcardCommands", () => {
     });
   });
 
+  it("deletes a flashcard whose deletion was confirmed outside the form", () => {
+    expect(
+      requestsAsked(appAfter(), actions.flashcardDeleteConfirmed("p1", "h")),
+    ).toMatchObject([
+      { request: { kind: "deleteFlashcard", flashcardId: "h" } },
+    ]);
+  });
+
+  it("suspends a flashcard asked to be suspended", () => {
+    expect(
+      flashcardEffects(
+        appAfter(),
+        actions.flashcardSuspendRequested("p1", "h"),
+      ),
+    ).toMatchObject([
+      {
+        request: {
+          kind: "holdReviewCard",
+          flashcardId: "h",
+          hold: "suspended",
+        },
+      },
+    ]);
+  });
+
   describe("when a background save lands", () => {
     it("offers Undo in a notice naming the card", () => {
       const app = hundSaving();

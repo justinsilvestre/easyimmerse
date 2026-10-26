@@ -34,6 +34,7 @@ const session = {
     role: "library_user",
     created_at_ms: 0,
     email_confirmed_at_ms: null,
+    manages_library: false,
   },
 } as const;
 
@@ -227,9 +228,9 @@ describe("AccountSection", () => {
       ).toBeDefined();
     });
 
-    it("names the account's role in words", async () => {
+    it("names what the account may do in words", async () => {
       renderConnected({ kind: "account", user: session.user });
-      expect(await screen.findByText("library user")).toBeDefined();
+      expect(await screen.findByText("Learner")).toBeDefined();
     });
 
     it("tells that the app's own server needs no account", async () => {

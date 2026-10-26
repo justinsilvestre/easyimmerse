@@ -6,6 +6,7 @@ import {
   canSubmitNewUser,
   createUserRequestId,
   deleteUserRequestId,
+  setLibraryManagerRequestId,
   setUserRoleRequestId,
   type UserChange,
 } from "./userManagement.ts";
@@ -54,7 +55,10 @@ export const selectUserChangeFailureMessage = createSelector(
     userManagementFailureMessage(changeFailure.failure, changeFailure.change),
 );
 
-/** Returns the change under way to the account: its deletion, a change of its role, or null. */
+/** Returns what the administrator typed to filter the accounts by email address. */
+export const selectUserSearch = (state: AppRoot) => selectUsers(state).search;
+
+/** Returns the change under way to the account: its deletion, a change of its role or of its library permission, or null. */
 export function selectUserChangeInFlight(
   state: AppRoot,
   userId: string,
@@ -63,5 +67,7 @@ export function selectUserChangeInFlight(
     return "deleteUser";
   if (selectIsRequestInFlight(state.app, setUserRoleRequestId(userId)))
     return "setUserRole";
+  if (selectIsRequestInFlight(state.app, setLibraryManagerRequestId(userId)))
+    return "setLibraryManager";
   return null;
 }

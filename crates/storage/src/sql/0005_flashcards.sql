@@ -10,7 +10,9 @@ CREATE TABLE flashcards (
     updated_at_ms INTEGER NOT NULL,
     exported_at_ms INTEGER,
     was_packaged INTEGER NOT NULL DEFAULT 0,
-    sent_at_ms INTEGER
+    sent_at_ms INTEGER,
+    -- 1 for a flashcard the server built from a library item, whose content cannot be changed
+    is_from_library INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX flashcards_by_project ON flashcards (project_id, created_at_ms);

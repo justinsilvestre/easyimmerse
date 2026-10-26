@@ -25,7 +25,7 @@ const meta = {
     hasCard: true,
     onBack: fn(),
     onUndo: fn(),
-    onEditFlashcard: fn(),
+    onEditFlashcard: fn() as (() => void) | null,
     onBury: fn(),
     onSuspend: fn(),
     onDeleteFlashcard: fn(),
@@ -66,4 +66,10 @@ export const MoreMenuOpen: Story = {
       within(canvasElement).getByRole("button", { name: "More" }),
     );
   },
+};
+
+/** The More menu open on a card made from the library, which has no item for editing. */
+export const LibraryCardMenuOpen: Story = {
+  args: { onEditFlashcard: null },
+  play: MoreMenuOpen.play,
 };

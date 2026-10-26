@@ -3,7 +3,7 @@ import { dispatch } from "../app/dispatchEffect.ts";
 import type { Effect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import { flashcardActions } from "../flashcards/flashcardActions.ts";
-import type { ReviewAction } from "./reviewActions.ts";
+import { type ReviewAction, reviewActions } from "./reviewActions.ts";
 import type { ReviewFlashcards } from "./reviewFlashcards.ts";
 import {
   extraNewCardCount,
@@ -173,14 +173,20 @@ function deleteShown(
   );
 }
 
-/** Opens the shown card in the editor of its media file's screen, to which the route moves. */
+/**
+ * Opens the shown card in the editor of its media file's screen, to which the route moves.
+ * A card made from the library cannot be edited, and one whose media file is gone has no screen to open on, so neither opens.
+ */
 function openInEditor(
   { shown }: ReviewScreenState,
   flashcards: ReviewFlashcards | null,
 ) {
   const flashcard = shown && flashcards?.byId.get(shown.flashcardId);
-  if (flashcard?.media_file_id == null) return [];
-  return [dispatch(flashcardActions.flashcardOpened(flashcard.id, flashcard))];
+  if (flashcard?.media_file_id == null || flashcard.is_from_library) return [];
+  return [
+    dispatch(reviewActions.reviewFlashcardEditStarted(flashcard.media_file_id)),
+    dispatch(flashcardActions.flashcardOpened(flashcard.id, flashcard)),
+  ];
 }
 
 /** Shows the next card at a moment, or fetches the queue again once the session has run out of cards. */

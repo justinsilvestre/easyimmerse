@@ -8,10 +8,12 @@ use crate::config::ApiConfig;
 pub enum Principal {
     /// The holder of the launch token, who owns the machine the server runs on.
     Launch,
-    /// The user of a session, with the role the account had when the request arrived, and the session's id.
+    /// The user of a session, with the role and library permission the account had when the request arrived,
+    /// and the session's id.
     Account {
         user_id: String,
         role: AccountRole,
+        manages_library: bool,
         session_id: String,
     },
 }
@@ -21,6 +23,7 @@ impl Principal {
         Principal::Account {
             user_id: user.id.clone(),
             role: user.role,
+            manages_library: user.manages_library,
             session_id: session_id.to_string(),
         }
     }
@@ -47,6 +50,16 @@ impl Principal {
             Principal::Account { role, .. } => *role == AccountRole::Administrator,
         }
     }
+
+    /// Administrators always manage the library; other accounts only when an administrator let them.
+    pub fn can_manage_library(&self) -> bool {
+        match self {
+            Principal::Launch => true,
+            Principal::Account {
+                manages_library, ..
+            } => *manages_library || self.is_administrator(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -54,9 +67,14 @@ mod tests {
     use super::*;
 
     fn account(role: AccountRole) -> Principal {
+        account_managing_library(role, false)
+    }
+
+    fn account_managing_library(role: AccountRole, manages_library: bool) -> Principal {
         Principal::Account {
             user_id: "u".to_string(),
             role,
+            manages_library,
             session_id: "s".to_string(),
         }
     }
@@ -103,5 +121,26 @@ mod tests {
     #[test]
     fn a_privileged_account_is_not_an_administrator() {
         assert!(!account(AccountRole::Privileged).is_administrator());
+    }
+
+    #[test]
+    fn the_launch_principal_manages_the_library() {
+        assert!(Principal::Launch.can_manage_library());
+    }
+
+    #[test]
+    fn an_administrator_manages_the_library_without_the_flag() {
+        assert!(account(AccountRole::Administrator).can_manage_library());
+    }
+
+    #[test]
+    fn a_flagged_library_user_manages_the_library() {
+        let principal = account_managing_library(AccountRole::LibraryUser, true);
+        assert!(principal.can_manage_library());
+    }
+
+    #[test]
+    fn a_privileged_account_without_the_flag_does_not_manage_the_library() {
+        assert!(!account(AccountRole::Privileged).can_manage_library());
     }
 }

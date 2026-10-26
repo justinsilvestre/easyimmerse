@@ -1,5 +1,9 @@
 import type {
   AddAlignmentRequest,
+  LibraryItem,
+  LibraryItemDraft,
+  LibraryItemStatus,
+  LibraryText,
   LookupResponse,
   MediaFile,
   PlaybackMethodRequest,
@@ -1303,5 +1307,411 @@ describe("the storage endpoints", () => {
       backendApi.endpoints.fetchStoredCopy.initiate(mediaArgs),
     );
     await vi.waitFor(() => expect(listings()).toBe(2));
+  });
+});
+
+const parkItem = (status: LibraryItemStatus): LibraryItem => ({
+  id: "i1",
+  title: "Im Park",
+  description: "",
+  translation_language: "en",
+  kind: "video",
+  difficulty: null,
+  tags: [],
+  file_name: "park.mp4",
+  duration_ms: null,
+  cover: { kind: "automatic" },
+  has_cover: false,
+  segment_count: 1,
+  status,
+  created_at_ms: 0,
+  updated_at_ms: 0,
+});
+
+const parkDraft = {
+  title: "Im Park",
+  description: "",
+  translation_language: "en",
+  kind: "video",
+  difficulty: null,
+  tags: [],
+} satisfies LibraryItemDraft;
+
+const hundWord = {
+  start: 4,
+  end: 8,
+  entry: {
+    term: "Hund",
+    reading: null,
+    l1_definition: "dog",
+    l2_definition: "",
+  },
+};
+
+const parkText: LibraryText = {
+  segments: [
+    {
+      index: 0,
+      chapter_index: null,
+      start_ms: 0,
+      end_ms: 1000,
+      screenshot_at_ms: null,
+      text: "Der Hund.",
+      translation: null,
+      words: [],
+    },
+  ],
+  chapter_titles: [],
+};
+
+/** The requests a library endpoint sends when the client answers every request with a draft item. */
+async function libraryRequests(start: unknown) {
+  const requests: BackendRequest[] = [];
+  const client = {
+    requests,
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      return { data: parkItem({ kind: "draft" }) as T };
+    },
+  };
+  const { dispatch } = createStore(client);
+  await (dispatch as (action: unknown) => unknown)(start);
+  return client.requests;
+}
+
+/** How the server answers a fetch of item i1: with the item in a status, or with 404 once the item is deleted. */
+type ItemAnswer = LibraryItemStatus | "gone";
+
+/**
+ * A store whose server answers the fetches of item i1 with each answer in turn and then with the last one,
+ * a publish with the item processing, and any other request with item i1's listing or text. It counts the requests by method and path.
+ */
+function createLibraryPollingStore(answers: ItemAnswer[]) {
+  const counts = new Map<string, number>();
+  const client: BackendClient = {
+    send: async <T>({ method, path }: BackendRequest) => {
+      const key = `${method} ${path}`;
+      const count = counts.get(key) ?? 0;
+      counts.set(key, count + 1);
+      if (path.endsWith("/publish"))
+        return { data: parkItem({ kind: "processing" }) as T };
+      if (path === "/library/items") return { data: { items: [] } as T };
+      if (path.endsWith("/text")) return { data: parkText as T };
+      const answer = answers[Math.min(count, answers.length - 1)];
+      return answer === "gone" || answer === undefined
+        ? { error: { status: 404, message: "No such item." } }
+        : { data: parkItem(answer) as T };
+    },
+  };
+  return { store: createStore(client), counts };
+}
+
+/** Counts the requests to a path within `ms` of fetching item i1 after the starting actions, with timers faked. */
+async function libraryRequestCount(
+  answers: ItemAnswer[],
+  key: string,
+  ms: number,
+  ...starts: unknown[]
+) {
+  vi.useFakeTimers();
+  const { store, counts } = createLibraryPollingStore(answers);
+  const dispatch = store.dispatch as (action: unknown) => unknown;
+  for (const start of starts) dispatch(start);
+  dispatch(backendApi.endpoints.getLibraryItem.initiate("i1"));
+  await vi.advanceTimersByTimeAsync(ms);
+  vi.useRealTimers();
+  return counts.get(key) ?? 0;
+}
+
+const itemFetchCount = (answers: ItemAnswer[], ms: number) =>
+  libraryRequestCount(answers, "GET /library/items/i1", ms);
+
+/** The cached text of item i1 once the words of its first segment are saved. */
+async function textAfterSavingWords() {
+  const client: BackendClient = {
+    send: async <T>(request: BackendRequest) =>
+      request.method === "GET"
+        ? { data: parkText as T }
+        : { data: { ...parkText.segments[0], words: [hundWord] } as T },
+  };
+  const store = createStore(client);
+  await store.dispatch(backendApi.endpoints.getLibraryText.initiate("i1"));
+  await store.dispatch(
+    backendApi.endpoints.putLibraryWords.initiate({
+      itemId: "i1",
+      segmentIndex: 0,
+      words: [hundWord],
+    }),
+  );
+  return backendApi.endpoints.getLibraryText.select("i1")(store.getState())
+    .data;
+}
+
+describe("the library endpoints", () => {
+  it("send GET /library/items for listLibraryItems", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.listLibraryItems.initiate()),
+    ).toEqual([{ method: "GET", path: "/library/items" }]);
+  });
+
+  it("send GET /library/items/{item_id} for getLibraryItem", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.getLibraryItem.initiate("i1")),
+    ).toEqual([{ method: "GET", path: "/library/items/i1" }]);
+  });
+
+  it("send GET .../text for getLibraryText", async () => {
+    expect(
+      await libraryRequests(backendApi.endpoints.getLibraryText.initiate("i1")),
+    ).toEqual([{ method: "GET", path: "/library/items/i1/text" }]);
+  });
+
+  it("post the project for addLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.addLibraryItem.initiate({
+          itemId: "i1",
+          projectId: null,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items/i1/add",
+        body: { kind: "json", value: { project_id: null } },
+      },
+    ]);
+  });
+
+  it("post the segment and word for createLibraryFlashcard", async () => {
+    const card = { id: "f1", segment_index: 0, word_start: 4 };
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.createLibraryFlashcard.initiate({
+          ...mediaArgs,
+          card,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/projects/p1/media/m1/library-flashcards",
+        body: { kind: "json", value: card },
+      },
+    ]);
+  });
+
+  it("post the draft for createLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.createLibraryItem.initiate(parkDraft),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items",
+        body: { kind: "json", value: parkDraft },
+      },
+    ]);
+  });
+
+  it("put the draft for updateLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.updateLibraryItem.initiate({
+          itemId: "i1",
+          draft: parkDraft,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1",
+        body: { kind: "json", value: parkDraft },
+      },
+    ]);
+  });
+
+  it("send DELETE /library/items/{item_id} for deleteLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.deleteLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "DELETE", path: "/library/items/i1" }]);
+  });
+
+  it("send POST .../proposed-words for proposeLibraryWords", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.proposeLibraryWords.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/proposed-words" }]);
+  });
+
+  it("post the entry and the words' text for applyLibraryEntry", async () => {
+    const apply = { word_text: "Hund", entry: hundWord.entry };
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.applyLibraryEntry.initiate({
+          itemId: "i1",
+          apply,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "POST",
+        path: "/library/items/i1/apply-entry",
+        body: { kind: "json", value: apply },
+      },
+    ]);
+  });
+
+  it("put the words of a segment for putLibraryWords", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.putLibraryWords.initiate({
+          itemId: "i1",
+          segmentIndex: 3,
+          words: [hundWord],
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/segments/3/words",
+        body: { kind: "json", value: [hundWord] },
+      },
+    ]);
+  });
+
+  it("put the time of the frame for setLibraryCoverFrame", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.setLibraryCoverFrame.initiate({
+          itemId: "i1",
+          atMs: 12_000,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/library/items/i1/cover/frame",
+        body: { kind: "json", value: { at_ms: 12_000 } },
+      },
+    ]);
+  });
+
+  it("send DELETE .../cover for resetLibraryCover", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.resetLibraryCover.initiate("i1"),
+      ),
+    ).toEqual([{ method: "DELETE", path: "/library/items/i1/cover" }]);
+  });
+
+  it("send POST .../publish for publishLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.publishLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/publish" }]);
+  });
+
+  it("send POST .../unpublish for unpublishLibraryItem", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.unpublishLibraryItem.initiate("i1"),
+      ),
+    ).toEqual([{ method: "POST", path: "/library/items/i1/unpublish" }]);
+  });
+
+  it("put the flag for setLibraryManager", async () => {
+    expect(
+      await libraryRequests(
+        backendApi.endpoints.setLibraryManager.initiate({
+          via: "self",
+          userId: "u1",
+          managesLibrary: true,
+        }),
+      ),
+    ).toEqual([
+      {
+        method: "PUT",
+        path: "/users/u1/library-manager",
+        body: { kind: "json", value: { manages_library: true } },
+      },
+    ]);
+  });
+
+  it("put the flag for setLibraryManager through the built-in server to the linked remote", async () => {
+    const [request] = await libraryRequests(
+      backendApi.endpoints.setLibraryManager.initiate({
+        via: "linkedRemote",
+        userId: "u1",
+        managesLibrary: true,
+      }),
+    );
+    expect(request?.path).toBe("/sync/remote/users/u1/library-manager");
+  });
+
+  it("fetch an item being prepared again every two seconds until it is published", async () => {
+    const processing = { kind: "processing" } as const;
+    const published = { kind: "published" } as const;
+    expect(
+      await itemFetchCount([processing, processing, published], 7000),
+    ).toBe(3);
+  });
+
+  it("fetch a published item only once", async () => {
+    expect(await itemFetchCount([{ kind: "published" }], 7000)).toBe(1);
+  });
+
+  it("stop fetching an item being prepared once a fetch fails", async () => {
+    expect(await itemFetchCount([{ kind: "processing" }, "gone"], 7000)).toBe(
+      2,
+    );
+  });
+
+  it("fetch the listing again once an item's preparation ends", async () => {
+    expect(
+      await libraryRequestCount(
+        [{ kind: "processing" }, { kind: "published" }],
+        "GET /library/items",
+        3000,
+        backendApi.endpoints.listLibraryItems.initiate(),
+      ),
+    ).toBe(2);
+  });
+
+  it("fetch the item's text again once its preparation ends", async () => {
+    expect(
+      await libraryRequestCount(
+        [{ kind: "processing" }, { kind: "published" }],
+        "GET /library/items/i1/text",
+        3000,
+        backendApi.endpoints.getLibraryText.initiate("i1"),
+      ),
+    ).toBe(2);
+  });
+
+  it("start fetching an item again once it is published", async () => {
+    vi.useFakeTimers();
+    const { store, counts } = createLibraryPollingStore([
+      { kind: "draft" },
+      { kind: "published" },
+    ]);
+    await store.dispatch(backendApi.endpoints.getLibraryItem.initiate("i1"));
+    await store.dispatch(
+      backendApi.endpoints.publishLibraryItem.initiate("i1"),
+    );
+    await vi.advanceTimersByTimeAsync(2100);
+    vi.useRealTimers();
+    expect(counts.get("GET /library/items/i1")).toBe(2);
+  });
+
+  it("put the saved segment into the item's cached text", async () => {
+    expect((await textAfterSavingWords())?.segments[0]?.words).toEqual([
+      hundWord,
+    ]);
   });
 });

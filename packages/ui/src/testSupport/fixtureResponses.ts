@@ -139,11 +139,11 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
 
 /** A media-source plugin, installed when a test puts it in the answer to `GET /plugins`. */
 export const fixtureMediaSourcePlugin: InstalledPlugin = {
-  name: "video-site",
-  title: "Video site",
+  name: "example-plugin",
+  title: "Example plugin",
   version: "0.1.0",
   kind: "media-source",
-  import_label: "Add from a video site",
+  import_label: "Add with Example plugin",
 };
 
 /** The media files of project `p1`, with `episode.mkv` imported through `fixtureMediaSourcePlugin`. */
@@ -191,6 +191,7 @@ export const fixtureResponses = {
   "GET /sync/status": fixtureSyncStatus(),
   "GET /projects": fixtureProjects,
   "GET /review/counts": { projects: [] },
+  "GET /library/settings": { language: "de" },
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,

@@ -10,6 +10,8 @@ pub struct Opf {
     pub manifest: Vec<ManifestItem>,
     /// Manifest item ids in reading order.
     pub spine: Vec<String>,
+    /// The id of the manifest item an EPUB 2 book names as its cover picture.
+    pub cover_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,7 +28,16 @@ pub fn parse_opf(xml: &str) -> Result<Opf, DocumentError> {
         language: find_element_text(&document, "language"),
         manifest: parse_manifest(&document),
         spine: parse_spine(&document),
+        cover_id: find_cover_id(&document),
     })
+}
+
+fn find_cover_id(document: &XmlDocument) -> Option<String> {
+    document
+        .descendants()
+        .find(|node| node.has_tag_name("meta") && node.attribute("name") == Some("cover"))
+        .and_then(|node| node.attribute("content"))
+        .map(String::from)
 }
 
 fn find_element_text(document: &XmlDocument, tag: &str) -> Option<String> {
@@ -70,6 +81,15 @@ fn parse_spine(document: &XmlDocument) -> Vec<String> {
 impl Opf {
     pub fn find_manifest_item(&self, id: &str) -> Option<&ManifestItem> {
         self.manifest.iter().find(|item| item.id == id)
+    }
+
+    /// The manifest item of the book's cover picture: the one with the EPUB 3 `cover-image` property,
+    /// else the one an EPUB 2 `cover` meta element names.
+    pub fn find_cover_item(&self) -> Option<&ManifestItem> {
+        let has_cover_property =
+            |item: &&ManifestItem| item.properties.iter().any(|name| name == "cover-image");
+        (self.manifest.iter().find(has_cover_property))
+            .or_else(|| self.find_manifest_item(self.cover_id.as_deref()?))
     }
 }
 
@@ -141,6 +161,33 @@ mod tests {
     fn leaves_the_language_empty_when_there_is_none() {
         let opf = parse_opf(r#"<package><metadata/><manifest/><spine/></package>"#).unwrap();
         assert_eq!(opf.language, None);
+    }
+
+    fn cover_href(xml: &str) -> Option<String> {
+        let opf = parse_opf(xml).unwrap();
+        opf.find_cover_item().map(|item| item.href.clone())
+    }
+
+    #[test]
+    fn finds_the_cover_with_the_cover_image_property() {
+        let xml = r#"<package><metadata/><manifest>
+            <item id="c1" href="c1.xhtml"/>
+            <item id="img" href="images/cover.jpg" properties="cover-image"/>
+        </manifest><spine/></package>"#;
+        assert_eq!(cover_href(xml), Some("images/cover.jpg".into()));
+    }
+
+    #[test]
+    fn finds_the_cover_an_epub_2_meta_element_names() {
+        let xml = r#"<package><metadata><meta name="cover" content="img"/></metadata><manifest>
+            <item id="img" href="cover.png"/>
+        </manifest><spine/></package>"#;
+        assert_eq!(cover_href(xml), Some("cover.png".into()));
+    }
+
+    #[test]
+    fn finds_no_cover_in_a_book_that_names_none() {
+        assert_eq!(cover_href(OPF), None);
     }
 
     #[test]

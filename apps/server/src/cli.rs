@@ -177,6 +177,8 @@ pub enum UsersCommand {
     List(DatabaseArgs),
     /// Changes the role of an account.
     SetRole(SetRoleArgs),
+    /// Lets an account manage the server's library, or stops it. Administrators manage it whatever this says.
+    SetLibraryManager(SetLibraryManagerArgs),
     /// Gives an account a new password and ends all of its sessions.
     /// The password is read from standard input with `--password-stdin`, or else from `EASYIMMERSE_PASSWORD`.
     SetPassword(SetPasswordArgs),
@@ -198,6 +200,7 @@ impl UsersCommand {
             Self::Create(args) => &mut args.database,
             Self::List(args) => args,
             Self::SetRole(args) => &mut args.database,
+            Self::SetLibraryManager(args) => &mut args.database,
             Self::SetPassword(args) => &mut args.database,
             Self::Delete(args) => &mut args.database,
         }
@@ -243,6 +246,17 @@ pub struct SetRoleArgs {
     /// One of `library_user`, `privileged` and `administrator`.
     #[arg(long)]
     pub role: AccountRole,
+}
+
+#[derive(Debug, Args)]
+pub struct SetLibraryManagerArgs {
+    #[command(flatten)]
+    pub database: DatabaseArgs,
+    #[arg(long)]
+    pub email: String,
+    /// `true` to let the account manage the library, `false` to stop it.
+    #[arg(long, action = clap::ArgAction::Set)]
+    pub manages_library: bool,
 }
 
 #[derive(Debug, Args)]

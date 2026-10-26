@@ -16,8 +16,8 @@ const audioExtensions: readonly string[] = [
   ".wav",
 ];
 
-/** The file extensions the media file picker offers: the common video and audio containers, ebooks, and text files. */
-export const mediaFileExtensions: readonly string[] = [
+/** The file extensions of the common video and audio containers. */
+export const videoAndAudioFileExtensions: readonly string[] = [
   ".mp4",
   ".m4v",
   ".mov",
@@ -26,7 +26,16 @@ export const mediaFileExtensions: readonly string[] = [
   ".avi",
   ".ts",
   ...audioExtensions,
-  ...Object.keys(documentFormats),
+];
+
+/** The file extensions of ebooks and text files. */
+export const documentFileExtensions: readonly string[] =
+  Object.keys(documentFormats);
+
+/** The file extensions the media file picker offers: the common video and audio containers, ebooks, and text files. */
+export const mediaFileExtensions: readonly string[] = [
+  ...videoAndAudioFileExtensions,
+  ...documentFileExtensions,
 ];
 
 /** Guesses from the name whether a file holds only sound, for files the server has not probed. */

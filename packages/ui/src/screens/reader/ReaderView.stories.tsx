@@ -25,6 +25,7 @@ import { exampleTermEntry } from "../../components/dictionaryPopup/exampleTermEn
 import type { LookupDisplayState } from "../../components/dictionaryPopup/lookupDisplayState.ts";
 import { FlashcardEditor } from "../../components/flashcardEditor/FlashcardEditor.tsx";
 import { exampleLanguages } from "../../components/flashcards/exampleFlashcard.ts";
+import { LibraryEditingBar } from "../../components/libraryEditing/LibraryEditingBar.tsx";
 import { languageOptions } from "../../lib/formatting/languages.ts";
 import {
   isWasmBuilt,
@@ -420,6 +421,25 @@ export const FlashcardStarted: Story = {
         onPlayClip={fn()}
       />
     ),
+  },
+};
+
+/** The words of the novel's first paragraph given entries for learners, as a library manager preparing it sees them underlined. */
+const preparedWords = [
+  { start: 0, end: 3 },
+  { start: 4, end: 10 },
+  { start: 11, end: 16 },
+].map((span) => ({ chapter_index: 0, paragraph_index: 0, ...span }));
+
+/** A library manager preparing a library document in the reader: every word can be clicked, and the words with an entry are underlined. */
+export const PreparingALibraryDocument: Story = {
+  decorators: openedWith(),
+  args: {
+    projectName: "Item details",
+    headerContent: (
+      <LibraryEditingBar title="Der Hund" kind="text" onOpenDetails={fn()} />
+    ),
+    markedSpans: preparedWords,
   },
 };
 

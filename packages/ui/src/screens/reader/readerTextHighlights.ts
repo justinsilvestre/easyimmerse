@@ -5,6 +5,9 @@ import { readerViewportAttribute } from "./useParagraphsNearView.ts";
 /** The name of the highlight on the text being spoken, which `styles.css` draws apart from the looked-up word's. */
 export const spokenHighlightName = "reader-spoken";
 
+/** The name of the highlight on the words a library manager gave entries, while they prepare a library document. */
+export const libraryWordHighlightName = "reader-library-word";
+
 /** The name of the highlight on the sentence whose translation the dictionary pop-up's sentence row shows. */
 export const translatedHighlightName = "reader-translated";
 

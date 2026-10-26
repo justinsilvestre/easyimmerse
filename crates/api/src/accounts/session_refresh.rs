@@ -107,6 +107,7 @@ mod tests {
                 role: AccountRole::LibraryUser,
                 created_at_ms: 0,
                 email_confirmed_at_ms: None,
+                manages_library: false,
             },
             last_used_at_ms: 0,
             expires_at_ms: SESSION_LIFETIME_MS,

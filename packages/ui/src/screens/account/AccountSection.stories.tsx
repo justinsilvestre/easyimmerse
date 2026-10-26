@@ -142,6 +142,7 @@ const someone: CurrentPrincipal & { kind: "account" } = {
     role: "privileged",
     created_at_ms: 0,
     email_confirmed_at_ms: null,
+    manages_library: false,
   },
 };
 
@@ -267,6 +268,21 @@ export const LoggedIn: Story = {
   parameters: connectedAs(someone),
 };
 
+/** A server admin's account, with the button to the Users page. */
+export const LoggedInAsServerAdmin: Story = {
+  parameters: connectedAs({
+    ...someone,
+    user: { ...someone.user, role: "administrator" },
+  }),
+};
+
+export const LoggedInAsLibraryAdmin: Story = {
+  parameters: connectedAs({
+    ...someone,
+    user: { ...someone.user, role: "privileged", manages_library: true },
+  }),
+};
+
 export const LoggingOut: Story = {
   parameters: connectedAs(someone),
   decorators: [withDispatchedActions(actions.signOutRequested())],
@@ -329,6 +345,14 @@ export const SignInNoLongerAccepted: Story = {
 /** A build set up with its server's own token, as a self-hoster's may be. */
 export const LaunchPrincipal: Story = {
   parameters: connectedAs({ kind: "launch" }),
+};
+
+/** The owner of a server with accounts, who manages them on the Users page. */
+export const LaunchPrincipalOfServerWithAccounts: Story = {
+  parameters: connectedAs(
+    { kind: "launch" },
+    { "GET /auth/server": { accounts: true, open_signup: false } },
+  ),
 };
 
 /** The desktop app, whose built-in server keeps the work on the computer and is not logged in to any server. */

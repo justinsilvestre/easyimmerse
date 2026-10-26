@@ -1,4 +1,4 @@
-import type { NativePlatform } from "@easyimmerse/state";
+import { type NativePlatform, selectRoute } from "@easyimmerse/state";
 import type { SyncLink, SyncLinkState } from "@easyimmerse/types";
 import {
   act,
@@ -171,11 +171,17 @@ describe("BuiltInServerAccount", () => {
       expect(await screen.findByText("This device")).toBeDefined();
     });
 
-    it("lists the server's accounts for an administrator", async () => {
-      renderBuiltIn({ ...linked, account_role: "administrator" });
-      expect(
-        await screen.findByRole("heading", { name: "Users" }),
-      ).toBeDefined();
+    it("opens the Users page of the linked server for a server admin", async () => {
+      const { store } = renderBuiltIn({
+        ...linked,
+        account_role: "administrator",
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Manage users" }),
+      );
+      expect(selectRoute(store.getState())).toMatchObject({
+        pages: ["linkedRemoteUsers"],
+      });
     });
 
     it("tells that logging out keeps the work on this computer but stops copying it", async () => {

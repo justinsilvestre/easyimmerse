@@ -9,8 +9,8 @@ use easyimmerse_core::account::{AccountRole, AccountUser};
 use easyimmerse_storage::Storage;
 
 use crate::cli::{
-    CreateUserArgs, DatabaseArgs, DeleteUserArgs, PasswordArgs, SetPasswordArgs, SetRoleArgs,
-    UsersCommand,
+    CreateUserArgs, DatabaseArgs, DeleteUserArgs, PasswordArgs, SetLibraryManagerArgs,
+    SetPasswordArgs, SetRoleArgs, UsersCommand,
 };
 
 /// The variable the password of a new account is read from without `--password-stdin`.
@@ -21,6 +21,7 @@ pub fn run(command: UsersCommand) -> anyhow::Result<()> {
         UsersCommand::Create(args) => create(args),
         UsersCommand::List(args) => list(&args),
         UsersCommand::SetRole(args) => set_role(args),
+        UsersCommand::SetLibraryManager(args) => set_library_manager(args),
         UsersCommand::SetPassword(args) => change_password(args),
         UsersCommand::Delete(args) => delete(args),
     }
@@ -52,6 +53,23 @@ fn set_role(args: SetRoleArgs) -> anyhow::Result<()> {
 fn set_role_of(storage: &Storage, email: &str, role: AccountRole) -> anyhow::Result<AccountUser> {
     let user = find_user(storage, email)?;
     Ok(storage.set_user_role(&user.id, role)?)
+}
+
+fn set_library_manager(args: SetLibraryManagerArgs) -> anyhow::Result<()> {
+    let storage = open(&args.database)?;
+    let user = set_library_manager_of(&storage, &args.email, args.manages_library)?;
+    println!("updated {}", describe(&user));
+    Ok(())
+}
+
+/// Lets the account with the email address manage the library, or stops it.
+fn set_library_manager_of(
+    storage: &Storage,
+    email: &str,
+    manages_library: bool,
+) -> anyhow::Result<AccountUser> {
+    let user = find_user(storage, email)?;
+    Ok(storage.set_library_manager(&user.id, manages_library)?)
 }
 
 fn change_password(args: SetPasswordArgs) -> anyhow::Result<()> {
@@ -117,7 +135,12 @@ fn read_first_line(mut input: impl BufRead) -> anyhow::Result<String> {
 }
 
 fn describe(user: &AccountUser) -> String {
-    format!("{}\t{}\t{}", user.email, user.role, user.id)
+    let library = if user.manages_library {
+        "\tmanages library"
+    } else {
+        ""
+    };
+    format!("{}\t{}\t{}{library}", user.email, user.role, user.id)
 }
 
 #[cfg(test)]
@@ -190,6 +213,19 @@ mod tests {
         )
         .unwrap();
         assert!(delete_user_of(&storage, "reader@example.com").is_ok());
+    }
+
+    #[test]
+    fn lets_an_account_manage_the_library() {
+        let storage = storage_with_reader();
+        let user = set_library_manager_of(&storage, "reader@example.com", true).unwrap();
+        assert!(user.manages_library);
+    }
+
+    #[test]
+    fn changing_the_library_permission_of_an_unknown_address_fails() {
+        let storage = storage_with_reader();
+        assert!(set_library_manager_of(&storage, "other@example.com", true).is_err());
     }
 
     #[test]

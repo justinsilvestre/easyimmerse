@@ -65,5 +65,6 @@ pub(crate) fn flashcard() -> Flashcard {
         was_packaged: false,
         sent_at_ms: None,
         is_suspended: false,
+        is_from_library: false,
     }
 }

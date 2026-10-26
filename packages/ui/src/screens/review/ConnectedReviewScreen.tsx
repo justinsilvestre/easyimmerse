@@ -10,7 +10,7 @@ import {
   selectReviewKeyBinding,
   selectReviewSession,
 } from "@easyimmerse/state";
-import type { ReviewIntervals } from "@easyimmerse/types";
+import type { Flashcard, ReviewIntervals } from "@easyimmerse/types";
 import { FlashcardDeleteDialog } from "../../components/flashcards/FlashcardDeleteDialog.tsx";
 import { useKeyBindings } from "../../lib/useKeyBindings.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
@@ -55,7 +55,6 @@ export function ConnectedReviewScreen({
     rate: ({ rating }) => rate(rating),
   });
   if (session === null || project === undefined) return null;
-  const mediaFileId = shown?.flashcard.media_file_id ?? null;
   const { settings } = project;
   return (
     <>
@@ -92,9 +91,9 @@ export function ConnectedReviewScreen({
         }
         onRetry={() => dispatch(actions.reviewQueueRetried())}
         onEditFlashcard={
-          mediaFileId === null
-            ? null
-            : () => dispatch(actions.reviewFlashcardEditRequested(mediaFileId))
+          isEditable(shown?.flashcard)
+            ? () => dispatch(actions.reviewFlashcardEditRequested())
+            : null
         }
         onBury={() => dispatch(actions.reviewCardHeld("buried", Date.now()))}
         onSuspend={() =>
@@ -128,4 +127,13 @@ function intervalsOf(intervals: ReviewIntervals) {
     good: formatInterval(intervals.good_ms),
     easy: formatInterval(intervals.easy_ms),
   } satisfies Record<ReviewGrade, string>;
+}
+
+/** Tells whether the editor can open the flashcard: it must have a media file, and not have been made from the library, which cannot be edited. */
+function isEditable(flashcard: Flashcard | undefined) {
+  return (
+    flashcard !== undefined &&
+    flashcard.media_file_id !== null &&
+    !flashcard.is_from_library
+  );
 }

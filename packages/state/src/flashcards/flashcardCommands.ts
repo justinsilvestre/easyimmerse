@@ -16,11 +16,13 @@ import type { FlashcardApp } from "./flashcardForm.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
+import { libraryFlashcardCommands } from "./libraryFlashcards.ts";
 import {
   isFlashcardSettled,
   settleFlashcardRequest,
 } from "./settleFlashcardRequest.ts";
 import { saveStarted, takeFinished } from "./startedCards.ts";
+import { sendSuspend, suspendSettled } from "./suspendFlashcard.ts";
 import { sendUnsuspend, unsuspendSettled } from "./unsuspendFlashcard.ts";
 import {
   fieldsAwaitedBy,
@@ -33,7 +35,8 @@ type FlashcardCommandsApp = FlashcardApp & Pick<AppState, "notices">;
 
 /**
  * Returns the flashcard requests and notices an action asks for outside the form: flashcards from words saved at once
- * or held for their lookup, the outcomes of flashcard requests, and the failed saves' Retry, Open and Discard.
+ * or held for their lookup, the outcomes of flashcard requests, the failed saves' Retry, Open and Discard, library flashcards,
+ * and the suspensions and deletions asked for outside the form.
  * The flashcards keep no state of their own.
  * Each request goes in its flashcard's scope with a time limit, under the first id free for its flashcard.
  */
@@ -47,6 +50,7 @@ export function flashcardCommands(
     ...answer(action, app),
     ...withdrawFormNotices(action, app),
     ...giveUpOpeningsAway(action, app),
+    ...libraryFlashcardCommands(action),
   ];
 }
 
@@ -66,6 +70,10 @@ function answer(action: AppAction, app: FlashcardCommandsApp) {
       return discardFailedSave(action.flashcardId, app);
     case "failedSaveDiscardUndone":
       return restoreFailedSave(action.kept, app);
+    case "flashcardDeleteConfirmed":
+      return [deleteInBackground(action.projectId, action.flashcardId, app)];
+    case "flashcardSuspendRequested":
+      return [sendSuspend(action.projectId, action.flashcardId)];
     case "flashcardUnsuspendRequested":
       return [sendUnsuspend(action.projectId, action.flashcardId)];
     case "saveUndoRequested":
@@ -75,6 +83,7 @@ function answer(action: AppAction, app: FlashcardCommandsApp) {
     case "requestSettled":
       return [
         ...fieldsAwaitedBy(action, app),
+        ...suspendSettled(action),
         ...unsuspendSettled(action),
         ...(isFlashcardSettled(action)
           ? settleFlashcardRequest(action, app)
@@ -83,6 +92,24 @@ function answer(action: AppAction, app: FlashcardCommandsApp) {
     default:
       return [];
   }
+}
+
+/** Deletes a flashcard outside the form; a failure is told of when it settles. */
+function deleteInBackground(
+  projectId: string,
+  flashcardId: string,
+  app: FlashcardCommandsApp,
+) {
+  return sendFlashcardRequest(
+    {
+      kind: "deleteFlashcard",
+      projectId,
+      flashcardId,
+      purpose: { type: "delete" },
+    },
+    app,
+    "background",
+  );
 }
 
 /** Withdraws, as the screen closes, the undo toasts of closed forms, since their Undo needs the form. */

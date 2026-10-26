@@ -27,7 +27,7 @@ pub fn parse_epub(bytes: &[u8]) -> Result<Document, DocumentError> {
     })
 }
 
-fn find_rootfile_path(container_xml: &str) -> Result<String, DocumentError> {
+pub(super) fn find_rootfile_path(container_xml: &str) -> Result<String, DocumentError> {
     let document = XmlDocument::parse(container_xml)?;
     document
         .descendants()
@@ -61,7 +61,7 @@ fn read_chapters(
     Ok((chapters, provenance))
 }
 
-fn read_entry(
+pub(super) fn read_entry(
     archive: &mut ZipArchive<Cursor<&[u8]>>,
     name: &str,
 ) -> Result<String, DocumentError> {
@@ -79,14 +79,14 @@ fn read_entry(
     Ok(text)
 }
 
-fn parent_directory(path: &str) -> &str {
+pub(super) fn parent_directory(path: &str) -> &str {
     path.rsplit_once('/').map_or("", |(directory, _)| directory)
 }
 
 /// Joins an href from the OPF onto the OPF's directory,
 /// resolving `.` and `..` segments and dropping any fragment.
 /// The result is percent-decoded, since archive entry names are not percent-encoded.
-fn resolve_href(directory: &str, href: &str) -> String {
+pub(super) fn resolve_href(directory: &str, href: &str) -> String {
     let encoded_path = href.split('#').next().unwrap_or_default();
     let path = percent_decode_str(encoded_path).decode_utf8_lossy();
     let mut segments: Vec<&str> = directory

@@ -8,6 +8,8 @@ import {
 import type { LookupResult, NewFlashcard } from "@easyimmerse/types";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { popupFlashcardOf } from "../dictionaryPopup/popupFlashcardOf.ts";
+import { libraryFlashcardsOf } from "./libraryFlashcardsOf.ts";
+import type { LibraryWords } from "./libraryWords.ts";
 import { type LookupPlace, placeOf } from "./lookupPlace.ts";
 import type { WordFlashcards } from "./wordFlashcards.ts";
 
@@ -16,13 +18,18 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * from a word of the text or held in the pop-up, filled from its lookup once it answers;
  * from the pop-up's flashcard buttons, filled from what the pop-up shows; and for no word.
  * `shown` is the word the pop-up shows, and `context` sorts definitions into the fields.
+ * Given a library item's words, every flashcard is a library flashcard instead, as `libraryFlashcardsOf` describes,
+ * and while a library manager prepares the item, no flashcard is made.
  */
 export function useLookupFlashcards(
   flashcards: WordFlashcards,
   shown: ChosenWord | null,
   context: LookupFieldsContext,
+  library?: LibraryWords,
 ) {
   const dispatch = useAppDispatch();
+  if (library?.isEditing) return noFlashcards;
+  if (library) return libraryFlashcardsOf(library, shown, dispatch);
   const destinationOf = (asked: FlashcardDestination) =>
     flashcards.savesAtOnce ? asked : "editor";
   const newFlashcard = (
@@ -119,3 +126,14 @@ export function useLookupFlashcards(
       startWordless(destination, null),
   };
 }
+
+const ignore = () => undefined;
+
+/** Asks for no flashcard, whatever the user does. */
+const noFlashcards = {
+  startFlashcardFor: ignore,
+  holdWord: ignore,
+  createFromPopup: ignore,
+  startFlashcardAtCursor: ignore,
+  startWordlessFlashcard: ignore,
+};

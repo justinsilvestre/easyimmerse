@@ -7,6 +7,7 @@ import {
   close,
   dropPending,
   holdWord,
+  open,
   openSearch,
   setAside,
 } from "./lookupMoves.ts";
@@ -21,6 +22,7 @@ import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
  * A click on the word shown closes the pop-up after the double-click interval, so that a double-click can still stop it.
  * Keeps the lookup cursor where the mouse or the keyboard points, with the length its word's lookup matched once a hover answers;
  * that answer also moves an open pop-up to the word, unless the pointer is inside the pop-up or a flashcard waits.
+ * Selected text opens the pop-up on it, even where it begins at the word shown.
  * The L key acts on the cursor's word. A held word opens the pop-up too, and shows its sentence's translation in the sentence row,
  * which the row's button and the T key show and hide.
  * `player` is the media screen's player before the action, which a pop-up opening while it plays pauses.
@@ -33,6 +35,8 @@ export function updateLookup(
   switch (action.type) {
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
+    case "lookupTextSelected":
+      return open(lookup, action.chosen, player);
     case "lookupFlashcardRequested":
     case "lookupPopupWordHeld": {
       const pending = requestedFlashcard(lookup, action);

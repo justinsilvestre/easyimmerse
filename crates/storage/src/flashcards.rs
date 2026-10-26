@@ -12,12 +12,14 @@ use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to
 
 /// The columns a saved draft writes.
 const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
-     content_json, included_fields_json, created_at_ms, updated_at_ms";
+     content_json, included_fields_json, created_at_ms, updated_at_ms, is_from_library";
 
-/// The columns every flashcard query selects: the draft's columns, then the ones the export writes, then whether the review suspended it.
+/// The columns every flashcard query selects: the draft's columns, then the ones the export writes, then whether the review suspended it,
+/// then whether it came from the library.
 const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
      content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, was_packaged, sent_at_ms, \
-     EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = flashcards.id AND h.kind = 'suspended')";
+     EXISTS (SELECT 1 FROM review_holds h WHERE h.flashcard_id = flashcards.id AND h.kind = 'suspended'), \
+     is_from_library";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -54,8 +56,28 @@ pub fn create_flashcard(
     id: &FlashcardId,
     draft: &FlashcardDraft,
 ) -> Result<Flashcard, StorageError> {
+    save_new_flashcard(conn, project_id, id, draft, false)
+}
+
+/// Saves a flashcard the server built from a library item, as `create_flashcard` does, marked as coming from the library.
+pub fn create_library_flashcard(
+    conn: &mut Connection,
+    project_id: &ProjectId,
+    id: &FlashcardId,
+    draft: &FlashcardDraft,
+) -> Result<Flashcard, StorageError> {
+    save_new_flashcard(conn, project_id, id, draft, true)
+}
+
+fn save_new_flashcard(
+    conn: &mut Connection,
+    project_id: &ProjectId,
+    id: &FlashcardId,
+    draft: &FlashcardDraft,
+    is_from_library: bool,
+) -> Result<Flashcard, StorageError> {
     let transaction = conn.transaction()?;
-    let flashcard = insert_flashcard(&transaction, project_id, id, draft)?;
+    let flashcard = insert_flashcard(&transaction, project_id, id, draft, is_from_library)?;
     forget_anki_pending_deletion(&transaction, id)?;
     transaction.commit()?;
     Ok(flashcard)
@@ -66,17 +88,19 @@ fn insert_flashcard(
     project_id: &ProjectId,
     id: &FlashcardId,
     draft: &FlashcardDraft,
+    is_from_library: bool,
 ) -> Result<Flashcard, StorageError> {
     ensure_project_exists(conn, project_id)?;
     ensure_media_file_matches(conn, project_id, draft.media_file_id.as_ref())?;
     let now = to_stored_integer(now_ms());
     let saved = conn.execute(
         &format!(
-            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8) \
+            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8, ?9) \
              ON CONFLICT(id) DO UPDATE SET media_file_id = excluded.media_file_id, \
              cue_index = excluded.cue_index, word_start = excluded.word_start, \
              content_json = excluded.content_json, \
-             included_fields_json = excluded.included_fields_json, updated_at_ms = excluded.updated_at_ms \
+             included_fields_json = excluded.included_fields_json, updated_at_ms = excluded.updated_at_ms, \
+             is_from_library = excluded.is_from_library \
              WHERE flashcards.project_id = excluded.project_id"
         ),
         params![
@@ -88,6 +112,7 @@ fn insert_flashcard(
             serde_json::to_string(&draft.content)?,
             serde_json::to_string(&draft.included_fields)?,
             now,
+            is_from_library,
         ],
     )?;
     if saved == 0 {
@@ -157,6 +182,7 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         was_packaged: row.get(10)?,
         sent_at_ms: read_optional_unsigned(row, 11)?,
         is_suspended: row.get(12)?,
+        is_from_library: row.get(13)?,
     })
 }
 
@@ -243,6 +269,24 @@ mod tests {
             .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         assert_eq!(created.word_start, Some(8));
+    }
+
+    #[test]
+    fn a_created_flashcard_is_not_from_the_library() {
+        let storage = seeded_storage();
+        let created = storage
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
+            .unwrap();
+        assert!(!created.is_from_library);
+    }
+
+    #[test]
+    fn a_library_flashcard_is_marked_as_from_the_library() {
+        let storage = seeded_storage();
+        let created = storage
+            .create_library_flashcard(&project(), &new_id(), &draft(None, "fressen"))
+            .unwrap();
+        assert!(created.is_from_library);
     }
 
     #[test]

@@ -4,11 +4,11 @@ import type { UserChange } from "./userManagement.ts";
 /** What an administrator asked of the server's accounts. */
 type UserRequest = "createUser" | UserChange;
 
-const lastAdministratorMessages: Record<UserChange, string> = {
+const lastAdministratorMessages: Partial<Record<UserChange, string>> = {
   setUserRole:
-    "You can't change the role of the server's only administrator. Make another account an administrator first.",
+    "You can't take Server admin away from the server's only server admin. Make another account a server admin first.",
   deleteUser:
-    "You can't delete the server's only administrator. Make another account an administrator first.",
+    "You can't delete the server's only server admin. Make another account a server admin first.",
 };
 
 const messagesByCode: Record<string, string> = {
@@ -16,12 +16,13 @@ const messagesByCode: Record<string, string> = {
   password_too_short: "The password must be at least 8 characters long.",
   password_too_long: "The password is too long.",
   invalid_email: "This email address is not valid.",
-  forbidden: "Only an administrator may manage this server's accounts.",
+  forbidden: "Only a server admin may manage this server's accounts.",
 };
 
 const failedRequests: Record<UserRequest, string> = {
   createUser: "The account could not be created",
-  setUserRole: "The role could not be changed",
+  setUserRole: "The account's access could not be changed",
+  setLibraryManager: "Library admin could not be changed",
   deleteUser: "The account could not be deleted",
 };
 
@@ -30,8 +31,10 @@ export function userManagementFailureMessage(
   failure: RequestFailure,
   request: UserRequest,
 ): string {
-  if (failure.code === "last_administrator" && request !== "createUser")
-    return lastAdministratorMessages[request];
+  const lastAdministrator =
+    request === "createUser" ? undefined : lastAdministratorMessages[request];
+  if (failure.code === "last_administrator" && lastAdministrator)
+    return lastAdministrator;
   const known = failure.code && messagesByCode[failure.code];
   if (known) return known;
   if (failure.status === "NETWORK")

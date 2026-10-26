@@ -63,7 +63,7 @@ pub async fn stream_media_file(
 }
 
 /// Lets tower-http read the file and answer the range and conditional headers of the request.
-async fn serve_file(path: &str, request: Request) -> Response {
+pub async fn serve_file(path: &str, request: Request) -> Response {
     let Ok(response) = ServeFile::new(path).oneshot(request).await;
     response.map(Body::new)
 }

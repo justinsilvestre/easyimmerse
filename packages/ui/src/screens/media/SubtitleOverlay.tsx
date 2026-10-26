@@ -19,6 +19,7 @@ import {
   lineStepOfKey,
 } from "../../components/wordLookup/cursorKeys.ts";
 import type { Range } from "../../components/wordLookup/RunText.tsx";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { useFocusFollowsCue } from "./useFocusFollowsCue.ts";
 
 /**
@@ -40,6 +41,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   display,
   appearance,
   flashcardWordRanges,
+  markedTitle,
+  words,
   activeWord,
   cursor,
   wordGestures,
@@ -51,6 +54,10 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
   appearance: SubtitleAppearance;
   /** Where the target cue's text holds the words that flashcards were made from. */
   flashcardWordRanges?: readonly Range[];
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedTitle?: string;
+  /** The only words of the target cue to make clickable, as a library item stores them; unset to find them in its text. */
+  words?: readonly WordSpan[];
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, highlighted when it lies in the target cue; null when there is none. */
   cursor?: CueTextCursor | null;
@@ -91,6 +98,8 @@ export const SubtitleOverlay = memo(function SubtitleOverlay({
             activeWord={activeWordIn(activeWord, targetCue)}
             cursor={cursorIn(cursor, targetCue)}
             markedRanges={flashcardWordRanges}
+            markedTitle={markedTitle}
+            words={words}
             gestures={gesturesForCue(wordGestures, targetCue)}
           />
         </p>

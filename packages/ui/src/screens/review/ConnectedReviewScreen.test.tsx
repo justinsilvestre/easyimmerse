@@ -144,6 +144,20 @@ describe("ConnectedReviewScreen", () => {
     await expect(showsWord("Katze")).resolves.toBeUndefined();
   });
 
+  it("offers no way to edit a card made from the library", async () => {
+    await renderReview(() =>
+      listedFlashcards().map((flashcard) => ({
+        ...flashcard,
+        is_from_library: true,
+      })),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    await screen.findByRole("menuitem", { name: "Suspend" });
+    expect(
+      screen.queryByRole("menuitem", { name: /^(Edit|Open) flashcard$/ }),
+    ).toBeNull();
+  });
+
   it("goes back to the project on Escape", async () => {
     const { store } = await renderReview();
     fireEvent.keyDown(document.body, { key: "Escape" });

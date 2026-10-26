@@ -1,3 +1,5 @@
+import type { AccountVia } from "../server/serverSelectors.ts";
+
 /** A screen that fills the window on its own. */
 export type MainRoute =
   | { screen: "home" }
@@ -8,7 +10,15 @@ export type MainRoute =
   /** The review of a project's flashcards, which fills the window without the app's frame. */
   | { screen: "review"; projectId: string }
   /** A media file of a project, shown on the media screen or, for a book, in the reader. */
-  | { screen: "media"; projectId: string; mediaFileId: string };
+  | { screen: "media"; projectId: string; mediaFileId: string }
+  /** The server's library, where a person browses the items they can add to a project. */
+  | { screen: "library" }
+  /** One item of the library, with its full description and the control that adds it to a project. */
+  | { screen: "libraryItem"; itemId: string }
+  /** The library management screen, with every item and the form for a new one, which only library managers reach. */
+  | { screen: "libraryManage" }
+  /** The library management screen for one item, which only library managers reach. */
+  | { screen: "libraryEdit"; itemId: string };
 
 /** The route of a media file's screen. */
 export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
@@ -19,7 +29,11 @@ export type SettingsPage =
   | "account"
   | "dictionaries"
   | "pairing"
-  | "server";
+  | "server"
+  /** The accounts of the app's own server, for its administrator to manage. */
+  | "users"
+  /** The accounts of the server the native app's built-in server keeps a copy of the work on, for an administrator there to manage. */
+  | "linkedRemoteUsers";
 
 /** A section of the general settings page that the page scrolls to when it opens. */
 export type SettingsSection = "mediaConversion";
@@ -57,7 +71,13 @@ export type NavigationStep =
   | { type: "openPairing" }
   /** Opens the page of the desktop app's server settings. */
   | { type: "openServerSettings" }
-  | { type: "closeSettings" };
+  /** Opens the page that manages the accounts of the server that `via` names. */
+  | { type: "openUsers"; via: AccountVia }
+  | { type: "closeSettings" }
+  | { type: "openLibrary" }
+  | { type: "openLibraryItem"; itemId: string }
+  | { type: "manageLibrary" }
+  | { type: "editLibraryItem"; itemId: string };
 
 export const initialRoute: Route = { screen: "home" };
 
@@ -108,10 +128,25 @@ function stepTarget(current: Route, step: NavigationStep): Route {
       return openSettingsPage(current, "pairing");
     case "openServerSettings":
       return openSettingsPage(current, "server");
+    case "openUsers":
+      return openSettingsPage(current, usersPages[step.via]);
     case "closeSettings":
       return closeSettingsPage(current);
+    case "openLibrary":
+      return { screen: "library" };
+    case "openLibraryItem":
+      return { screen: "libraryItem", itemId: step.itemId };
+    case "manageLibrary":
+      return { screen: "libraryManage" };
+    case "editLibraryItem":
+      return { screen: "libraryEdit", itemId: step.itemId };
   }
 }
+
+const usersPages = {
+  self: "users",
+  linkedRemote: "linkedRemoteUsers",
+} as const satisfies Record<AccountVia, SettingsPage>;
 
 /** Returns the settings page on top of the stack, which is the one shown. */
 export function settingsPageOf(
@@ -152,7 +187,7 @@ export function mainScreenOf(route: Route): MainRoute {
   return route.screen === "settings" ? route.beneath : route;
 }
 
-/** Tells whether two routes show the same main screen for the same project and media file. Settings over it do not count. */
+/** Tells whether two routes show the same main screen for the same project, media file and library item. Settings over it do not count. */
 export function isSameMainScreen(before: Route, after: Route): boolean {
   const [a, b] = [
     identify(mainScreenOf(before)),
@@ -166,5 +201,6 @@ function identify(route: MainRoute): readonly (string | null)[] {
     route.screen,
     "projectId" in route ? route.projectId : null,
     "mediaFileId" in route ? route.mediaFileId : null,
+    "itemId" in route ? route.itemId : null,
   ];
 }

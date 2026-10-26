@@ -80,6 +80,26 @@ describe("navigate", () => {
     });
   });
 
+  it("opens the users page of the app's own server on top of the server page", () => {
+    const server = navigate(project, { type: "openServerSettings" });
+    expect(navigate(server, { type: "openUsers", via: "self" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["server", "users"],
+    });
+  });
+
+  it("opens the users page of the linked server on top of the account settings", () => {
+    const account = navigate(project, { type: "openAccountSettings" });
+    expect(
+      navigate(account, { type: "openUsers", via: "linkedRemote" }),
+    ).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["account", "linkedRemoteUsers"],
+    });
+  });
+
   it("opens the account settings screen by itself over the current screen", () => {
     expect(navigate(project, { type: "openAccountSettings" })).toEqual({
       screen: "settings",
@@ -156,6 +176,45 @@ describe("navigate", () => {
     expect(navigate(initialRoute, { type: "continueOffline" })).toEqual({
       screen: "offline",
     });
+  });
+
+  it("opens the library from home", () => {
+    expect(navigate(initialRoute, { type: "openLibrary" })).toEqual({
+      screen: "library",
+    });
+  });
+
+  it("opens a library item from the library", () => {
+    expect(
+      navigate(
+        { screen: "library" },
+        { type: "openLibraryItem", itemId: "i1" },
+      ),
+    ).toEqual({ screen: "libraryItem", itemId: "i1" });
+  });
+
+  it("opens the library management screen from the library", () => {
+    expect(navigate({ screen: "library" }, { type: "manageLibrary" })).toEqual({
+      screen: "libraryManage",
+    });
+  });
+
+  it("opens a library item for editing", () => {
+    expect(
+      navigate(
+        { screen: "library" },
+        { type: "editLibraryItem", itemId: "i1" },
+      ),
+    ).toEqual({ screen: "libraryEdit", itemId: "i1" });
+  });
+
+  it("moves from one library item to another", () => {
+    expect(
+      navigate(
+        { screen: "libraryItem", itemId: "i1" },
+        { type: "openLibraryItem", itemId: "i2" },
+      ),
+    ).toEqual({ screen: "libraryItem", itemId: "i2" });
   });
 });
 

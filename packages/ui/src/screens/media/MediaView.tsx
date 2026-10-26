@@ -9,9 +9,11 @@ import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../../components/cuePanel/cueWordGestures.ts";
+import { libraryWordsOf } from "../../components/cuePanel/libraryWordsByCue.ts";
 import type { SubtitleAppearance } from "../../components/subtitleAppearance/subtitleAppearance.ts";
 import type { LineStep } from "../../components/wordLookup/cursorKeys.ts";
 import type { Range } from "../../components/wordLookup/RunText.tsx";
+import type { WordSpan } from "../../components/wordLookup/splitAtWords.ts";
 import { AppFooter } from "../../layout/AppFooter.tsx";
 import { ProfileMenu } from "../../layout/ProfileMenu.tsx";
 import { useElementSize } from "../../lib/useElementSize.ts";
@@ -60,6 +62,10 @@ type MediaViewProps = {
   onCloseSubtitleAppearance: () => void;
   /** Where each cue's text holds the words that flashcards were made from, by cue index. */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
+  /** What hovering a word in `flashcardWordRanges` tells about it, as `ClickableText` describes. */
+  markedWordTitle?: string;
+  /** The words of each cue a library item stores, by cue index, which alone are clickable; unset for any other media file. */
+  libraryWords?: ReadonlyMap<number, readonly WordSpan[]>;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: ActiveCueWord;
   /** The lookup cursor of the subtitles, which is highlighted in them; null when there is none. */
@@ -73,7 +79,8 @@ type MediaViewProps = {
   /** Moves from a cue of the subtitles over the stage to the previous or next one; it must keep its identity across renders. */
   onCueStep?: (cue: Cue, step: LineStep) => void;
   onLookup: () => void;
-  onAddFlashcard: () => void;
+  /** Saves a flashcard from the cue shown; without it, the subtitles offer none. */
+  onAddFlashcard?: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** The dictionary pop-up, which places itself at its word or else over the lower part of the stage. */
@@ -216,6 +223,12 @@ export function MediaView(props: MediaViewProps) {
                         flashcardWordRanges={
                           shownCue
                             ? props.flashcardWordRanges?.get(shownCue.index)
+                            : undefined
+                        }
+                        markedTitle={props.markedWordTitle}
+                        words={
+                          shownCue
+                            ? libraryWordsOf(props.libraryWords, shownCue)
                             : undefined
                         }
                         activeWord={props.activeWord}

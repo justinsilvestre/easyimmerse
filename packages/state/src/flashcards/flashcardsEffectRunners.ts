@@ -8,7 +8,7 @@ import { flashcardFieldsFromLookup } from "./lookupFields.ts";
 
 /**
  * Performs the flashcards' effects: the fields of a lookup are written with the platform's Markdown writer and reported at once,
- * and a flashcard to start gets a fresh id and is asked for at once.
+ * and a flashcard to start, or a library flashcard, gets a fresh id and is asked for at once.
  */
 export const flashcardsEffectRunners = {
   writeFlashcardFields: (
@@ -28,6 +28,10 @@ export const flashcardsEffectRunners = {
     ),
   startFlashcardWithNewId: ({ start }, { dispatch }) =>
     dispatch(startedUnder(createFlashcardId(), start)),
+  createLibraryFlashcard: ({ place }, { dispatch }) =>
+    dispatch(
+      flashcardActions.libraryFlashcardStarted(place, createFlashcardId()),
+    ),
 } satisfies EffectRunners<FlashcardsEffect>;
 
 /** The action that starts a flashcard under an id: asked for from its word's lookup, or started outright for no word. */

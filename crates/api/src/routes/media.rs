@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::auth::error_body::{ApiError, ApiFailure, not_found};
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::principal::Principal;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::resolve_local_file;
@@ -57,7 +57,7 @@ pub async fn list_media_files(
 /// Adds a media file to a project. A `path` source must name an existing file on the
 /// server's machine, which only a token allowed to read local paths may do; the text
 /// subtitle tracks inside it and the subtitle files beside it that share its name are added
-/// as its subtitle tracks.
+/// as its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media",
@@ -68,6 +68,7 @@ pub async fn list_media_files(
     request_body = AddMediaFileRequest,
     responses(
         (status = 201, description = "The added media file", body = MediaFile),
+        (status = 400, description = "A `library` source, which only adding the library item makes", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not name local paths", body = ApiError),
         (status = 404, description = "No such project, or no file at the given path", body = ApiError),
@@ -103,6 +104,9 @@ async fn resolve_media_source(
         MediaFileSource::Path { path } => Ok(MediaFileSource::Path {
             path: resolve_local_file(principal, &state.config, &path).await?,
         }),
+        MediaFileSource::Library { .. } => Err(bad_request(
+            "a library item is added to a project through its own add route",
+        )),
         source => Ok(source),
     }
 }

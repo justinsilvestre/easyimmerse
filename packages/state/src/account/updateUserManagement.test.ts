@@ -8,7 +8,17 @@ import {
   selectNewUserForm,
   selectUserChangeFailureMessage,
   selectUserChangeInFlight,
+  selectUserSearch,
 } from "./userManagementSelectors.ts";
+
+const learner = {
+  id: "u1",
+  email: "learner@example.com",
+  role: "library_user",
+  created_at_ms: 0,
+  email_confirmed_at_ms: null,
+  manages_library: false,
+} as const;
 
 const newUser = {
   email: "someone@example.com",
@@ -21,6 +31,7 @@ const createdUser = {
   ...newUser,
   created_at_ms: 0,
   email_confirmed_at_ms: null,
+  manages_library: false,
 };
 
 const lastAdministrator = {
@@ -43,7 +54,7 @@ function connectedStore(bundledIn?: "desktop") {
 function creatingStore() {
   const connected = connectedStore();
   connected.store.dispatch(actions.newUserFormChanged(newUser));
-  connected.store.dispatch(actions.newUserSubmitted());
+  connected.store.dispatch(actions.newUserSubmitted("self"));
   return connected;
 }
 
@@ -92,24 +103,15 @@ describe("updateUserManagement", () => {
     store.dispatch(
       actions.newUserFormChanged({ email: "someone@example.com" }),
     );
-    store.dispatch(actions.newUserSubmitted());
+    store.dispatch(actions.newUserSubmitted("self"));
     expect(server.sentRequests).toEqual([]);
   });
 
-  it("sends the role chosen for an account", () => {
-    const { server, store } = connectedStore();
-    store.dispatch(actions.userRoleChosen("u1", "administrator"));
-    expect(server.sentRequests).toContainEqual({
-      kind: "setUserRole",
-      via: "self",
-      userId: "u1",
-      role: "administrator",
-    });
-  });
-
-  it("sends the role chosen through the built-in server to the remote it is linked to", () => {
+  it("sends the access checked for an account to the server named", () => {
     const { server, store } = connectedStore("desktop");
-    store.dispatch(actions.userRoleChosen("u1", "administrator"));
+    store.dispatch(
+      actions.userAccessToggled("linkedRemote", learner, "serverAdmin"),
+    );
     expect(server.sentRequests).toContainEqual({
       kind: "setUserRole",
       via: "linkedRemote",
@@ -118,23 +120,38 @@ describe("updateUserManagement", () => {
     });
   });
 
-  it("tells that the only administrator's role cannot change", async () => {
+  it("shows that the account's library permission is changing", () => {
+    const { store } = connectedStore();
+    store.dispatch(actions.userAccessToggled("self", learner, "libraryAdmin"));
+    expect(selectUserChangeInFlight(store.getState(), "u1")).toBe(
+      "setLibraryManager",
+    );
+  });
+
+  it("tells that the only server admin keeps Server admin", async () => {
     const { server, store } = connectedStore();
-    store.dispatch(actions.userRoleChosen("u1", "library_user"));
+    store.dispatch(
+      actions.userAccessToggled(
+        "self",
+        { ...learner, role: "administrator", manages_library: true },
+        "serverAdmin",
+      ),
+    );
     server.respond(
-      {
-        kind: "setUserRole",
-        via: "self",
-        userId: "u1",
-        role: "library_user",
-      },
+      { kind: "setUserRole", via: "self", userId: "u1", role: "privileged" },
       lastAdministrator,
     );
     await vi.waitFor(() =>
       expect(selectUserChangeFailureMessage(store.getState())).toBe(
-        "You can't change the role of the server's only administrator. Make another account an administrator first.",
+        "You can't take Server admin away from the server's only server admin. Make another account a server admin first.",
       ),
     );
+  });
+
+  it("keeps what was typed to search the accounts", () => {
+    const { store } = connectedStore();
+    store.dispatch(actions.userSearchChanged("reader"));
+    expect(selectUserSearch(store.getState())).toBe("reader");
   });
 
   describe("when an account's deletion is asked for", () => {
@@ -160,7 +177,7 @@ describe("updateUserManagement", () => {
     it("deletes the account once it is confirmed", () => {
       const { server, store } = connectedStore();
       store.dispatch(actions.userDeletionAsked("u1"));
-      store.dispatch(actions.userDeletionConfirmed());
+      store.dispatch(actions.userDeletionConfirmed("self"));
       expect(server.sentRequests).toContainEqual({
         kind: "deleteUser",
         via: "self",
@@ -171,7 +188,7 @@ describe("updateUserManagement", () => {
     it("shows that the account is being deleted", () => {
       const { store } = connectedStore();
       store.dispatch(actions.userDeletionAsked("u1"));
-      store.dispatch(actions.userDeletionConfirmed());
+      store.dispatch(actions.userDeletionConfirmed("self"));
       expect(selectUserChangeInFlight(store.getState(), "u1")).toBe(
         "deleteUser",
       );

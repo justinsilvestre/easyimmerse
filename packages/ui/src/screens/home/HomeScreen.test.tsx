@@ -1,4 +1,6 @@
 import type { BackendClient } from "@easyimmerse/backend";
+import { selectRoute } from "@easyimmerse/state";
+import type { CurrentPrincipal } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
@@ -14,6 +16,28 @@ const offlineClient: BackendClient = {
 };
 
 afterEach(cleanup);
+
+const learner = {
+  kind: "account",
+  user: {
+    id: "u2",
+    email: "someone@example.com",
+    role: "library_user",
+    created_at_ms: 0,
+    email_confirmed_at_ms: null,
+    manages_library: false,
+  },
+} satisfies CurrentPrincipal;
+
+function createManagerClient() {
+  return createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /auth/me": {
+      ...learner,
+      user: { ...learner.user, manages_library: true },
+    },
+  });
+}
 
 function renderHome(
   callbacks: {
@@ -127,5 +151,44 @@ describe("HomeScreen", () => {
     expect(
       card.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  describe("for someone who manages the library", () => {
+    it("opens the library when Browse the library is clicked", async () => {
+      const { store } = renderHome({}, createManagerClient());
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Browse the library" }),
+      );
+      expect(selectRoute(store.getState())).toEqual({ screen: "library" });
+    });
+
+    it("shows the library above the projects", async () => {
+      renderHome({}, createManagerClient());
+      const library = await screen.findByRole("region", { name: "Library" });
+      const projects = await screen.findByRole("list", { name: "Projects" });
+      expect(
+        library.compareDocumentPosition(projects) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it("opens library management when Manage library is clicked", async () => {
+      const { store } = renderHome({}, createManagerClient());
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Manage library" }),
+      );
+      expect(selectRoute(store.getState())).toEqual({
+        screen: "libraryManage",
+      });
+    });
+  });
+
+  it("shows no library section to someone who cannot manage the library", async () => {
+    renderHome(
+      {},
+      createFakeBackendClient({ ...fixtureResponses, "GET /auth/me": learner }),
+    );
+    await screen.findByRole("list", { name: "Projects" });
+    expect(screen.queryByRole("region", { name: "Library" })).toBeNull();
   });
 });

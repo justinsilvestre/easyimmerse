@@ -66,6 +66,15 @@ describe("classifyStories", () => {
     assert.equal(changes[0]?.kind, "errored");
   });
 
+  it("marks a new story that fails to render as errored", () => {
+    const changes = classifyStories(
+      manifest(),
+      manifest(story("a", "boom")),
+      identical,
+    );
+    assert.equal(changes[0]?.kind, "errored");
+  });
+
   it("marks a story that renders again as changed, with the earlier error", () => {
     const changes = classifyStories(
       manifest(story("a", "boom")),

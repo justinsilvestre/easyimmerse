@@ -13,4 +13,8 @@ created_at_ms: number,
  * When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.
  * None until then, and always on a server that sends no email.
  */
-email_confirmed_at_ms: number | null, };
+email_confirmed_at_ms: number | null, 
+/**
+ * Whether an administrator let the account manage the server's library. Administrators manage it whatever this says.
+ */
+manages_library: boolean, };

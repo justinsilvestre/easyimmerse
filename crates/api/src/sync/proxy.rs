@@ -29,6 +29,7 @@ const PROXIED_ROUTES: &[(Method, &str)] = &[
     (Method::GET, "/users"),
     (Method::POST, "/users"),
     (Method::PUT, "/users/{id}/role"),
+    (Method::PUT, "/users/{id}/library-manager"),
     (Method::DELETE, "/users/{id}"),
     (Method::GET, "/storage"),
 ];
@@ -160,6 +161,11 @@ mod tests {
     #[test]
     fn passes_a_route_with_an_id_through() {
         assert!(is_proxied(&Method::DELETE, "/auth/sessions/abc"));
+    }
+
+    #[test]
+    fn passes_letting_an_account_manage_the_library_through() {
+        assert!(is_proxied(&Method::PUT, "/users/abc/library-manager"));
     }
 
     #[test]

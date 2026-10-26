@@ -747,7 +747,7 @@ describe("MediaScreen", () => {
 
   describe("for a file imported through a plugin", () => {
     const fetchForm: PluginForm = {
-      title: "Subtitles from the video site",
+      title: "Subtitles from Example plugin",
       description: null,
       fields: [
         {
@@ -788,7 +788,7 @@ describe("MediaScreen", () => {
     /** Opens the plugin's media interface from the chip, checks the English track, and applies. */
     async function applyEnglish() {
       fireEvent.click(
-        await screen.findByRole("button", { name: "Video site" }),
+        await screen.findByRole("button", { name: "Example plugin" }),
       );
       fireEvent.click(await screen.findByLabelText("English (automatic)"));
       fireEvent.click(screen.getByRole("button", { name: "Apply" }));
@@ -797,7 +797,7 @@ describe("MediaScreen", () => {
     it("shows a chip named after the plugin's title", async () => {
       renderImported();
       expect(
-        await screen.findByRole("button", { name: "Video site" }),
+        await screen.findByRole("button", { name: "Example plugin" }),
       ).toBeDefined();
     });
 
@@ -805,7 +805,7 @@ describe("MediaScreen", () => {
       renderImported(applied(), []);
       expect(
         (
-          await screen.findByRole("button", { name: "video-site" })
+          await screen.findByRole("button", { name: "example-plugin" })
         ).getAttribute("aria-disabled"),
       ).toBe("true");
     });
@@ -841,7 +841,7 @@ describe("MediaScreen", () => {
       responses: { "GET /plugins": { plugins: [fixtureMediaSourcePlugin] } },
     });
     await findSubtitles();
-    expect(screen.queryByRole("button", { name: "Video site" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Example plugin" })).toBeNull();
   });
 
   describe("with a video the browser added", () => {

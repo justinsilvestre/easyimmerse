@@ -32,6 +32,15 @@ pub struct AccountUser {
     /// When the owner confirmed the email address by following a link mailed to it, in milliseconds since the Unix epoch.
     /// None until then, and always on a server that sends no email.
     pub email_confirmed_at_ms: Option<u64>,
+    /// Whether an administrator let the account manage the server's library. Administrators manage it whatever this says.
+    pub manages_library: bool,
+}
+
+/// What an administrator sends to let an account manage the library, or to stop it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SetLibraryManager {
+    pub manages_library: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -103,6 +112,7 @@ mod tests {
             role: AccountRole::Administrator,
             created_at_ms: 1,
             email_confirmed_at_ms: None,
+            manages_library: false,
         };
         let json = serde_json::to_value(&user).unwrap();
         assert_eq!(json["created_at_ms"], 1);

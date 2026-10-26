@@ -40,7 +40,10 @@ import {
   lineHeights,
   lineLengthsEm,
 } from "./readerPreferences.ts";
-import { translatedHighlightName } from "./readerTextHighlights.ts";
+import {
+  libraryWordHighlightName,
+  translatedHighlightName,
+} from "./readerTextHighlights.ts";
 import type { ReaderTranslation } from "./readerTranslation.ts";
 import {
   chapterStartProgresses,
@@ -52,6 +55,7 @@ import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
 import { spokenSpansShown } from "./spokenSpansShown.ts";
+import type { StoredWords } from "./storedWords.ts";
 import { TranslationPanel } from "./TranslationPanel.tsx";
 import {
   type HighlightedWord,
@@ -103,6 +107,8 @@ type ReaderViewProps = {
   projectName: string;
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
+  /** The words a library manager set in each paragraph, which alone are the book's words; unset to find them by the language. */
+  storedWords?: StoredWords;
   preferences: ReaderPreferences;
   callbacks: ReaderCallbacks;
   /** The dictionary pop-up, placed beside `lookupRect`. */
@@ -119,6 +125,8 @@ type ReaderViewProps = {
   highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
   /** The text whose translation the dictionary pop-up's sentence row shows, highlighted as the sentence the translation covers. */
   highlightedSentence?: readonly TextSpan[];
+  /** The words a library manager gave entries, underlined while they prepare a library document. */
+  markedSpans?: readonly TextSpan[];
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. */
@@ -185,14 +193,19 @@ export function ReaderView(props: ReaderViewProps) {
   const sectionIndex = sectionIndexAt(sections, location.paragraphIndex);
   const shownSection = isPaged ? sections[sectionIndex] : undefined;
   /** The text the lookup cursor moves through: the section shown, or the whole chapter in the scrolling layout. */
+  // The translation shown in place of the book has no stored words.
+  const chapterWords = shown.isTranslationShown
+    ? undefined
+    : props.storedWords?.[chapterIndex];
   const chapterText = useMemo(
     () => ({
       chapterIndex,
       paragraphs: chapter.paragraphs,
       section: shownSection ?? { start: 0, end: chapter.paragraphs.length },
       language,
+      storedWords: chapterWords,
     }),
-    [chapterIndex, chapter, shownSection, language],
+    [chapterIndex, chapter, shownSection, language, chapterWords],
   );
   const marks = useMemo(
     () =>
@@ -271,6 +284,12 @@ export function ReaderView(props: ReaderViewProps) {
     shown.isTranslationShown ? noSpans : (props.highlightedSentence ?? noSpans),
     shownText,
   );
+  useTextHighlight(
+    textContainer,
+    libraryWordHighlightName,
+    props.markedSpans ?? noSpans,
+    shownText,
+  );
   const { playAt } = props.audio ?? {};
   const playWord = playAt && ((word: ReaderWord) => playAt(word.location));
   const turn = (direction: "next" | "previous") => {
@@ -312,15 +331,21 @@ export function ReaderView(props: ReaderViewProps) {
     else if (isPaged && share > 0.75) turn("next");
     else dispatch(actions.readerChromeToggled());
   };
-  const wordPointer = useWordPointer(chapterIndex, language, {
-    onWordClick: callbacks.onWordClick,
-    onWordDoubleClick: callbacks.onWordDoubleClick,
-    onWordPointed: callbacks.onWordPointed,
-    onWordHover: callbacks.onWordHover,
-    onWordCommandClick: playWord,
-    onWordHold: callbacks.onWordHold,
-    onBlankClick,
-  });
+  const wordPointer = useWordPointer(
+    chapterIndex,
+    language,
+    {
+      onWordClick: callbacks.onWordClick,
+      onWordDoubleClick: callbacks.onWordDoubleClick,
+      onWordPointed: callbacks.onWordPointed,
+      onWordHover: callbacks.onWordHover,
+      onWordCommandClick: playWord,
+      onWordHold: callbacks.onWordHold,
+      onTextSelect: callbacks.onTextSelect,
+      onBlankClick,
+    },
+    chapterWords,
+  );
   // The words of the translation are not looked up, since the dictionaries are for the book's language.
   const pointerProps = shown.isTranslationShown
     ? { onClick: onBlankClick }

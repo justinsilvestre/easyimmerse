@@ -4,14 +4,21 @@ export {
   selectCachedLookup,
   selectCachedWaveformWindow,
   useAddAlignmentMutation,
+  useAddLibraryItemMutation,
+  useApplyLibraryEntryMutation,
   useCaptureFrameQuery,
   useChoosePlaybackMethodQuery,
   useCreateFlashcardMutation,
+  useCreateLibraryItemMutation,
   useCurrentPairingCodeQuery,
   useDeleteFlashcardMutation,
+  useDeleteLibraryItemMutation,
   useGetConversionCacheStatusQuery,
   useGetConversionCapabilitiesQuery,
   useGetCurrentPrincipalQuery,
+  useGetLibraryItemQuery,
+  useGetLibrarySettingsQuery,
+  useGetLibraryTextQuery,
   useGetMediaAvailabilityQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
@@ -28,6 +35,7 @@ export {
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,
+  useListLibraryItemsQuery,
   useListMediaFilesQuery,
   useListPluginsQuery,
   useListProjectsQuery,
@@ -39,9 +47,19 @@ export {
   useLookupTextQuery,
   useOpenBookQuery,
   useProbePicturesQuery,
+  useProposeLibraryWordsMutation,
+  usePublishLibraryItemMutation,
+  usePutLibrarySettingsMutation,
+  usePutLibraryWordsMutation,
   useRemoveAlignmentMutation,
+  useResetLibraryCoverMutation,
+  useSetLibraryCoverFrameMutation,
   useSetTranslationDocumentMutation,
+  useUnpublishLibraryItemMutation,
   useUpdateFlashcardMutation,
+  useUpdateLibraryItemMutation,
+  useUploadLibraryCoverMutation,
+  useUploadLibraryFileMutation,
 } from "./backendApi.ts";
 export type {
   BackendClient,
@@ -59,6 +77,8 @@ export {
 export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export type { FrameCapturer } from "./frameCapturer.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
+export { libraryPollMs } from "./libraryItemPolling.ts";
+export { buildLibraryCoverUrl, buildLibraryFileUrl } from "./libraryUrls.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
 export { lookupStartsIn } from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";

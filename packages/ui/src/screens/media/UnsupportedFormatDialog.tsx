@@ -13,7 +13,7 @@ export function UnsupportedFormatDialog({
 }) {
   return (
     <ModalDialog
-      title="This browser cannot play the file"
+      title="Your browser can't play this file"
       onCancel={onClose}
       footer={
         <>
@@ -25,9 +25,9 @@ export function UnsupportedFormatDialog({
       }
     >
       <p className="text-sm">
-        Browsers do not play the format of <strong>{fileName}</strong>. The
-        desktop app plays it, converting the file when needed, and opens your
-        projects and flashcards as they are here.
+        Browsers don't support the format of <strong>{fileName}</strong>, but
+        the desktop app can play it. Your projects and flashcards will be there
+        too.
       </p>
     </ModalDialog>
   );

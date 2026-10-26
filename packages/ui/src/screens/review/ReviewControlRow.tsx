@@ -39,7 +39,7 @@ export function ReviewControlRow({
   hasCard: boolean;
   onBack: () => void;
   onUndo: () => void;
-  /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone. */
+  /** Opens the card in the editor. Null leaves the item out, as for a card whose media file is gone or one made from the library, which cannot be edited. */
   onEditFlashcard: (() => void) | null;
   /** Hides the card until the next day begins. */
   onBury: () => void;

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
+use crate::library::LibraryItemId;
 use crate::project::ProjectId;
 use crate::providers::media_source::MediaLocator;
 
@@ -42,6 +43,7 @@ pub struct MediaFile {
 /// The `path` variant names a file on the machine running the server. The `browser_file`
 /// variant describes a file the web app holds in memory; the server never sees its bytes,
 /// so it records only what identifies the file when the user picks it again.
+/// The `library` variant names an item of the server's library, whose files the server keeps.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 #[ts(export)]
@@ -53,6 +55,9 @@ pub enum MediaFileSource {
         size: u64,
         /// The file's modification time in milliseconds since the Unix epoch.
         last_modified_ms: u64,
+    },
+    Library {
+        item_id: LibraryItemId,
     },
 }
 
@@ -107,6 +112,18 @@ mod tests {
         assert_eq!(
             json,
             serde_json::json!({ "kind": "path", "path": "/videos/a.mp4" })
+        );
+    }
+
+    #[test]
+    fn tags_a_library_source_with_its_kind() {
+        let json = serde_json::to_value(MediaFileSource::Library {
+            item_id: LibraryItemId("item".to_string()),
+        })
+        .unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({ "kind": "library", "item_id": "item" })
         );
     }
 

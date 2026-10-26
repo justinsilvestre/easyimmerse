@@ -22,6 +22,7 @@ import {
   type MediaWaveform,
   TextFieldBlocks,
 } from "./FlashcardEditorFields.tsx";
+import { SuspendedStrip } from "./SuspendedStrip.tsx";
 
 /**
  * The form for a flashcard that was just created or reopened.
@@ -97,8 +98,7 @@ export function FlashcardEditor({
           if (!isSaveInert) onSave();
         }}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-          <h2 className="font-semibold">Flashcard</h2>
+        <div className="flex items-center justify-end gap-2 border-b border-line px-4 py-2">
           <IconButton
             label="Close without saving"
             aria-disabled={isSaveInert || undefined}
@@ -227,15 +227,3 @@ const saveStatusTexts = {
   waitingForDefinitions: "Waiting for definitions…",
   saving: "Saving…",
 };
-
-/** Says that the flashcard is suspended and left out of reviews, with the way to bring it back. */
-function SuspendedStrip({ onUnsuspend }: { onUnsuspend: () => void }) {
-  return (
-    <div className="flex items-center justify-between gap-2 border-b border-line bg-surface-muted px-4 py-1.5 text-sm text-fg-muted">
-      <p>This card won't show up in reviews until you unsuspend it.</p>
-      <Button variant="subtle" onClick={onUnsuspend}>
-        Unsuspend
-      </Button>
-    </div>
-  );
-}

@@ -4,12 +4,14 @@ import type { Effect } from "../../app/effect.ts";
 import type { ReadableState } from "../../app/feature.ts";
 import { draftFromCue } from "../../flashcards/draftFromCue.ts";
 import type { FlashcardStart } from "../../flashcards/flashcardsEffect.ts";
+import { cachedLibraryItemIdOf } from "../cachedLibrary.ts";
 import type { ChosenWord } from "../lookup/lookupState.ts";
 import {
   type CueFlashcardSources,
   cachedCueFlashcardSources,
 } from "./cueFlashcardSources.ts";
 import { findTranslationOf } from "./findCue.ts";
+import { libraryCursorFlashcard } from "./libraryCursorFlashcard.ts";
 import { selectMediaScreen } from "./mediaScreenSelectors.ts";
 import type { PlayerState } from "./playerState.ts";
 import { shownCueOf } from "./selectShownCue.ts";
@@ -25,6 +27,7 @@ type CursorFlashcardApp = Pick<
  * or, when there is no cursor, one for no word from the cue shown now.
  * Its draft is built from the server cache as `draftFromCue` describes, and it gets its id as the effect runs.
  * Nothing is asked for while the cache lacks the file's record or the project's settings.
+ * A library media file asks for a library flashcard instead, as `libraryCursorFlashcard` describes.
  */
 export function cursorFlashcardCommands(
   action: AppAction,
@@ -33,6 +36,9 @@ export function cursorFlashcardCommands(
   if (action.type !== "lookupCursorFlashcardRequested") return [];
   const open = selectMediaScreen(app);
   if (open === null) return [];
+  const { projectId, mediaFileId } = open.route;
+  const itemId = cachedLibraryItemIdOf(app.backend, projectId, mediaFileId);
+  if (itemId !== null) return libraryCursorFlashcard(open, itemId, app.backend);
   const sources = cachedCueFlashcardSources(app, open.route);
   if (sources === null) return [];
   const chosen = open.screen.lookup.cursor?.chosen ?? null;

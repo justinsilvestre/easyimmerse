@@ -11,6 +11,9 @@ mod dictionaries;
 mod email_tokens;
 mod error;
 mod flashcards;
+mod library_items;
+mod library_segments;
+mod library_settings;
 mod media_copies;
 #[cfg(test)]
 mod media_copies_tests;
@@ -67,6 +70,10 @@ use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
 };
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::library::{
+    LibraryCover, LibraryEntry, LibraryItem, LibraryItemDraft, LibraryItemId, LibraryItemStatus,
+    LibrarySegment, LibrarySettings, LibraryText, LibraryWord,
+};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
@@ -292,6 +299,16 @@ impl Storage {
         draft: &FlashcardDraft,
     ) -> Result<Flashcard, StorageError> {
         self.write(|conn| flashcards::create_flashcard(conn, project_id, id, draft))
+    }
+
+    /// Saves a flashcard the server built from a library item, which cannot be changed afterwards.
+    pub fn create_library_flashcard(
+        &self,
+        project_id: &ProjectId,
+        id: &FlashcardId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.write(|conn| flashcards::create_library_flashcard(conn, project_id, id, draft))
     }
 
     pub fn update_flashcard(
@@ -565,6 +582,15 @@ impl Storage {
 
     pub fn set_user_role(&self, id: &str, role: AccountRole) -> Result<AccountUser, StorageError> {
         self.write(|conn| users::set_user_role(conn, id, role))
+    }
+
+    /// Lets the account manage the server's library, or stops it.
+    pub fn set_library_manager(
+        &self,
+        id: &str,
+        manages_library: bool,
+    ) -> Result<AccountUser, StorageError> {
+        self.write(|conn| users::set_library_manager(conn, id, manages_library))
     }
 
     /// Replaces the password hash of an account and ends all of its sessions.
@@ -1079,6 +1105,203 @@ impl Storage {
         media_file_id: &MediaFileId,
     ) -> Result<Option<u64>, StorageError> {
         self.read(|conn| sync::remote_copies::remote_copy_size(conn, remote_id, media_file_id))
+    }
+
+    pub fn get_library_settings(&self) -> Result<LibrarySettings, StorageError> {
+        self.read(library_settings::get_library_settings)
+    }
+
+    /// Replaces the library's settings, refusing with `LibraryHasItems` while the library has any item.
+    pub fn set_library_settings(
+        &self,
+        settings: &LibrarySettings,
+    ) -> Result<LibrarySettings, StorageError> {
+        self.write(|conn| library_settings::set_library_settings(conn, settings))
+    }
+
+    /// Creates a draft library item with no file and no text, refusing with `LibraryLanguageUnset`
+    /// while the library's language is unset.
+    pub fn create_library_item(
+        &self,
+        draft: &LibraryItemDraft,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::create_library_item(conn, draft))
+    }
+
+    /// Replaces a library item's metadata, whatever its status.
+    pub fn update_library_item(
+        &self,
+        id: &LibraryItemId,
+        draft: &LibraryItemDraft,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::update_library_item(conn, id, draft))
+    }
+
+    pub fn get_library_item(&self, id: &LibraryItemId) -> Result<LibraryItem, StorageError> {
+        self.read(|conn| library_items::get_library_item(conn, id))
+    }
+
+    /// Lists the published library items, or every item when `include_unpublished` is true, by title.
+    pub fn list_library_items(
+        &self,
+        include_unpublished: bool,
+    ) -> Result<Vec<LibraryItem>, StorageError> {
+        self.read(|conn| library_items::list_library_items(conn, include_unpublished))
+    }
+
+    /// Deletes a library item together with its text. Its files are the caller's to delete.
+    pub fn delete_library_item(&self, id: &LibraryItemId) -> Result<(), StorageError> {
+        self.write(|conn| library_items::delete_library_item(conn, id))
+    }
+
+    /// Records the name and size of the file uploaded for a library item.
+    pub fn set_library_file(
+        &self,
+        id: &LibraryItemId,
+        file_name: &str,
+        size_bytes: u64,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_file(conn, id, file_name, size_bytes))
+    }
+
+    pub fn set_library_status(
+        &self,
+        id: &LibraryItemId,
+        status: &LibraryItemStatus,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_status(conn, id, status))
+    }
+
+    /// Marks a draft or failed library item as being published, and returns it.
+    /// Returns None, changing nothing, when the item is already published or being published.
+    pub fn begin_library_publish(
+        &self,
+        id: &LibraryItemId,
+    ) -> Result<Option<LibraryItem>, StorageError> {
+        self.write(|conn| library_items::begin_library_publish(conn, id))
+    }
+
+    /// Marks every library item that was being published as failed with the message, and returns how many there were.
+    pub fn fail_interrupted_library_publishes(&self, message: &str) -> Result<usize, StorageError> {
+        self.write(|conn| library_items::fail_interrupted_library_publishes(conn, message))
+    }
+
+    /// Records the type of the cover picture now kept for the library item, or that it has none.
+    pub fn set_library_cover(
+        &self,
+        id: &LibraryItemId,
+        media_type: Option<&str>,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_cover(conn, id, media_type))
+    }
+
+    /// Records where the library item's cover picture comes from.
+    pub fn set_library_cover_choice(
+        &self,
+        id: &LibraryItemId,
+        cover: LibraryCover,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_cover_choice(conn, id, cover))
+    }
+
+    /// Records the length of a video or audio library item, as probed when it is published.
+    pub fn set_library_duration(
+        &self,
+        id: &LibraryItemId,
+        duration_ms: Option<u64>,
+    ) -> Result<LibraryItem, StorageError> {
+        self.write(|conn| library_items::set_library_duration(conn, id, duration_ms))
+    }
+
+    /// Returns the tracks that learners of the library item play, as the JSON of a `TrackSelection`, or None for the default tracks.
+    pub fn get_library_track_selection_json(
+        &self,
+        id: &LibraryItemId,
+    ) -> Result<Option<String>, StorageError> {
+        self.read(|conn| library_items::get_library_track_selection_json(conn, id))
+    }
+
+    /// Records the tracks that learners of the library item play; None leaves the choice to the default tracks.
+    pub fn set_library_track_selection_json(
+        &self,
+        id: &LibraryItemId,
+        track_selection_json: Option<&str>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            library_items::set_library_track_selection_json(conn, id, track_selection_json)
+        })
+    }
+
+    /// Replaces a library item's segments and chapter titles with the given text.
+    pub fn replace_library_segments(
+        &self,
+        item_id: &LibraryItemId,
+        text: &LibraryText,
+    ) -> Result<LibraryText, StorageError> {
+        self.write(|conn| library_segments::replace_library_segments(conn, item_id, text))
+    }
+
+    /// Replaces the words of one segment of a library item. The caller checks them with `validate_words` first.
+    pub fn set_segment_words(
+        &self,
+        item_id: &LibraryItemId,
+        segment_index: u32,
+        words: &[LibraryWord],
+    ) -> Result<LibrarySegment, StorageError> {
+        self.write(|conn| library_segments::set_segment_words(conn, item_id, segment_index, words))
+    }
+
+    /// Gives the entry to every word of the library item whose text is `word_text`, and returns the item's text.
+    pub fn apply_library_entry(
+        &self,
+        item_id: &LibraryItemId,
+        word_text: &str,
+        entry: &LibraryEntry,
+    ) -> Result<LibraryText, StorageError> {
+        self.write(|conn| library_segments::apply_library_entry(conn, item_id, word_text, entry))
+    }
+
+    /// Records the screenshot time of each listed segment, given as pairs of segment index and time.
+    pub fn set_screenshot_times(
+        &self,
+        item_id: &LibraryItemId,
+        screenshot_times: &[(u32, u64)],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| library_segments::set_screenshot_times(conn, item_id, screenshot_times))
+    }
+
+    /// Returns a library item's segments in order, with its chapter titles.
+    pub fn get_library_text(&self, item_id: &LibraryItemId) -> Result<LibraryText, StorageError> {
+        self.read(|conn| library_segments::get_library_text(conn, item_id))
+    }
+
+    /// Finds the project's media file of the library item.
+    pub fn find_library_media_file(
+        &self,
+        project_id: &ProjectId,
+        item_id: &LibraryItemId,
+    ) -> Result<Option<MediaFile>, StorageError> {
+        self.read(|conn| media_files::find_library_media_file(conn, project_id, item_id))
+    }
+
+    /// Finds the owner's media file of the library item in any of its projects, the one in the project opened last when there are several.
+    pub fn find_owners_library_media_file(
+        &self,
+        owner: &OwnerId,
+        item_id: &LibraryItemId,
+    ) -> Result<Option<MediaFile>, StorageError> {
+        self.read(|conn| media_files::find_owners_library_media_file(conn, owner, item_id))
+    }
+
+    /// Stores the track choice of every media file of the library item, in any project; `None` clears it.
+    pub fn set_library_media_track_selection_json(
+        &self,
+        item_id: &LibraryItemId,
+        track_selection_json: Option<&str>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            media_files::set_library_media_track_selection_json(conn, item_id, track_selection_json)
+        })
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

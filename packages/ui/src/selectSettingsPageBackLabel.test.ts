@@ -11,6 +11,13 @@ describe("selectSettingsPageBackLabel", () => {
     expect(selectSettingsPageBackLabel(store.getState())).toBe("Settings");
   });
 
+  it("names the page beneath for a page opened from another settings page", () => {
+    const { store } = createTestAppStore();
+    store.dispatch(actions.navigated({ type: "openServerSettings" }));
+    store.dispatch(actions.navigated({ type: "openUsers", via: "self" }));
+    expect(selectSettingsPageBackLabel(store.getState())).toBe("Server");
+  });
+
   it("says Back for a page opened over the main screen", () => {
     const { store } = createTestAppStore();
     store.dispatch(actions.navigated({ type: "openAccountSettings" }));

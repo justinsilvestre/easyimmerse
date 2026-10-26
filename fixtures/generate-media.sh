@@ -28,6 +28,11 @@ ffmpeg -y -loglevel error \
   -f lavfi -i "sine=frequency=440:sample_rate=44100:duration=3" \
   -ac 1 -c:a libmp3lame -b:a 64k sample.mp3
 
+ffmpeg -y -loglevel error \
+  -f lavfi -i "testsrc=size=160x90:rate=12:duration=1" \
+  -c:v libx264 -preset veryfast -crf 35 -pix_fmt yuv420p \
+  sample-silent.mp4
+
 # The conversion fixtures below are documented in README.md, which describes how to decode their frame index and audio position.
 
 # Draws the frame index as 16 full-height columns, bit i in column i with the least significant bit on the left.

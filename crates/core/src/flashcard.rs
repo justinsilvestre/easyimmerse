@@ -53,6 +53,8 @@ pub struct Flashcard {
     pub sent_at_ms: Option<u64>,
     /// Whether the user suspended the flashcard from the review, which leaves it out until they unsuspend it.
     pub is_suspended: bool,
+    /// Whether the server built the flashcard from a library item. Such a flashcard cannot be changed, only deleted.
+    pub is_from_library: bool,
 }
 
 /// What the editor sends to create or replace a flashcard.

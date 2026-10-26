@@ -10,12 +10,15 @@ use easyimmerse_core::subtitle_track::{
     SubtitleTracksResponse,
 };
 use easyimmerse_core::text_source::TextSource;
-use easyimmerse_core::timed_text::{TimedTextTrack, detect_format, parse_timed_text};
+use easyimmerse_core::timed_text::{
+    TimedTextFormat, TimedTextTrack, detect_format, parse_timed_text,
+};
 use easyimmerse_storage::NewSubtitleTrack;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::principal::Principal;
 use crate::fetched_subtitle_files::remove_subtitle_tracks;
+use crate::library_tracks::{editable_library_item_of, follow_shown_tracks};
 use crate::local_path::{resolve_local_file, resolve_local_text};
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
@@ -56,6 +59,7 @@ pub async fn list_subtitle_tracks(
 /// Adds a subtitles file to the media file.
 /// The text is parsed once to check it and to take its first cue as the track's sample;
 /// a `path` source is read on the server's machine.
+/// For a media file from the library, the item's segments become the cues of the tracks it then shows.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media/{media_id}/subtitles",
@@ -71,8 +75,9 @@ pub async fn list_subtitle_tracks(
         (status = 201, description = "The added track", body = SubtitleTrack),
         (status = 400, description = "The text could not be parsed", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 403, description = "The token may not read local paths", body = ApiError),
+        (status = 403, description = "The token may not read local paths, or the media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project, or no file at the given path", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -82,8 +87,12 @@ pub async fn add_subtitle_track(
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(request): Json<AddSubtitleTrackRequest>,
 ) -> Result<(StatusCode, Json<SubtitleTrack>), ApiFailure> {
-    load_media_file(&state, project_id, media_id.clone()).await?;
-    let track = store_subtitle_track(&state, &principal, media_id, request).await?;
+    let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
+    let library_item = editable_library_item_of(&state, &principal, &media_file).await?;
+    let track = store_subtitle_track(&state, &principal, media_id.clone(), request).await?;
+    if let Some(item) = library_item {
+        follow_shown_tracks(&state, &principal, media_id, &item).await?;
+    }
     Ok((StatusCode::CREATED, Json(track)))
 }
 
@@ -97,11 +106,10 @@ pub async fn store_subtitle_track(
 ) -> Result<SubtitleTrack, ApiFailure> {
     let source = resolve_text_source(state, principal, request.source).await?;
     let text = read_text(state, principal, &source).await?;
-    let format = request.format.unwrap_or_else(|| detect_format(&text));
-    let parsed = parse_timed_text(&text, Some(format))?;
+    let parsed = parse_subtitle_text(&text, request.format)?;
     let new_track = NewSubtitleTrack {
         name: request.name,
-        format,
+        format: parsed.format,
         source,
         sample: parsed.cues.first().map(|cue| cue.text.clone()),
     };
@@ -117,6 +125,15 @@ pub async fn store_subtitle_track(
             Ok(track)
         })
         .await
+}
+
+/// Parses subtitle text in the given format, or in the format detected from the text when none is given.
+pub fn parse_subtitle_text(
+    text: &str,
+    format: Option<TimedTextFormat>,
+) -> Result<TimedTextTrack, ApiFailure> {
+    let format = format.unwrap_or_else(|| detect_format(text));
+    Ok(parse_timed_text(text, Some(format))?)
 }
 
 #[utoipa::path(
@@ -190,21 +207,29 @@ pub async fn get_subtitle_cues(
     ),
     request_body = SubtitleSelection,
     responses(
-        (status = 204, description = "The selection was saved"),
+        (status = 204, description = "The selection was saved. For a media file from the library, the item's segments became the cues of the chosen tracks"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 403, description = "The media file is from the library and the principal does not manage it", body = ApiError),
         (status = 404, description = "No such media file in the project, or a named track is not on it", body = ApiError),
+        (status = 409, description = "`item_processing`: the media file is from a library item that is being published", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
 pub async fn set_subtitle_selection(
     State(state): State<AppState>,
+    Extension(principal): Extension<Principal>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(selection): Json<SubtitleSelection>,
 ) -> Result<StatusCode, ApiFailure> {
-    load_media_file(&state, project_id, media_id.clone()).await?;
+    let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
+    let library_item = editable_library_item_of(&state, &principal, &media_file).await?;
+    let id = media_id.clone();
     state
-        .with_storage(move |storage| storage.set_subtitle_selection(&media_id, &selection))
+        .with_storage(move |storage| storage.set_subtitle_selection(&id, &selection))
         .await?;
+    if let Some(item) = library_item {
+        follow_shown_tracks(&state, &principal, media_id, &item).await?;
+    }
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -223,7 +248,8 @@ async fn resolve_text_source(
     }
 }
 
-async fn read_text(
+/// Reads a track's text, from the server's machine for a `path` source.
+pub async fn read_text(
     state: &AppState,
     principal: &Principal,
     source: &TextSource,

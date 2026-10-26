@@ -12,7 +12,7 @@ import type { LookupText } from "./lookupTextAt.ts";
  * Looks up ahead every word of the passages near the user, such as the subtitle cues about to be shown,
  * so that hovering or clicking one of them shows its entries at once.
  * `lookupsIn` gives the lookups of a passage's words, as hovering them would make them.
- * Nothing is looked up until the dictionaries are known and one covers the language.
+ * Nothing is looked up until the dictionaries are known and one covers the language, nor while the passages hold no words.
  * The passages are looked up again each time they change, when the dictionaries change, and every `prefetchRepeatMs`,
  * which keeps their cached lookups from expiring while they stay near.
  */
@@ -35,7 +35,7 @@ export function useLookupPrefetch(
   usePrefetchLookupRangeQuery(
     { language, lookups },
     {
-      skip: !isCovered,
+      skip: !isCovered || lookups.length === 0,
       pollingInterval: prefetchRepeatMs,
       // Nothing here reads the range's result, so its starting and settling do not render the component.
       selectFromResult: () => ({}),

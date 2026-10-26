@@ -12,9 +12,10 @@ pub struct StoredUser {
     pub password_hash: String,
 }
 
-pub const USER_COLUMNS: &str = "u.id, u.email, u.role, u.created_at_ms, u.email_confirmed_at_ms";
+pub const USER_COLUMNS: &str =
+    "u.id, u.email, u.role, u.created_at_ms, u.email_confirmed_at_ms, u.manages_library";
 /// How many columns `USER_COLUMNS` names, which is the index of the first column after them.
-pub const USER_COLUMN_COUNT: usize = 5;
+pub const USER_COLUMN_COUNT: usize = 6;
 
 /// Creates an account, together with the owner of its data, in one transaction,
 /// unless one already has the email address in any letter case.
@@ -109,6 +110,22 @@ pub fn set_user_role(
     Ok(user)
 }
 
+/// Lets the account manage the server's library, or stops it.
+pub fn set_library_manager(
+    conn: &Connection,
+    id: &str,
+    manages_library: bool,
+) -> Result<AccountUser, StorageError> {
+    let updated = conn.execute(
+        "UPDATE users SET manages_library = ?2 WHERE id = ?1",
+        params![id, manages_library],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::UserNotFound(id.to_string()));
+    }
+    get_user(conn, id)
+}
+
 /// Replaces the password hash of an account and ends all of its sessions, in one transaction.
 pub fn set_password_hash(
     conn: &mut Connection,
@@ -190,6 +207,7 @@ pub fn read_user(row: &Row) -> rusqlite::Result<AccountUser> {
         })?,
         created_at_ms: read_unsigned(row, 3)?,
         email_confirmed_at_ms: read_optional_unsigned(row, 4)?,
+        manages_library: row.get(5)?,
     })
 }
 
@@ -274,6 +292,27 @@ mod tests {
     fn reports_setting_the_role_of_an_unknown_user() {
         let storage = Storage::open_in_memory().unwrap();
         let result = storage.set_user_role("missing", AccountRole::Privileged);
+        assert!(matches!(result, Err(StorageError::UserNotFound(_))));
+    }
+
+    #[test]
+    fn a_new_user_does_not_manage_the_library() {
+        let storage = storage_with_user("reader@example.com");
+        assert!(!storage.list_users().unwrap()[0].manages_library);
+    }
+
+    #[test]
+    fn lets_a_user_manage_the_library() {
+        let storage = storage_with_user("reader@example.com");
+        let id = storage.list_users().unwrap()[0].id.clone();
+        storage.set_library_manager(&id, true).unwrap();
+        assert!(storage.get_user(&id).unwrap().manages_library);
+    }
+
+    #[test]
+    fn reports_letting_an_unknown_user_manage_the_library() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.set_library_manager("missing", true);
         assert!(matches!(result, Err(StorageError::UserNotFound(_))));
     }
 

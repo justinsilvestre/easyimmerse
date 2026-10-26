@@ -87,7 +87,7 @@ function LoadedSettings({
       {fields.auth === "accounts" && (
         <CheckboxField
           label="Let anyone who can reach the server sign up"
-          hint="New accounts are library users. Otherwise only an administrator adds accounts."
+          hint="New accounts are learners. Otherwise only a server admin adds accounts."
           checked={fields.open_signup}
           onChange={(event) => onChange({ open_signup: event.target.checked })}
         />

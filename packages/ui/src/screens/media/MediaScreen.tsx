@@ -20,9 +20,11 @@ import { AnchoredPopup } from "../../components/dictionaryPopup/AnchoredPopup.ts
 import { DictionaryPopup } from "../../components/dictionaryPopup/DictionaryPopup.tsx";
 import type { SentenceRowSource } from "../../components/dictionaryPopup/sentenceRowSource.ts";
 import { useScreenshotSource } from "../../components/flashcards/useScreenshotSource.ts";
+import { LibraryEditingBar } from "../../components/libraryEditing/LibraryEditingBar.tsx";
 import { MediaPlayer } from "../../components/player/MediaPlayer.tsx";
 import { selectSubtitleAppearance } from "../../components/subtitleAppearance/selectSubtitleAppearance.ts";
 import type { LineStep } from "../../components/wordLookup/cursorKeys.ts";
+import type { LibraryItemText } from "../../components/wordLookup/libraryWords.ts";
 import type { LookupPlace } from "../../components/wordLookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../../components/wordLookup/useLookupPrefetch.ts";
 import { wordLookupsIn } from "../../components/wordLookup/wordLookupsIn.ts";
@@ -30,9 +32,11 @@ import { useKeyBindings } from "../../lib/useKeyBindings.ts";
 import { useStableCallbacks } from "../../lib/useStableCallbacks.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
+import { useNavigate } from "../../useNavigate.ts";
 import { ConnectedPlayerControls } from "./ConnectedPlayerControls.tsx";
 import { findAdjacentCue } from "./findCue.ts";
 import { flashcardWordRanges } from "./flashcardWordRanges.ts";
+import { LibraryFlashcardDeleteDialog } from "./LibraryFlashcardDeleteDialog.tsx";
 import { MediaFlashcardEditor } from "./MediaFlashcardEditor.tsx";
 import { MediaView } from "./MediaView.tsx";
 import { mediaSourceOf } from "./mediaSourceOf.ts";
@@ -65,13 +69,27 @@ import { useSubtitleLookup } from "./useSubtitleLookup.ts";
  * The file resumes where playback last was, as `resume` in the state package describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `playOpenedCard` in the state package describes.
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
+ * A file from the library takes its cues from its item's text, where only the stored words are clickable,
+ * the pop-up shows each word's stored entry without looking it up, and every flashcard is a library flashcard.
+ * A library flashcard cannot be edited, so it never opens in the editor: the mark on its cue's card offers a menu with
+ * "Suspend" or "Unsuspend" and "Delete flashcard", which asks to confirm first.
+ * Its tracks cannot change, so the subtitles panel offers no tracks and the player offers no track choice;
+ * it plays the audio and video tracks its library manager chose before publishing the item.
+ * While a library manager prepares the item, the subtitles panel and the track choice offer its tracks as for any file,
+ * and the item's text follows the subtitle tracks chosen;
+ * every word can be clicked and any text selected, the stored words are underlined,
+ * the pop-up gives the text an entry for learners, as `useWordLookup` describes, and no flashcard is made;
+ * a bar above the stage leads back to the item's details, as does the way back.
  */
 export function MediaScreen({
   project,
   mediaFileId,
+  library,
 }: {
   project: Project;
   mediaFileId: string;
+  /** The library item the file comes from, with its text, or unset for a file from anywhere else. */
+  library?: LibraryItemText;
 }) {
   const dispatch = useAppDispatch();
   const projectId = project.id;
@@ -79,7 +97,11 @@ export function MediaScreen({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const isPlaying = useAppSelector((state) => selectPlayer(state).isPlaying);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
-  const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  const subtitles = useMediaSubtitles(projectId, mediaFileId, library);
+  const isEditing = library?.isEditing ?? false;
+  const navigate = useNavigate();
+  const openDetails = () =>
+    library && navigate({ type: "editLibraryItem", itemId: library.item.id });
   const source = mediaSourceOf(
     mediaFile?.origin ?? null,
     useListPluginsQuery().data?.plugins,
@@ -95,10 +117,12 @@ export function MediaScreen({
     selectIsSubtitleAppearanceOpen,
   );
   // Computed once per change of either list, so that each cue's ranges keep their identity and its memoised card does not render again.
-  const wordRanges = useMemo(
+  const flashcardRanges = useMemo(
     () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),
     [flashcards.flashcards, subtitles.cues],
   );
+  const wordRanges = subtitles.markedWords ?? flashcardRanges;
+  const markedWordTitle = isEditing ? "Has an entry for learners" : undefined;
   const subtitleAppearance = useAppSelector(selectSubtitleAppearance);
   const isEditorOpen = flashcards.editedSegmentId !== null;
   const fullscreen = useFullscreen();
@@ -139,11 +163,11 @@ export function MediaScreen({
   );
   useLookupPrefetch(
     languages.target,
-    cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
+    library ? [] : cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
     wordLookupsIn,
   );
   const isTranslationOnScreen =
-    subtitles.selection.translation_track_id !== null &&
+    subtitles.translationCues.length > 0 &&
     ((panels.subtitleDisplay !== "target" && !panels.areSubtitlesHidden) ||
       (panels.cues && !isEditorOpen));
   /** The cue of a word's passage, or the cue shown now for the current one; null for a word of a book. */
@@ -174,6 +198,12 @@ export function MediaScreen({
     languages,
     { draftFor, savesAtOnce: true },
     sentence,
+    library && {
+      ...library,
+      projectId,
+      mediaFileId,
+      wordlessSource: shownCue && { kind: "cue", cue: shownCue },
+    },
   );
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
@@ -205,6 +235,10 @@ export function MediaScreen({
   });
   return (
     <>
+      <LibraryFlashcardDeleteDialog
+        projectId={projectId}
+        flashcards={flashcards.flashcards}
+      />
       {sourceMedia && source && (
         <SourceMediaDialog
           title={source.title}
@@ -220,9 +254,19 @@ export function MediaScreen({
       <MediaView
         media={{
           title: mediaFile?.name ?? "",
-          projectName: settings.name,
+          projectName: isEditing ? "Item details" : settings.name,
           source,
         }}
+        headerContent={
+          isEditing &&
+          library && (
+            <LibraryEditingBar
+              title={library.item.title}
+              kind="subtitles"
+              onOpenDetails={openDetails}
+            />
+          )
+        }
         stage={<MediaPlayer projectId={projectId} />}
         isPlaying={isPlaying}
         controls={
@@ -263,15 +307,19 @@ export function MediaScreen({
           dispatch(actions.subtitleAppearanceClosed())
         }
         flashcardWordRanges={wordRanges}
+        markedWordTitle={markedWordTitle}
+        libraryWords={subtitles.libraryWords}
         playerCallbacks={playerCallbacks}
-        onBack={() => dispatch(actions.closeMedia())}
+        onBack={isEditing ? openDetails : () => dispatch(actions.closeMedia())}
         onOpenSource={() => dispatch(actions.sourceMediaOpened())}
         activeWord={lookup.activeWord}
         cursor={lookup.cursor}
         wordGestures={lookup.wordGestures}
         onCueStep={cueSteps.step}
         onLookup={lookup.openSearch}
-        onAddFlashcard={() => lookup.startWordlessFlashcard("save")}
+        onAddFlashcard={
+          isEditing ? undefined : () => lookup.startWordlessFlashcard("save")
+        }
         lookup={
           lookup.popup && (
             <AnchoredPopup {...lookup.popup.anchored}>
@@ -289,15 +337,17 @@ export function MediaScreen({
           ) : panels.cues ? (
             <SubtitlesSidePanel
               subtitles={subtitles}
-              tracks={tracks}
+              tracks={library && !isEditing ? null : tracks}
               languages={languages}
               shownCue={shownCue}
               flashcardCueIndexes={flashcards.cueIndexes}
               flashcardWordRanges={wordRanges}
+              markedTitle={markedWordTitle}
               activeWord={lookup.activeWord}
               cursor={lookup.cursor}
               wordGestures={lookup.wordGestures}
               onOpenFlashcardForCue={flashcards.openForCue}
+              flashcardMenus={flashcards.libraryMenus}
               onSeek={playerCallbacks.onSeek}
               onGenerateSubtitles={() =>
                 dispatch(

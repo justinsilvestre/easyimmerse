@@ -3,7 +3,7 @@ import type { MediaImportWizard } from "./mediaImportWizard.ts";
 
 /** A plugin form that asks which subtitles to fetch. */
 export const subtitlesForm: PluginForm = {
-  title: "Add from a video site",
+  title: "Add with Example plugin",
   description: null,
   fields: [
     {
@@ -20,9 +20,9 @@ export const subtitlesForm: PluginForm = {
   actions: [{ id: "add", label: "Add", style: "primary" }],
 };
 
-/** The import dialog of a video-site plugin, showing its subtitles form. */
+/** The import dialog of a media-source plugin, showing its subtitles form. */
 export const showingForm: MediaImportWizard = {
-  source: { name: "video-site", label: "Add from a video site" },
+  source: { name: "example-plugin", label: "Add with Example plugin" },
   form: subtitlesForm,
   isAwaitingAnswer: false,
   jobId: null,

@@ -17,6 +17,8 @@ import type { SentenceRowProps } from "../dictionaryPopup/SentenceRow.tsx";
 import type { SentenceRowSource } from "../dictionaryPopup/sentenceRowSource.ts";
 import { sentenceTranslationActionOf } from "../dictionaryPopup/sentenceTranslationActionOf.ts";
 import { useLookupDisplay } from "../dictionaryPopup/useLookupDisplay.ts";
+import { useLibraryWordEditing } from "../libraryEditing/useLibraryWordEditing.ts";
+import type { LibraryWords } from "./libraryWords.ts";
 import type { LookupPlace } from "./lookupPlace.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
 import { useLookupFlashcards } from "./useLookupFlashcards.ts";
@@ -30,24 +32,32 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * and a double-click turns the word into a flashcard filled from its lookup, made as `flashcards` says.
  * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
  * The pop-up's sentence row is filled from `sentence`, as the screen knows the sentences or cues.
+ * Given a library item's words, the pop-up shows their stored entries, nothing is looked up, and flashcards are library flashcards.
+ * While a library manager prepares the item, words are looked up in their dictionaries instead, any text can be clicked or selected,
+ * and the pop-up gives the text chosen an entry for learners, as `useLibraryWordEditing` describes, rather than making flashcards.
  */
 export function useWordLookup(
   languages: { target: string; translation: string },
   flashcards: WordFlashcards,
   sentence: SentenceRowSource,
+  library?: LibraryWords,
 ) {
   const dispatch = useAppDispatch();
   const store = useAppStore();
   const lookup = useAppSelector((state) => selectLookup(state.app));
-  const display = useLookupDisplay(lookup?.popup ?? null, languages.target);
+  const learning = library?.isEditing ? undefined : library;
+  const display = useLookupDisplay(
+    lookup?.popup ?? null,
+    languages.target,
+    learning,
+  );
   const popupId = useId();
   const chosen = lookup?.popup?.chosen ?? null;
-  const made = useLookupFlashcards(flashcards, chosen, {
-    languages,
-    dictionaries: display.dictionaries,
-  });
+  const context = { languages, dictionaries: display.dictionaries };
+  const made = useLookupFlashcards(flashcards, chosen, context, library);
+  const editing = useLibraryWordEditing(library, chosen, context);
   const wordOf = (term: string, text: Parameters<typeof lookupWordOf>[1]) =>
-    lookupWordOf(term, text, languages.target, display.isCovered);
+    lookupWordOf(term, text, languages.target, !learning && display.isCovered);
   const hasTranslationOf = (source: LookupSource | null) =>
     sentence.factsOf(source).translation !== null;
   const row = sentenceRowOf(
@@ -66,7 +76,10 @@ export function useWordLookup(
       },
       onWordHold: made.holdWord,
       onCreateFlashcard: (entryIndex) =>
-        made.createFromPopup(display.results, entryIndex),
+        editing
+          ? editing.saveEntry(display.results, entryIndex)
+          : made.createFromPopup(display.results, entryIndex),
+      forLearners: editing ? editing.forLearners : undefined,
       sentence: row,
       onClose: () => dispatch(actions.lookupClosed()),
       onToggleSize: () => dispatch(actions.lookupSizeToggled()),
@@ -91,11 +104,20 @@ export function useWordLookup(
         ? (chosen?.source ?? null)
         : undefined,
     wordOf,
-    clickWord: (word: ChosenWord, input: WordHit["input"]) =>
-      dispatch(actions.lookupWordClicked(word, input)),
+    clickWord: (word: ChosenWord, input: WordHit["input"]) => {
+      editing?.choose(word);
+      dispatch(actions.lookupWordClicked(word, input));
+    },
+    /** Opens the pop-up on text selected in a passage, which ends at `end` there. */
+    selectText: (word: ChosenWord, end: number) => {
+      editing?.choose(word, end);
+      dispatch(actions.lookupTextSelected(word));
+    },
     /** Opens the pop-up at a held word, or keeps it there, with its sentence's translation shown when there is one to show. */
-    holdWord: (word: ChosenWord) =>
-      dispatch(actions.lookupWordHeld(word, hasTranslationOf(word.source))),
+    holdWord: (word: ChosenWord) => {
+      editing?.choose(word);
+      dispatch(actions.lookupWordHeld(word, hasTranslationOf(word.source)));
+    },
     /** The T key: shows or hides the translation of the current sentence or cue in the pop-up's sentence row, as `sentenceTranslationActionOf` decides. */
     toggleSentenceTranslation: () => {
       const latest = selectLookup(store.getState().app);

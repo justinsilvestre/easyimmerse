@@ -17,7 +17,7 @@ export const sourceMediaRoute = {
 
 /** A source form that offers subtitles to fetch. */
 export const fetchForm: PluginForm = {
-  title: "Subtitles from the video site",
+  title: "Subtitles from Example plugin",
   description: null,
   fields: [
     {

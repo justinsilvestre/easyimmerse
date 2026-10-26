@@ -209,7 +209,7 @@ async fn lists_an_installed_plugin_with_its_kind_title_and_import_label() {
             "title": "Fixture",
             "version": "0.1.0",
             "kind": "media-source",
-            "import_label": "Add from Fixture",
+            "import_label": "Add with Fixture",
         }] })
     );
 }
