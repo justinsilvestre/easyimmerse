@@ -127,6 +127,12 @@ export interface Effects {
    * Returns a function that stops the calls.
    */
   subscribeToOpenedLinks(listener: (link: string) => void): () => void;
+  /**
+   * Calls the listener with the path and query of each of the app's own links that a person follows within the app, in place of the platform loading it.
+   * Where the platform can open a link elsewhere, such as in a new browser tab, a click that asks for that is left to it.
+   * Returns a function that stops the calls.
+   */
+  subscribeToLinkClicks(listener: (path: string) => void): () => void;
   /** Shows the document in the given theme and at the given text scale. */
   applyAppearance(appearance: Appearance): void;
   /**

@@ -16,8 +16,6 @@ const meta = {
     coverUrlOf: () => null,
     addStatus: "ready",
     onAddMedia: fn(),
-    onEditItem: fn(),
-    onBack: fn(),
   },
 } satisfies Meta<typeof LibraryManagementView>;
 

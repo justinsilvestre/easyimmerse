@@ -6,18 +6,21 @@ import { ProjectForm } from "./ProjectForm.tsx";
 export function ProjectSettingsView({
   mode,
   initialValues,
+  backHref,
   onSubmit,
   onCancel,
 }: {
   mode: "create" | "edit";
   initialValues: ProjectSettings;
+  /** The path of the screen Back leads to: the projects, or the project. */
+  backHref: string;
   onSubmit: (values: ProjectSettings) => void;
   onCancel: () => void;
 }) {
   return (
     <ScreenLayout
       wide
-      onBack={onCancel}
+      backHref={backHref}
       backLabel={mode === "create" ? "Projects" : "Project"}
     >
       <h1 className="text-xl font-semibold">

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { Button } from "./Button.tsx";
+import { Button, ButtonLink } from "./Button.tsx";
 
 const meta = {
   title: "Components/Common/Button",
@@ -31,3 +31,13 @@ export const Danger: Story = {
 export const Small: Story = { args: { variant: "primary", size: "sm" } };
 
 export const Disabled: Story = { args: { variant: "primary", disabled: true } };
+
+/** A link to another screen in a button's style, which a modified or middle click opens in a new tab. */
+export const AsLink: Story = {
+  args: { variant: "primary" },
+  render: ({ variant, children }) => (
+    <ButtonLink variant={variant} href="/library">
+      {children}
+    </ButtonLink>
+  ),
+};

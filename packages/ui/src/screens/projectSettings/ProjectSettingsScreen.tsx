@@ -1,5 +1,5 @@
 import { useGetProjectQuery } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, pathOfRoute } from "@easyimmerse/state";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
@@ -16,7 +16,10 @@ export function ProjectSettingsScreen({
   const { data: project, error } = useGetProjectQuery(projectId);
   if (error)
     return (
-      <ScreenLayout onBack={onCancel} backLabel="Project">
+      <ScreenLayout
+        backHref={pathOfRoute({ screen: "project", projectId })}
+        backLabel="Project"
+      >
         <p role="alert">Could not load the project.</p>
       </ScreenLayout>
     );
@@ -25,6 +28,7 @@ export function ProjectSettingsScreen({
     <ProjectSettingsView
       mode="edit"
       initialValues={project.settings}
+      backHref={pathOfRoute({ screen: "project", projectId })}
       onSubmit={(settings) => dispatch(actions.projectFormSubmitted(settings))}
       onCancel={onCancel}
     />

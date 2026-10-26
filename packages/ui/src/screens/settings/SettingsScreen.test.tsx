@@ -17,13 +17,7 @@ import { SettingsScreen } from "./SettingsScreen.tsx";
 afterEach(cleanup);
 
 function renderSettings() {
-  return renderWithAppStore(
-    <SettingsScreen
-      onBack={() => undefined}
-      onOpenAccount={() => undefined}
-      onOpenDictionaries={() => undefined}
-    />,
-  );
+  return renderWithAppStore(<SettingsScreen backHref="/" />);
 }
 
 const showAgainName = "Show dismissed suggestions again";
@@ -33,70 +27,36 @@ function getGroup(name: string) {
 }
 
 describe("SettingsScreen", () => {
-  it("calls onBack when Back is clicked", () => {
-    let backCount = 0;
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => {
-          backCount += 1;
-        }}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(backCount).toBe(1);
+  it("links Back to the screen beneath Settings", () => {
+    renderWithAppStore(<SettingsScreen backHref="/projects/p1" />);
+    expect(
+      screen.getByRole("link", { name: "Back" }).getAttribute("href"),
+    ).toBe("/projects/p1");
   });
 
   it("opens the dictionaries settings from their link", () => {
-    let openCount = 0;
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => {
-          openCount += 1;
-        }}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /Dictionaries/ }));
-    expect(openCount).toBe(1);
+    const { store } = renderSettings();
+    fireEvent.click(screen.getByRole("link", { name: /Dictionaries/ }));
+    expect(selectRoute(store.getState())).toMatchObject({
+      pages: ["dictionaries"],
+    });
   });
 
-  it("opens the account settings screen from its button", () => {
-    let openCount = 0;
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => {
-          openCount += 1;
-        }}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /^Account/ }));
-    expect(openCount).toBe(1);
+  it("opens the account settings screen from its link", () => {
+    const { store } = renderSettings();
+    fireEvent.click(screen.getByRole("link", { name: /^Account/ }));
+    expect(selectRoute(store.getState())).toMatchObject({
+      pages: ["account"],
+    });
   });
 
   it("tells on the account button that the app is logged in to no account", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
+    renderWithAppStore(<SettingsScreen backHref="/" />);
     expect(screen.getByText(/You are not logged in/)).toBeDefined();
   });
 
   it("marks the Profile menu's Settings row as the page already open", () => {
-    const { store } = renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
+    const { store } = renderWithAppStore(<SettingsScreen backHref="/" />);
     act(() => {
       store.dispatch(actions.navigated({ type: "openSettings" }));
     });
@@ -109,13 +69,7 @@ describe("SettingsScreen", () => {
   });
 
   it("shows the subtitle appearance controls in a Subtitles section", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
+    renderWithAppStore(<SettingsScreen backHref="/" />);
     expect(
       within(screen.getByRole("region", { name: "Subtitles" })).getByRole(
         "slider",
@@ -125,13 +79,7 @@ describe("SettingsScreen", () => {
   });
 
   it("treats conversion as unavailable until told otherwise", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
+    renderWithAppStore(<SettingsScreen backHref="/" />);
     expect(
       screen.getByText(
         "Media conversion is unavailable, so there is no cache.",
@@ -140,13 +88,7 @@ describe("SettingsScreen", () => {
   });
 
   it("shows the lossless audio toggle in a Media conversion section", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
+    renderWithAppStore(<SettingsScreen backHref="/" />);
     expect(
       within(
         screen.getByRole("region", { name: "Media conversion" }),
@@ -155,33 +97,19 @@ describe("SettingsScreen", () => {
   });
 
   it("shows the Server row on the desktop app", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-      undefined,
-      {
-        server: {
-          serverUrl: "http://127.0.0.1:5000",
-          token: "t",
-          bundledIn: "desktop",
-        },
+    renderWithAppStore(<SettingsScreen backHref="/" />, undefined, {
+      server: {
+        serverUrl: "http://127.0.0.1:5000",
+        token: "t",
+        bundledIn: "desktop",
       },
-    );
-    expect(screen.getByRole("button", { name: /^Server/ })).toBeDefined();
+    });
+    expect(screen.getByRole("link", { name: /^Server/ })).toBeDefined();
   });
 
   it("shows no Server row elsewhere", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-    );
-    expect(screen.queryByRole("button", { name: /^Server/ })).toBeNull();
+    renderWithAppStore(<SettingsScreen backHref="/" />);
+    expect(screen.queryByRole("link", { name: /^Server/ })).toBeNull();
   });
 
   it.each(["Sync", "This device", "About"])(
@@ -193,14 +121,17 @@ describe("SettingsScreen", () => {
   );
 
   it.each([
-    ["Sync", /^Account/],
-    ["Sync", /^Local network sync/],
-    ["This device", /^Dictionaries/],
-    ["About", /^Help/],
-  ])("puts in the %s group the %s row", (group, name) => {
-    renderSettings();
-    expect(getGroup(group).getByRole("button", { name })).toBeDefined();
-  });
+    ["Sync", "link", /^Account/],
+    ["Sync", "link", /^Local network sync/],
+    ["This device", "link", /^Dictionaries/],
+    ["About", "button", /^Help/],
+  ] as const)(
+    "puts in the %s group the %s row named %s",
+    (group, role, name) => {
+      renderSettings();
+      expect(getGroup(group).getByRole(role, { name })).toBeDefined();
+    },
+  );
 
   it.each([
     ["This device", "Display"],
@@ -213,23 +144,15 @@ describe("SettingsScreen", () => {
   });
 
   it("puts the desktop app's Server row in the Sync group", () => {
-    renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
-      undefined,
-      {
-        server: {
-          serverUrl: "http://127.0.0.1:5000",
-          token: "t",
-          bundledIn: "desktop",
-        },
+    renderWithAppStore(<SettingsScreen backHref="/" />, undefined, {
+      server: {
+        serverUrl: "http://127.0.0.1:5000",
+        token: "t",
+        bundledIn: "desktop",
       },
-    );
+    });
     expect(
-      getGroup("Sync").getByRole("button", { name: /^Server/ }),
+      getGroup("Sync").getByRole("link", { name: /^Server/ }),
     ).toBeDefined();
   });
 
@@ -238,9 +161,7 @@ describe("SettingsScreen", () => {
     act(() => {
       store.dispatch(actions.navigated({ type: "openSettings" }));
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: /^Local network sync/ }),
-    );
+    fireEvent.click(screen.getByRole("link", { name: /^Local network sync/ }));
     expect(selectRoute(store.getState())).toMatchObject({
       pages: ["general", "pairing"],
     });
@@ -248,11 +169,7 @@ describe("SettingsScreen", () => {
 
   it("opens the Server page from its row on the desktop app", () => {
     const { store } = renderWithAppStore(
-      <SettingsScreen
-        onBack={() => undefined}
-        onOpenAccount={() => undefined}
-        onOpenDictionaries={() => undefined}
-      />,
+      <SettingsScreen backHref="/" />,
       undefined,
       {
         server: {
@@ -265,7 +182,7 @@ describe("SettingsScreen", () => {
     act(() => {
       store.dispatch(actions.navigated({ type: "openSettings" }));
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Server/ }));
+    fireEvent.click(screen.getByRole("link", { name: /^Server/ }));
     expect(selectRoute(store.getState())).toMatchObject({
       pages: ["general", "server"],
     });

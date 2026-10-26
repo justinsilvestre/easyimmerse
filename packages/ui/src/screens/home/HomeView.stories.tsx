@@ -14,12 +14,7 @@ const meta = {
     status: "ready",
     projects: exampleProjects,
     reviewCounts: exampleReviewCounts,
-    onOpenProject: fn(),
-    onReviewProject: fn(),
-    onCreateProject: fn(),
-    onContinueOffline: fn(),
-    onOpenLibrary: fn(),
-    onManageLibrary: null,
+    canManageLibrary: false,
   },
 } satisfies Meta<typeof HomeView>;
 
@@ -29,7 +24,7 @@ type Story = StoryObj<typeof meta>;
 /** As a learner sees it: no library section, since the library is reached from a project. */
 export const RecentProjects: Story = {};
 
-export const LibraryManager: Story = { args: { onManageLibrary: fn() } };
+export const LibraryManager: Story = { args: { canManageLibrary: true } };
 
 export const Empty: Story = { args: { projects: [] } };
 

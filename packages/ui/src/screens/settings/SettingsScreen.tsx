@@ -1,12 +1,11 @@
 import {
-  actions,
   selectBundledServerPlatform,
+  selectPathOfStep,
   selectSettingsScrollTarget,
 } from "@easyimmerse/state";
 import { BookOpen, Server, UserRound, Wifi } from "lucide-react";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { selectLoginState } from "../../lib/sync/selectLoginState.ts";
-import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
 import { CloudStorageSection } from "./CloudStorageSection.tsx";
 import type { ConversionCacheControls } from "./ConversionCacheSection.tsx";
@@ -42,35 +41,42 @@ const localNetworkSyncDescriptions = {
 };
 
 export function SettingsScreen({
-  onBack,
-  onOpenAccount,
-  onOpenDictionaries,
+  backHref,
   conversionCache = unavailableConversionCache,
   ffmpegBuild = null,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
-  /** Closes Settings to the screen beneath, whichever it is, so its button says only Back. */
-  onBack: () => void;
-  onOpenAccount: () => void;
-  onOpenDictionaries: () => void;
+  /** The path of the screen beneath Settings, whichever it is, so its link says only Back. */
+  backHref: string;
   conversionCache?: ConversionCacheControls;
   /** The desktop app's ffmpeg build, or null where the app has none to choose. */
   ffmpegBuild?: FfmpegBuildControls | null;
   licenseNotices?: LicenseNoticesState;
 }) {
-  const dispatch = useAppDispatch();
   const isDesktop = useAppSelector(selectBundledServerPlatform) === "desktop";
   const scrollTarget = useAppSelector(selectSettingsScrollTarget);
   const loginState = useAppSelector(selectLoginState);
+  const accountHref = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openAccountSettings" }),
+  );
+  const pairingHref = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openPairing" }),
+  );
+  const serverHref = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openServerSettings" }),
+  );
+  const dictionariesHref = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openDictionaries" }),
+  );
   return (
-    <ScreenLayout onBack={onBack}>
+    <ScreenLayout backHref={backHref}>
       <h1 className="text-xl font-semibold">Settings</h1>
       <SettingsGroup title="Sync">
         <SettingsPageButton
           icon={<UserRound className="size-4 text-fg-muted" aria-hidden />}
           label="Account"
           description={accountDescriptions[loginState]}
-          onClick={onOpenAccount}
+          href={accountHref}
         />
         <SettingsPageButton
           icon={<Wifi className="size-4 text-fg-muted" aria-hidden />}
@@ -78,16 +84,14 @@ export function SettingsScreen({
           description={
             localNetworkSyncDescriptions[isDesktop ? "desktop" : "elsewhere"]
           }
-          onClick={() => dispatch(actions.navigated({ type: "openPairing" }))}
+          href={pairingHref}
         />
         {isDesktop && (
           <SettingsPageButton
             icon={<Server className="size-4 text-fg-muted" aria-hidden />}
             label="Server"
             description="Start and stop the server other devices reach, name this computer, and choose who may sign in."
-            onClick={() =>
-              dispatch(actions.navigated({ type: "openServerSettings" }))
-            }
+            href={serverHref}
           />
         )}
         <CloudStorageSection />
@@ -98,7 +102,7 @@ export function SettingsScreen({
           icon={<BookOpen className="size-4 text-fg-muted" aria-hidden />}
           label="Dictionaries"
           description="Add and remove the dictionaries words are looked up in."
-          onClick={onOpenDictionaries}
+          href={dictionariesHref}
         />
         <SubtitleAppearanceSection />
         <MediaConversionSection

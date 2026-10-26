@@ -21,9 +21,6 @@ const meta = {
     canManage: false,
     coverUrlOf: () => null,
     onToggleTag: fn(),
-    onOpenItem: fn(),
-    onManage: fn(),
-    onBack: fn(),
   },
 } satisfies Meta<typeof LibraryView>;
 

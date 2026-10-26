@@ -1,7 +1,7 @@
 import { actions } from "@easyimmerse/state";
 import type { AccountRole, AccountUser } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn, userEvent, within } from "storybook/test";
+import { userEvent, within } from "storybook/test";
 import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../../storybook/withDispatchedActions.tsx";
 import {
@@ -99,7 +99,7 @@ const meta = {
   title: "Screens/Users/UsersScreen",
   component: UsersScreen,
   decorators: [withAppStore],
-  args: { via: "self", onBack: fn() },
+  args: { via: "self", backHref: "/" },
   parameters: serverWith(fakeUsersPages(severalUsers)),
 } satisfies Meta<typeof UsersScreen>;
 

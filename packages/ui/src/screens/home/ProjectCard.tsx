@@ -1,7 +1,8 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import type { Project, ReviewCounts } from "@easyimmerse/types";
 import { ChevronRight, Film, GraduationCap, Layers } from "lucide-react";
 import { Badge } from "../../components/common/Badge.tsx";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 import { Skeleton } from "../../components/common/Skeleton.tsx";
 import { formatRelativeDate } from "../../lib/formatting/formatRelativeDate.ts";
 import { languageName } from "../../lib/formatting/languages.ts";
@@ -9,26 +10,21 @@ import { pluralize } from "../../lib/formatting/pluralize.ts";
 
 /**
  * One project on the home screen, with its language, size, and when it was last opened.
- * Beside it, or under it at phone width, a button opens its review directly: to review the cards due, with their count, or to learn new cards when none is due.
+ * The card links to the project's screen. Beside it, or under it at phone width, a link opens its review directly: to review the cards due, with their count, or to learn new cards when none is due.
  */
 export function ProjectCard({
   project,
   review,
-  onOpen,
-  onReview,
 }: {
   project: Project;
   /** What waits in the project's review today, or null while that is not known. */
   review: ReviewCounts | null;
-  onOpen: (projectId: string) => void;
-  onReview: (projectId: string) => void;
 }) {
   const { name, target_language: language } = project.settings;
   return (
-    <div className="flex flex-col rounded-lg border border-line bg-surface has-[button:hover]:border-line-strong sm:flex-row sm:items-center">
-      <button
-        type="button"
-        onClick={() => onOpen(project.id)}
+    <div className="flex flex-col rounded-lg border border-line bg-surface has-[a:hover]:border-line-strong sm:flex-row sm:items-center">
+      <a
+        href={pathOfRoute({ screen: "project", projectId: project.id })}
         className="group flex min-w-0 flex-1 items-center gap-4 rounded-lg px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span
@@ -56,14 +52,8 @@ export function ProjectCard({
           className="size-4 shrink-0 text-fg-faint group-hover:text-fg"
           aria-hidden
         />
-      </button>
-      {review && (
-        <ReviewButton
-          projectId={project.id}
-          review={review}
-          onReview={onReview}
-        />
-      )}
+      </a>
+      {review && <ReviewButton projectId={project.id} review={review} />}
     </div>
   );
 }
@@ -76,20 +66,18 @@ export function ProjectCard({
 function ReviewButton({
   projectId,
   review,
-  onReview,
 }: {
   projectId: string;
   review: ReviewCounts;
-  onReview: (projectId: string) => void;
 }) {
   const dueCount = review.due_count + review.learning_count;
   if (dueCount === 0 && review.new_count === 0) return null;
   return (
-    <Button
+    <ButtonLink
       size="sm"
       variant={dueCount > 0 ? "primary" : "secondary"}
       className="mx-3 mb-3 shrink-0 sm:my-0 sm:mr-3 sm:ml-0"
-      onClick={() => onReview(projectId)}
+      href={pathOfRoute({ screen: "review", projectId })}
     >
       <GraduationCap className="size-3.5" aria-hidden />
       {dueCount > 0 ? (
@@ -100,7 +88,7 @@ function ReviewButton({
       ) : (
         "Learn"
       )}
-    </Button>
+    </ButtonLink>
   );
 }
 

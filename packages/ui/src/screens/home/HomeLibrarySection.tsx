@@ -1,14 +1,9 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import { Library, Settings2 } from "lucide-react";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 
 /** The home screen's way into the server's library and into managing it, for someone who may manage it. */
-export function HomeLibrarySection({
-  onOpenLibrary,
-  onManageLibrary,
-}: {
-  onOpenLibrary: () => void;
-  onManageLibrary: () => void;
-}) {
+export function HomeLibrarySection() {
   return (
     <section
       aria-label="Library"
@@ -24,11 +19,13 @@ export function HomeLibrarySection({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <Button onClick={onManageLibrary}>
+        <ButtonLink href={pathOfRoute({ screen: "libraryManage" })}>
           <Settings2 className="size-4" aria-hidden />
           Manage library
-        </Button>
-        <Button onClick={onOpenLibrary}>Browse the library</Button>
+        </ButtonLink>
+        <ButtonLink href={pathOfRoute({ screen: "library" })}>
+          Browse the library
+        </ButtonLink>
       </div>
     </section>
   );

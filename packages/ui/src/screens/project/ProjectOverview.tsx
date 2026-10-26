@@ -14,6 +14,7 @@ import {
   selectFlashcardSync,
   selectIsAnkiConnectSetupOpen,
   selectMediaImport,
+  selectPathOfStep,
 } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../../browserFileRegistryContext.ts";
@@ -35,15 +36,7 @@ import { ProjectView } from "./ProjectView.tsx";
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
  * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
  */
-export function ProjectOverview({
-  project,
-  onBack,
-  onEditSettings,
-}: {
-  project: Project;
-  onBack: () => void;
-  onEditSettings: () => void;
-}) {
+export function ProjectOverview({ project }: { project: Project }) {
   const dispatch = useAppDispatch();
   const media = useMediaItems(project.id);
   const importSources = useImportSources();
@@ -59,33 +52,28 @@ export function ProjectOverview({
   useGetReviewSummaryQuery(project.id, { refetchOnMountOrArgChange: true });
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
-  const openDictionaries = () => navigate({ type: "openDictionaries" });
+  const dictionariesHref = useAppSelector((state) =>
+    selectPathOfStep(state, { type: "openDictionaries" }),
+  );
   const { settings } = project;
   return (
-    <ProjectView
-      name={settings.name}
-      onBack={onBack}
-      onEditSettings={onEditSettings}
-    >
+    <ProjectView projectId={project.id} name={settings.name}>
       {dictionaries && (
         <DictionaryStatus
           statuses={dictionaryStatusesOf(dictionaries, settings)}
-          onOpenDictionaries={openDictionaries}
+          dictionariesHref={dictionariesHref}
         />
       )}
       {media.error ? (
         <p role="alert">Could not load the media files.</p>
       ) : (
         <MediaSection
+          projectId={project.id}
           media={media.items}
           importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
-          onOpenLibrary={() => navigate({ type: "openLibrary" })}
           onImportMedia={(source) =>
             dispatch(actions.mediaImportOpened(source))
-          }
-          onOpenMedia={(mediaFileId) =>
-            dispatch(actions.openMediaFileRequested(project.id, mediaFileId))
           }
           onDeleteMedia={(mediaFileId) =>
             dispatch(actions.mediaFileRemovalRequested(mediaFileId))

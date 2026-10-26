@@ -23,6 +23,10 @@ import { createPreferenceStore } from "./preferenceStore.ts";
 import { readLocalStorage } from "./readLocalStorage.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { createScopedPreferenceStore } from "./scopedPreferenceStore.ts";
+import {
+  createSubscribeToLinkClicks,
+  type LinkClickScope,
+} from "./subscribeToLinkClicks.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
 import { unavailableDesktopServerEffects } from "./unavailableDesktopServerEffects.ts";
 
@@ -37,6 +41,8 @@ export function createWebEffects(options: {
   server?: ServerConfig | null;
   /** The history that decides where the app is; the browser's own when absent. */
   history?: RouterHistory;
+  /** Which clicks on the app's own links the app takes in place of the browser; plain clicks only when absent. */
+  linkClicks?: LinkClickScope;
 }): Effects {
   const deviceStore = createPreferenceStore();
   const preferences = createScopedPreferenceStore(
@@ -67,6 +73,10 @@ export function createWebEffects(options: {
     subscribeToSettingsRequests: ignoreSettingsRequests,
     subscribeToOpenedLinks: ignoreOpenedLinks,
     ...createHistoryLocation(options.history ?? createBrowserHistory()),
+    subscribeToLinkClicks: createSubscribeToLinkClicks(
+      document,
+      options.linkClicks ?? "plain",
+    ),
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
       window.matchMedia("(prefers-color-scheme: dark)"),
@@ -107,3 +117,4 @@ export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
 export { readLocalStorage } from "./readLocalStorage.ts";
 export { createServerPreferenceStore } from "./serverPreferenceStore.ts";
+export { createSubscribeToLinkClicks } from "./subscribeToLinkClicks.ts";

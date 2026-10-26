@@ -12,7 +12,6 @@ import {
 import { libraryProjectOf } from "../../lib/library/libraryProjectOf.ts";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
-import { useNavigate } from "../../useNavigate.ts";
 import { LibraryManagementView } from "./LibraryManagementView.tsx";
 
 /**
@@ -20,7 +19,6 @@ import { LibraryManagementView } from "./LibraryManagementView.tsx";
  * and the way to add media, which sets the library's language while it has no items. A new item opens in the manager's library project, which adding it makes when there is none yet.
  */
 export function LibraryManageScreen() {
-  const go = useNavigate();
   const dispatch = useAppDispatch();
   const isCreating = useAppSelector(selectIsCreatingLibraryItem);
   const server = useAppSelector(selectServerConfig);
@@ -55,8 +53,6 @@ export function LibraryManageScreen() {
           }),
         );
       }}
-      onEditItem={(itemId) => go({ type: "editLibraryItem", itemId })}
-      onBack={() => go({ type: "openLibrary" })}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { BookOpen } from "lucide-react";
 import { Badge } from "../../components/common/Badge.tsx";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 import { languageName } from "../../lib/formatting/languages.ts";
 import { pluralize } from "../../lib/formatting/pluralize.ts";
 
@@ -14,10 +14,11 @@ export type LanguageDictionaryStatus = {
 /** Shows whether each language of the project's flashcards has a dictionary, with the way to the dictionaries settings. */
 export function DictionaryStatus({
   statuses,
-  onOpenDictionaries,
+  dictionariesHref,
 }: {
   statuses: readonly LanguageDictionaryStatus[];
-  onOpenDictionaries: () => void;
+  /** The path of the dictionaries settings over the current screen. */
+  dictionariesHref: string;
 }) {
   const isAnyMissing = statuses.some((status) => status.dictionaryCount === 0);
   return (
@@ -49,14 +50,14 @@ export function DictionaryStatus({
           </li>
         ))}
       </ul>
-      <Button
+      <ButtonLink
         size="sm"
         variant={isAnyMissing ? "primary" : "subtle"}
         className="ml-auto"
-        onClick={onOpenDictionaries}
+        href={dictionariesHref}
       >
         {isAnyMissing ? "Set up dictionaries" : "Manage"}
-      </Button>
+      </ButtonLink>
     </section>
   );
 }

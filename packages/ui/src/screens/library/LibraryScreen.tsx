@@ -15,7 +15,6 @@ import {
 import type { LibraryItem } from "@easyimmerse/types";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { useAppSelector } from "../../useAppSelector.ts";
-import { useNavigate } from "../../useNavigate.ts";
 import { LibraryView } from "./LibraryView.tsx";
 
 const noItems: readonly LibraryItem[] = [];
@@ -26,7 +25,6 @@ const noItems: readonly LibraryItem[] = [];
  */
 export function LibraryScreen() {
   const dispatch = useAppDispatch();
-  const go = useNavigate();
   const listing = useListLibraryItemsQuery();
   const language = useGetLibrarySettingsQuery().data?.language ?? null;
   const filter = useAppSelector(selectLibraryBrowseFilter);
@@ -43,9 +41,6 @@ export function LibraryScreen() {
       canManage={canManageLibrary(principal)}
       coverUrlOf={(item) => buildLibraryCoverUrl(server, item)}
       onToggleTag={(tag) => dispatch(actions.libraryTagToggled(tag))}
-      onOpenItem={(itemId) => go({ type: "openLibraryItem", itemId })}
-      onManage={() => go({ type: "manageLibrary" })}
-      onBack={() => go({ type: "goHome" })}
     />
   );
 }

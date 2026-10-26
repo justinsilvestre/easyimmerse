@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
 import {
   exampleCoverUrl,
   exampleLibraryItem,
@@ -19,7 +18,7 @@ const meta = {
   args: {
     item: exampleLibraryItem(),
     coverUrl: null,
-    onOpen: fn(),
+    href: "/library/items/item-1",
   },
 } satisfies Meta<typeof LibraryItemCard>;
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Route } from "./route.ts";
 import { navigate } from "./route.ts";
-import { upRouteOf } from "./upRouteOf.ts";
+import { upPathOf, upRouteOf } from "./upRouteOf.ts";
 
 const project: Route = { screen: "project", projectId: "p1" };
 
@@ -26,5 +26,17 @@ const routesWithUps: readonly [Route, Route | null][] = [
 describe("upRouteOf", () => {
   it.each(routesWithUps)("leads from %j to %j", (route, up) => {
     expect(upRouteOf(route)).toEqual(up);
+  });
+});
+
+describe("upPathOf", () => {
+  it("returns the path of the screen the current one belongs to", () => {
+    expect(
+      upPathOf({ screen: "media", projectId: "p1", mediaFileId: "m1" }),
+    ).toBe("/projects/p1");
+  });
+
+  it("returns null on the home screen", () => {
+    expect(upPathOf({ screen: "home" })).toBeNull();
   });
 });

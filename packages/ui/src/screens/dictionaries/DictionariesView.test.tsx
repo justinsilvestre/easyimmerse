@@ -23,7 +23,7 @@ function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
       dictionaries={exampleDictionaries}
       unsupportedFile={null}
       pendingTable={null}
-      onBack={() => undefined}
+      backHref="/"
       onAddFromFile={() => undefined}
       onRemove={() => undefined}
       onConfirmRemoval={() => undefined}

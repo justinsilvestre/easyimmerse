@@ -150,6 +150,13 @@ describe("createAppStore", () => {
     expect(store.getState().app.route).toEqual({ screen: "home" });
   });
 
+  it("moves to the screen of a link a person follows within the app", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.followLink("/library");
+    expect(store.getState().app.route).toEqual({ screen: "library" });
+  });
+
   it("writes the address of each screen it moves to into the browser's history", () => {
     const effects = createRecordingEffects();
     const store = createAppStore(effects, createFakeServerStoreParts());

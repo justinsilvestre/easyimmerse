@@ -4,6 +4,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import {
   selectCurrentMediaFileId,
   selectIsSettingsOpen,
+  selectPathOfStep,
   selectRoute,
   selectSettingsScrollTarget,
 } from "./routeSelectors.ts";
@@ -61,5 +62,11 @@ describe("routeSelectors", () => {
   it("selectSettingsScrollTarget returns null for Settings opened plainly", () => {
     const settings = { app: stateAfter(actions.settingsRequested()) };
     expect(selectSettingsScrollTarget(settings)).toBeNull();
+  });
+
+  it("selectPathOfStep returns the path of the place a step leads from where the app is", () => {
+    expect(selectPathOfStep(project, { type: "openDictionaries" })).toBe(
+      "/projects/p1?settings=dictionaries",
+    );
   });
 });

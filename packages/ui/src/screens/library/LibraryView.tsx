@@ -1,8 +1,8 @@
-import type { LibraryBrowseFilter } from "@easyimmerse/state";
+import { type LibraryBrowseFilter, pathOfRoute } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Library, Settings2 } from "lucide-react";
-import { Button } from "../../components/common/Button.tsx";
+import { ButtonLink } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
 import { LibraryItemCard } from "../../components/libraryItemCard/LibraryItemCard.tsx";
@@ -23,9 +23,6 @@ export function LibraryView({
   canManage,
   coverUrlOf,
   onToggleTag,
-  onOpenItem,
-  onManage,
-  onBack,
 }: {
   status: LibraryListStatus;
   /** The library's language, or null while no library manager has set it. */
@@ -38,12 +35,13 @@ export function LibraryView({
   canManage: boolean;
   coverUrlOf: (item: LibraryItem) => string | null;
   onToggleTag: (tag: string) => void;
-  onOpenItem: (itemId: string) => void;
-  onManage: () => void;
-  onBack: () => void;
 }) {
   return (
-    <ScreenLayout onBack={onBack} backLabel="Projects" wide>
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "home" })}
+      backLabel="Projects"
+      wide
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold">Library</h1>
@@ -54,10 +52,10 @@ export function LibraryView({
           )}
         </div>
         {canManage && (
-          <Button onClick={onManage}>
+          <ButtonLink href={pathOfRoute({ screen: "libraryManage" })}>
             <Settings2 className="size-4" aria-hidden />
             Manage library
-          </Button>
+          </ButtonLink>
         )}
       </div>
       {status === "ready" && tags.length > 0 && (
@@ -69,7 +67,6 @@ export function LibraryView({
         canManage={canManage}
         coverUrlOf={coverUrlOf}
         isFiltered={filter.tags.length > 0}
-        onOpenItem={onOpenItem}
       />
     </ScreenLayout>
   );
@@ -116,14 +113,12 @@ function Items({
   canManage,
   coverUrlOf,
   isFiltered,
-  onOpenItem,
 }: {
   status: LibraryListStatus;
   items: readonly LibraryItem[];
   canManage: boolean;
   coverUrlOf: (item: LibraryItem) => string | null;
   isFiltered: boolean;
-  onOpenItem: (itemId: string) => void;
 }) {
   switch (status) {
     case "loading":
@@ -167,7 +162,7 @@ function Items({
                 item={item}
                 coverUrl={coverUrlOf(item)}
                 showsStatus={canManage}
-                onOpen={onOpenItem}
+                href={pathOfRoute({ screen: "libraryItem", itemId: item.id })}
               />
             </li>
           ))}

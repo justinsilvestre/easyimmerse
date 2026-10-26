@@ -35,17 +35,14 @@ function renderWith(responses: Record<string, FakeResponse>) {
   return { client, ...rendered };
 }
 
-const manageUsers = () =>
-  screen.queryByRole("button", { name: "Manage users" });
+const manageUsers = () => screen.queryByRole("link", { name: "Manage users" });
 
 describe("ManageUsersButton on the account settings screen", () => {
   it("opens the Users page for a server admin", async () => {
     const { store } = renderWith({
       "GET /auth/me": { kind: "account", user: account("administrator") },
     });
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Manage users" }),
-    );
+    fireEvent.click(await screen.findByRole("link", { name: "Manage users" }));
     expect(selectRoute(store.getState())).toMatchObject({ pages: ["users"] });
   });
 
@@ -63,7 +60,7 @@ describe("ManageUsersButton on the account settings screen", () => {
       "GET /auth/server": { accounts: true, open_signup: false },
     });
     expect(
-      await screen.findByRole("button", { name: "Manage users" }),
+      await screen.findByRole("link", { name: "Manage users" }),
     ).toBeDefined();
   });
 

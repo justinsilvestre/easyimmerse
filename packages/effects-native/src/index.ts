@@ -33,6 +33,7 @@ import { createWindowCloseGuard } from "./windowCloseGuard.ts";
  * and so does each `easyimmerse://` link the operating system opens the app with;
  * the embedded server asks a remote what it offers for signing in, since it is the embedded server that logs in to it;
  * closing the window while a flashcard has unsaved changes or is being saved asks first;
+ * every click on one of the app's own links opens it in the window, which has no tabs to open it in;
  * and on a desktop, the page manages the server the app runs through the shell's commands, and picks programs such as ffmpeg in its file dialog.
  */
 export function createNativeEffects(options: {
@@ -44,6 +45,7 @@ export function createNativeEffects(options: {
   const webEffects = createWebEffects({
     playerRegistry: options.playerRegistry,
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
+    linkClicks: "every",
   });
   const preferences = createServerPreferenceStore(options.server);
   return {

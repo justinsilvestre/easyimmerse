@@ -8,9 +8,7 @@ afterEach(cleanup);
 
 describe("OfflineScreen", () => {
   it("lists the cues of a picked subtitles file", async () => {
-    const { effects, store } = renderWithAppStore(
-      <OfflineScreen onBack={() => undefined} />,
-    );
+    const { effects, store } = renderWithAppStore(<OfflineScreen />);
     act(() => store.dispatch(actions.navigated({ type: "continueOffline" })));
     fireEvent.click(
       screen.getByRole("button", { name: "Open a subtitles file" }),

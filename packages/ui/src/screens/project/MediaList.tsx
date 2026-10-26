@@ -1,3 +1,4 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import clsx from "clsx";
 import { BookText, Film, Music, Trash2, TriangleAlert } from "lucide-react";
 import { type ReactNode, useId } from "react";
@@ -29,16 +30,16 @@ const kindIcons: Record<MediaItem["kind"], ReactNode> = {
 };
 
 /**
- * Lists a project's media files with their kind and flashcards. Each row opens the file and has a menu for removing it.
+ * Lists a project's media files with their kind and flashcards. Each row links to the file's screen and has a menu for removing it.
  * A file that cannot be opened from this app is marked with a warning giving the reason; its row still opens it, to show the full notice.
  */
 export function MediaList({
+  projectId,
   media,
-  onOpen,
   onDelete,
 }: {
+  projectId: string;
   media: readonly MediaItem[];
-  onOpen: (mediaId: string) => void;
   onDelete: (mediaId: string) => void;
 }) {
   return (
@@ -46,8 +47,8 @@ export function MediaList({
       {media.map((item) => (
         <MediaRow
           key={item.id}
+          projectId={projectId}
           item={item}
-          onOpen={onOpen}
           onDelete={onDelete}
         />
       ))}
@@ -56,12 +57,12 @@ export function MediaList({
 }
 
 function MediaRow({
+  projectId,
   item,
-  onOpen,
   onDelete,
 }: {
+  projectId: string;
   item: MediaItem;
-  onOpen: (mediaId: string) => void;
   onDelete: (mediaId: string) => void;
 }) {
   const issueId = useId();
@@ -69,9 +70,12 @@ function MediaRow({
   return (
     <li className="flex flex-col rounded-md border border-line bg-surface hover:border-line-strong">
       <div className="flex items-center gap-1 pr-1">
-        <button
-          type="button"
-          onClick={() => onOpen(item.id)}
+        <a
+          href={pathOfRoute({
+            screen: "media",
+            projectId,
+            mediaFileId: item.id,
+          })}
           aria-describedby={issueMessage && issueId}
           className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
@@ -100,7 +104,7 @@ function MediaRow({
               {pluralize(item.flashcardCount, "card")}
             </span>
           )}
-        </button>
+        </a>
         {issueMessage && (
           <span id={issueId} className="sr-only">
             {issueMessage}

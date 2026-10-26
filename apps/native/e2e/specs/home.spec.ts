@@ -2,7 +2,7 @@ import { $, expect } from "@wdio/globals";
 
 describe("the app's home screen", () => {
   it("lists the placeholder projects of a new database", async () => {
-    await expect($('ul[aria-label="Projects"] button')).toBeDisplayed();
+    await expect($('ul[aria-label="Projects"] a')).toBeDisplayed();
   });
 
   // The app starts in the system's theme, which differs between machines and times of day.

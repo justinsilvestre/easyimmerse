@@ -1,5 +1,5 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, pathOfRoute } from "@easyimmerse/state";
 import { useAppDispatch } from "../../useAppDispatch.ts";
 import { newProjectSettings } from "./newProjectSettings.ts";
 import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
@@ -13,6 +13,7 @@ export function NewProjectScreen({ onCancel }: { onCancel: () => void }) {
     <ProjectSettingsView
       mode="create"
       initialValues={newProjectSettings(data?.projects ?? [])}
+      backHref={pathOfRoute({ screen: "home" })}
       onSubmit={(settings) => dispatch(actions.projectFormSubmitted(settings))}
       onCancel={onCancel}
     />

@@ -5,7 +5,6 @@ import type {
   ServerLogEntry,
 } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
 import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../../storybook/withDispatchedActions.tsx";
 import { ServerScreen } from "./ServerScreen.tsx";
@@ -73,7 +72,7 @@ const meta = {
   title: "Screens/Server/ServerScreen",
   component: ServerScreen,
   decorators: [withAppStore],
-  args: { onBack: fn() },
+  args: { backHref: "/" },
 } satisfies Meta<typeof ServerScreen>;
 
 export default meta;
