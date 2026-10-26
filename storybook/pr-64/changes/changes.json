@@ -33,8 +33,71 @@
       }
     }
   ],
-  "storyCount": 685,
+  "storyCount": 686,
   "changes": [
+    {
+      "id": "components-common-button--as-link",
+      "title": "Components/Common/Button",
+      "name": "As Link",
+      "importPath": "./src/components/common/Button.stories.tsx",
+      "kind": "added",
+      "changedVariants": {},
+      "imageSizes": {
+        "after-light-phone.png": {
+          "width": 88,
+          "height": 64
+        },
+        "after-light-desktop.png": {
+          "width": 88,
+          "height": 64
+        },
+        "after-dark-phone.png": {
+          "width": 88,
+          "height": 64
+        },
+        "after-dark-desktop.png": {
+          "width": 88,
+          "height": 64
+        }
+      },
+      "changedAreas": {}
+    },
+    {
+      "id": "screens-library-edit-librarycoverpicker--video-with-its-first-line",
+      "title": "Screens/Library Edit/LibraryCoverPicker",
+      "name": "Video With Its First Line",
+      "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 108
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 664
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 664
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 664
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 664
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 216,
+          "y": 473,
+          "width": 14,
+          "height": 46
+        }
+      }
+    },
     {
       "id": "screens-library-edit-librarycoverpicker--video-not-published-yet",
       "title": "Screens/Library Edit/LibraryCoverPicker",
@@ -42,8 +105,9 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 159,
-        "dark-desktop.png": 41
+        "light-phone.png": 108,
+        "light-desktop.png": 98,
+        "dark-desktop.png": 76
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -81,16 +145,22 @@
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 204,
-          "y": 304,
-          "width": 26,
-          "height": 60
+          "x": 216,
+          "y": 301,
+          "width": 14,
+          "height": 46
+        },
+        "light-desktop.png": {
+          "x": 253,
+          "y": 256,
+          "width": 14,
+          "height": 46
         },
         "dark-desktop.png": {
           "x": 254,
-          "y": 260,
+          "y": 258,
           "width": 13,
-          "height": 51
+          "height": 53
         }
       }
     },
@@ -101,10 +171,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 93,
-        "light-desktop.png": 77,
+        "light-phone.png": 108,
+        "light-desktop.png": 93,
         "dark-phone.png": 80,
-        "dark-desktop.png": 39
+        "dark-desktop.png": 30
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -142,16 +212,16 @@
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 215,
-          "y": 477,
-          "width": 15,
-          "height": 53
+          "x": 216,
+          "y": 474,
+          "width": 14,
+          "height": 46
         },
         "light-desktop.png": {
-          "x": 235,
-          "y": 439,
-          "width": 13,
-          "height": 45
+          "x": 233,
+          "y": 441,
+          "width": 15,
+          "height": 53
         },
         "dark-phone.png": {
           "x": 216,
@@ -160,10 +230,10 @@
           "height": 53
         },
         "dark-desktop.png": {
-          "x": 236,
-          "y": 440,
-          "width": 12,
-          "height": 43
+          "x": 234,
+          "y": 438,
+          "width": 14,
+          "height": 34
         }
       }
     },
@@ -174,9 +244,9 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
+        "light-phone.png": 54,
         "light-desktop.png": 77,
-        "dark-phone.png": 46,
-        "dark-desktop.png": 39
+        "dark-desktop.png": 30
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -213,23 +283,23 @@
         }
       },
       "changedAreas": {
+        "light-phone.png": {
+          "x": 216,
+          "y": 474,
+          "width": 14,
+          "height": 34
+        },
         "light-desktop.png": {
           "x": 235,
           "y": 439,
           "width": 13,
           "height": 45
         },
-        "dark-phone.png": {
-          "x": 216,
-          "y": 478,
-          "width": 14,
-          "height": 51
-        },
         "dark-desktop.png": {
-          "x": 236,
-          "y": 440,
-          "width": 12,
-          "height": 43
+          "x": 234,
+          "y": 438,
+          "width": 14,
+          "height": 34
         }
       }
     },
@@ -240,7 +310,8 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 149
+        "light-phone.png": 181,
+        "light-desktop.png": 48
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -251,6 +322,14 @@
           "width": 390,
           "height": 696
         },
+        "before-light-desktop.png": {
+          "width": 426,
+          "height": 670
+        },
+        "after-light-desktop.png": {
+          "width": 426,
+          "height": 670
+        },
         "before-dark-phone.png": {
           "width": 390,
           "height": 696
@@ -258,14 +337,101 @@
         "after-dark-phone.png": {
           "width": 390,
           "height": 696
+        },
+        "before-dark-desktop.png": {
+          "width": 426,
+          "height": 670
+        },
+        "after-dark-desktop.png": {
+          "width": 426,
+          "height": 670
         }
       },
       "changedAreas": {
         "light-phone.png": {
           "x": 215,
-          "y": 474,
+          "y": 473,
           "width": 15,
-          "height": 55
+          "height": 56
+        },
+        "light-desktop.png": {
+          "x": 234,
+          "y": 437,
+          "width": 14,
+          "height": 34
+        }
+      }
+    },
+    {
+      "id": "screens-settings-settingspagebutton--external",
+      "title": "Screens/Settings/SettingsPageButton",
+      "name": "External",
+      "importPath": "./src/screens/settings/SettingsPageButton.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 78,
+        "light-desktop.png": 78,
+        "dark-phone.png": 78,
+        "dark-desktop.png": 78
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 122
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 122
+        },
+        "before-light-desktop.png": {
+          "width": 459,
+          "height": 102
+        },
+        "after-light-desktop.png": {
+          "width": 459,
+          "height": 102
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 122
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 122
+        },
+        "before-dark-desktop.png": {
+          "width": 459,
+          "height": 102
+        },
+        "after-dark-desktop.png": {
+          "width": 459,
+          "height": 102
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 34,
+          "y": 54,
+          "width": 14,
+          "height": 14
+        },
+        "light-desktop.png": {
+          "x": 35,
+          "y": 44,
+          "width": 14,
+          "height": 14
+        },
+        "dark-phone.png": {
+          "x": 34,
+          "y": 54,
+          "width": 14,
+          "height": 14
+        },
+        "dark-desktop.png": {
+          "x": 35,
+          "y": 44,
+          "width": 14,
+          "height": 14
         }
       }
     }
