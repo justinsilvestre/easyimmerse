@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t,t as n}from"./withAppStore-CN9Jgfe6.js";import{n as r,t as i}from"./DisplaySection-DgGACCNf.js";var a,o,s;function c(){return(c=e((()=>{n(),r(),a={title:`Screens/Settings/DisplaySection`,component:i,decorators:[t]},o={},s=[`Default`]})))()}c();export{o as Default,s as __namedExportsOrder,a as default};

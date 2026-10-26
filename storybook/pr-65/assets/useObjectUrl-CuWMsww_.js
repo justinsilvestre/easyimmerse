@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t}from"./iframe-BYvoSe9U.js";function n(e){let t=(0,r.useMemo)(()=>e===null?null:URL.createObjectURL(e),[e]);return(0,r.useEffect)(()=>{if(t!==null)return()=>URL.revokeObjectURL(t)},[t]),t}var r;function i(){return(i=e((()=>{r=t()})))()}export{n,i as t};
