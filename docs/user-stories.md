@@ -55,6 +55,11 @@ As a user:
   - [ ] the address bar shows a link to the screen I am on, such as a project, one of its media files, a library item, or a settings page
   - [ ] I can return to the previous screen with the browser's Back button, just as with the app's own Back button
   - [ ] I can return to a screen I went back from with the browser's Forward button
+- when I am using the app in a web browser, and I Ctrl-click, Cmd-click or middle-click a control that leads to another screen, such as a project in the list, a library item, a media file, an entry of the settings, or a Back button:
+  - [ ] the screen it leads to opens in a new browser tab
+  - [ ] the screen I clicked it on stays open in the current tab
+- when I am using the app in a web browser, and I right-click a control that leads to another screen:
+  - [ ] I can copy the link to the screen it leads to
 - when I reload the page, or open a link to a screen of the app in a web browser:
   - [ ] the app opens on that screen
 - when I open a link to a screen I can't reach, such as a project that isn't on this device, or the library management screen while I am not a library manager:
