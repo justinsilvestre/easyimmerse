@@ -60,6 +60,10 @@ tauri-plugin-single-instance = { workspace = true }
 tauri-plugin-wdio = { workspace = true, optional = true }
 tauri-plugin-wdio-webdriver = { workspace = true, optional = true }
 
+# Only pins the version that tauri-plugin-deep-link compiles against on Linux; the app does not use it directly.
+[target.'cfg(target_os = "linux")'.dependencies]
+rust-ini = { workspace = true }
+
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { workspace = true }
 
