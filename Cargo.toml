@@ -69,6 +69,8 @@ tauri-build = "2.7"
 tauri-plugin = "2.7"
 tauri-plugin-barcode-scanner = "2.5"
 tauri-plugin-deep-link = "2.6"
+# tauri-plugin-deep-link 2.6.2 fills rust-ini's `ParseOption` by its fields, and rust-ini 0.21.2 added two, so Linux builds need 0.21.1.
+rust-ini = "=0.21.1"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-notification = "2.5"
 tauri-plugin-opener = "2.7"
