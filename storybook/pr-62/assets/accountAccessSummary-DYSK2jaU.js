@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){if(e.role===`administrator`)return`Server admin`;let t=[...e.manages_library?[`Library admin`]:[],...e.role===`privileged`?[`Full access`]:[]];return t.length===0?`Learner`:t.join(` · `)}function n(){return(n=e((()=>{})))()}export{n,t};
