@@ -70,6 +70,12 @@ As a user:
 - when I submit the new project form:
   - [x] I am taken to the new project's screen
 
+As a library manager:
+- when I am on the home screen:
+  - [x] I see a "Library" section above my projects
+  - [x] I can open the server's library with the "Browse the library" button in the "Library" section
+  - [x] I can open the library management screen with the "Manage library" button in the "Library" section
+
 ---
 
 ### Project settings
@@ -170,15 +176,17 @@ As a user:
   - [x] I can toggle fullscreen mode with the F key or by double-clicking on the video
   - [ ] the footer shows a button for toggling the visibility of the subtitles panel
   - [ ] the footer shows a button for toggling the visibility of the waveform visualization
-- when I open a media file for the first time, and the audio tracks correspond neatly to both or either of the project's target or translation languages:
+- when I open a *library* media file file:
+  - [x] the tracks and subtitles are set for me (by the library admin), and uneditable
+- when I open a *self-added* media file for the first time, and the audio tracks correspond neatly to both or either of the project's target or translation languages:
   - [x] the tracks are automatically opened as the target- and/or translation-language tracks
-- when I open a media file for the first time, and the audio tracks do NOT correspond neatly to both or either of the project's target or translation languages:
+- when I open a *self-added* media file for the first time, and the audio tracks do NOT correspond neatly to both or either of the project's target or translation languages:
   - [ ] I am prompted to select a track for each target- and translation-language slot
--  *on desktop*, when I open a media file for the first time, and subtitles files in the same folder sharing the files name are present:
+-  *on desktop*, when I open a *self-added* media file for the first time, and subtitles files in the same folder sharing the files name are present:
   - [x] the subtitles files are added, so as to be immediately available in the subtitles track selection dropdowns
-- when I open a media file for the first time, and the immediately available subtitles tracks correspond neatly to both or either of the project's target or translation languages:
+- when I open a *self-added* media file for the first time, and the immediately available subtitles tracks correspond neatly to both or either of the project's target or translation languages:
   - [x] the tracks are automatically opened as the target- and/or translation-language tracks
-- when I open a media file for the first time, and the immediately available tracks do NOT correspond neatly to both or either of the project's target or translation languages:
+- when I open a *self-added* media file for the first time, and the immediately available tracks do NOT correspond neatly to both or either of the project's target or translation languages:
   - [ ] I am prompted to select a track for each target- and translation-language slot, with the first lines of each track shown so I can tell them apart
 - when a subtitles track is added:
   - [ ] its language is detected from any metadata, and on external files, tags in the filename such as `.ja.srt` or `.jpn.srt` 
@@ -194,6 +202,8 @@ As a user:
 - when multiple audio tracks are present:
   - [x] I can switch between different audio tracks
 - when subtitles are present at the current time:
+  - [ ] the subtitles are overlaid on the video, according to my settings
+  - [ ] the corresponding cue card in the subtitles panel is highlighted
 - when the video has been paused, or when I've just moved the pointer over the video area, NOT including the subtitles band:
   - [x] the player controls and the header appear over the video (to hide again after a few seconds of no pointer movement)
 - when the video has been paused, or when I've just moved the pointer over the video area, including the subtitles band:
@@ -265,7 +275,9 @@ As a user:
   - [x] I see an audio player
   - [ ] I see a visualization of the album art, if present in the audio file
   - [x] I can control the audio in the same ways as a video
-- when I open an audio file for the first time:
+- when I open a *library* audio file:
+  - [ ] the tracks and subtitles are set for me (by the library admin), and uneditable
+- when I open a *self-added* audio file for the first time:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles/timing-enhanced transcript resources, a lone track in the language of the project is automatically selected as the target language subtitles/timing-enhanced transcript, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles/timing-enhanced transcript resources, a lone track in my language is automatically selected as the translation subtitles/timing-enhanced transcript, or else I am prompted to select a track
@@ -362,7 +374,7 @@ As a user:
   - [x] I can switch between the single-language views and two bilingual views:
       - interlinear view
       - parallel view
-- when I have opened an ebook, and I also have a translation of it as a separate ebook or text file:
+- when I have opened a *self-added* ebook, and I also have a translation of it as a separate ebook or text file:
   - [ ] I can choose to combine the two into a bilingual ebook
 - when I choose to combine the two ebooks into a bilingual ebook:
   - [ ] I am prompted to choose an alignment provider: the easyImmerse cloud or an installed plugin
@@ -391,6 +403,11 @@ As a user:
   - [x] the dictionary pop-up opens at the word with its sentence/segment translation shown
 - when I press the lookup button, or L while no word is under the mouse pointer or has keyboard focus (and no text field has focus):
   - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
+
+As a library admin:
+- when I click a word, or select any text of a subtitle line or a paragraph, of an item in the player or the reader:
+  - [x] the dictionary pop-up looks the text up in my own dictionaries
+  - [x] the pop-up's "For learners" section shows the entry learners see for that text, as their pop-up shows it
 
 ---
 
@@ -455,6 +472,13 @@ As a user:
   - [x] the dictionary pop-up is closed
 - when I close the dictionary pop-up:
   - [x] any audio/video playback paused or looped due to the pop-up's opening is resumed/played as normal
+
+As a library admin:
+- when I choose one of my dictionaries' entries in the pop-up with its "Use this entry for learners" button:
+  - [x] the text I clicked or selected gets that entry for learners, in place of any word it overlaps
+- when the text I clicked or selected already has an entry for learners:
+  - [x] I can remove the word with the "Remove the word" button
+  - [x] I can give its entry to every word written the same in the item with the "Use for every word" button
 
 ---
 
@@ -729,7 +753,7 @@ As a user:
   - [x] the cards due for review come first, then the cards I am learning, then up to twenty new cards for the day, in the order I made them
 - when a card is shown:
   - [x] I see its front, laid out as my project's flashcard settings say
-  - [x] I can open a "More" menu that shows how many cards are left in the session (new, learning and due), with buttons to edit the card's flashcard, bury the card, suspend it, turn "Show intervals on answer buttons" on or off, and delete the flashcard
+  - [x] I can open a "More" menu with buttons to edit the card's flashcard (expect for premade library flashcards), bury the card, suspend it, delete the flashcard, turn "Show intervals on answer buttons" on or off (off by default), and turn "Show review progress" on or off (off by default).
   - [ ] its audio plays by itself when the audio is on the front
   - [x] I can replay the audio with its button, or with R
   - [x] I can show the answer with the button, Space or Enter
@@ -738,9 +762,11 @@ As a user:
   - [ ] its audio plays by itself when the audio is on the back
   - [x] I can rate the card Forgot or Remembered, with the buttons or with 1 and 2; Space rates it Remembered
   - [x] the next card appears as soon as I rate
-- when I turn on "Show intervals on answer buttons" in the More menu, which is off at first:
+- when "Show intervals on answer buttons" from the "More" menu is on:
   - [x] each rating button shows the corresponding review interval
   - [x] the setting stays on for later sessions on this device, until I turn it off
+- when "Show review progress" from the "More" menu is on:
+  - [ ] I can see how many cards are left in the session (new, learning and due) at the bottom of the screen.
 - when I rate a card Forgot:
   - [x] it comes back ten minutes later, or sooner once nothing else is left in the session
 - when I rate a new card Remembered:
@@ -809,9 +835,13 @@ As a user:
 ### easyImmerse library
 
 As a user:
+- when a project is open:
+  - [x] I can open the easyImmerse library with the "From the library" button beside "Add media"
 - when I open the easyImmerse library:
-  - [ ] I see videos, audiobooks, and ebooks, which I can filter by language
-  - [ ] I can see an item's description, length, and difficulty before opening it
+  - [ ] I see which language the library is for under its heading, such as "For learners of German."
+  - [ ] I see videos, audiobooks, and ebooks, which I can filter by tag
+  - [ ] I can see an item's cover picture, description, length, and difficulty before opening it
+  - [x] each item's difficulty is shown as a CEFR level with the plain name it commonly goes by, such as "A1 · Beginner"
 - when I choose a library item:
   - [ ] the item is added to the current project, or a new project is created for the item's language + difficulty
   - [ ] the item opens with its subtitles already set up
@@ -819,8 +849,71 @@ As a user:
   - [ ] library items I have opened before are still available
 - when I create flashcards from a library item:
   - [ ] the flashcards are saved in my project, and I can export them to Anki or review them in the easyImmerse SRS
-  - [ ] I cannot edit the flashcard
+  - [x] I cannot edit the flashcard
   - [ ] the audio is not included in the flashcard
+- while a library media file is open, when I open the "Flashcard actions" menu in a subtitles panel cue card:
+  - [x] I can suspend the flashcard I made from that subtitle with "Suspend"
+  - [x] I can delete the flashcard I made from that subtitle with "Delete flashcard", after confirming in a dialog
+- while a library media file is open, when I open the "Flashcard actions" menu in a subtitles panel cue card, and the flashcard I made from that subtitle is suspended:
+  - [x] I can bring the flashcard back into the review with "Unsuspend"
+- when the review shows a flashcard I made from a library item:
+  - [x] I can suspend it with "Suspend" in the "More" menu
+  - [x] I can delete it with "Delete flashcard" in the "More" menu, after confirming in a dialog
+- when adding a library item to one of my projects fails:
+  - [x] I'm told that the item wasn't added, and to which project
+  - [x] I'm told why it wasn't added, when the server gives a reason
+  - [x] I'm told what I can do next
+
+As a library admin:
+- when I open the "Manage library" screen:
+  - [x] I can choose the translation language of the next item I add under "Translation language"
+  - [x] I can add a video, an audio file, or a text to the library with the "Add media" button
+- when I open the "Manage library" screen while the library has no content:
+  - [x] I can choose the language of the media I add with the "Language" select, which becomes the language of the whole library once I add it
+- when I open the "Manage library" screen while the library has content:
+  - [x] I see which language the library is for under the heading, such as "For learners of German."
+- when I drag and drop a video, an audio file, or a text onto the "Manage library" screen:
+  - [ ] it is added to the library as the "Add media" button would add it
+- when I add a video, an audio file, or a text to the library:
+  - [x] it is added as a draft, with a title derived from its file
+  - [x] it opens in the player or the reader, where I prepare it for learners
+- when I prepare a video or audio item in the player:
+  - [x] I can open its title, description, and other details with the "Item details" button
+
+- when I edit a library item:
+  - [x] I can set its difficulty to a CEFR level from A1 to C2 with the "Difficulty" select, whose hint says what the levels are
+  - [x] the "Tags" field tells me that learners can pick tags in the library to see only the items that have them
+  - [x] I can see under "Cover picture" where its cover comes from
+  - [x] I can upload a JPEG, PNG, GIF or WebP picture as its cover under "Cover picture"
+- when I edit a video item whose file is uploaded:
+  - [x] I can make a frame of the video its cover by pausing the preview under "Cover picture" at that frame and choosing "Use the frame at …"
+- when I upload an EPUB file for a text item whose cover I have not uploaded:
+  - [x] the book's own cover becomes the item's cover
+- when I edit a video item whose cover I uploaded or chose:
+  - [x] I can make the first subtitle's screenshot its cover again with the "Use the first subtitle's screenshot" button
+- when I edit an item made from an EPUB file whose cover I uploaded:
+  - [x] I can make the book's own cover its cover again with the "Use the book's own cover" button
+- when I edit an audio item or a plain text item whose cover I uploaded:
+  - [x] I can remove its cover with the "Remove the picture" button
+- when I upload a new file for an item whose cover I uploaded:
+  - [x] the uploaded cover stays
+- when I open an item from its details page with the "Open in the player" or "Open in the reader" button:
+  - [x] the item opens in the player or the reader that learners use, in my "Library" project
+  - [x] a bar above the video or the text tells me how to give text an entry for learners
+  - [x] the bar's "Item details" button takes me back to the item's details page, as does the way back
+  - [x] the words that already have an entry for learners are underlined
+- when I change the file, subtitles, audio track or words of a published item:
+  - [x] learners see the change at once
+- when I edit a published item:
+  - [x] the "Translation language" select can't be changed, and tells me it is because learners added the item to their projects with that translation language
+- while the server prepares an item for learners:
+  - [x] I'm told to wait until it is done before I change its file, subtitles or words
+- on an item's details page:
+  - [x] I can change its title, description, tags, difficulty and cover apart from the player and the reader
+  - [x] I see how many words learners can click, and in how many of its subtitles or paragraphs
+  - [x] I can replace its file with the "Replace the file" button, which opens the file picker as "Add media" does
+- when a change to an item fails:
+  - [x] I'm told what wasn't saved, why when the server gives a reason, and what to do next
 
 ---
 
@@ -966,7 +1059,8 @@ As a user:
 
 As a user:
 - when I open the account settings screen while logged in:
-  - [x] I see my email address and my role
+  - [x] I see my email address
+  - [x] I see under "Access" what my account may do on its server, such as "Learner" or "Library admin · Full access"
   - [x] I can log out with the "Log out" button
   - [x] I see the devices I am logged in on, and can log out any of them
 - when I open the account settings screen while logged in to a server besides the easyImmerse cloud:
@@ -977,20 +1071,44 @@ As a user:
   - [ ] I can choose the amount I pay on a sliding scale
   - [ ] I can manage or cancel my subscription from the account settings screen
 
-As a privileged user (a subscriber or a self-hosted server account holder):
+As a learner with full access (a subscriber, or an account holder on a self-hosted server):
 - when I open the account settings screen after some of my changes conflicted with changes made on another device:
   - [x] I see the conflicting changes listed by project, and within a project by media file
 - when there are more conflicting changes than the account settings screen lists at first:
   - [x] I can list all of them with the "Show all" button
 
-As an administrator of a server with accounts:
+As a server admin of a server with accounts:
 - when I open the account settings screen:
-  - [x] I see the server's accounts with their roles
-  - [x] I can create an account by giving an email address, a password and a role
-  - [x] I can change an account's role
-  - [x] I can delete an account after confirming, which logs out anyone using it
-- when I try to demote or delete the server's only administrator:
-  - [x] I am told that this is the only administrator account and that another account must become an administrator first, and nothing changes
+  - [x] I can open the Users page of that server with the "Manage users" button
+
+As a desktop app user, when my local server has accounts:
+- when I open the account settings screen:
+  - [x] I can open the Users page of that server with the "Manage users" button
+
+---
+
+### Users page
+
+As a server admin of a server with accounts:
+- when I open the Users page:
+  - [x] I am told which server's accounts it lists
+  - [x] I see each account on one row, with its email address
+  - [x] I see on each account's row what it may do: "Server admin", "Learner", or whichever of "Library admin" and "Full access" it has, such as "Library admin · Full access"
+  - [x] I can create an account under "New account" by giving an email address, a password, and its access: "Learner", "Full access" or "Server admin"
+  - [x] I can list only the accounts whose email address contains what I type in "Search by email"
+- when I search the accounts on the Users page:
+  - [x] I am told how many of all the accounts are shown, or that no email address contains what I typed
+- when I open an account's menu on the Users page:
+  - [x] I can make the account a server admin by checking "Server admin", or stop it being one by unchecking it
+  - [x] I can make the account a library admin, who can add to and edit the library, by checking "Library admin", or stop it being one by unchecking it
+  - [x] I can give the account full access, which lets it sync dictionaries and use services like translation, by checking "Full access", or take it away by unchecking it
+  - [x] I can delete the account with "Delete" after confirming, which logs out anyone using it
+- when I open the menu of a server admin's account on the Users page:
+  - [x] I see "Library admin" and "Full access" checked, and I cannot uncheck them, because a server admin always has both
+- when I uncheck "Server admin" in an account's menu on the Users page:
+  - [x] the account stays a library admin with full access
+- when I try to uncheck "Server admin" for the server's only server admin, or to delete that account:
+  - [x] I am told that this is the server's only server admin and that another account must become a server admin first, and nothing changes
 
 ---
 
@@ -1017,7 +1135,7 @@ As a user:
 - when I have synchronized a project over the local network with the desktop app since I last changed it, even without being logged in (in the web app or the mobile app), as the desktop app then keeps a copy of it:
   - [ ] the project counts as backed up, and the Sync button shows it
 
-As a privileged user (a subscriber or a self-hosted server account holder):
+As a learner with full access (a subscriber, or an account holder on a self-hosted server):
 - while I am logged in on a device:
   - [x] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
   - [x] changes I make on one device appear on my other devices
@@ -1129,11 +1247,11 @@ As a desktop app user:
 - when I am running an unauthenticated local server:
   - [x] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
-  - [x] the Server page of Settings describes the roles I can give user accounts, and links to the account settings screen
-  - [x] on the account settings screen, I can create and manage user accounts, and assign them different roles:
-    - library user: can access my library, sync projects, and sync their flashcards
-    - privileged user: can also sync projects, flashcards, and dictionaries, and access services like translation
-    - administrator: can also manage the server, user accounts, my library, dictionaries available to users, and services like translation available to users
+  - [x] the Server page of Settings describes what each kind of access lets an account do, and links to the Users page, where I create and manage the accounts of this computer's server
+  - [x] every account is a learner, who can use my library and sync their projects and flashcards
+  - [x] I can give an account full access, which also lets it sync dictionaries and use services like translation
+  - [x] I can make an account a library admin, which also lets it add to and edit my library
+  - [x] I can make an account a server admin, which gives it full access, makes it a library admin, and also lets it manage the server, its accounts, the dictionaries available to users, and services like translation
 
 As a standalone server user:
 - when I install the server without the desktop app:
@@ -1145,13 +1263,13 @@ As a standalone server user:
   - [x] people can log in to it with an email address and password
   - [x] it still accepts a launch token if I give one with `--token`, so the app that started it keeps working
 - when I start the server with `--accounts --open-signup`:
-  - [x] anyone who can reach the server can sign up for an account, and is a library user
+  - [x] anyone who can reach the server can sign up for an account, and is a learner
 - when I start the server with `--accounts` but not `--open-signup`:
-  - [x] nobody can sign up, and only an administrator can add accounts
+  - [x] nobody can sign up, and only a server admin can add accounts
 - when I start the server with neither `--accounts` nor `--token`:
   - [x] it makes a random launch token and prints it to standard error
 - when I run `easyimmerse-server users create` with an email address and a role:
-  - [x] an account is created in the server's database, with the password I give on standard input or in `EASYIMMERSE_PASSWORD`, so that I can create the first administrator without the server running
+  - [x] an account is created in the server's database, with the password I give on standard input or in `EASYIMMERSE_PASSWORD`, so that I can create the first server admin without the server running
 - when I run `easyimmerse-server users list`, `users set-role` or `users delete`:
   - [x] I see the accounts with their roles, change an account's role, or delete an account together with its sessions
 - when I run `easyimmerse-server users set-password` with an email address:
@@ -1266,7 +1384,7 @@ As a user:
 - when I use the keyboard shortcut (e.g. Cmd + ,):
   - [ ] the settings screen opens
 
-As a privileged user (a subscriber or a self-hosted server account holder):
+As a learner with full access (a subscriber, or an account holder on a self-hosted server):
 - when I am on the settings screen:
   - [x] I see how much of my storage quota is used, and can delete files from the cloud
 
