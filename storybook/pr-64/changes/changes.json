@@ -36,87 +36,14 @@
   "storyCount": 685,
   "changes": [
     {
-      "id": "screens-library-edit-librarycoverpicker--video-with-its-first-line",
-      "title": "Screens/Library Edit/LibraryCoverPicker",
-      "name": "Video With Its First Line",
-      "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
-      "kind": "changed",
-      "changedVariants": {
-        "light-phone.png": 84,
-        "light-desktop.png": 77,
-        "dark-phone.png": 39,
-        "dark-desktop.png": 39
-      },
-      "imageSizes": {
-        "before-light-phone.png": {
-          "width": 390,
-          "height": 664
-        },
-        "after-light-phone.png": {
-          "width": 390,
-          "height": 664
-        },
-        "before-light-desktop.png": {
-          "width": 426,
-          "height": 638
-        },
-        "after-light-desktop.png": {
-          "width": 426,
-          "height": 638
-        },
-        "before-dark-phone.png": {
-          "width": 390,
-          "height": 664
-        },
-        "after-dark-phone.png": {
-          "width": 390,
-          "height": 664
-        },
-        "before-dark-desktop.png": {
-          "width": 426,
-          "height": 638
-        },
-        "after-dark-desktop.png": {
-          "width": 426,
-          "height": 638
-        }
-      },
-      "changedAreas": {
-        "light-phone.png": {
-          "x": 217,
-          "y": 474,
-          "width": 13,
-          "height": 45
-        },
-        "light-desktop.png": {
-          "x": 235,
-          "y": 438,
-          "width": 13,
-          "height": 45
-        },
-        "dark-phone.png": {
-          "x": 218,
-          "y": 475,
-          "width": 12,
-          "height": 43
-        },
-        "dark-desktop.png": {
-          "x": 236,
-          "y": 439,
-          "width": 12,
-          "height": 43
-        }
-      }
-    },
-    {
       "id": "screens-library-edit-librarycoverpicker--video-not-published-yet",
       "title": "Screens/Library Edit/LibraryCoverPicker",
       "name": "Video Not Published Yet",
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 54,
-        "dark-desktop.png": 39
+        "light-phone.png": 159,
+        "dark-desktop.png": 41
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -154,16 +81,16 @@
       },
       "changedAreas": {
         "light-phone.png": {
-          "x": 216,
-          "y": 301,
-          "width": 14,
-          "height": 34
+          "x": 204,
+          "y": 304,
+          "width": 26,
+          "height": 60
         },
         "dark-desktop.png": {
-          "x": 255,
-          "y": 258,
-          "width": 12,
-          "height": 43
+          "x": 254,
+          "y": 260,
+          "width": 13,
+          "height": 51
         }
       }
     },
@@ -174,8 +101,10 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-phone.png": 149,
-        "light-desktop.png": 77
+        "light-phone.png": 93,
+        "light-desktop.png": 77,
+        "dark-phone.png": 80,
+        "dark-desktop.png": 39
       },
       "imageSizes": {
         "before-light-phone.png": {
@@ -214,15 +143,27 @@
       "changedAreas": {
         "light-phone.png": {
           "x": 215,
-          "y": 475,
+          "y": 477,
           "width": 15,
-          "height": 55
+          "height": 53
         },
         "light-desktop.png": {
           "x": 235,
           "y": 439,
           "width": 13,
           "height": 45
+        },
+        "dark-phone.png": {
+          "x": 216,
+          "y": 476,
+          "width": 14,
+          "height": 53
+        },
+        "dark-desktop.png": {
+          "x": 236,
+          "y": 440,
+          "width": 12,
+          "height": 43
         }
       }
     },
@@ -233,8 +174,8 @@
       "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
       "kind": "changed",
       "changedVariants": {
-        "light-desktop.png": 144,
-        "dark-phone.png": 39,
+        "light-desktop.png": 77,
+        "dark-phone.png": 46,
         "dark-desktop.png": 39
       },
       "imageSizes": {
@@ -273,22 +214,58 @@
       },
       "changedAreas": {
         "light-desktop.png": {
-          "x": 233,
+          "x": 235,
           "y": 439,
-          "width": 15,
-          "height": 55
+          "width": 13,
+          "height": 45
         },
         "dark-phone.png": {
-          "x": 218,
-          "y": 476,
-          "width": 12,
-          "height": 43
+          "x": 216,
+          "y": 478,
+          "width": 14,
+          "height": 51
         },
         "dark-desktop.png": {
           "x": 236,
           "y": 440,
           "width": 12,
           "height": 43
+        }
+      }
+    },
+    {
+      "id": "screens-library-edit-librarycoverpicker--changing",
+      "title": "Screens/Library Edit/LibraryCoverPicker",
+      "name": "Changing",
+      "importPath": "./src/screens/libraryEdit/LibraryCoverPicker.stories.tsx",
+      "kind": "changed",
+      "changedVariants": {
+        "light-phone.png": 149
+      },
+      "imageSizes": {
+        "before-light-phone.png": {
+          "width": 390,
+          "height": 696
+        },
+        "after-light-phone.png": {
+          "width": 390,
+          "height": 696
+        },
+        "before-dark-phone.png": {
+          "width": 390,
+          "height": 696
+        },
+        "after-dark-phone.png": {
+          "width": 390,
+          "height": 696
+        }
+      },
+      "changedAreas": {
+        "light-phone.png": {
+          "x": 215,
+          "y": 474,
+          "width": 15,
+          "height": 55
         }
       }
     }
