@@ -115,6 +115,13 @@ export interface Effects {
    * Returns a function that stops the calls.
    */
   subscribeToLocation(listener: (path: string) => void): () => void;
+  /**
+   * Calls the listener with each link from outside the app that the operating system opens the app with, such as an `easyimmerse://` link:
+   * the one that started the app, and each one opened while it runs. Each link reaches the listener once.
+   * A platform that no link opens never calls it.
+   * Returns a function that stops the calls.
+   */
+  subscribeToOpenedLinks(listener: (link: string) => void): () => void;
   /** Shows the document in the given theme and at the given text scale. */
   applyAppearance(appearance: Appearance): void;
   /**

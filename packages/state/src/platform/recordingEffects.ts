@@ -129,6 +129,11 @@ export type RecordingEffects = Effects & {
    * A listener subscribed later hears the address at once. Until an address is shown, a subscription hears nothing, as on a platform without an address bar.
    */
   showAddress(path: string): void;
+  /**
+   * Acts as the operating system opening the app with a link, by calling every subscribed listener.
+   * A link opened while nothing listens waits for the first listener, as the link that starts an app does.
+   */
+  openLink(link: string): void;
   /** Makes every later copy fail, as a platform that refuses clipboard access does. */
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
@@ -242,6 +247,8 @@ export function createRecordingEffects(
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   const locationListeners = new Set<(path: string) => void>();
   let shownAddress: string | null = null;
+  const linkListeners = new Set<(link: string) => void>();
+  let waitingLink: string | null = null;
   let refusesCopies = false;
   let refusesConnections = false;
   return {
@@ -333,6 +340,12 @@ export function createRecordingEffects(
       locationListeners.add(listener);
       if (shownAddress !== null) listener(shownAddress);
       return () => locationListeners.delete(listener);
+    },
+    subscribeToOpenedLinks: (listener) => {
+      linkListeners.add(listener);
+      if (waitingLink !== null) listener(waitingLink);
+      waitingLink = null;
+      return () => linkListeners.delete(listener);
     },
     applyAppearance: (appearance) => {
       calls.push({ type: "applyAppearance", appearance });
@@ -443,6 +456,10 @@ export function createRecordingEffects(
     showAddress: (path) => {
       shownAddress = path;
       for (const listener of locationListeners) listener(path);
+    },
+    openLink: (link) => {
+      if (linkListeners.size === 0) waitingLink = link;
+      for (const listener of linkListeners) listener(link);
     },
     refuseCopies: () => {
       refusesCopies = true;

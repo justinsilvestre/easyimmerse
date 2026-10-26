@@ -117,4 +117,29 @@ describe("createRecordingEffects", () => {
     effects.requestSettings();
     expect(callCount).toBe(0);
   });
+
+  it("calls a link listener with each opened link", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    effects.openLink("easyimmerse://library");
+    expect(links).toEqual(["easyimmerse://library"]);
+  });
+
+  it("hands a link opened before anything listens to the first listener", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.openLink("easyimmerse://library");
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    expect(links).toEqual(["easyimmerse://library"]);
+  });
+
+  it("hands a link opened before anything listens to only one listener", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.openLink("easyimmerse://library");
+    effects.subscribeToOpenedLinks(() => undefined);
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    expect(links).toEqual([]);
+  });
 });

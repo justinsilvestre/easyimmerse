@@ -62,6 +62,7 @@ export function createWebEffects(options: {
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
+    subscribeToOpenedLinks: ignoreOpenedLinks,
     ...createHistoryLocation(window),
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
@@ -89,6 +90,11 @@ async function refuseCopy(): Promise<never> {
 
 /** A browser has no menu item for Settings, so nothing ever asks for it from outside the page. */
 function ignoreSettingsRequests(): () => void {
+  return () => undefined;
+}
+
+/** A page is never opened by an `easyimmerse://` link, which only the installed apps handle. */
+function ignoreOpenedLinks(): () => void {
   return () => undefined;
 }
 

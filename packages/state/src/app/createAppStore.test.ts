@@ -108,6 +108,45 @@ describe("createAppStore", () => {
     expect(store.getState().app.route).toEqual({ screen: "home" });
   });
 
+  it("opens on the screen of the link the platform started the app with", () => {
+    const effects = createRecordingEffects();
+    effects.openLink("easyimmerse://projects/p1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    expect(store.getState().app.route).toEqual({
+      screen: "project",
+      projectId: "p1",
+    });
+  });
+
+  it("moves to the screen of a link the platform opens while the app runs", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("easyimmerse://projects/p1?settings=general");
+    expect(store.getState().app.route).toEqual({
+      screen: "settings",
+      beneath: { screen: "project", projectId: "p1" },
+      pages: ["general"],
+    });
+  });
+
+  it("writes the screen a link opens into the browser's history as a new entry", () => {
+    const effects = createRecordingEffects();
+    createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("easyimmerse://projects/p1");
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      path: "/projects/p1",
+      write: "push",
+    });
+  });
+
+  it("ignores a link of another scheme", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("https://example.com/projects/p1");
+    expect(store.getState().app.route).toEqual({ screen: "home" });
+  });
+
   it("writes the address of each screen it moves to into the browser's history", () => {
     const effects = createRecordingEffects();
     const store = createAppStore(effects, createFakeServerStoreParts());
