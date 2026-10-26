@@ -122,7 +122,7 @@ describe("MediaPlayer", () => {
     it("points the video at the stream URL", async () => {
       renderPlayer(directPlaybackRoutes);
       expect((await findVideo()).getAttribute("src")).toBe(
-        "http://127.0.0.1:1/projects/p1/media/m1/stream?token=t0k3n",
+        "http://127.0.0.1:1/api/projects/p1/media/m1/stream?token=t0k3n",
       );
     });
 
@@ -247,7 +247,7 @@ describe("MediaPlayer", () => {
       });
       await waitFor(() =>
         expect(hls[0]?.sourceUrl).toBe(
-          "http://127.0.0.1:1/conversions/copy0001/index.m3u8",
+          "http://127.0.0.1:1/api/conversions/copy0001/index.m3u8",
         ),
       );
     });
@@ -311,7 +311,7 @@ describe("MediaPlayer", () => {
       fireEvent.click(screen.getByRole("button", { name: "Play" }));
       await waitFor(() =>
         expect(hls[0]?.sourceUrl).toBe(
-          "http://127.0.0.1:1/conversions/transcode01/index.m3u8",
+          "http://127.0.0.1:1/api/conversions/transcode01/index.m3u8",
         ),
       );
     });
@@ -501,7 +501,7 @@ describe("MediaPlayer", () => {
           browserFileRegistry: createBrowserFileRegistry<File>(),
         });
         expect((await findVideo()).getAttribute("src")).toBe(
-          "http://127.0.0.1:1/projects/p1/media/m1/stream?token=t0k3n",
+          "http://127.0.0.1:1/api/projects/p1/media/m1/stream?token=t0k3n",
         );
       });
 

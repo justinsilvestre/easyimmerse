@@ -16,7 +16,7 @@ describe("createServerPreferenceStore", () => {
     const fetchFn = fakeFetch(new Response(null, { status: 204 }));
     await createServerPreferenceStore(server, fetchFn).save("a b", "1");
     expect(fetchFn.mock.calls[0]?.[0]).toBe(
-      "http://127.0.0.1:8787/preferences/a%20b",
+      "http://127.0.0.1:8787/api/preferences/a%20b",
     );
   });
 

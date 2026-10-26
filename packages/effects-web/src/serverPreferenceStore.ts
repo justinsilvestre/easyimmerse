@@ -1,4 +1,4 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 import type { PreferenceStore } from "./preferenceStore.ts";
 
 /** Persists preferences through a server's `/preferences/{key}` routes, as the person the token belongs to. */
@@ -44,7 +44,7 @@ function oneAtATimePerKey(
 
 function buildUrl(server: ServerConfig, key: string): string {
   return new URL(
-    `/preferences/${encodeURIComponent(key)}`,
+    apiPathOf(`/preferences/${encodeURIComponent(key)}`),
     server.serverUrl,
   ).toString();
 }

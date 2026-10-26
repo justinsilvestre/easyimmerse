@@ -6,7 +6,7 @@ const server = { serverUrl: "http://127.0.0.1:8787", token: "secret" };
 describe("buildMediaStreamUrl", () => {
   it("addresses the stream route of the media file", () => {
     expect(buildMediaStreamUrl(server, "p1", "m1")).toBe(
-      "http://127.0.0.1:8787/projects/p1/media/m1/stream?token=secret",
+      "http://127.0.0.1:8787/api/projects/p1/media/m1/stream?token=secret",
     );
   });
 
