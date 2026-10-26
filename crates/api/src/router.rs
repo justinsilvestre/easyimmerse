@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
-use axum::extract::DefaultBodyLimit;
+use axum::extract::{DefaultBodyLimit, MatchedPath};
 use axum::middleware::{from_fn, from_fn_with_state};
+use axum::response::IntoResponse;
 use axum::routing::any;
 use axum::{Extension, Router};
 use tower_http::cors::{AllowHeaders, CorsLayer};
@@ -13,6 +14,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::auth::bearer_token::require_bearer_token;
+use crate::auth::error_body::not_found;
 use crate::auth::host_check::check_host;
 use crate::auth::owned_path::require_owned_path;
 use crate::routes::{
@@ -32,19 +34,44 @@ use crate::sync::proxy::forward_to_remote;
 use crate::unread_body::drain_unread_body;
 use crate::web_app::web_app_router;
 
+/// The path under which every API route lives, so that every other path is free for the web app's own pages.
+pub const API_PATH_PREFIX: &str = "/api";
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024 * 1024;
 /// The routes that need no token take only small JSON bodies.
 const MAX_PUBLIC_REQUEST_BODY_BYTES: usize = 16 * 1024;
 
+/// The path of a matched API route as the OpenAPI document names it, without [`API_PATH_PREFIX`].
+pub fn route_path_of(matched: &MatchedPath) -> &str {
+    let path = matched.as_str();
+    path.strip_prefix(API_PATH_PREFIX).unwrap_or(path)
+}
+
 /// Builds the complete application router together with its OpenAPI document.
 ///
-/// Every route checks the `Host` header. Every route except `/health`, `/auth/server`,
+/// Every API route lives under [`API_PATH_PREFIX`], and the document names that prefix as its server.
+/// Every route checks the `Host` header. Every API route except `/health`, `/auth/server`,
 /// `/auth/signup`, `/auth/login`, `/auth/confirm-email`, `/auth/password-reset`, `/auth/password`
 /// and `/pairing/claim` requires a bearer token.
-/// When the state names a web app directory, every other path serves its files, without a token.
+/// When the state names a web app directory, every path outside the prefix serves its files, without a token.
 pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let document = openapi_document();
+    let api = api_router(&state, &document).with_state(state.clone());
+    let mut router = Router::new().nest_service(API_PATH_PREFIX, api);
+    if let Some(dir) = &state.web_app_dir {
+        router = router.fallback_service(web_app_router(dir));
+    }
+    let router = router
+        .layer(cors_layer())
+        .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
+        .layer(from_fn(drain_unread_body))
+        .layer(TraceLayer::new_for_http().make_span_with(request_span));
+    (router, document)
+}
+
+/// The API's routes at the paths the document names, without the prefix.
+/// An unknown path answers with the API's own 404 error, never with the web app.
+fn api_router(state: &AppState, document: &OpenApi) -> Router<AppState> {
     let (protected, _) = protected_routes().split_for_parts();
     // The proxy reuses the documented account routes of the remote, so it stays out of the document.
     let protected = protected
@@ -55,19 +82,10 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
         .layer(from_fn_with_state(state.clone(), require_bearer_token));
     let (public, _) = public_routes().split_for_parts();
     let public = public.layer(DefaultBodyLimit::max(MAX_PUBLIC_REQUEST_BODY_BYTES));
-    let mut router = protected.merge(public);
-    // The web app's files need no token, so their fallback comes after the token layer.
-    if let Some(dir) = &state.web_app_dir {
-        router = router.fallback_service(web_app_router(dir));
-    }
-    let router = router
+    protected
+        .merge(public)
+        .fallback(|| async { not_found("the API has no such route").into_response() })
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
-        .layer(cors_layer())
-        .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
-        .layer(from_fn(drain_unread_body))
-        .layer(TraceLayer::new_for_http().make_span_with(request_span))
-        .with_state(state);
-    (router, document)
 }
 
 /// Records the method and the path of a request, but not its query,
@@ -277,6 +295,7 @@ fn public_routes() -> OpenApiRouter<AppState> {
 #[derive(utoipa::OpenApi)]
 #[openapi(
     info(title = "easyImmerse API", description = "The REST API of easyImmerse."),
+    servers((url = "/api", description = "The API, under the origin of the server")),
     modifiers(&BearerTokenScheme),
 )]
 struct ApiDoc;
@@ -300,6 +319,15 @@ mod tests {
     #[test]
     fn documents_the_health_route() {
         assert!(openapi_document().paths.paths.contains_key("/health"));
+    }
+
+    #[test]
+    fn names_the_api_path_prefix_as_the_server() {
+        let servers = openapi_document().servers.unwrap_or_default();
+        assert_eq!(
+            servers.first().map(|server| server.url.as_str()),
+            Some(API_PATH_PREFIX)
+        );
     }
 
     #[test]

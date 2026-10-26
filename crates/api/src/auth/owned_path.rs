@@ -6,6 +6,7 @@ use easyimmerse_storage::OwnedPath;
 
 use crate::auth::error_body::unauthorized;
 use crate::auth::principal::Principal;
+use crate::router::route_path_of;
 use crate::state::AppState;
 
 /// Answers 404, as for a missing row, when an id in the matched path names a row of another owner than the principal's.
@@ -27,7 +28,7 @@ pub async fn require_owned_path(
     let (Some(matched), Ok(params)) = (matched, params) else {
         return next.run(request).await;
     };
-    let path = owned_path_of(matched.as_str(), params.iter());
+    let path = owned_path_of(route_path_of(&matched), params.iter());
     if path == OwnedPath::default() {
         return next.run(request).await;
     }

@@ -9,6 +9,12 @@
     },
     "version": "0.1.0"
   },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "The API, under the origin of the server"
+    }
+  ],
   "paths": {
     "/auth/confirm-email": {
       "post": {
@@ -14891,7 +14897,7 @@
               "string",
               "null"
             ],
-            "description": "The path of the HLS playlist, present only when the method converts."
+            "description": "The path of the HLS playlist under the API path prefix, present only when the method converts."
           }
         }
       },

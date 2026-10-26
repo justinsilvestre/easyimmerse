@@ -3,6 +3,6 @@ import type { PlaybackMethod } from "./PlaybackMethod";
 
 export type PlaybackMethodResponse = { method: PlaybackMethod, 
 /**
- * The path of the HLS playlist, present only when the method converts.
+ * The path of the HLS playlist under the API path prefix, present only when the method converts.
  */
 playlist_path: string | null, };

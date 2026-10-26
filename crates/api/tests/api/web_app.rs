@@ -1,4 +1,4 @@
-//! The server serves the built web app from a directory at every path the API does not use.
+//! The server serves the built web app from a directory at every path outside the API's prefix.
 
 use std::path::Path;
 
@@ -37,7 +37,11 @@ fn write_web_app(dir: &Path) {
 }
 
 async fn get_without_token(server: &TestServer, path: &str) -> crate::support::TestResponse {
-    server.request("GET", path).without_token().send().await
+    server
+        .web_app_request("GET", path)
+        .without_token()
+        .send()
+        .await
 }
 
 async fn get_page_without_token(
@@ -46,7 +50,7 @@ async fn get_page_without_token(
     accept: &str,
 ) -> crate::support::TestResponse {
     server
-        .request("GET", path)
+        .web_app_request("GET", path)
         .without_token()
         .header("Accept", accept)
         .send()
@@ -106,10 +110,35 @@ async fn answers_404_for_a_missing_file_with_an_extension() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn serves_index_html_to_a_browser_at_a_page_path_that_an_api_route_also_has() {
+    let fixture = serve_web_app().await;
+    let response = get_page_without_token(&fixture.server, "/projects", "text/html").await;
+    assert_eq!(response.text(), INDEX);
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn still_requires_a_token_for_an_api_path() {
     let fixture = serve_web_app().await;
-    let response = get_without_token(&fixture.server, "/projects").await;
+    let response = fixture
+        .server
+        .request("GET", "/projects")
+        .without_token()
+        .send()
+        .await;
     assert_eq!(response.status, 401);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn answers_404_to_a_browser_at_an_unknown_api_path() {
+    let fixture = serve_web_app().await;
+    let response = fixture
+        .server
+        .request("GET", "/some/page")
+        .without_token()
+        .header("Accept", "text/html")
+        .send()
+        .await;
+    assert_eq!(response.status, 404);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -117,7 +146,7 @@ async fn still_checks_the_host_of_a_request_for_a_file() {
     let fixture = serve_web_app().await;
     let response = fixture
         .server
-        .request("GET", "/")
+        .web_app_request("GET", "/")
         .without_token()
         .header("Host", "evil.test")
         .send()
@@ -129,7 +158,7 @@ async fn still_checks_the_host_of_a_request_for_a_file() {
 async fn serves_no_file_without_a_web_app_dir() {
     let server =
         spawn_test_server_with_options(false, seeded_storage(), ServeOptions::default()).await;
-    let response = server.get("/").await;
+    let response = server.web_app_request("GET", "/").send().await;
     assert_eq!(response.status, 404);
 }
 
@@ -141,6 +170,6 @@ async fn serves_no_file_when_the_web_app_dir_is_missing() {
         ..ServeOptions::default()
     };
     let server = spawn_test_server_with_options(false, seeded_storage(), options).await;
-    let response = server.get("/").await;
+    let response = server.web_app_request("GET", "/").send().await;
     assert_eq!(response.status, 404);
 }

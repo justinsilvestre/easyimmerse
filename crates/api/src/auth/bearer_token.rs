@@ -12,6 +12,7 @@ use crate::auth::error_body::{ApiFailure, unauthorized};
 use crate::auth::principal::Principal;
 use crate::config::ApiConfig;
 use crate::now_ms::now_ms;
+use crate::router::route_path_of;
 use crate::routes::dictionary_media::DICTIONARY_MEDIA_ROUTE_PATH;
 use crate::routes::library_cover::LIBRARY_COVER_ROUTE_PATH;
 use crate::routes::library_files::LIBRARY_FILE_ROUTE_PATH;
@@ -99,7 +100,8 @@ fn accepts_query_token(request: &Request) -> bool {
     request
         .extensions()
         .get::<MatchedPath>()
-        .is_some_and(|matched| {
+        .map(route_path_of)
+        .is_some_and(|route_path| {
             [
                 STREAM_ROUTE_PATH,
                 FRAME_ROUTE_PATH,
@@ -108,7 +110,7 @@ fn accepts_query_token(request: &Request) -> bool {
                 LIBRARY_FILE_ROUTE_PATH,
                 LIBRARY_COVER_ROUTE_PATH,
             ]
-            .contains(&matched.as_str())
+            .contains(&route_path)
         })
 }
 

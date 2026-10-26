@@ -7,7 +7,8 @@ use std::process::Command;
 
 use easyimmerse_api::mail::{OutgoingMail, RecordedMails};
 use easyimmerse_api::{
-    AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions, ServerHandle, serve,
+    API_PATH_PREFIX, AccountsConfig, ApiConfig, MailConfig, MailTransport, ServeOptions,
+    ServerHandle, serve,
 };
 use easyimmerse_core::project::ProjectId;
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
@@ -230,7 +231,13 @@ fn lists_srt_muxer(muxers: &str) -> bool {
 }
 
 impl TestServer {
+    /// A request to an API path, such as `/projects`, which the server serves under its API path prefix.
     pub fn request(&self, method: &'static str, path: &str) -> TestRequest {
+        self.web_app_request(method, &format!("{API_PATH_PREFIX}{path}"))
+    }
+
+    /// A request to a path outside the API, where the server serves the web app's files.
+    pub fn web_app_request(&self, method: &'static str, path: &str) -> TestRequest {
         TestRequest {
             method,
             url: format!("{}{path}", self.base_url),

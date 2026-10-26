@@ -71,13 +71,13 @@ jobs:
         run: |
           target/release/easyimmerse-server serve --token ci --seed-placeholders &
           for _ in $(seq 1 50); do
-            curl -fsS http://127.0.0.1:8787/health && break
+            curl -fsS http://127.0.0.1:8787/api/health && break
             sleep 0.2
           done
-          curl -fsS http://127.0.0.1:8787/health | grep -q '"status":"ok"'
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/projects)" = 401
-          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.test' http://127.0.0.1:8787/health)" = 421
-          projects="$(curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/projects)"
+          curl -fsS http://127.0.0.1:8787/api/health | grep -q '"status":"ok"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/projects)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.test' http://127.0.0.1:8787/api/health)" = 421
+          projects="$(curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/api/projects)"
           echo "$projects" | grep -q 'Spanish practice'
           echo "$projects" | grep -q 'Japanese drama'
           kill %1
