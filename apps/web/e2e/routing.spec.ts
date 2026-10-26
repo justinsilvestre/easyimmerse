@@ -76,3 +76,40 @@ test("a link to a project that does not exist opens the home screen", async ({
   await page.goto("/projects/no-such-project");
   await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
 });
+
+test.describe("after the app's own Back", () => {
+  // The history began at a blank page before the app's start, which Playwright keeps as an entry.
+  test("the browser's Back leaves the app's start, rather than returning to the screen it left", async ({
+    page,
+  }) => {
+    await openFirstProject(page);
+    await page.getByRole("button", { name: "Projects", exact: true }).click();
+    await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/);
+    await page.goBack();
+    await expect(page).toHaveURL("about:blank");
+  });
+
+  test("the browser's Forward returns to the settings page it closed", async ({
+    page,
+  }) => {
+    await openFirstProject(page);
+    await openSettings(page);
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await expect(settingsHeading(page)).toHaveCount(0);
+    await page.goForward();
+    await expect(settingsHeading(page)).toBeVisible();
+  });
+
+  test("the browser's Back leaves a screen opened from a link for where the history began", async ({
+    page,
+    context,
+  }) => {
+    await openFirstProject(page);
+    const linked = await context.newPage();
+    await linked.goto(page.url());
+    await linked.getByRole("button", { name: "Projects", exact: true }).click();
+    await expect(linked).toHaveURL(/^https?:\/\/[^/]+\/$/);
+    await linked.goBack();
+    await expect(linked).toHaveURL("about:blank");
+  });
+});
