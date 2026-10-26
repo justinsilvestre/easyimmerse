@@ -5,9 +5,10 @@ import { updated } from "../app/updated.ts";
 import { editedFlashcardRoute } from "../review/editedFlashcardRoute.ts";
 import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
-import { historyWriteOf } from "./historyWriteOf.ts";
+import { type HistoryWrite, historyWriteOf } from "./historyWriteOf.ts";
 import type { MainRoute, Route } from "./route.ts";
 import { initialRoute, mainScreenOf, navigate } from "./route.ts";
+import type { RouteEffect } from "./routeEffect.ts";
 import { pathOfRoute, routeOfPath } from "./routePath.ts";
 
 /** Returns where the app is after an action. */
@@ -79,20 +80,32 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
  * The route as a feature: where the app is, moved by navigation, by opening and closing media files, and by the addresses the platform shows.
  * Each move writes the browser's history as `historyWriteOf` decides.
  */
-export const routeFeature: Feature<Route, keyof RouteApp> = {
+export const routeFeature: Feature<Route, keyof RouteApp | "routeHistory"> = {
   initialState: initialRoute,
   update: (route, action, app) => {
     const next = routeAfter(app, action);
-    const write = historyWriteOf(route, next, action);
-    return write === null
-      ? updated(next)
-      : updated(next, {
-          type: "writeLocation",
-          path: pathOfRoute(next),
-          write,
-        });
+    const { previousPath } = app.routeHistory;
+    const write = historyWriteOf(route, next, action, previousPath);
+    return updated(next, ...historyEffectsOf(write, route, next, previousPath));
   },
 };
+
+/** Returns the effects that write the history as decided: a new entry after the route left, the current entry with its previous path kept, or a return to the previous entry. */
+function historyEffectsOf(
+  write: HistoryWrite | null,
+  before: Route,
+  after: Route,
+  previousPath: string | null,
+): RouteEffect[] {
+  if (write === null) return [];
+  if (write === "back") return [{ type: "returnToPreviousLocation" }];
+  const path = pathOfRoute(after);
+  const entry =
+    write === "push"
+      ? { path, previousPath: pathOfRoute(before) }
+      : { path, previousPath };
+  return [{ type: "writeLocation", entry, write }];
+}
 
 /** Changes the main screen, beneath Settings when they are open, and keeps the route itself when nothing changes. */
 function withMainRoute(

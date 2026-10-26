@@ -135,7 +135,7 @@ describe("createAppStore", () => {
     effects.openLink("easyimmerse://projects/p1");
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      path: "/projects/p1",
+      entry: { path: "/projects/p1", previousPath: "/" },
       write: "push",
     });
   });
@@ -153,8 +153,51 @@ describe("createAppStore", () => {
     store.dispatch(actions.navigated({ type: "openLibrary" }));
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      path: "/library",
+      entry: { path: "/library", previousPath: "/" },
       write: "push",
+    });
+  });
+
+  it("returns to the previous history entry when the app's own Back leads to it", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    expect(effects.calls).toContainEqual({ type: "returnToPreviousLocation" });
+  });
+
+  it("leaves the history to the browser's Back when the app's own Back returns to the previous entry", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    expect(
+      effects.calls.filter(({ type }) => type === "writeLocation"),
+    ).toHaveLength(1);
+  });
+
+  it("keeps its route when the browser arrives at the entry the app's own Back returned to", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    const route = store.getState().app.route;
+    effects.showAddress("/");
+    expect(store.getState().app.route).toBe(route);
+  });
+
+  it("replaces the entry of a screen opened at an address when the app's own Back leaves it", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/projects/p1/media/m1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.closeMedia());
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      entry: { path: "/projects/p1", previousPath: null },
+      write: "replace",
     });
   });
 

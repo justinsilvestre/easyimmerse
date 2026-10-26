@@ -13,7 +13,7 @@ import type { SignInAttempt, SignInOutcome } from "../account/signInAttempt.ts";
 import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
-import type { LocationWrite } from "../route/routeEffect.ts";
+import type { LocationEntry, LocationWrite } from "../route/routeEffect.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { Clock } from "../timers/clock.ts";
 
@@ -105,16 +105,18 @@ export interface Effects {
    */
   subscribeToSettingsRequests(listener: () => void): () => void;
   /**
-   * Shows the path and query in the address bar, as a new entry of the browser's history or in place of the current one.
-   * A platform without an address bar does nothing.
+   * Shows the entry's path and query in the address bar, as a new entry of the browser's history or in place of the current one,
+   * and keeps the entry's previous path with it, to be reported again when the history returns to it. A platform without an address bar does nothing.
    */
-  writeLocation(path: string, write: LocationWrite): void;
+  writeLocation(entry: LocationEntry, write: LocationWrite): void;
+  /** Returns to the previous entry of the browser's history, as the browser's Back does. A platform without an address bar does nothing. */
+  returnToPreviousLocation(): void;
   /**
-   * Calls the listener with the path and query the address bar shows, at once where the platform has one,
-   * and again whenever the browser's Back or Forward returns to another entry. A platform without an address bar never calls it.
-   * Returns a function that stops the calls.
+   * Calls the listener with the history entry the address bar shows, at once where the platform has one,
+   * and again whenever the browser's Back or Forward returns to another entry. An entry the app did not write has no previous path.
+   * A platform without an address bar never calls it. Returns a function that stops the calls.
    */
-  subscribeToLocation(listener: (path: string) => void): () => void;
+  subscribeToLocation(listener: (entry: LocationEntry) => void): () => void;
   /**
    * Calls the listener with each link from outside the app that the operating system opens the app with, such as an `easyimmerse://` link:
    * the one that started the app, and each one opened while it runs. Each link reaches the listener once.

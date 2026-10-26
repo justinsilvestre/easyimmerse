@@ -55,7 +55,7 @@ describe("watchUnreachableRoute", () => {
     const { effects } = storeOpenedAt("/projects/p1/review", cache);
     expect(effects.calls).toContainEqual({
       type: "writeLocation",
-      path: "/",
+      entry: { path: "/", previousPath: null },
       write: "replace",
     });
   });

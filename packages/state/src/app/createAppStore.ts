@@ -87,8 +87,8 @@ export function createAppStore(
   );
   watchBackupFaults(store);
   watchUnreachableRoute(store);
-  effects.subscribeToLocation((path) =>
-    store.dispatch(actions.locationOpened(path)),
+  effects.subscribeToLocation(({ path, previousPath }) =>
+    store.dispatch(actions.locationOpened(path, previousPath)),
   );
   effects.subscribeToOpenedLinks((link) => {
     const path = pathOfAppLink(link);

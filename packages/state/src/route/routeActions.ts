@@ -12,10 +12,12 @@ export const routeActions = {
   /** Leaves the open media file for its project's overview. */
   closeMedia: () => ({ type: "closeMedia" }) as const,
   /**
-   * The platform shows an address, path and query: the one the app opened at, or one the browser's Back or Forward returned to.
+   * The platform shows an address, path and query: the one the app opened at, or one the browser's Back or Forward returned to,
+   * with the path of the history entry before it, when the app wrote that entry.
    * The app moves to the screen it names, or to the home screen when it names none.
    */
-  locationOpened: (path: string) => ({ type: "locationOpened", path }) as const,
+  locationOpened: (path: string, previousPath: string | null = null) =>
+    ({ type: "locationOpened", path, previousPath }) as const,
   /**
    * Opens the screen that a link's path and query name, as a new step from where the app is, or the home screen when they name none.
    * A link from outside the app, such as an `easyimmerse://` link, opens through this action.

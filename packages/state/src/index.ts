@@ -249,7 +249,7 @@ export type {
   SettingsSection,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";
-export type { LocationWrite } from "./route/routeEffect.ts";
+export type { LocationEntry, LocationWrite } from "./route/routeEffect.ts";
 export { pathOfRoute, routeOfPath } from "./route/routePath.ts";
 export {
   selectCurrentMediaFileId,

@@ -8,7 +8,7 @@ import type { PairingForm } from "../pairing/pairingForm.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
 import type { RecoveryState } from "../recovery/updateRecovery.ts";
 import type { Route } from "../route/route.ts";
-import type { RouteOrigin } from "../route/routeOrigin.ts";
+import type { RouteHistory } from "../route/routeHistory.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
@@ -18,7 +18,8 @@ import type { SyncState } from "../sync/updateSync.ts";
 export type AppState = {
   /** Where the app is. The address bar shows it as a path, as `pathOfRoute` writes it. */
   route: Route;
-  routeOrigin: RouteOrigin;
+  /** How the app reached the route: from a link or by its own navigation, and from which history entry. */
+  routeHistory: RouteHistory;
   screen: ScreenState;
   server: ServerState;
   preferences: PreferencesState;

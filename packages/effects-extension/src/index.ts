@@ -28,6 +28,7 @@ export function createExtensionEffects(options: {
       browser.tabs.create(properties),
     ),
     writeLocation: () => undefined,
+    returnToPreviousLocation: () => undefined,
     subscribeToLocation: () => () => undefined,
   };
 }

@@ -12,7 +12,7 @@ import { mainScreenOf } from "./route.ts";
  * It decides only once the answer it needs has arrived, and is false while that answer is on its way or for a screen the app navigated to itself.
  */
 export function selectIsRouteUnreachable({ app, backend }: RootState): boolean {
-  if (app.routeOrigin !== "link") return false;
+  if (app.routeHistory.origin !== "link") return false;
   const main = mainScreenOf(app.route);
   if (isLibraryScreen(main) && app.server.config === null) return true;
   return isMainScreenUnreachable(main, backend);
