@@ -148,14 +148,49 @@ describe("historyWriteOf", () => {
     ).toBe("replace");
   });
 
-  it("replaces the entry of a media file once its removal succeeds", () => {
+  describe("for a move to the screen the current one belongs to that the app makes itself", () => {
     const removed = actions.requestSettled(
       "project/p1/removeMediaFile/m1",
       { kind: "removeMediaFile", projectId: "p1", mediaFileId: "m1" },
       { ok: true, data: undefined },
     );
-    expect(historyWriteOf(media, project, removed, "/projects/p1")).toBe(
-      "replace",
+
+    it("returns to the previous entry when the open media file's removal leads to it", () => {
+      expect(historyWriteOf(media, project, removed, "/projects/p1")).toBe(
+        "back",
+      );
+    });
+
+    it("replaces the entry of a removed media file opened from elsewhere", () => {
+      expect(historyWriteOf(media, project, removed, "/library")).toBe(
+        "replace",
+      );
+    });
+
+    it("returns to the previous entry when saved project settings open the project they came from", () => {
+      const saved = actions.requestSettled(
+        "projectSettings/p1/save",
+        {
+          kind: "updateProject",
+          projectId: "p1",
+          settings: exampleProjectSettings,
+        },
+        { ok: true, data: exampleProject("p1") },
+      );
+      expect(
+        historyWriteOf(
+          { screen: "projectSettings", projectId: "p1" },
+          project,
+          saved,
+          "/projects/p1",
+        ),
+      ).toBe("back");
+    });
+  });
+
+  it("pushes an entry for an opened link to the screen the current one belongs to", () => {
+    expect(historyWriteOf(project, home, actions.linkOpened("/"), "/")).toBe(
+      "push",
     );
   });
 });

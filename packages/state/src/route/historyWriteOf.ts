@@ -13,9 +13,10 @@ export type HistoryWrite = LocationWrite | "back";
  * Returns how a move from one route to another, made by the action, writes the browser's history, or null when it writes nothing.
  * `previousPath` is the path of the history entry before the current one, or null when the app does not know it.
  * - An ordinary move adds an entry, and so does each settings page opened, so that the browser's Back leaves one page at a time.
- * - An Up step, which the app's own Back controls take to the screen the current one belongs to, returns to the previous entry when that entry is its target,
+ * - An Up step, a move to the screen the current one belongs to, returns to the previous entry when that entry is its target,
  *   and replaces the current entry otherwise, so that the history never holds the screen just left after its target.
- * - A redirect replaces the current entry: a project form opening its project, the open media file's removal, and the fallback from an unreachable screen.
+ *   The app's own Back controls take such steps, and so do a saved project settings form and the open media file's removal.
+ * - Any other redirect replaces the current entry: the new project form opening its project, and the fallback from an unreachable screen.
  * - An address the platform shows, at startup or after Back or Forward, writes nothing, unless it names no screen and the home screen replaces it.
  */
 export function historyWriteOf(
@@ -34,12 +35,11 @@ export function historyWriteOf(
   return isRedirect(before, action) ? "replace" : "push";
 }
 
+/** Tells whether the move leads to the screen the current one belongs to, by the app's own Back controls or by a redirect such as a saved form, rather than by a link. */
 function isUpStep(before: Route, path: string, action: AppAction): boolean {
   const up = upRouteOf(before);
   return (
-    (action.type === "navigated" || action.type === "closeMedia") &&
-    up !== null &&
-    pathOfRoute(up) === path
+    action.type !== "linkOpened" && up !== null && pathOfRoute(up) === path
   );
 }
 
