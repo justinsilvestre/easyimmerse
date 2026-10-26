@@ -27,6 +27,8 @@ const capabilities: TauriCapabilities[] = [
 export const config: WebdriverIO.Config = {
   runner: "local",
   specs: ["./specs/**/*.spec.ts"],
+  // On desktop the operating system opens links through an installed app, which a debug build is not.
+  exclude: ["./specs/deepLinks.spec.ts"],
   maxInstances: 1,
   capabilities,
   services: [
