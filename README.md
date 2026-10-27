@@ -138,6 +138,7 @@ target/release/easyimmerse-server serve --db server.sqlite
 - The server **listens at `127.0.0.1:8787`** by default. To reach it from other machines, bind it to every interface with `--bind 0.0.0.0:8787`, and name each address that clients use with `--expected-host`, for example `--expected-host 192.168.1.5:8787`. The server refuses a request whose Host header names any other address.
 - The server's **directories and ffmpeg** are set as described under `web-dev` above, or with `--ffmpeg-dir` for a directory holding `ffmpeg` and `ffprobe`. `easyimmerse-server serve --help` lists every flag.
 - The settings can also live in a **config file**, named with `--config server.toml` or `EASYIMMERSE_CONFIG`. Its keys are the flag names with underscores, such as `bind = "0.0.0.0:8787"` or `cache_dir = "cache"`, and relative paths in it are relative to the file. A flag or an environment variable overrides the file. `easyimmerse-server config show --config server.toml` prints the settings the server would use, and `easyimmerse-server config set bind 0.0.0.0:8787 --config server.toml` changes one of them.
+- The server answers **API requests under `/api`**, such as `/api/health` and `/api/openapi.json`, and leaves every other path to the web app.
 - The server **serves the web app** at its own address from a directory named `web` next to its executable, or from the directory `--web-app-dir` names. A CI build holds the binary and `web/` together, as described under Test builds. When building from source, build the web app with `mise exec -- pnpm --filter @easyimmerse/web build` and pass `--web-app-dir apps/web/dist`. `--api-only` turns this off.
 - By default every client presents the server's launch token. To let several people log in with their own accounts, and to send them email for address confirmation and password resets, see [docs/self-hosting.md](docs/self-hosting.md).
 
@@ -190,7 +191,7 @@ The [app README](apps/native/README.md#end-to-end-tests) describes how the nativ
 
 #### Desktop smoke test
 
-CI also builds the desktop app and runs it with `EASYIMMERSE_SMOKE_TEST=1`. The app then requests its own `/health` route, prints `smoke test: 200 {"status":"ok"}`, and exits before any window is created. A build with the `plugin-check` feature also runs the [plugin host check](crates/plugins/README.md#checking-the-host-inside-the-app) and prints the greeting and the execution mode.
+CI also builds the desktop app and runs it with `EASYIMMERSE_SMOKE_TEST=1`. The app then requests its own `/api/health` route, prints `smoke test: 200 {"status":"ok"}`, and exits before any window is created. A build with the `plugin-check` feature also runs the [plugin host check](crates/plugins/README.md#checking-the-host-inside-the-app) and prints the greeting and the execution mode.
 
 ```sh
 mise exec -- pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle

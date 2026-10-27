@@ -16,7 +16,6 @@ const meta = {
         }
         label="Help"
         description="Opens the easyImmerse project page in your browser."
-        isExternal
         onClick={fn()}
       />
     ),

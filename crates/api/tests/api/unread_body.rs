@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use easyimmerse_api::API_PATH_PREFIX;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
@@ -16,10 +17,10 @@ async fn a_rejected_body_that_arrives_late_leaves_the_connection_open() {
     let address = server.base_url.trim_start_matches("http://");
     let mut connection = TcpStream::connect(address).await.unwrap();
     let head = format!(
-        "POST /users HTTP/1.1\r\nHost: {address}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
+        "POST {API_PATH_PREFIX}/users HTTP/1.1\r\nHost: {address}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
         BODY.len()
     );
-    let next = format!("GET /health HTTP/1.1\r\nHost: {address}\r\n\r\n");
+    let next = format!("GET {API_PATH_PREFIX}/health HTTP/1.1\r\nHost: {address}\r\n\r\n");
     let statuses = exchange(&mut connection, &head, &next).await;
     assert_eq!(statuses.ok(), Some((401, 200)));
 }

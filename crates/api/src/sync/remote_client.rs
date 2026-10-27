@@ -12,6 +12,7 @@ use ureq::http::Request;
 use ureq::http::header::{AUTHORIZATION, CONTENT_TYPE, RETRY_AFTER};
 
 use crate::auth::error_body::ApiError;
+use crate::router::API_PATH_PREFIX;
 use crate::routes::auth_server::ServerAuthInfo;
 use crate::routes::current_principal::CurrentPrincipal;
 use crate::routes::sessions::{LoginRequest, SessionCreated, SignupRequest};
@@ -50,7 +51,8 @@ pub struct RemoteResponse {
 /// Sends requests to one remote, with this server's session there when it has one.
 pub struct RemoteClient {
     pub(super) agent: Agent,
-    pub(super) server_url: String,
+    /// The address of the remote's API: its server address followed by the API path prefix.
+    api_url: String,
     pub(super) token: Option<String>,
 }
 
@@ -71,7 +73,7 @@ impl RemoteClient {
             .into();
         Self {
             agent,
-            server_url: server_url.trim_end_matches('/').to_string(),
+            api_url: format!("{}{API_PATH_PREFIX}", server_url.trim_end_matches('/')),
             token,
         }
     }
@@ -148,6 +150,11 @@ impl RemoteClient {
         })
     }
 
+    /// The address of an API path of the remote, such as `/auth/me`.
+    pub(super) fn url_of(&self, path: &str) -> String {
+        format!("{}{path}", self.api_url)
+    }
+
     fn send(
         &self,
         method: Method,
@@ -155,9 +162,7 @@ impl RemoteClient {
         content_type: Option<&str>,
         body: Vec<u8>,
     ) -> Result<RemoteResponse, RemoteError> {
-        let mut builder = Request::builder()
-            .method(method)
-            .uri(format!("{}{path}", self.server_url));
+        let mut builder = Request::builder().method(method).uri(self.url_of(path));
         if let Some(token) = &self.token {
             builder = builder.header(AUTHORIZATION, format!("Bearer {token}"));
         }
@@ -245,6 +250,15 @@ mod tests {
     #[test]
     fn names_the_app_and_its_version_in_the_user_agent() {
         assert!(user_agent().starts_with(&format!("easyImmerse/{} (", env!("CARGO_PKG_VERSION"))));
+    }
+
+    #[test]
+    fn puts_a_path_under_the_remotes_api() {
+        let client = RemoteClient::new("https://cloud.example.com/", None);
+        assert_eq!(
+            client.url_of("/auth/me"),
+            "https://cloud.example.com/api/auth/me"
+        );
     }
 
     #[test]

@@ -33,7 +33,8 @@ const choosing: DictionaryImportWizard = {
   layout: { columns: ["term"], hasHeader: false },
 };
 
-const closeSettings = actions.navigated({ type: "closeSettings" });
+/** The location the history reports once the dictionaries page closes, leaving the general settings. */
+const closeSettings = actions.locationChanged("/?settings=general");
 
 /** Applies an action while the dictionaries page is on top. */
 const updateOnPage = (

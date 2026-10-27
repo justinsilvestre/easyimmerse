@@ -10,7 +10,7 @@ const meta = {
   component: SettingsScreen,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onBack: fn(), onOpenAccount: fn(), onOpenDictionaries: fn() },
+  args: { backHref: "/" },
 } satisfies Meta<typeof SettingsScreen>;
 
 export default meta;

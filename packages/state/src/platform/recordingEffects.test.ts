@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { LocationReport } from "../route/routeEffect.ts";
 import type { PickedFile } from "./effects.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
 
@@ -116,5 +117,86 @@ describe("createRecordingEffects", () => {
     unsubscribe();
     effects.requestSettings();
     expect(callCount).toBe(0);
+  });
+
+  it("calls a link listener with each opened link", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    effects.openLink("easyimmerse://library");
+    expect(links).toEqual(["easyimmerse://library"]);
+  });
+
+  it("hands a link opened before anything listens to the first listener", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.openLink("easyimmerse://library");
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    expect(links).toEqual(["easyimmerse://library"]);
+  });
+
+  it("hands a link opened before anything listens to only one listener", () => {
+    const effects = createRecordingEffects();
+    const links: string[] = [];
+    effects.openLink("easyimmerse://library");
+    effects.subscribeToOpenedLinks(() => undefined);
+    effects.subscribeToOpenedLinks((link) => links.push(link));
+    expect(links).toEqual([]);
+  });
+
+  it("calls a link click listener with the path of each followed link", () => {
+    const effects = createRecordingEffects();
+    const paths: string[] = [];
+    effects.subscribeToLinkClicks((path) => paths.push(path));
+    effects.followLink("/library");
+    expect(paths).toEqual(["/library"]);
+  });
+
+  describe("for the history", () => {
+    const state = { previousPath: "/", origin: "app" } as const;
+
+    /** Subscribes to the history of recording effects that start at home, and returns the reports. */
+    function subscribedAtHome() {
+      const effects = createRecordingEffects();
+      effects.showAddress("/");
+      const reports: LocationReport[] = [];
+      effects.subscribeToLocation((report) => reports.push(report));
+      return { effects, reports };
+    }
+
+    it("reports the address shown at once", () => {
+      expect(subscribedAtHome().reports).toEqual([
+        { path: "/", state: null, cause: "traversal" },
+      ]);
+    });
+
+    it("reports each write at once", () => {
+      const { effects, reports } = subscribedAtHome();
+      effects.writeLocation({ path: "/library", state }, "push");
+      expect(reports.at(-1)).toEqual({
+        path: "/library",
+        state,
+        cause: "write",
+      });
+    });
+
+    it("reports the previous entry once it returns to it", () => {
+      const { effects, reports } = subscribedAtHome();
+      effects.writeLocation({ path: "/library", state }, "push");
+      effects.returnToPreviousLocation();
+      expect(reports.at(-1)).toEqual({
+        path: "/",
+        state: null,
+        cause: "traversal",
+      });
+    });
+
+    it("reports nothing before an address is shown or written", () => {
+      const reports: LocationReport[] = [];
+      createRecordingEffects().subscribeToLocation((report) =>
+        reports.push(report),
+      );
+      expect(reports).toEqual([]);
+    });
   });
 });

@@ -20,7 +20,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakeBackendClient,
   type FakeResponse,
@@ -41,7 +41,7 @@ import { ProjectScreen } from "./ProjectScreen.tsx";
 
 afterEach(cleanup);
 
-function renderProject(onEditSettings: () => void = () => undefined) {
+function renderProject() {
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
@@ -52,11 +52,7 @@ function renderProject(onEditSettings: () => void = () => undefined) {
     directPlaybackRoutes,
   );
   const rendered = renderWithAppStore(
-    <ProjectScreen
-      projectId="p1"
-      onBack={() => undefined}
-      onEditSettings={onEditSettings}
-    />,
+    <ProjectScreen projectId="p1" />,
     client,
     { server: fakeServer },
   );
@@ -74,21 +70,17 @@ const pathsOf = (requests: BackendRequest[], method: string) =>
     .map((request) => request.path);
 
 describe("ProjectScreen", () => {
-  it("offers the way back while the project loads", () => {
-    const onBack = vi.fn();
+  it("links back to the projects while the project loads", () => {
     renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={onBack}
-        onEditSettings={() => undefined}
-      />,
+      <ProjectScreen projectId="p1" />,
       createFakeBackendClient({
         ...fixtureResponses,
         "GET /projects/p1": () => new Promise(() => undefined),
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    expect(onBack).toHaveBeenCalled();
+    expect(
+      screen.getByRole("link", { name: "Projects" }).getAttribute("href"),
+    ).toBe("/");
   });
 
   it("shows the project's name", async () => {
@@ -99,33 +91,33 @@ describe("ProjectScreen", () => {
   it("offers to set up dictionaries when none covers the project's languages", async () => {
     renderProject();
     expect(
-      await screen.findByRole("button", { name: "Set up dictionaries" }),
+      await screen.findByRole("link", { name: "Set up dictionaries" }),
     ).toBeDefined();
   });
 
   it("lists the project's media files", async () => {
     renderProject();
     expect(
-      await screen.findByRole("button", { name: "Audio interview.mp3" }),
+      await screen.findByRole("link", { name: "Audio interview.mp3" }),
     ).toBeDefined();
   });
 
   it("narrows the media list to one kind of file from its heading menu", async () => {
     renderProject();
-    await screen.findByRole("button", { name: "Audio interview.mp3" });
+    await screen.findByRole("link", { name: "Audio interview.mp3" });
     fireEvent.click(screen.getByRole("button", { name: "Media" }));
     fireEvent.click(
       screen.getByRole("menuitemcheckbox", { name: "Audio (1)" }),
     );
     expect(
-      screen.queryByRole("button", { name: "Video episode.mkv" }),
+      screen.queryByRole("link", { name: "Video episode.mkv" }),
     ).toBeNull();
   });
 
   it("opens a media file when it is clicked", async () => {
     const { store } = renderProject();
     fireEvent.click(
-      await screen.findByRole("button", { name: "Video episode.mkv" }),
+      await screen.findByRole("link", { name: "Video episode.mkv" }),
     );
     expect(selectCurrentMediaFileId(store.getState())).toBe("m1");
   });
@@ -158,11 +150,7 @@ describe("ProjectScreen", () => {
       "POST /documents/parse-local": exampleShortBook,
     });
     const { store } = renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={() => undefined}
-        onEditSettings={() => undefined}
-      />,
+      <ProjectScreen projectId="p1" />,
       client,
     );
     await screen.findByRole("heading", { name: "Alpha" });
@@ -192,7 +180,7 @@ describe("ProjectScreen", () => {
 
   it("sends a picked media file to the project and opens it", async () => {
     const { effects, store } = renderProject();
-    await screen.findByRole("button", { name: "Video episode.mkv" });
+    await screen.findByRole("link", { name: "Video episode.mkv" });
     fireEvent.click(screen.getByRole("button", { name: "Add media" }));
     act(() =>
       effects.resolvePickMediaFile({
@@ -208,7 +196,7 @@ describe("ProjectScreen", () => {
   it("opens the library when From the library is clicked", async () => {
     const { store } = renderProject();
     fireEvent.click(
-      await screen.findByRole("button", { name: "From the library" }),
+      await screen.findByRole("link", { name: "From the library" }),
     );
     expect(selectRoute(store.getState())).toEqual({ screen: "library" });
   });
@@ -287,11 +275,7 @@ describe("ProjectScreen", () => {
       directPlaybackRoutes,
     );
     const rendered = renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={() => undefined}
-        onEditSettings={() => undefined}
-      />,
+      <ProjectScreen projectId="p1" />,
       client,
       { server: fakeServer },
     );
@@ -417,11 +401,7 @@ describe("ProjectScreen", () => {
 
   it("marks a file the browser no longer holds with the reason", async () => {
     renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={() => undefined}
-        onEditSettings={() => undefined}
-      />,
+      <ProjectScreen projectId="p1" />,
       createFakeBackendClient({
         ...fixtureResponses,
         "GET /dictionaries": { dictionaries: [] },
@@ -437,11 +417,7 @@ describe("ProjectScreen", () => {
 
   it("marks a file the server reports missing with the reason", async () => {
     renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={() => undefined}
-        onEditSettings={() => undefined}
-      />,
+      <ProjectScreen projectId="p1" />,
       createFakeBackendClient({
         ...fixtureResponses,
         "GET /dictionaries": { dictionaries: [] },
@@ -451,7 +427,7 @@ describe("ProjectScreen", () => {
       }),
     );
     expect(
-      await screen.findByRole("button", {
+      await screen.findByRole("link", {
         name: "Video episode.mkv",
         description:
           "This file was not found at its path. It may have been moved or deleted.",
@@ -460,10 +436,12 @@ describe("ProjectScreen", () => {
   });
 
   it("opens the project's settings", async () => {
-    let opened = false;
-    renderProject(() => (opened = true));
+    const { store } = renderProject();
     await screen.findByRole("heading", { name: "Alpha" });
-    fireEvent.click(screen.getByRole("button", { name: "Project settings" }));
-    expect(opened).toBe(true);
+    fireEvent.click(screen.getByRole("link", { name: "Project settings" }));
+    expect(selectRoute(store.getState())).toEqual({
+      screen: "projectSettings",
+      projectId: "p1",
+    });
   });
 });

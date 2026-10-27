@@ -4,11 +4,12 @@ import type { Feature } from "../app/feature.ts";
 import { editedFlashcardRoute } from "../review/editedFlashcardRoute.ts";
 import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
-import type { MainRoute, Route } from "./route.ts";
-import { initialRoute, mainScreenOf, navigate } from "./route.ts";
+import type { MainRoute, Route, SettingsSection } from "./route.ts";
+import { initialRoute, isSamePlace, mainScreenOf, navigate } from "./route.ts";
+import { routeOfPath } from "./routePath.ts";
 
-/** Returns where the app is after an action. */
-export function nextRoute(route: Route, action: AppAction): Route {
+/** Returns where a request asks the app to go from the route, which is the route itself for an action that asks for no move. */
+export function requestedRoute(route: Route, action: AppAction): Route {
   switch (action.type) {
     case "navigated":
       return navigate(route, action.step);
@@ -21,6 +22,11 @@ export function nextRoute(route: Route, action: AppAction): Route {
         projectId: action.projectId,
         mediaFileId: action.mediaFileId,
       };
+    case "linkOpened":
+    case "linkFollowed":
+      return routeAtPath(route, action.path);
+    case "routeUnreachable":
+      return withMainRoute(route, () => ({ screen: "home" }));
     case "closeMedia":
       return withMainRoute(route, (main) =>
         main.screen === "media" ? projectRouteOf(main) : main,
@@ -45,10 +51,11 @@ export function nextRoute(route: Route, action: AppAction): Route {
 export type RouteApp = Pick<AppState, "route" | "screen">;
 
 /**
- * Returns where the app is after an action, including the media file that a settled pick or fetch opens,
+ * Returns where an action asks the app to go, including the media file that a settled pick or fetch opens,
  * the project that a settled project form opens, and the media file of a card the review opens in the editor.
+ * It is the route itself for an action that asks for no move. The app goes there once the history reports the location.
  */
-export function routeAfter(app: RouteApp, action: AppAction): Route {
+export function destinationOf(app: RouteApp, action: AppAction): Route {
   const edited = editedFlashcardRoute(app, action);
   if (edited !== null) return withMainRoute(app.route, () => edited);
   const project = projectOpenedByForm(mainScreenOf(app.route), action);
@@ -59,7 +66,7 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
     }));
   const opened = mediaFileOpenedBy(app, action);
   return opened === null
-    ? nextRoute(app.route, action)
+    ? requestedRoute(app.route, action)
     : withMainRoute(app.route, (main) =>
         main.screen === "project"
           ? { ...main, screen: "media", mediaFileId: opened }
@@ -67,8 +74,21 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
       );
 }
 
-/** The route as a feature: where the app is, moved by navigation and by opening and closing media files. */
-export const routeFeature: Feature<Route, keyof RouteApp> = {
+/**
+ * Returns where the app is after an action. Only a reported location moves it, to the screen the location names, or home when it names none;
+ * the route keeps its reference when the location names it already.
+ */
+export function routeAfter(
+  app: Pick<RouteApp, "route">,
+  action: AppAction,
+): Route {
+  return action.type === "locationChanged"
+    ? routeAtLocation(app.route, action.path, action.state?.scrollTarget)
+    : app.route;
+}
+
+/** The route as a feature: where the app is, which moves only when the history reports a location. */
+export const routeFeature: Feature<Route, "route"> = {
   initialState: initialRoute,
   update: (_route, action, app) => [routeAfter(app, action), []],
 };
@@ -81,6 +101,25 @@ function withMainRoute(
   if (route.screen !== "settings") return change(route);
   const beneath = change(route.beneath);
   return beneath === route.beneath ? route : { ...route, beneath };
+}
+
+/** Returns the route the path names, or home when it names none, keeping the current route itself when the path names it. */
+function routeAtPath(route: Route, path: string): Route {
+  return routeAtLocation(route, path, undefined);
+}
+
+/** Returns the route a location names, with the settings section its entry scrolls to, keeping the current route itself when they name it. */
+function routeAtLocation(
+  route: Route,
+  path: string,
+  scrollTarget: SettingsSection | undefined,
+): Route {
+  const named = routeOfPath(path) ?? initialRoute;
+  const located =
+    named.screen === "settings" && scrollTarget !== undefined
+      ? { ...named, scrollTarget }
+      : named;
+  return isSamePlace(located, route) ? route : located;
 }
 
 function projectRouteOf(main: { projectId: string }): MainRoute {

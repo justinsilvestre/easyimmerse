@@ -36,7 +36,7 @@ export default defineConfig({
   webServer: [
     {
       command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:${serverPort} --token ${token} --seed-placeholders`,
-      url: `${serverUrl}/health`,
+      url: `${serverUrl}/api/health`,
       reuseExistingServer,
       timeout: 300_000,
     },

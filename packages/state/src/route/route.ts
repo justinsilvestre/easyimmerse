@@ -1,4 +1,5 @@
 import type { AccountVia } from "../server/serverSelectors.ts";
+import { pathOfRoute } from "./routePath.ts";
 
 /** A screen that fills the window on its own. */
 export type MainRoute =
@@ -41,7 +42,9 @@ export type SettingsSection = "mediaConversion";
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it so that going back restores it, player state included.
  * The settings pages form a stack: Back leaves the top page, and the last page returns to the main screen.
- * A library router is planned; it will own history, links and deep links, and this value will then be fed from it or replaced by it.
+ * The history decides where the app is. A request for a move works out the route it leads to and writes that route's path, as `pathOfRoute` writes it,
+ * into the history, or returns to the previous entry; the route changes only when the history reports a location,
+ * whether after the app's own write, at startup, or after the browser's Back or Forward.
  */
 export type Route =
   | MainRoute
@@ -180,6 +183,19 @@ function closeSettingsPage(current: Route): Route {
   return first === undefined
     ? current.beneath
     : { ...current, pages: [first, ...rest] };
+}
+
+/** Tells whether two routes show the same place: the same path, and the same settings section to bring into view. */
+export function isSamePlace(before: Route, after: Route): boolean {
+  return (
+    pathOfRoute(before) === pathOfRoute(after) &&
+    scrollTargetOf(before) === scrollTargetOf(after)
+  );
+}
+
+/** Returns the settings section a route brings into view, or undefined. */
+export function scrollTargetOf(route: Route): SettingsSection | undefined {
+  return route.screen === "settings" ? route.scrollTarget : undefined;
 }
 
 /** The main screen to show: the current one, or the one beneath Settings. */

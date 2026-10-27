@@ -3,6 +3,7 @@
 //! On desktop, the server can also listen on a public address for other devices,
 //! the tray icon controls it,
 //! and the app runs the server's command line when started with one of its commands.
+//! An `easyimmerse://` link opens the app on the screen it names.
 
 mod app_locations;
 #[cfg(target_os = "macos")]
@@ -21,6 +22,7 @@ mod embedded_server;
 mod injected_config_script;
 mod main_window;
 mod navigation_guard;
+mod opened_links;
 mod plugin_check;
 #[cfg_attr(mobile, allow(dead_code))]
 mod server_addresses;
@@ -50,8 +52,16 @@ pub fn run() {
     if let Some(status) = command_line::run_if_requested(&context) {
         std::process::exit(status);
     }
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // A second launch, as when the operating system opens a link while the app runs, hands its arguments to the running app and ends.
+    // Debug builds leave it out, so that development builds of several checkouts can run side by side.
+    #[cfg(all(desktop, not(debug_assertions)))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
+        opened_links::bring_window_forward(app)
+    }));
+    let builder = builder
         .manage(logs)
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init());
@@ -63,6 +73,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             #[cfg(feature = "plugin-check")]
             plugin_check::enabled::check_plugin_host,
+            opened_links::take_opened_link,
             #[cfg(desktop)]
             server_control::get_desktop_server_settings,
             #[cfg(desktop)]
@@ -94,6 +105,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     }
     #[cfg(desktop)]
     dev_server_file::write_in_debug_builds(&server);
+    opened_links::install(app.handle());
     main_window::create(app.handle(), &server)?;
     #[cfg(target_os = "macos")]
     app_menu::install(app.handle())?;

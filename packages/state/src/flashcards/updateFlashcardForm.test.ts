@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type AppAction, actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
+import { reportedLocationOf } from "../app/stateAfter.ts";
 import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
@@ -74,18 +75,17 @@ describe("updateFlashcardForm", () => {
 
   it("when the screen is left, saves the card it held in the background", () => {
     const app = appAfter(startNew("f1", "Katze"));
-    expect(originsOf(formUpdate(app, actions.closeMedia()))).toEqual([
-      ["f1", "background"],
-    ]);
+    const left = reportedLocationOf(app, actions.closeMedia());
+    expect(originsOf(formUpdate(app, left))).toEqual([["f1", "background"]]);
   });
 
   it("when the screen is left while a lookup flashcard waits, keeps the card waiting for its lookup", () => {
     const app = appAfter(...lateCat);
-    const held = formUpdate(app, actions.closeMedia()).effects.flatMap(
-      (effect) =>
-        effect.type === "sendRequest" && effect.heldFor !== undefined
-          ? [effect.request]
-          : [],
+    const left = reportedLocationOf(app, actions.closeMedia());
+    const held = formUpdate(app, left).effects.flatMap((effect) =>
+      effect.type === "sendRequest" && effect.heldFor !== undefined
+        ? [effect.request]
+        : [],
     );
     expect(held).toMatchObject([{ flashcardId: "f-cat" }]);
   });

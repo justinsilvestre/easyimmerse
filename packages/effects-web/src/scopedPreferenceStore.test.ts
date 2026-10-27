@@ -31,7 +31,7 @@ describe("createScopedPreferenceStore", () => {
       );
       await store.save("showTranslations", "true");
       expect(sentUrls).toEqual([
-        "https://books.example.org/preferences/showTranslations",
+        "https://books.example.org/api/preferences/showTranslations",
       ]);
     });
 

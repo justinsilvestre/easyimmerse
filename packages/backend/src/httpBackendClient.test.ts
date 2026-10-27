@@ -54,7 +54,7 @@ describe("createHttpBackendClient", () => {
     );
   });
 
-  it("joins the path and query onto the server URL", async () => {
+  it("joins the path and query onto the URL of the server's API", async () => {
     const fakeFetch = createFakeFetch(() => jsonResponse(200, {}));
     await createClient(fakeFetch).send({
       method: "POST",
@@ -62,7 +62,7 @@ describe("createHttpBackendClient", () => {
       query: { format: "epub" },
     });
     expect(fakeFetch.requests[0]?.url).toBe(
-      "http://127.0.0.1:8787/documents/parse?format=epub",
+      "http://127.0.0.1:8787/api/documents/parse?format=epub",
     );
   });
 

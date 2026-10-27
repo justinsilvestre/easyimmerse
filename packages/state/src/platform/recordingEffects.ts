@@ -15,6 +15,11 @@ import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { PairingScan } from "../pairing/pairingScan.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
+import type {
+  EntryState,
+  LocationEntry,
+  LocationWrite,
+} from "../route/routeEffect.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
@@ -28,6 +33,7 @@ import type {
   SaveCopyOutcome,
   SavePathPick,
 } from "./effects.ts";
+import { createRecordedHistory } from "./recordedHistory.ts";
 
 /** The recording effects' answers about media support: a WebKit browser that plays MP4 directly and through Media Source Extensions. */
 const recordedPlaybackProbes: PlaybackProbes = {
@@ -57,6 +63,8 @@ type EffectCall =
   | { type: "openExternalUrl"; url: string }
   | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
+  | { type: "writeLocation"; entry: LocationEntry; write: LocationWrite }
+  | { type: "returnToPreviousLocation" }
   | { type: "applyAppearance"; appearance: Appearance }
   | { type: "fetchServerAuthInfo"; serverUrl: string }
   | { type: "createSession"; attempt: SignInAttempt }
@@ -122,6 +130,19 @@ export type RecordingEffects = Effects & {
   requestSettings(): void;
   /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
   changeSystemTheme(theme: Theme): void;
+  /**
+   * Acts as the browser showing an address, path and query, as it does at startup and after Back or Forward, by calling every subscribed listener.
+   * `state` is what the app kept with that history entry, if it wrote it. Each write of the history is reported at once as well, as a browser's history reports it.
+   * A listener subscribed later hears the address at once. Until an address is shown, a subscription hears nothing, as on a platform without an address bar.
+   */
+  showAddress(path: string, state?: EntryState | null): void;
+  /**
+   * Acts as the operating system opening the app with a link, by calling every subscribed listener.
+   * A link opened while nothing listens waits for the first listener, as the link that starts an app does.
+   */
+  openLink(link: string): void;
+  /** Acts as a person following one of the app's own links within the app, by calling every subscribed listener with its path and query. */
+  followLink(path: string): void;
   /** Makes every later copy fail, as a platform that refuses clipboard access does. */
   refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
@@ -233,6 +254,10 @@ export function createRecordingEffects(
     createPendingPick<SignInOutcome<SessionCreated>>("new password");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
+  const history = createRecordedHistory();
+  const linkListeners = new Set<(link: string) => void>();
+  let waitingLink: string | null = null;
+  const linkClickListeners = new Set<(path: string) => void>();
   let refusesCopies = false;
   let refusesConnections = false;
   return {
@@ -316,6 +341,25 @@ export function createRecordingEffects(
     subscribeToSettingsRequests: (listener) => {
       settingsListeners.add(listener);
       return () => settingsListeners.delete(listener);
+    },
+    writeLocation: (entry, write) => {
+      calls.push({ type: "writeLocation", entry, write });
+      history.write(entry, write);
+    },
+    returnToPreviousLocation: () => {
+      calls.push({ type: "returnToPreviousLocation" });
+      history.back();
+    },
+    subscribeToLocation: history.subscribe,
+    subscribeToOpenedLinks: (listener) => {
+      linkListeners.add(listener);
+      if (waitingLink !== null) listener(waitingLink);
+      waitingLink = null;
+      return () => linkListeners.delete(listener);
+    },
+    subscribeToLinkClicks: (listener) => {
+      linkClickListeners.add(listener);
+      return () => linkClickListeners.delete(listener);
     },
     applyAppearance: (appearance) => {
       calls.push({ type: "applyAppearance", appearance });
@@ -422,6 +466,14 @@ export function createRecordingEffects(
     },
     changeSystemTheme: (theme) => {
       for (const listener of systemThemeListeners) listener(theme);
+    },
+    showAddress: (path, state = null) => history.show(path, state),
+    openLink: (link) => {
+      if (linkListeners.size === 0) waitingLink = link;
+      for (const listener of linkListeners) listener(link);
+    },
+    followLink: (path) => {
+      for (const listener of linkClickListeners) listener(path);
     },
     refuseCopies: () => {
       refusesCopies = true;

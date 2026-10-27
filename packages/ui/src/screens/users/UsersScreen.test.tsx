@@ -48,13 +48,9 @@ function renderWith(responses: Record<string, FakeResponse>) {
     "GET /users": fakeUsersPages([administrator, reader, librarian]),
     ...responses,
   });
-  renderWithAppStore(
-    <UsersScreen via="self" onBack={() => undefined} />,
-    client,
-    {
-      server: { serverUrl: "https://books.example.org", token: "t" },
-    },
-  );
+  renderWithAppStore(<UsersScreen via="self" backHref="/" />, client, {
+    server: { serverUrl: "https://books.example.org", token: "t" },
+  });
   return client;
 }
 

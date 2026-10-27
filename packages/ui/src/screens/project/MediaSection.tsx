@@ -1,7 +1,7 @@
-import type { MediaImportSource } from "@easyimmerse/state";
+import { type MediaImportSource, pathOfRoute } from "@easyimmerse/state";
 import { Library, Link, Plus } from "lucide-react";
 import { useState } from "react";
-import { Button } from "../../components/common/Button.tsx";
+import { Button, ButtonLink } from "../../components/common/Button.tsx";
 import { EmptyState } from "../../components/common/EmptyState.tsx";
 import { MenuButton } from "../../components/common/MenuButton.tsx";
 import { LoadingStatus, Skeleton } from "../../components/common/Skeleton.tsx";
@@ -23,14 +23,13 @@ export function MediaSection({
   media,
   ...props
 }: {
+  projectId: string;
   /** The project's media files, or `undefined` while they are loading. */
   media: readonly MediaItem[] | undefined;
   /** The installed media-source plugins, each offered as a button beside "Add media". */
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
-  onOpenLibrary: () => void;
   onImportMedia: (source: MediaImportSource) => void;
-  onOpenMedia: (mediaId: string) => void;
   onDeleteMedia: (mediaId: string) => void;
 }) {
   if (!media) return <LoadingMedia />;
@@ -50,30 +49,28 @@ function LoadingMedia() {
 }
 
 function LoadedMedia({
+  projectId,
   media,
   importSources,
   onAddMedia,
-  onOpenLibrary,
   onImportMedia,
-  onOpenMedia,
   onDeleteMedia,
 }: {
+  projectId: string;
   media: readonly MediaItem[];
   importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
-  onOpenLibrary: () => void;
   onImportMedia: (source: MediaImportSource) => void;
-  onOpenMedia: (mediaId: string) => void;
   onDeleteMedia: (mediaId: string) => void;
 }) {
   const [category, setCategory] = useState<MediaCategory>("all");
   const shown = mediaOfCategory(media, category);
   const otherButtons = (
     <>
-      <Button onClick={onOpenLibrary}>
+      <ButtonLink href={pathOfRoute({ screen: "library" })}>
         <Library className="size-4" aria-hidden />
         From the library
-      </Button>
+      </ButtonLink>
       {importSources.map((source) => (
         <Button key={source.name} onClick={() => onImportMedia(source)}>
           <Link className="size-4" aria-hidden />
@@ -129,8 +126,8 @@ function LoadedMedia({
         </p>
       ) : (
         <MediaList
+          projectId={projectId}
           media={shown}
-          onOpen={onOpenMedia}
           onDelete={onDeleteMedia}
         />
       )}

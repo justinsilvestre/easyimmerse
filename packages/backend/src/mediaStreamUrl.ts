@@ -1,4 +1,4 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL a media element loads a media file from.
@@ -10,7 +10,9 @@ export function buildMediaStreamUrl(
   mediaFileId: string,
 ): string {
   const url = new URL(
-    `/projects/${encodeURIComponent(projectId)}/media/${encodeURIComponent(mediaFileId)}/stream`,
+    apiPathOf(
+      `/projects/${encodeURIComponent(projectId)}/media/${encodeURIComponent(mediaFileId)}/stream`,
+    ),
     server.serverUrl,
   );
   url.searchParams.set("token", server.token);
@@ -28,7 +30,9 @@ export function buildMediaFrameUrl(
   atMs: number,
 ): string {
   const url = new URL(
-    `/projects/${encodeURIComponent(projectId)}/media/${encodeURIComponent(mediaFileId)}/frame`,
+    apiPathOf(
+      `/projects/${encodeURIComponent(projectId)}/media/${encodeURIComponent(mediaFileId)}/frame`,
+    ),
     server.serverUrl,
   );
   url.searchParams.set("at_ms", String(Math.round(atMs)));

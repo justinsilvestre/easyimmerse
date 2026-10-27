@@ -63,7 +63,7 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
   });
   const registry = createBrowserFileRegistry<File>();
   const rendered = renderWithAppStore(
-    <DictionariesScreen onBack={() => undefined} />,
+    <DictionariesScreen backHref="/" />,
     client,
     { browserFileRegistry: registry },
   );

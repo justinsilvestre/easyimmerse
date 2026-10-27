@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page
     .getByRole("list", { name: "Projects" })
-    .getByRole("button")
+    .getByRole("link")
     .first()
     .click();
   await pickFile(page, "Add media", mediaFixture);

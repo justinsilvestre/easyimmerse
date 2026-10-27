@@ -7,11 +7,13 @@ import type {
   ServerConfig,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
+import { createBrowserHistory, type RouterHistory } from "@tanstack/history";
 import { createAccountEffects } from "./accountEffects.ts";
 import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 import { downloadFile } from "./downloadFile.ts";
+import { createHistoryLocation } from "./historyLocation.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { createPairingEffects } from "./pairingEffects.ts";
 import { pickFile } from "./pickFile.ts";
@@ -21,6 +23,10 @@ import { createPreferenceStore } from "./preferenceStore.ts";
 import { readLocalStorage } from "./readLocalStorage.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { createScopedPreferenceStore } from "./scopedPreferenceStore.ts";
+import {
+  createSubscribeToLinkClicks,
+  type LinkClickScope,
+} from "./subscribeToLinkClicks.ts";
 import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
 import { unavailableDesktopServerEffects } from "./unavailableDesktopServerEffects.ts";
 
@@ -33,6 +39,10 @@ export function createWebEffects(options: {
   writeDefinitionMarkdown: DefinitionWriter;
   /** The server the app is connected to, which keeps the preferences that follow the person; absent or null when there is none. */
   server?: ServerConfig | null;
+  /** The history that decides where the app is; the browser's own when absent. */
+  history?: RouterHistory;
+  /** Which clicks on the app's own links the app takes in place of the browser; plain clicks only when absent. */
+  linkClicks?: LinkClickScope;
 }): Effects {
   const deviceStore = createPreferenceStore();
   const preferences = createScopedPreferenceStore(
@@ -61,6 +71,12 @@ export function createWebEffects(options: {
     copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
+    subscribeToOpenedLinks: ignoreOpenedLinks,
+    ...createHistoryLocation(options.history ?? createBrowserHistory()),
+    subscribeToLinkClicks: createSubscribeToLinkClicks(
+      document,
+      options.linkClicks ?? "plain",
+    ),
     applyAppearance: createApplyAppearance(document.documentElement),
     subscribeToSystemTheme: createSubscribeToSystemTheme(
       window.matchMedia("(prefers-color-scheme: dark)"),
@@ -90,9 +106,15 @@ function ignoreSettingsRequests(): () => void {
   return () => undefined;
 }
 
+/** A page is never opened by an `easyimmerse://` link, which only the installed apps handle. */
+function ignoreOpenedLinks(): () => void {
+  return () => undefined;
+}
+
 export { requestJson } from "./accountEffects.ts";
 export { createApplyAppearance } from "./applyAppearance.ts";
 export { openMailedLink } from "./openMailedLink.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
 export { readLocalStorage } from "./readLocalStorage.ts";
 export { createServerPreferenceStore } from "./serverPreferenceStore.ts";
+export { createSubscribeToLinkClicks } from "./subscribeToLinkClicks.ts";

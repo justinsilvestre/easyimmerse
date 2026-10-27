@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { openedAnkiExport } from "../anki/ankiExportDialog.ts";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { reportedLocationOf, stateAfter } from "../app/stateAfter.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
@@ -16,6 +16,13 @@ import { updateScreen } from "./updateScreen.ts";
 const apply = (action: AppAction, ...before: AppAction[]) => {
   const app = stateAfter(...before);
   return updateScreen(app.screen, action, withEmptyServerCache(app));
+};
+
+/** Updates the screen for the location the history reports after the request. */
+const applyMove = (request: AppAction, ...before: AppAction[]) => {
+  const app = stateAfter(...before);
+  const reported = reportedLocationOf(app, request);
+  return updateScreen(app.screen, reported, withEmptyServerCache(app));
 };
 
 const pickedMediaFile: PickedMediaFile = {
@@ -41,7 +48,7 @@ const leftProject: AppAction[] = [
 
 describe("updateScreen", () => {
   it("aborts the parse of a subtitles file when the offline screen is left", () => {
-    const [, effects] = apply(
+    const [, effects] = applyMove(
       actions.navigated({ type: "goHome" }),
       actions.navigated({ type: "continueOffline" }),
     );
@@ -59,7 +66,7 @@ describe("updateScreen", () => {
       startMs: 0,
       endMs: 30_000,
     } as const;
-    const [, effects] = apply(
+    const [, effects] = applyMove(
       actions.closeMedia(),
       ...playingM2,
       actions.requestSettled(
@@ -80,12 +87,12 @@ describe("updateScreen", () => {
   });
 
   it("cancels the lookup's close timer when the media screen closes", () => {
-    const [, effects] = apply(actions.closeMedia(), ...playingM2);
+    const [, effects] = applyMove(actions.closeMedia(), ...playingM2);
     expect(effects).toContainEqual({ type: "cancelTimer", id: "lookup/close" });
   });
 
   it("cancels the wait for a flashcard's lookup when the media screen closes", () => {
-    const [, effects] = apply(actions.closeMedia(), ...playingM2);
+    const [, effects] = applyMove(actions.closeMedia(), ...playingM2);
     expect(effects).toContainEqual({
       type: "cancelTimer",
       id: "lookup/flashcardWait",
@@ -93,7 +100,7 @@ describe("updateScreen", () => {
   });
 
   it("aborts the source dialog's form request when the media screen closes", () => {
-    const [, effects] = apply(
+    const [, effects] = applyMove(
       actions.closeMedia(),
       ...playingM2,
       actions.sourceMediaOpened(),
@@ -105,7 +112,7 @@ describe("updateScreen", () => {
   });
 
   it("starts the new screen's state when the main screen changes", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.navigated({ type: "openProject", projectId: "p1" }),
     );
     expect(screen.main).toEqual({
@@ -117,7 +124,7 @@ describe("updateScreen", () => {
   });
 
   it("reads where the project's flashcards go as its overview opens", () => {
-    const [, effects] = apply(
+    const [, effects] = applyMove(
       actions.navigated({ type: "openProject", projectId: "p1" }),
     );
     expect(effects).toContainEqual({
@@ -134,7 +141,7 @@ describe("updateScreen", () => {
     const main = { ...app.screen.main, ankiExport: exportingDialog };
     const [, effects] = updateScreen(
       { ...app.screen, main } as typeof app.screen,
-      actions.navigated({ type: "goHome" }),
+      reportedLocationOf(app, actions.navigated({ type: "goHome" })),
       withEmptyServerCache(app),
     );
     expect(effects).toContainEqual({
@@ -144,12 +151,12 @@ describe("updateScreen", () => {
   });
 
   it("drops the player for closeMedia", () => {
-    const [screen] = apply(actions.closeMedia(), ...playingM2);
+    const [screen] = applyMove(actions.closeMedia(), ...playingM2);
     expect(screen.main.kind).toBe("project");
   });
 
   it("resets the player when another media file opens", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.openMediaFileRequested("p1", "m1"),
       ...playingM2,
     );
@@ -179,7 +186,7 @@ describe("updateScreen", () => {
   });
 
   it("opens the media screen once the picked file is added", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.requestSettled(
         "project/p1/addMediaFile",
         { kind: "addMediaFile", projectId: "p1", request: pickedMediaFile },
@@ -231,7 +238,7 @@ describe("updateScreen", () => {
   });
 
   it("asks for the media file's record when its media screen opens", () => {
-    const [, effects] = apply(actions.openMediaFileRequested("p1", "m1"));
+    const [, effects] = applyMove(actions.openMediaFileRequested("p1", "m1"));
     expect(effects).toContainEqual({
       type: "sendRequest",
       id: "media/m1/mediaFile",
@@ -240,7 +247,7 @@ describe("updateScreen", () => {
   });
 
   it("closes the track choice when the media screen is left", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.closeMedia(),
       actions.openMediaFileRequested("p1", "m1"),
       mediaFilesListed(),
@@ -250,7 +257,7 @@ describe("updateScreen", () => {
   });
 
   it("closes the subtitle appearance dialog when the media screen is left", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.closeMedia(),
       actions.openMediaFileRequested("p1", "m1"),
       actions.subtitleAppearanceOpened(),
@@ -264,7 +271,7 @@ describe("updateScreen", () => {
   });
 
   it("closes the removal question when the dictionaries page closes", () => {
-    const [screen] = apply(
+    const [screen] = applyMove(
       actions.navigated({ type: "closeSettings" }),
       actions.navigated({ type: "openDictionaries" }),
       actions.dictionaryRemovalRequested("d1"),

@@ -14,7 +14,7 @@ const meta = {
     unsupportedFile: null,
     importFailure: null,
     pendingTable: null,
-    onBack: fn(),
+    backHref: "/",
     onAddFromRegistry: fn(),
     onAddFromFile: fn(),
     onToggle: fn(),

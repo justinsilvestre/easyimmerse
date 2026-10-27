@@ -6,6 +6,7 @@ import type {
   SignInOutcome,
 } from "@easyimmerse/state";
 import {
+  apiPathOf,
   connectionNotKeptCode,
   serverConfigStorageKey,
 } from "@easyimmerse/state";
@@ -38,29 +39,29 @@ export function createAccountEffects(
 ): AccountEffects {
   return {
     fetchServerAuthInfo: (serverUrl) =>
-      requestJson(fetchFn, new URL("/auth/server", serverUrl)),
+      requestJson(fetchFn, new URL(apiPathOf("/auth/server"), serverUrl)),
     createSession: ({ serverUrl, mode, email, password }: SignInAttempt) =>
       requestJson(
         fetchFn,
-        new URL(`/auth/${mode}`, serverUrl),
+        new URL(apiPathOf(`/auth/${mode}`), serverUrl),
         postingJson({ email, password }),
       ),
     confirmEmail: (serverUrl, token) =>
       requestDone(
         fetchFn,
-        new URL("/auth/confirm-email", serverUrl),
+        new URL(apiPathOf("/auth/confirm-email"), serverUrl),
         postingJson({ token }),
       ),
     requestPasswordReset: (serverUrl, email) =>
       requestDone(
         fetchFn,
-        new URL("/auth/password-reset", serverUrl),
+        new URL(apiPathOf("/auth/password-reset"), serverUrl),
         postingJson({ email }),
       ),
     setNewPassword: (serverUrl, token, password) =>
       requestJson(
         fetchFn,
-        new URL("/auth/password", serverUrl),
+        new URL(apiPathOf("/auth/password"), serverUrl),
         postingJson({ token, password }),
       ),
     connectToServer: async (server: ServerConfig) => {

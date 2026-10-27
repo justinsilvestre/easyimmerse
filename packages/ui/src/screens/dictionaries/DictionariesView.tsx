@@ -35,7 +35,7 @@ export function DictionariesView({
   unsupportedFile,
   importFailure = null,
   pendingTable,
-  onBack,
+  backHref,
   backLabel,
   onAddFromRegistry,
   onAddFromFile,
@@ -76,7 +76,7 @@ export function DictionariesView({
     hint: string | null;
   } | null;
   /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up. */
-  onBack: () => void;
+  backHref: string;
   /** Names where Back leads, such as "Settings"; "Back" when it is left out. */
   backLabel?: string;
   onAddFromRegistry?: () => void;
@@ -122,7 +122,7 @@ export function DictionariesView({
     </>
   );
   return (
-    <ScreenLayout onBack={onBack} backLabel={backLabel}>
+    <ScreenLayout backHref={backHref} backLabel={backLabel}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1
           ref={headingRef}

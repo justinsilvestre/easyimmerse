@@ -18,14 +18,7 @@ function renderProject(responses: Record<string, FakeResponse>) {
     "GET /dictionaries": { dictionaries: [] },
     ...responses,
   });
-  const rendered = renderWithAppStore(
-    <ProjectScreen
-      projectId="p1"
-      onBack={() => undefined}
-      onEditSettings={() => undefined}
-    />,
-    client,
-  );
+  const rendered = renderWithAppStore(<ProjectScreen projectId="p1" />, client);
   act(() =>
     rendered.store.dispatch(
       actions.navigated({ type: "openProject", projectId: "p1" }),

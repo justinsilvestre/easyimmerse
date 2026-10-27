@@ -67,16 +67,18 @@ function sections(
 ) {
   return (
     <>
-      <DictionaryStatus statuses={dictionaries} onOpenDictionaries={fn()} />
+      <DictionaryStatus
+        statuses={dictionaries}
+        dictionariesHref="/projects/p1?settings=dictionaries"
+      />
       <MediaSection
+        projectId="p1"
         media={mediaItems}
         onAddMedia={fn()}
-        onOpenLibrary={fn()}
         importSources={[
           { name: "example-plugin", label: "Add with Example plugin" },
         ]}
         onImportMedia={fn()}
-        onOpenMedia={fn()}
         onDeleteMedia={fn()}
       />
       <ProjectFlashcardsPanel
@@ -104,9 +106,8 @@ const meta = {
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
+    projectId: "p1",
     name: "German",
-    onBack: fn(),
-    onEditSettings: fn(),
     children: sections(media, neverExportedSync),
   },
 } satisfies Meta<typeof ProjectView>;

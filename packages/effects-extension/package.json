@@ -13,6 +13,7 @@
   "dependencies": {
     "@easyimmerse/effects-web": "workspace:*",
     "@easyimmerse/state": "workspace:*",
+    "@tanstack/history": "1.162.5",
     "@wxt-dev/browser": "^0.3.4"
   },
   "devDependencies": {

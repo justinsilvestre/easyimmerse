@@ -5,6 +5,7 @@ use tauri::Url;
 /// and the embedded server.
 /// The window injects the API token into every page it loads,
 /// so a remote page must never load there.
+/// An `easyimmerse://` link is refused too: the operating system hands it to the app, whose page opens the screen it names.
 pub fn is_app_url(url: &Url) -> bool {
     match url.scheme() {
         "tauri" => true,
@@ -42,7 +43,7 @@ mod tests {
 
     #[test]
     fn allows_the_embedded_server() {
-        assert!(allows("http://127.0.0.1:8787/health"));
+        assert!(allows("http://127.0.0.1:8787/api/health"));
     }
 
     #[test]
@@ -53,6 +54,11 @@ mod tests {
     #[test]
     fn refuses_a_remote_page_that_only_mentions_localhost() {
         assert!(!allows("http://localhost.example.com/"));
+    }
+
+    #[test]
+    fn refuses_an_easyimmerse_link() {
+        assert!(!allows("easyimmerse://projects/p1"));
     }
 
     #[test]

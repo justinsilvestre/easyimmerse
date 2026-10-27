@@ -8,7 +8,7 @@ const coveredItem = { id: "i1", has_cover: true, updated_at_ms: 42 };
 describe("buildLibraryCoverUrl", () => {
   it("addresses the cover route of the item, with the token and the time the item changed", () => {
     expect(buildLibraryCoverUrl(server, coveredItem)).toBe(
-      "http://127.0.0.1:8787/library/items/i1/cover?token=secret&v=42",
+      "http://127.0.0.1:8787/api/library/items/i1/cover?token=secret&v=42",
     );
   });
 
@@ -26,7 +26,7 @@ describe("buildLibraryCoverUrl", () => {
 describe("buildLibraryFileUrl", () => {
   it("addresses the file route of the item, with the token", () => {
     expect(buildLibraryFileUrl(server, "i1")).toBe(
-      "http://127.0.0.1:8787/library/items/i1/file?token=secret",
+      "http://127.0.0.1:8787/api/library/items/i1/file?token=secret",
     );
   });
 

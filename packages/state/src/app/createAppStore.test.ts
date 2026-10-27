@@ -90,6 +90,131 @@ describe("createAppStore", () => {
     expect(store.getState().app.preferences.systemTheme).toBe("dark");
   });
 
+  it("opens on the screen the platform's address names", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/projects/p1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    expect(store.getState().app.route).toEqual({
+      screen: "project",
+      projectId: "p1",
+    });
+  });
+
+  it("moves to the screen of an address the browser's Back returns to", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    effects.showAddress("/");
+    expect(store.getState().app.route).toEqual({ screen: "home" });
+  });
+
+  it("opens on the screen of the link the platform started the app with", () => {
+    const effects = createRecordingEffects();
+    effects.openLink("easyimmerse://projects/p1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    expect(store.getState().app.route).toEqual({
+      screen: "project",
+      projectId: "p1",
+    });
+  });
+
+  it("moves to the screen of a link the platform opens while the app runs", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("easyimmerse://projects/p1?settings=general");
+    expect(store.getState().app.route).toEqual({
+      screen: "settings",
+      beneath: { screen: "project", projectId: "p1" },
+      pages: ["general"],
+    });
+  });
+
+  it("writes the screen a link opens into the browser's history as a new entry", () => {
+    const effects = createRecordingEffects();
+    createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("easyimmerse://projects/p1");
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      entry: {
+        path: "/projects/p1",
+        state: { previousPath: "/", origin: "link" },
+      },
+      write: "push",
+    });
+  });
+
+  it("ignores a link of another scheme", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.openLink("https://example.com/projects/p1");
+    expect(store.getState().app.route).toEqual({ screen: "home" });
+  });
+
+  it("moves to the screen of a link a person follows within the app", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.followLink("/library");
+    expect(store.getState().app.route).toEqual({ screen: "library" });
+  });
+
+  it("writes the address of each screen it moves to into the browser's history", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      entry: {
+        path: "/library",
+        state: { previousPath: "/", origin: "app" },
+      },
+      write: "push",
+    });
+  });
+
+  it("returns to the previous history entry when the app's own Back leads to it", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    expect(effects.calls).toContainEqual({ type: "returnToPreviousLocation" });
+  });
+
+  it("leaves the history to the browser's Back when the app's own Back returns to the previous entry", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    expect(
+      effects.calls.filter(({ type }) => type === "writeLocation"),
+    ).toHaveLength(1);
+  });
+
+  it("moves to the previous entry's screen once the history returns to it for the app's own Back", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.navigated({ type: "openLibrary" }));
+    store.dispatch(actions.navigated({ type: "goHome" }));
+    expect(store.getState().app.route).toEqual({ screen: "home" });
+  });
+
+  it("replaces the entry of a screen opened at an address when the app's own Back leaves it", () => {
+    const effects = createRecordingEffects();
+    effects.showAddress("/projects/p1/media/m1");
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.closeMedia());
+    expect(effects.calls).toContainEqual({
+      type: "writeLocation",
+      entry: {
+        path: "/projects/p1",
+        state: { previousPath: null, origin: "app" },
+      },
+      write: "replace",
+    });
+  });
+
   it("dispatches appStarted once it is created", () => {
     const server = createFakeServerStoreParts();
     createAppStore(createRecordingEffects(), server);

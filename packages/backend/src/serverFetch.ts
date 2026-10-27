@@ -1,7 +1,7 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 import { buildAuthorizationHeader } from "./conversionFileUrl.ts";
 
-/** Fetches a path from the server with the bearer token, for answers that are not JSON, such as media and packages. */
+/** Fetches an API path from the server with the bearer token, for answers that are not JSON, such as media and packages. */
 export type ServerFetch = (
   path: string,
   init?: RequestInit,
@@ -13,7 +13,7 @@ export function createServerFetch(
   fetchFn: typeof fetch = (input, init) => globalThis.fetch(input, init),
 ): ServerFetch {
   return (path, init = {}) =>
-    fetchFn(new URL(path, server.serverUrl), {
+    fetchFn(new URL(apiPathOf(path), server.serverUrl), {
       ...init,
       headers: {
         ...(init.headers as Record<string, string> | undefined),

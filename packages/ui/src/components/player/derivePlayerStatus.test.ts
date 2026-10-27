@@ -25,7 +25,7 @@ describe("derivePlayerStatus", () => {
       status: "ready",
       source: {
         kind: "hls",
-        url: "http://127.0.0.1:1/conversions/copy0001/index.m3u8",
+        url: "http://127.0.0.1:1/api/conversions/copy0001/index.m3u8",
         authorization: "Bearer t0k3n",
       },
     });

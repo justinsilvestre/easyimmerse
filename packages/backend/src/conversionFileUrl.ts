@@ -1,4 +1,4 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL of a converted media file, such as the HLS playlist the playback route names.
@@ -8,7 +8,7 @@ export function buildConversionFileUrl(
   server: ServerConfig,
   playlistPath: string,
 ): string {
-  return new URL(playlistPath, server.serverUrl).toString();
+  return new URL(apiPathOf(playlistPath), server.serverUrl).toString();
 }
 
 /** The value of the `Authorization` header every request to the server carries. */

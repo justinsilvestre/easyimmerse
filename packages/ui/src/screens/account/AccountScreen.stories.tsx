@@ -1,6 +1,5 @@
 import { actions } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
 import { withAppStore } from "../../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../../storybook/withDispatchedActions.tsx";
 import { AccountScreen } from "./AccountScreen.tsx";
@@ -10,7 +9,7 @@ const meta = {
   component: AccountScreen,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onBack: fn() },
+  args: { backHref: "/" },
 } satisfies Meta<typeof AccountScreen>;
 
 export default meta;

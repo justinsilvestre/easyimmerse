@@ -1,7 +1,8 @@
+import { pathOfRoute } from "@easyimmerse/state";
 import type { LibraryItem, Project } from "@easyimmerse/types";
 import { Pencil, Plus } from "lucide-react";
 import { Badge } from "../../components/common/Badge.tsx";
-import { Button } from "../../components/common/Button.tsx";
+import { Button, ButtonLink } from "../../components/common/Button.tsx";
 import { SelectField } from "../../components/common/SelectField.tsx";
 import { ScreenLayout } from "../../layout/ScreenLayout.tsx";
 import { languageName } from "../../lib/formatting/languages.ts";
@@ -30,8 +31,6 @@ export function LibraryItemView({
   addFailure,
   onAdd,
   onChooseProject,
-  onEdit,
-  onBack,
 }: {
   item: LibraryItem;
   /** The language of every item of the library, which a new project is for. */
@@ -48,12 +47,13 @@ export function LibraryItemView({
   /** Adds the item to the project with the given id, or to a new project for null. */
   onAdd: (projectId: string | null) => void;
   onChooseProject: (projectId: string | null) => void;
-  onEdit: () => void;
-  onBack: () => void;
 }) {
   const chosen = chosenProjectId ?? newProject;
   return (
-    <ScreenLayout onBack={onBack} backLabel="Library">
+    <ScreenLayout
+      backHref={pathOfRoute({ screen: "library" })}
+      backLabel="Library"
+    >
       {coverUrl && (
         <img
           src={coverUrl}
@@ -65,10 +65,12 @@ export function LibraryItemView({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <h1 className="text-xl font-semibold">{item.title}</h1>
           {canManage && (
-            <Button onClick={onEdit}>
+            <ButtonLink
+              href={pathOfRoute({ screen: "libraryEdit", itemId: item.id })}
+            >
               <Pencil className="size-4" aria-hidden />
               Edit
-            </Button>
+            </ButtonLink>
           )}
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">

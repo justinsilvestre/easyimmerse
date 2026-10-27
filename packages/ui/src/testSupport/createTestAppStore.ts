@@ -1,5 +1,6 @@
 import type { BackendClient, BrowserFiles } from "@easyimmerse/backend";
 import { createBackendStoreParts } from "@easyimmerse/backend";
+import { createSubscribeToLinkClicks } from "@easyimmerse/effects-web";
 import type { ServerState } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -15,6 +16,7 @@ import { fixtureResponses } from "./fixtureResponses.ts";
  * A server config makes hooks that build media URLs treat the client as a connected server, and a cloud URL names the official server the app offers to log in to.
  * Browser files let requests read the bytes and frames of the files their registry holds.
  * The store starts by loading the preferences that the given recording effects hold.
+ * A plain click on one of the app's own links anywhere in the document moves the store, as in the browser, rather than loading the link.
  */
 export function createTestAppStore(
   client: BackendClient = createFakeBackendClient(fixtureResponses),
@@ -27,7 +29,10 @@ export function createTestAppStore(
   ),
 ) {
   const store = createAppStore(
-    effects,
+    {
+      ...effects,
+      subscribeToLinkClicks: createSubscribeToLinkClicks(document, "plain"),
+    },
     createBackendStoreParts(client, servers.config, browserFiles),
     servers.cloudUrl,
   );

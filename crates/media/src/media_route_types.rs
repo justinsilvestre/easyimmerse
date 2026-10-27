@@ -36,7 +36,7 @@ pub struct PlaybackMethodRequest {
 #[ts(export)]
 pub struct PlaybackMethodResponse {
     pub method: PlaybackMethod,
-    /// The path of the HLS playlist, present only when the method converts.
+    /// The path of the HLS playlist under the API path prefix, present only when the method converts.
     pub playlist_path: Option<String>,
 }
 

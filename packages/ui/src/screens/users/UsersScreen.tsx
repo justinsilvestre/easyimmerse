@@ -9,14 +9,14 @@ import { UsersServerLine } from "./UsersServerLine.tsx";
 /** The accounts of the server that `via` names, for its administrator to create, search, give access to, and delete. */
 export function UsersScreen({
   via,
-  onBack,
+  backHref,
 }: {
   via: AccountVia;
-  onBack: () => void;
+  backHref: string;
 }) {
   return (
     <ScreenLayout
-      onBack={onBack}
+      backHref={backHref}
       backLabel={useAppSelector(selectSettingsPageBackLabel)}
     >
       <div className="flex flex-col gap-6">

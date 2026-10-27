@@ -177,7 +177,7 @@ describe("BuiltInServerAccount", () => {
         account_role: "administrator",
       });
       fireEvent.click(
-        await screen.findByRole("button", { name: "Manage users" }),
+        await screen.findByRole("link", { name: "Manage users" }),
       );
       expect(selectRoute(store.getState())).toMatchObject({
         pages: ["linkedRemoteUsers"],

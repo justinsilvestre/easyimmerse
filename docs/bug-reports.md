@@ -40,3 +40,9 @@ Each bug report is to be logged in this format:
 - Headword cards lose their underline 2026-10-07
   - Double-click an inflected word in the subtitles, such as "frisst", when the dictionary answers with its headword, "fressen". The flashcard takes the headword as its word.
   - The subtitle shows no dotted underline for that flashcard, because the headword does not appear in the cue. The word the flashcard was made from should be marked even when the flashcard's word is its dictionary form.
+
+## Links
+
+- iOS launch link opens home 2026-10-26
+  - With the iOS app closed, open an `easyimmerse://` link to a screen, such as `easyimmerse://projects/new`. The app starts on the home screen. tao, the window library under Tauri, does not pass on the link that launches an iOS app (tauri-apps/tao#1248, with fixes proposed in tauri-apps/tao#1257 and #1376).
+  - The app should start on the screen the link names, as it does on Android and when the iOS app is already running.

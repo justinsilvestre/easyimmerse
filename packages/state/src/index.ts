@@ -242,19 +242,30 @@ export {
   selectReviewProjectId,
   selectReviewSession,
 } from "./review/selectReviewSession.ts";
+export { readEntryState } from "./route/readEntryState.ts";
 export type {
   MainRoute,
   NavigationStep,
+  Route,
   SettingsPage,
   SettingsSection,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";
+export type {
+  EntryState,
+  LocationEntry,
+  LocationReport,
+  LocationWrite,
+} from "./route/routeEffect.ts";
+export { pathOfRoute, routeOfPath } from "./route/routePath.ts";
 export {
   selectCurrentMediaFileId,
   selectIsSettingsOpen,
+  selectPathOfStep,
   selectRoute,
   selectSettingsScrollTarget,
 } from "./route/routeSelectors.ts";
+export { upPathOf } from "./route/upRouteOf.ts";
 export {
   cachedLibraryItemIdOf,
   cachedLibraryText,
@@ -413,6 +424,7 @@ export {
   selectPlayerDuration,
   selectPlayerFailure,
 } from "./screen/screenSelectors.ts";
+export { apiPathOf } from "./server/apiPathOf.ts";
 export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";

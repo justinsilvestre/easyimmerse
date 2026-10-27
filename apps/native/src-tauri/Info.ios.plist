@@ -4,5 +4,17 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>easyImmerse uses the camera to scan the QR code that pairs it with the desktop app on your local network.</string>
+	<!-- The deep-link plugin writes the same URL type into the generated project from tauri.conf.json, but only when its build script runs, which a cached build skips after the project is generated anew. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>easyimmerse</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>easyimmerse</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

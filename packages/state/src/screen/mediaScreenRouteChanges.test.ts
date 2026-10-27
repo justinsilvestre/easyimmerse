@@ -6,6 +6,12 @@ import {
   mediaScreenLeftBy,
 } from "./mediaScreenRouteChanges.ts";
 
+const toProject = actions.locationChanged("/projects/p1");
+
+const toSettings = actions.locationChanged(
+  "/projects/p1/media/m1?settings=general",
+);
+
 const open = stateAfter(
   actions.openMediaFileRequested("p1", "m1"),
   actions.playerTimeChanged(4),
@@ -13,33 +19,29 @@ const open = stateAfter(
 
 describe("mediaScreenLeftBy", () => {
   it("returns the media screen that the route change closes", () => {
-    expect(
-      mediaScreenLeftBy(open, actions.closeMedia())?.route.mediaFileId,
-    ).toBe("m1");
+    expect(mediaScreenLeftBy(open, toProject)?.route.mediaFileId).toBe("m1");
   });
 
   it("returns null while the media screen stays open", () => {
-    expect(mediaScreenLeftBy(open, actions.settingsRequested())).toBeNull();
+    expect(mediaScreenLeftBy(open, toSettings)).toBeNull();
   });
 
   it("returns null when no media screen is open", () => {
-    expect(mediaScreenLeftBy(stateAfter(), actions.closeMedia())).toBeNull();
+    expect(mediaScreenLeftBy(stateAfter(), toProject)).toBeNull();
   });
 });
 
 describe("mediaScreenEnteredBy", () => {
   it("returns the media file that the route change opens", () => {
-    const action = actions.openMediaFileRequested("p1", "m2");
+    const action = actions.locationChanged("/projects/p1/media/m2");
     expect(mediaScreenEnteredBy(open, action)).toBe("m2");
   });
 
   it("returns null when the same media file stays open", () => {
-    const action = actions.settingsRequested();
-    expect(mediaScreenEnteredBy(open, action)).toBeNull();
+    expect(mediaScreenEnteredBy(open, toSettings)).toBeNull();
   });
 
   it("returns null when the route change opens no media file", () => {
-    const action = actions.closeMedia();
-    expect(mediaScreenEnteredBy(open, action)).toBeNull();
+    expect(mediaScreenEnteredBy(open, toProject)).toBeNull();
   });
 });

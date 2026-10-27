@@ -1,6 +1,6 @@
 //! The health check CI runs after building the app.
 //!
-//! When `EASYIMMERSE_SMOKE_TEST=1` is set, the app starts its embedded server, requests `/health`, prints the result,
+//! When `EASYIMMERSE_SMOKE_TEST=1` is set, the app starts its embedded server, requests `/api/health`, prints the result,
 //! and exits without creating a window, so no display is needed for the request itself.
 //! A build with the `plugin-check` feature also runs the plugin host check and prints what it found.
 //! On Linux, `tauri::Builder::run` still initializes GTK before `setup` runs, and GTK refuses to start without a display,
@@ -8,6 +8,7 @@
 
 use std::time::Duration;
 
+use easyimmerse_api::API_PATH_PREFIX;
 use tauri::AppHandle;
 use thiserror::Error;
 
@@ -65,7 +66,7 @@ fn check_plugin_host(_app: &AppHandle) -> Result<(), SmokeTestError> {
 }
 
 fn check_health(server: &EmbeddedServer) -> Result<(), SmokeTestError> {
-    let mut response = ureq::get(format!("{}/health", server.url))
+    let mut response = ureq::get(format!("{}{API_PATH_PREFIX}/health", server.url))
         .header("authorization", format!("Bearer {}", server.token))
         .config()
         .timeout_global(Some(REQUEST_TIMEOUT))

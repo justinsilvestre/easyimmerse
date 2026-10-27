@@ -20,7 +20,7 @@ const settings = {
 describe("ServerScreen", () => {
   it("saves the address typed into the form", () => {
     const { store, effects } = renderWithAppStore(
-      <ServerScreen onBack={() => undefined} />,
+      <ServerScreen backHref="/" />,
     );
     act(() => {
       store.dispatch(
@@ -42,7 +42,7 @@ describe("ServerScreen", () => {
 
   it("saves the device name typed into the form", () => {
     const { store, effects } = renderWithAppStore(
-      <ServerScreen onBack={() => undefined} />,
+      <ServerScreen backHref="/" />,
     );
     act(() => {
       store.dispatch(
@@ -68,7 +68,7 @@ describe("ServerScreen", () => {
 
   it("copies the log", () => {
     const { store, effects } = renderWithAppStore(
-      <ServerScreen onBack={() => undefined} />,
+      <ServerScreen backHref="/" />,
     );
     act(() => {
       store.dispatch(

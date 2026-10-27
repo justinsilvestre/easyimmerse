@@ -111,9 +111,7 @@ impl RemoteClient {
         body: impl AsSendBody,
         size: Option<u64>,
     ) -> Result<Response<Body>, RemoteError> {
-        let mut builder = Request::builder()
-            .method(method)
-            .uri(format!("{}{path}", self.server_url));
+        let mut builder = Request::builder().method(method).uri(self.url_of(path));
         if let Some(token) = &self.token {
             builder = builder.header(AUTHORIZATION, format!("Bearer {token}"));
         }

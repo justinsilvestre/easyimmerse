@@ -68,7 +68,7 @@ function updateChoices(state: LibraryEditState, action: AppAction) {
         ...state,
         addTarget: { itemId: action.itemId, projectId: action.projectId },
       });
-    case "navigated":
+    case "locationChanged":
       return updated({
         ...state,
         deletion: null,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { reportedLocationOf, stateAfter } from "../app/stateAfter.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
@@ -39,6 +39,12 @@ function apply(
   });
 }
 
+/** Applies the location the history reports after the request to the media imports after the given earlier actions. */
+function applyMove(request: AppAction, before: AppAction[]) {
+  const app = stateAfter(...before);
+  return apply(reportedLocationOf(app, request), before);
+}
+
 describe("mediaImportsFeature", () => {
   it("opens the dialog of the project shown", () => {
     const [imports] = apply(actions.mediaImportOpened(source), [
@@ -48,12 +54,12 @@ describe("mediaImportsFeature", () => {
   });
 
   it("drops a dialog with no fetch once the project is left", () => {
-    const [imports] = apply(goHome, openedMediaImport);
+    const [imports] = applyMove(goHome, openedMediaImport);
     expect(imports).toEqual({});
   });
 
   it("aborts the requests of a dialog with no fetch once the project is left", () => {
-    const [, effects] = apply(goHome, openedMediaImport);
+    const [, effects] = applyMove(goHome, openedMediaImport);
     expect(effects).toContainEqual({
       type: "abortRequest",
       id: "project/p1/mediaImport/form",
@@ -61,18 +67,18 @@ describe("mediaImportsFeature", () => {
   });
 
   it("keeps a running fetch once the project is left", () => {
-    const [imports] = apply(goHome, startedMediaFetch);
+    const [imports] = applyMove(goHome, startedMediaFetch);
     expect(imports.p1?.jobId).toBe("j1");
   });
 
   it("goes on watching a running fetch once the project is left", () => {
-    const [, effects] = apply(goHome, startedMediaFetch);
+    const [, effects] = applyMove(goHome, startedMediaFetch);
     expect(effects).toEqual([]);
   });
 
   it("keeps a failed fetch once the project is left", () => {
     const failed = mediaFetchChecked({ status: "failed" });
-    const [imports] = apply(goHome, [...startedMediaFetch, failed]);
+    const [imports] = applyMove(goHome, [...startedMediaFetch, failed]);
     expect(imports.p1).toBeDefined();
   });
 
@@ -110,12 +116,12 @@ describe("mediaImportsFeature", () => {
   });
 
   it("keeps a dialog whose action is being answered once the project is left", () => {
-    const [imports] = apply(goHome, sentMediaImportStep);
+    const [imports] = applyMove(goHome, sentMediaImportStep);
     expect(imports.p1?.isAwaitingAnswer).toBe(true);
   });
 
   it("goes on waiting for the answer to an action once the project is left", () => {
-    const [, effects] = apply(goHome, sentMediaImportStep);
+    const [, effects] = applyMove(goHome, sentMediaImportStep);
     expect(effects).toEqual([]);
   });
 

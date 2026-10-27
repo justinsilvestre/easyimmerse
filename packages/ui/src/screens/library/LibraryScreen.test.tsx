@@ -62,9 +62,7 @@ describe("LibraryScreen", () => {
     it("shows no Manage library button", async () => {
       renderLibrary({ kind: "account", user: learner });
       await screen.findByRole("list", { name: "Library items" });
-      expect(
-        screen.queryByRole("button", { name: "Manage library" }),
-      ).toBeNull();
+      expect(screen.queryByRole("link", { name: "Manage library" })).toBeNull();
     });
   });
 
@@ -75,7 +73,7 @@ describe("LibraryScreen", () => {
         user: { ...learner, manages_library: true },
       });
       expect(
-        await screen.findByRole("button", { name: "Manage library" }),
+        await screen.findByRole("link", { name: "Manage library" }),
       ).toBeDefined();
     });
   });

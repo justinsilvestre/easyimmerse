@@ -6,6 +6,8 @@ import {
 } from "redux";
 import { watchBackupFaults } from "../backup/watchBackupFaults.ts";
 import type { Effects } from "../platform/effects.ts";
+import { pathOfAppLink } from "../route/pathOfAppLink.ts";
+import { watchUnreachableRoute } from "../route/watchUnreachableRoute.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import type { RequestRunner } from "../server/serverRequest.ts";
 import type { ServerConfig, ServerState } from "../server/serverState.ts";
@@ -51,6 +53,9 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
  * The store opens Settings whenever the platform asks for them, follows the operating system's theme, and shows a notice each time the backup breaks, for as long as it lives.
+ * The history decides where the app is. A request for a move, such as a navigation step or an `easyimmerse://` link the platform opens the app with,
+ * only writes the history; the store moves when the history reports the location: after its own writes, at startup, and after the browser's Back or Forward.
+ * A screen opened from an address or a link which turns out to be unreachable gives way to the home screen.
  * `cloudUrl` is the address of the official easyImmerse server, which the app offers to log in to, or null while there is none.
  * Once created, it dispatches `appStarted`, which loads the stored preferences.
  */
@@ -81,6 +86,17 @@ export function createAppStore(
     store.dispatch(actions.systemThemeChanged(theme)),
   );
   watchBackupFaults(store);
+  watchUnreachableRoute(store);
+  effects.subscribeToLocation(({ path, state, cause }) =>
+    store.dispatch(actions.locationChanged(path, state, cause)),
+  );
+  effects.subscribeToOpenedLinks((link) => {
+    const path = pathOfAppLink(link);
+    if (path !== null) store.dispatch(actions.linkOpened(path));
+  });
+  effects.subscribeToLinkClicks((path) =>
+    store.dispatch(actions.linkFollowed(path)),
+  );
   store.dispatch(actions.appStarted());
   return store;
 }

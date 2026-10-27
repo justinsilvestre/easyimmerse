@@ -1,4 +1,4 @@
-import type { ServerConfig } from "@easyimmerse/state";
+import { apiPathOf, type ServerConfig } from "@easyimmerse/state";
 import type { LibraryItem } from "@easyimmerse/types";
 
 /**
@@ -33,7 +33,7 @@ function libraryItemUrl(
   part: "cover" | "file",
 ): string {
   const url = new URL(
-    `/library/items/${encodeURIComponent(itemId)}/${part}`,
+    apiPathOf(`/library/items/${encodeURIComponent(itemId)}/${part}`),
     server.serverUrl,
   );
   url.searchParams.set("token", server.token);

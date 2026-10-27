@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
 import { INITIAL_VIEWPORTS } from "storybook/viewport";
 import {
   exampleProjectReviewed,
@@ -22,8 +21,6 @@ const meta = {
   args: {
     project: exampleProjectReviewed,
     review: exampleReviewCounts[2] ?? null,
-    onOpen: fn(),
-    onReview: fn(),
   },
 } satisfies Meta<typeof ProjectCard>;
 

@@ -13,6 +13,7 @@ const meta = {
     ),
   ],
   args: {
+    projectId: "p1",
     media: [
       {
         id: "m1",
@@ -29,9 +30,7 @@ const meta = {
     ],
     importSources: [],
     onAddMedia: fn(),
-    onOpenLibrary: fn(),
     onImportMedia: fn(),
-    onOpenMedia: fn(),
     onDeleteMedia: fn(),
   },
 } satisfies Meta<typeof MediaSection>;
@@ -52,6 +51,7 @@ export const WithImportSources: Story = {
 
 export const WithUnavailableMedia: Story = {
   args: {
+    projectId: "p1",
     media: [
       {
         id: "m1",
@@ -109,6 +109,7 @@ export const Empty: Story = {
 
 export const EmptyWithAnImportSource: Story = {
   args: {
+    projectId: "p1",
     media: [],
     importSources: [
       { name: "example-plugin", label: "Add with Example plugin" },

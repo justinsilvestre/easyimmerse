@@ -13,7 +13,6 @@ export function HelpRow() {
       icon={<CircleQuestionMark className="size-4 text-fg-muted" aria-hidden />}
       label="Help"
       description="Opens the easyImmerse project page in your browser."
-      isExternal
       onClick={() => dispatch(actions.externalLinkRequested(helpUrl))}
     />
   );

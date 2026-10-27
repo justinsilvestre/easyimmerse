@@ -8,6 +8,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  pathOfRoute,
   selectLibraryEdit,
   selectServerConfig,
 } from "@easyimmerse/state";
@@ -40,7 +41,10 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
   );
   if (!item.data)
     return (
-      <ScreenLayout onBack={manage} backLabel="Manage library">
+      <ScreenLayout
+        backHref={pathOfRoute({ screen: "libraryManage" })}
+        backLabel="Manage library"
+      >
         {item.isError ? (
           <p role="alert">
             This library item couldn't be loaded. Try again in a moment.
@@ -97,7 +101,6 @@ export function LibraryEditScreen({ itemId }: { itemId: string }) {
         dispatch(actions.libraryDeletionAsked(null));
         editing.remove();
       }}
-      onBack={manage}
     />
   );
 }

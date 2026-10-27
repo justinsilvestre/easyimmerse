@@ -50,7 +50,7 @@ async function openJapaneseSubtitles(page: Page, answersBatches = false) {
   await page.goto("/");
   await page
     .getByRole("list", { name: "Projects" })
-    .getByRole("button")
+    .getByRole("link")
     .first()
     .click();
   const mediaChooser = page.waitForEvent("filechooser");
