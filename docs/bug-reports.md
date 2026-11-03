@@ -41,6 +41,25 @@ Each bug report is to be logged in this format:
   - Double-click an inflected word in the subtitles, such as "frisst", when the dictionary answers with its headword, "fressen". The flashcard takes the headword as its word.
   - The subtitle shows no dotted underline for that flashcard, because the headword does not appear in the cue. The word the flashcard was made from should be marked even when the flashcard's word is its dictionary form.
 
+- Example flashcard always German 2026-10-27
+  - Create or edit a project whose target language is not German, and look at the example flashcard in the project form.
+  - The example is German whatever the target language. It should be in the project's target language.
+
+## Accessibility
+
+- Target text lacks lang attribute 2026-10-27
+  - With a screen reader or text-to-speech, read target-language subtitles, reader text or flashcard fields.
+  - They are pronounced as the interface language, since the text has no `lang` attribute. Target-language text should carry the project's language so that it is pronounced correctly.
+
+## Layout
+
+- Notices cover reader slider 2026-10-27
+  - Open an ebook and cause a notice, such as a flashcard saved in the background.
+  - The notice appears at the bottom centre, over the reader's progress slider. The slider should stay reachable while a notice shows.
+- Scrollbars on long files unconfirmed 2026-10-27
+  - Reported in the desktop app: the media screen shows scrollbars with a long file. This could not be reproduced in Chromium or the system WebKit at several window sizes, with the waveform and with the flashcard editor open. The layout was changed anyway, so that the screen is cut off at the edges of the window and the side panel scrolls on its own.
+  - The screen should never show scrollbars of its own. If they still appear in the desktop app, the next step is to measure the layout there.
+
 ## Links
 
 - iOS launch link opens home 2026-10-26
