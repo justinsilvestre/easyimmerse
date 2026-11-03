@@ -10,10 +10,14 @@ use crate::support::{
 const PROJECT: &str = "placeholder-1";
 
 async fn add_media(server: &TestServer) -> String {
+    add_named_media(server, "clip.webm").await
+}
+
+async fn add_named_media(server: &TestServer, name: &str) -> String {
     let response = server
         .post_json(
             &format!("/projects/{PROJECT}/media"),
-            &json!({ "name": "clip.webm", "source": { "kind": "browser_file", "size": 1, "last_modified_ms": 2 } }),
+            &json!({ "name": name, "source": { "kind": "browser_file", "size": 1, "last_modified_ms": 2 } }),
         )
         .await;
     response.json()["id"].as_str().unwrap().to_string()
@@ -218,7 +222,7 @@ async fn removes_a_track() {
 async fn does_not_reach_a_track_through_another_media_file() {
     let server = spawn_test_server(false).await;
     let media_id = add_media(&server).await;
-    let other_media_id = add_media(&server).await;
+    let other_media_id = add_named_media(&server, "other.webm").await;
     let added = add_track(&server, &media_id, &inline_request(None)).await;
     let id = added["id"].as_str().unwrap();
     let response = server

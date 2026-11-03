@@ -1,9 +1,11 @@
 use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::ProjectId;
 use serde_json::{Value, json};
+use tempfile::TempDir;
 
 use crate::support::{
-    TestServer, fixture_path, seeded_storage, spawn_test_server, spawn_test_server_with_storage,
+    TestResponse, TestServer, fixture_path, read_fixture, seeded_storage, spawn_test_server,
+    spawn_test_server_with_storage,
 };
 
 const PROJECT: &str = "placeholder-1";
@@ -16,15 +18,42 @@ fn browser_source() -> Value {
     json!({ "kind": "browser_file", "size": 48822, "last_modified_ms": 1700000000000u64 })
 }
 
-async fn add(server: &TestServer, name: &str, source: Value) -> Value {
-    let response = server
+async fn post(server: &TestServer, name: &str, source: &Value) -> TestResponse {
+    server
         .post_json(
             &format!("/projects/{PROJECT}/media"),
             &json!({ "name": name, "source": source }),
         )
-        .await;
+        .await
+}
+
+/// Adds a new media file to the project and returns it as the project's list shows it.
+async fn add(server: &TestServer, name: &str, source: Value) -> Value {
+    let response = post(server, name, &source).await;
     assert_eq!(response.status, 201, "{}", response.text());
-    response.json()
+    let mut added = response.json();
+    added
+        .as_object_mut()
+        .unwrap()
+        .remove("was_already_in_project");
+    added
+}
+
+/// Adds a media file to the project twice and returns the second response.
+async fn add_twice(server: &TestServer, name: &str, source: Value) -> TestResponse {
+    add(server, name, source.clone()).await;
+    post(server, name, &source).await
+}
+
+/// A folder holding a video named `Show.mp4`.
+fn folder_with_show() -> TempDir {
+    let folder = TempDir::new().expect("a temporary folder");
+    std::fs::write(folder.path().join("Show.mp4"), read_fixture("sample.mp4")).unwrap();
+    folder
+}
+
+fn show_source(folder: &TempDir) -> Value {
+    json!({ "kind": "path", "path": folder.path().join("Show.mp4") })
 }
 
 fn stream_path(media_file: &Value) -> String {
@@ -58,6 +87,83 @@ async fn an_added_media_file_carries_its_canonical_path() {
         added["source"],
         json!({ "kind": "path", "path": canonical })
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_new_media_file_was_not_already_in_the_project() {
+    let server = spawn_test_server(true).await;
+    let response = post(&server, "sample.mp4", &path_source("sample.mp4")).await;
+    assert_eq!(response.json()["was_already_in_project"], false);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn re_adding_a_file_at_the_same_path_answers_200() {
+    let server = spawn_test_server(true).await;
+    let response = add_twice(&server, "sample.mp4", path_source("sample.mp4")).await;
+    assert_eq!(response.status, 200, "{}", response.text());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn re_adding_a_file_at_the_same_path_says_it_was_already_in_the_project() {
+    let server = spawn_test_server(true).await;
+    let response = add_twice(&server, "sample.mp4", path_source("sample.mp4")).await;
+    assert_eq!(response.json()["was_already_in_project"], true);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn re_adding_a_file_at_the_same_path_returns_the_media_file_already_there() {
+    let server = spawn_test_server(true).await;
+    let added = add(&server, "sample.mp4", path_source("sample.mp4")).await;
+    let response = post(&server, "sample.mp4", &path_source("sample.mp4")).await;
+    assert_eq!(response.json()["id"], added["id"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn re_adding_a_file_at_the_same_path_adds_nothing_to_the_list() {
+    let server = spawn_test_server(true).await;
+    add_twice(&server, "sample.mp4", path_source("sample.mp4")).await;
+    let response = server.get(&format!("/projects/{PROJECT}/media")).await;
+    assert_eq!(response.json()["media_files"].as_array().unwrap().len(), 1);
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread")]
+async fn adding_a_link_to_a_file_already_there_returns_the_media_file_already_there() {
+    let server = spawn_test_server(true).await;
+    let folder = folder_with_show();
+    let link = folder.path().join("Link.mp4");
+    std::os::unix::fs::symlink(folder.path().join("Show.mp4"), &link).unwrap();
+    let added = add(&server, "Show.mp4", show_source(&folder)).await;
+    let linked = json!({ "kind": "path", "path": link });
+    let response = post(&server, "Link.mp4", &linked).await;
+    assert_eq!(response.json()["id"], added["id"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adds_a_file_of_the_same_name_from_another_folder() {
+    let server = spawn_test_server(true).await;
+    let (first, second) = (folder_with_show(), folder_with_show());
+    add(&server, "Show.mp4", show_source(&first)).await;
+    let response = post(&server, "Show.mp4", &show_source(&second)).await;
+    assert_eq!(response.status, 201, "{}", response.text());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn re_adding_the_same_browser_file_returns_the_media_file_already_there() {
+    let server = spawn_test_server(false).await;
+    let added = add(&server, "clip.webm", browser_source()).await;
+    let response = post(&server, "clip.webm", &browser_source()).await;
+    assert_eq!(response.json()["id"], added["id"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adds_a_browser_file_of_the_same_name_modified_at_another_time() {
+    let server = spawn_test_server(false).await;
+    add(&server, "clip.webm", browser_source()).await;
+    let modified =
+        json!({ "kind": "browser_file", "size": 48822, "last_modified_ms": 1800000000000u64 });
+    let response = post(&server, "clip.webm", &modified).await;
+    assert_eq!(response.status, 201, "{}", response.text());
 }
 
 #[tokio::test(flavor = "multi_thread")]

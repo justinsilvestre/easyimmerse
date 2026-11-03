@@ -46,7 +46,10 @@ function renderProject() {
     {
       ...fixtureResponses,
       "GET /dictionaries": { dictionaries: [] },
-      "POST /projects/p1/media": fixtureMediaFiles.media_files[0],
+      "POST /projects/p1/media": {
+        ...fixtureMediaFiles.media_files[0],
+        was_already_in_project: false,
+      },
       "DELETE /projects/p1/media/m2": undefined,
     },
     directPlaybackRoutes,

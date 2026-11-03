@@ -5795,7 +5795,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do; the text\nsubtitle tracks inside it and the subtitle files beside it that share its name are added\nas its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.",
+        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do; the text\nsubtitle tracks inside it and the subtitle files beside it that share its name are added\nas its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.\nWhen the project already has the same file, that media file is returned and nothing is added:\na file at the same canonical path, or a browser file of the same name, size and modification time.",
         "operationId": "addMediaFile",
         "parameters": [
           {
@@ -5819,12 +5819,22 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "description": "The same file, which the project already had",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFileAdded"
+                }
+              }
+            }
+          },
           "201": {
             "description": "The added media file",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MediaFile"
+                  "$ref": "#/components/schemas/MediaFileAdded"
                 }
               }
             }
@@ -14209,6 +14219,26 @@
             ]
           }
         }
+      },
+      "MediaFileAdded": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MediaFile"
+          },
+          {
+            "type": "object",
+            "required": [
+              "was_already_in_project"
+            ],
+            "properties": {
+              "was_already_in_project": {
+                "type": "boolean",
+                "description": "Whether the project already had the same file, which is returned instead of a new one."
+              }
+            }
+          }
+        ],
+        "description": "A media file that an add request returned, and whether the project already had it."
       },
       "MediaFileAvailability": {
         "type": "object",

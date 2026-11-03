@@ -3,7 +3,7 @@ import { actions } from "../../app/appAction.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
 import { operationsFeature } from "../../operations/operations.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
-import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
+import { exampleMediaFileAdded } from "../../server/exampleMediaFileAdded.ts";
 import { emptyServerCache } from "../../server/serverCacheWith.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
 import type { ProjectScreenState } from "../screenState.ts";
@@ -35,20 +35,16 @@ const chosen: ProjectScreenState = {
   isAnkiConnectSetupOpen: false,
 };
 
-const listRequest: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };
-
 const addRequest: ServerRequest = {
   kind: "addMediaFile",
   projectId: "p1",
   request: picked,
 };
 
-const listed = (...names: string[]) =>
-  actions.requestSettled("project/p1/listMediaFiles", listRequest, {
+const added = (wasAlreadyInProject: boolean) =>
+  actions.requestSettled("project/p1/addMediaFile", addRequest, {
     ok: true,
-    data: {
-      media_files: names.map((name) => exampleMediaFile(`m-${name}`, name)),
-    },
+    data: exampleMediaFileAdded("m1", "Pilot.mkv", wasAlreadyInProject),
   });
 
 describe("updateProjectScreen", () => {
@@ -62,7 +58,7 @@ describe("updateProjectScreen", () => {
     expect(screen).toEqual(chosen);
   });
 
-  it("asks for the project's media files once a media file is chosen", () => {
+  it("sends the chosen media file to the project", () => {
     const [, effects] = updateProjectScreen(
       idle,
       actions.mediaFileChosen(picked),
@@ -72,80 +68,45 @@ describe("updateProjectScreen", () => {
     expect(effects).toEqual([
       {
         type: "sendRequest",
-        id: "project/p1/listMediaFiles",
-        request: listRequest,
-      },
-    ]);
-  });
-
-  it("sends the chosen file when no file of its name is in the project", () => {
-    const [, effects] = updateProjectScreen(
-      chosen,
-      listed("episode.mkv"),
-      route,
-      app,
-    );
-    expect(effects).toEqual([
-      {
-        type: "sendRequest",
         id: "project/p1/addMediaFile",
         request: addRequest,
       },
     ]);
   });
 
-  it("sends the chosen file when the project's media files could not be listed", () => {
-    const failed = actions.requestSettled(
-      "project/p1/listMediaFiles",
-      listRequest,
-      { ok: false, error: { status: 500, message: "down" } },
-    );
-    const [, effects] = updateProjectScreen(chosen, failed, route, app);
-    expect(effects).toEqual([
-      {
-        type: "sendRequest",
-        id: "project/p1/addMediaFile",
-        request: addRequest,
-      },
-    ]);
-  });
-
-  it("says that a file of the same name is already in the project", () => {
-    const [, effects] = updateProjectScreen(
-      chosen,
-      listed("pilot.mkv"),
-      route,
-      app,
-    );
+  it("says that the file is already in the project when the server had it", () => {
+    const [, effects] = updateProjectScreen(chosen, added(true), route, app);
     expect(effects).toEqual([
       {
         type: "dispatch",
         action: actions.noticeRequested(
-          transientNotice("info", "“pilot.mkv” is already in the project."),
+          transientNotice("info", "“Pilot.mkv” is already in the project."),
         ),
       },
     ]);
   });
 
+  it("says nothing once the file is added", () => {
+    const [, effects] = updateProjectScreen(chosen, added(false), route, app);
+    expect(effects).toEqual([]);
+  });
+
   it("forgets the chosen file once its add has settled", () => {
-    const added = actions.requestSettled(
+    const failed = actions.requestSettled(
       "project/p1/addMediaFile",
       addRequest,
-      {
-        ok: false,
-        error: { status: 500, message: "down" },
-      },
+      { ok: false, error: { status: 500, message: "down" } },
     );
-    const [screen] = updateProjectScreen(chosen, added, route, app);
+    const [screen] = updateProjectScreen(chosen, failed, route, app);
     expect(screen.pendingMediaFile).toBeNull();
   });
 
-  it("ignores a listing that it did not ask for", () => {
+  it("ignores an add that it did not send", () => {
     const [, effects] = updateProjectScreen(
       chosen,
-      actions.requestSettled("other", listRequest, {
+      actions.requestSettled("other", addRequest, {
         ok: true,
-        data: { media_files: [] },
+        data: exampleMediaFileAdded("m1", "Pilot.mkv", true),
       }),
       route,
       app,
@@ -153,8 +114,8 @@ describe("updateProjectScreen", () => {
     expect(effects).toEqual([]);
   });
 
-  it("ignores a listing once no file is chosen", () => {
-    const [, effects] = updateProjectScreen(idle, listed(), route, app);
+  it("ignores an add once no file is chosen", () => {
+    const [, effects] = updateProjectScreen(idle, added(true), route, app);
     expect(effects).toEqual([]);
   });
 

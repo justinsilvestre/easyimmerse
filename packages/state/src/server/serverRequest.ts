@@ -25,6 +25,7 @@ import type {
   LookupQuery,
   LookupResponse,
   MediaFile,
+  MediaFileAdded,
   MediaSourceJob,
   NewLibraryFlashcard,
   ParseTimedTextRequest,
@@ -317,7 +318,7 @@ export type ServerResponses = {
   listMediaFiles: ListMediaFilesResponse;
   listAlignments: AlignmentsResponse;
   listFlashcards: ListFlashcardsResponse;
-  addMediaFile: MediaFile;
+  addMediaFile: MediaFileAdded;
   parseTimedText: TimedTextTrack;
   getImportJob: ImportJobStatus;
   getMediaSourceJob: MediaSourceJob;
