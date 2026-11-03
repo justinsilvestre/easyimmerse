@@ -164,6 +164,11 @@ As a user:
 - when I add a media file to the project:
   - [x] I see the new media file in the list of media files
   - [x] the new media file is opened
+- when I add a media file that is already in the project:
+  - [x] the media file already in the project is opened
+  - [x] a notice says that the file is already in the project
+- *on desktop*, when I add a media file with any embedded subtitles tracks:
+  - [x] those subtitle tracks are added to the media file
 - when I click "Remove" next to a media file:
   - [x] the media file is removed from the project's list; the user's files are left alone
 - while I am editing a flashcard:
@@ -184,7 +189,8 @@ As a user:
 As a user:
 - when a video has been opened:
   - [x] I see a video player
-  - [x] I can pause and resume playback through player controls, keyboard shortcuts, or double-clicking on the video
+  - [x] I can pause and resume playback with the play button in the player controls, with Space or K, or by clicking the video once
+  - [x] the tooltips of the player controls show their keyboard shortcuts
   - [x] I can seek to a different time in the video via the playback bar
   - [ ] I can skip forward or backward (by cue timings if any subtitles tracks are open) via player controls
   - [x] I can adjust the volume of the audio track
@@ -194,11 +200,10 @@ As a user:
     - toggling the visibility of the target language track (disabled if absent)
     - toggling the visibility of the translation track (disabled if absent)
     - opening the subtitles appearance dialog
-  - [x] the footer shows a button for toggling fullscreen mode
+  - [x] on the right of the footer, I see buttons for showing or hiding the subtitles panel and the waveform visualization, and for turning fullscreen mode on or off
   - [ ] the Sync button is on the left of the footer
   - [x] I can toggle fullscreen mode with the F key or by double-clicking on the video
-  - [ ] the footer shows a button for toggling the visibility of the subtitles panel
-  - [ ] the footer shows a button for toggling the visibility of the waveform visualization
+  - [x] the player controls fit in one row, even on a phone
 - when I open a *library* media file file:
   - [x] the tracks and subtitles are set for me (by the library admin), and uneditable
 - when I open a *self-added* media file for the first time, and the audio tracks correspond neatly to both or either of the project's target or translation languages:
@@ -212,7 +217,7 @@ As a user:
 - when I open a *self-added* media file for the first time, and the immediately available tracks do NOT correspond neatly to both or either of the project's target or translation languages:
   - [ ] I am prompted to select a track for each target- and translation-language slot, with the first lines of each track shown so I can tell them apart
 - when a subtitles track is added:
-  - [ ] its language is detected from any metadata, and on external files, tags in the filename such as `.ja.srt` or `.jpn.srt` 
+  - [ ] its language is detected from any metadata, and on external files, tags in the filename such as `.ja.srt` or `.jpn.srt`, also when `forced`, `sdh` or `cc` follows the tag, as in `.ja.forced.srt`
 - when subtitles tracks are present:
   - [x] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
 - when NO subtitles tracks are opened:
@@ -247,12 +252,17 @@ As a user:
   - [x] a "Screenshot" button captures the current frame
 - when a file cannot be played:
   - [x] I see "The media could not be played." followed by one plain sentence saying why, for example "This video's picture is too tall to convert."
+  - [x] I can return to the project with the "Back to the project" button under the message
 - when a subtitles track is opened and visible:
   - [ ] I see it in a band at the bottom or below the picture
   - [x] I see the subtitles in a band right under the picture, or across the picture's lower edge, above the player controls, when the window is too short and wide to fit the band and the controls underneath; the band keeps its height from cue to cue, sits on black under the picture, like the video, and on a translucent dark backdrop over it, and the text carries a shadow so it stays readable
   - [x] moving the mouse anywhere over the subtitle band, even its empty parts, does not bring the player controls back
 - when I open the subtitles appearance dialog from the menu in the player controls:
-  - [x] I can change the background's opacity and the text's shadow, size and colour
+  - [x] I can change:
+    - the opacity of the background
+    - the colour of the text
+    - the size of the text, from 50% to 150%
+    - the shadow of the text: None, Light, Medium or Heavy
   - [ ] I can see a live preview
 - when I submit the subtitles appearance dialog:
   - [ ] the choice is kept on the device for every file
@@ -310,8 +320,12 @@ As a user:
 
 ### Waveform visualization
 
-- when a video or audio file is opened:
-  - [x] I see a waveform visualization of the audio track around the current time; parts not yet loaded show a quiet line
+- when I open a video or audio file:
+  - [x] the waveform visualization is hidden
+  - [x] I can show or hide the waveform visualization with the waveform button in the footer
+- while the waveform visualization is shown:
+  - [x] I see the waveform of the audio track around the current time
+  - [x] parts of the audio that have not loaded yet show as a flat line
 - when a subtitles track/timing-enhanced transcript is opened:
   - [x] I see indications of the cue/segment timings in the waveform visualization, and can click on them to seek the audio to that cue/segment
   - [x] I can distinguish those segments corresponding to flashcards from those that do not
@@ -344,6 +358,13 @@ As a user:
   - [ ] in each subtitle cue card, I see the target language in large text and the translation a size smaller under it
   - [ ] I can see which cues correspond to flashcards, and which words inside those cues correspond to their word fields
   - [ ] it is docked to the side of the video player, or at the top of the audio player
+  - [x] I can choose the target-language and translation subtitles tracks from two lists at the top of the panel, each named for its language, such as "Japanese subtitles"
+  - [x] I can choose "None" in either list, so that no subtitles track is opened for that language
+- when a cue in the subtitles panel has a saved flashcard:
+  - [x] I can open the flashcard with a button on the cue's card
+- when a flashcard is open in the side panel:
+  - [x] the subtitles panel button in the footer is disabled
+  - [x] the tooltip of the subtitles panel button says to close the flashcard to show the subtitles
 - when cue text is active in the video/audio player:
   - [x] the card corresponding to the cue now is highlighted
 - when the user scrolls to cues at a different time than the current media time:
@@ -352,6 +373,9 @@ As a user:
 - while the user hasn't scrolled away from the current media time:
 - [ ] the panel scrolls automatically to keep the highlighted cue card in view
   - [ ] I can click on a card to seek the media to the start of that cue
+- when I click a word in a cue card in the subtitles panel:
+  - [x] the dictionary pop-up opens at that word
+  - [x] the media stays at its current time
 - when the open media file has no subtitles:
   - [x] I see a button to add a subtitles file from disk
   - [ ] I see a button to generate subtitles automatically
@@ -444,7 +468,6 @@ As a library admin:
   - [x] the highlight is removed
 - when I press the Up and Down arrow keys:
   - [x] any playback skips to the previous or next cue, and the highlight and keyboard focus move to that cue's first word
-  - [ ] the highlight moves to the last word of the previous/first of the next subtitles cue or reader text segment
 - when focus is on the cue text in the video/audio player, and the cue text changes
   - [x] the highlight moves to the first word of the new cue
 - when I press an arrow key so as to navigate past the first/last word of the subtitles or reader text page:
@@ -469,6 +492,10 @@ As a user:
   - [ ] it is at its default compact size
 - when there are no results for the word in the pop-up:
   - [x] I can see a link to the dictionary settings
+  - [x] I can make a flashcard with the word and its sentence with the flashcard button in the pop-up's header
+- when a dictionary entry has frequency ranks from my frequency dictionaries:
+  - [x] I see each rank after a "Frequency" label, with the name of its dictionary
+  - [x] I can hover over a rank to read what it means
 - when I click the flashard button in the pop-up's header, or on one of its entries:
   - [x] I can create a flashcard from that word or entry
 - when the word shown in the pop-up belongs to a sentence/segment or cue with audio:
@@ -527,8 +554,6 @@ As a user:
   - [x] a flashcard for the word is created from every entry and saved at once
 - when I press the flashcard button on one of the dictionary pop-up's entries:
   - [x] a flashcard for the word is created from that entry alone and saved at once
-- when I hold a tap on a word in the dictionary pop-up:
-  - [x] a flashcard for the word is created and saved at once
 - when I press the new-flashcard button over the subtitles:
   - [x] a flashcard with no word is created from the cue shown now and saved at once; the button's tooltip names the C key
 - when I press C while no text field has focus:
@@ -544,8 +569,13 @@ As a user:
 
 ### Flashcard form
 
+- when I open the flashcard-editing form while the media is playing:
+  - [ ] the flashcard's clip plays in a loop until I close the form, pause, or seek outside the clip
+- when I open the flashcard-editing form while the media is playing outside the flashcard's clip:
+  - [ ] playback jumps to the start of the clip
+- when the flashcard's clip is playing in a loop and playback reaches the end of the clip:
+  - [ ] playback starts over from the start of the clip
 - when the flashcard-editing form is open:
-  - [ ] the corresponding segment of audio/video is looped
   - [x] I can edit the text fields of the flashcard
   - [x] I can see the a segment of the audio track's waveform visualization corresponding to that card's audio clip, if present
   - [ ] I can move the clip's edges to change the clip's start and end times
@@ -555,8 +585,14 @@ As a user:
   - [x] fields excluded in my flashcard settings are hidden
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
-  - [x] I can delete the flashcard and close the form
-  - [x] I can close the form without saving; changes I discard this way can be brought back with Undo for a short while
+  - [x] I can close the form without saving with the close button
+- when the flashcard in the form has been saved before:
+  - [x] I can delete the flashcard with the "Delete" button, after confirming in a dialog
+- when I close the form without saving, and I had changed the flashcard:
+  - [x] my changes are discarded
+  - [x] a notice lets me bring the changes back with its "Undo" button for a few seconds
+- while the dictionaries are still looking up the flashcard's word:
+  - [x] the word and definition fields say "Looking up…"
 - when an unfocused text field has many lines of text:
   - [x] it shows only a few lines, with a faded edge
 - when a focused text field has many lines of text:
@@ -963,6 +999,10 @@ As a web/mobile app user:
   - [ ] I am told the format is not supported in the browser, and that the desktop app can play it
 - when I open a media file from my computer in the web app:
   - [x] it plays from the browser's memory; it is never converted and has no waveform visualization
+- when I edit a flashcard of a media file I opened from my computer in the web app:
+  - [x] the flashcard-editing form shows the start time, end time and length of the flashcard's clip
+  - [x] I can move the start or end of the clip by a tenth of a second with the − and + buttons beside each time
+  - [x] I can play the clip with the "Play" button beside its length
 
 As a web app user:
   - [ ] I can install the app as a Progressive Web App
@@ -1384,11 +1424,15 @@ As a user:
 
 As a user:
 - when I am on the settings screen:
-  - [ ] the settings are grouped under "Sync", "This device" and "About"
+  - [ ] the settings are grouped as follows:
+    - "Sync": Account, Local network sync, Server, Cloud storage
+    - "This device": Display, Dictionaries, Subtitles, Media conversion, Media cache
+    - "About": Licenses, Help
   - [x] I see whether I am logged in, and can open the account settings screen with the "Account" button
   - [ ] I can open the "Local network sync" page from the "Sync" group
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
-  - [x] I can open the subtitles appearance dialog
+  - [x] under "Subtitles", I can change the appearance of the subtitles with the same controls and preview as in the subtitles appearance dialog
+  - [x] under "Subtitles", I can go back to the default appearance with the "Restore defaults" button
   - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
   - [ ] under "Display", I can pick the theme and the text size, as in the Profile menu
   - [ ] under "About", I can open the help
