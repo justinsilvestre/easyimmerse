@@ -1158,6 +1158,8 @@ export interface paths {
          *     server's machine, which only a token allowed to read local paths may do; the text
          *     subtitle tracks inside it and the subtitle files beside it that share its name are added
          *     as its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.
+         *     When the project already has the same file, that media file is returned and nothing is added:
+         *     a file at the same canonical path, or a browser file of the same name, size and modification time.
          */
         post: operations["addMediaFile"];
         delete?: never;
@@ -3104,6 +3106,11 @@ export interface components {
              */
             track_selection_json?: string | null;
             translation_media_file_id?: components["schemas"]["MediaFileId"] | null;
+        };
+        /** @description A media file that an add request returned, and whether the project already had it. */
+        MediaFileAdded: components["schemas"]["MediaFile"] & {
+            /** @description Whether the project already had the same file, which is returned instead of a new one. */
+            was_already_in_project: boolean;
         };
         MediaFileAvailability: {
             availability: components["schemas"]["PathAvailability"];
@@ -8697,13 +8704,22 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The same file, which the project already had */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFileAdded"];
+                };
+            };
             /** @description The added media file */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MediaFile"];
+                    "application/json": components["schemas"]["MediaFileAdded"];
                 };
             };
             /** @description A `library` source, which only adding the library item makes */

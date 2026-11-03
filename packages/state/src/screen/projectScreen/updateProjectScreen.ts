@@ -15,8 +15,7 @@ import type { ServerCacheSlice } from "../../server/cacheEntry.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ScreenApp } from "../screenApp.ts";
 import type { ProjectScreenState } from "../screenState.ts";
-import { findMediaFileNamed } from "./mediaFileOpenedBy.ts";
-import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
+import { mediaFileAddId } from "./mediaFileAddId.ts";
 import { mediaFileRemovalId } from "./mediaFileRemovalId.ts";
 
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
@@ -66,40 +65,29 @@ function removalEffects(action: AppAction, { projectId }: ProjectRoute) {
   ];
 }
 
-/** Adds a picked media file to the project, unless a file of that name is already there. */
+/** Adds a picked media file to the project, and tells when the project already had the same file. */
 function updatePickedMediaFile(
   pending: PickedMediaFile | null,
   action: AppAction,
   { projectId }: ProjectRoute,
 ) {
-  const ids = mediaFilePickRequestIds(projectId);
-  switch (action.type) {
-    case "mediaFileChosen":
-      return updated(action.file, {
-        type: "sendRequest",
-        id: ids.list,
-        request: { kind: "listMediaFiles", projectId },
-      });
-    case "requestSettled":
-      if (pending === null) return updated(pending);
-      if (isSettled(action, ids.list, "listMediaFiles"))
-        // A list that fails to load lets the file be sent anyway.
-        return action.outcome.ok &&
-          findMediaFileNamed(action.outcome.data, pending.name)
-          ? updated(null, alreadyInProject(pending.name))
-          : updated(pending, sendPickedFile(projectId, pending));
-      if (isSettled(action, ids.add, "addMediaFile")) return updated(null);
-      return updated(pending);
-    default:
-      return updated(pending);
-  }
+  if (action.type === "mediaFileChosen")
+    return updated(action.file, sendPickedFile(projectId, action.file));
+  if (
+    pending === null ||
+    !isSettled(action, mediaFileAddId(projectId), "addMediaFile")
+  )
+    return updated(pending);
+  return action.outcome.ok && action.outcome.data.was_already_in_project
+    ? updated(null, alreadyInProject(action.outcome.data.name))
+    : updated(null);
 }
 
 /** Sends a picked media file to the project. */
 function sendPickedFile(projectId: string, file: PickedMediaFile) {
   return {
     type: "sendRequest",
-    id: mediaFilePickRequestIds(projectId).add,
+    id: mediaFileAddId(projectId),
     request: { kind: "addMediaFile", projectId, request: file },
   } satisfies Effect;
 }

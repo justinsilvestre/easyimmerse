@@ -89,8 +89,12 @@ async fn create_project(client: &Client<'_>) -> String {
 }
 
 async fn add_media(client: &Client<'_>, project: &str) -> String {
+    add_named_media(client, project, "clip.webm").await
+}
+
+async fn add_named_media(client: &Client<'_>, project: &str, name: &str) -> String {
     let body = json!({
-        "name": "clip.webm",
+        "name": name,
         "source": { "kind": "browser_file", "size": 1, "last_modified_ms": 2 },
     });
     client
@@ -349,8 +353,8 @@ mod alignments {
         let server = spawn_test_server_with_accounts(true).await;
         let (first, second) = two_accounts(&server).await;
         let project = create_project(&first).await;
-        let book = add_media(&first, &project).await;
-        let audio = add_media(&first, &project).await;
+        let book = add_named_media(&first, &project, "book.epub").await;
+        let audio = add_named_media(&first, &project, "book.mp3").await;
         let alignment = add_alignment(&first, &project, &book, &audio).await;
         let own_project = create_project(&second).await;
         let own_media = add_media(&second, &own_project).await;

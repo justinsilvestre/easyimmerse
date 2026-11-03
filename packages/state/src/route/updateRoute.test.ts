@@ -3,6 +3,7 @@ import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleMediaFileAdded } from "../server/exampleMediaFileAdded.ts";
 import {
   exampleProject,
   exampleProjectSettings,
@@ -134,7 +135,7 @@ const pickedInProject = [
 const added = actions.requestSettled(
   "project/p1/addMediaFile",
   { kind: "addMediaFile", projectId: "p1", request: picked },
-  { ok: true, data: exampleMediaFile("m1", "a.mkv") },
+  { ok: true, data: exampleMediaFileAdded("m1", "a.mkv") },
 );
 
 const fetchStatusRequest = {

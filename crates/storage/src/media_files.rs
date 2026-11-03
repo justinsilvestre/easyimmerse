@@ -84,6 +84,37 @@ pub fn find_library_media_file(
         .optional()?)
 }
 
+/// Finds the project's media file that is the same file as the given one: a file at the same path,
+/// a browser file of the same name, size and modification time, or the same library item.
+pub fn find_same_media_file(
+    conn: &Connection,
+    project_id: &ProjectId,
+    name: &str,
+    source: &MediaFileSource,
+) -> Result<Option<MediaFile>, StorageError> {
+    let (source_kind, source_path, size, last_modified_ms) = source_columns(source);
+    Ok(conn
+        .query_row(
+            &format!(
+                "SELECT {SELECTED_COLUMNS} FROM media_files \
+                 WHERE project_id = ?1 AND source_kind = ?2 AND source_path IS ?3 \
+                 AND browser_file_size IS ?4 AND browser_file_last_modified_ms IS ?5 \
+                 AND (source_kind != 'browser_file' OR name = ?6) \
+                 ORDER BY created_at_ms, rowid LIMIT 1"
+            ),
+            params![
+                project_id.0,
+                source_kind,
+                source_path,
+                size,
+                last_modified_ms,
+                name
+            ],
+            read_media_file,
+        )
+        .optional()?)
+}
+
 /// Finds the owner's media file of the library item in any of its projects, the one in the project opened last when there are several.
 pub fn find_owners_library_media_file(
     conn: &Connection,
@@ -466,6 +497,89 @@ mod tests {
             storage.get_media_file(&added.id).unwrap().source,
             library_source()
         );
+    }
+
+    fn browser_source_modified_at(last_modified_ms: u64) -> MediaFileSource {
+        MediaFileSource::BrowserFile {
+            size: 1234,
+            last_modified_ms,
+        }
+    }
+
+    #[test]
+    fn finds_the_media_file_at_the_same_path() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "a.mp4", &path_source("/a.mp4"))
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "renamed.mp4", &path_source("/a.mp4"))
+            .unwrap();
+        assert_eq!(found, Some(added));
+    }
+
+    #[test]
+    fn finds_no_media_file_of_the_same_name_at_another_path() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "a.mp4", &path_source("/one/a.mp4"))
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "a.mp4", &path_source("/two/a.mp4"))
+            .unwrap();
+        assert_eq!(found, None);
+    }
+
+    #[test]
+    fn finds_the_browser_file_of_the_same_name_size_and_modification_time() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "b.webm", &browser_source())
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "b.webm", &browser_source())
+            .unwrap();
+        assert_eq!(found, Some(added));
+    }
+
+    #[test]
+    fn finds_no_browser_file_of_the_same_name_modified_at_another_time() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "b.webm", &browser_source_modified_at(1))
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "b.webm", &browser_source_modified_at(2))
+            .unwrap();
+        assert_eq!(found, None);
+    }
+
+    #[test]
+    fn finds_no_browser_file_of_another_name() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(&project(), "b.webm", &browser_source())
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "c.webm", &browser_source())
+            .unwrap();
+        assert_eq!(found, None);
+    }
+
+    #[test]
+    fn finds_no_media_file_at_the_same_path_in_another_project() {
+        let storage = seeded_storage();
+        storage
+            .add_media_file(
+                &ProjectId("placeholder-2".to_string()),
+                "a.mp4",
+                &path_source("/a.mp4"),
+            )
+            .unwrap();
+        let found = storage
+            .find_same_media_file(&project(), "a.mp4", &path_source("/a.mp4"))
+            .unwrap();
+        assert_eq!(found, None);
     }
 
     #[test]
