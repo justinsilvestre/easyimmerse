@@ -1,0 +1,2200 @@
+{
+  "provider": null,
+  "content": {
+    "kind": "translation",
+    "translation_media_file_id": "translation",
+    "links": [
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 105,
+            "quote": "[Test note: the sample recording reads only the beginning of this chapter, up to the marked point below.]"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 105,
+            "quote": "[Test note: the sample recording reads only the beginning of this chapter, up to the marked point below.]"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 8,
+            "quote": "或春の日暮です。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 58,
+            "quote": "It was the close of a spring day, and the sun was setting."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 37,
+            "quote": "唐の都洛陽の西の門の下に、ぼんやり空を仰いでいる、一人の若者がありました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 59,
+            "end": 175,
+            "quote": "A young man was standing in front of the western city-gate of Loyang, the capital, during the Tang dynasty in China."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 176,
+            "end": 223,
+            "quote": "He was looking up absent-mindedly into the sky."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 62,
+            "quote": "若者は名を杜子春といって、元は金持の息子でしたが、今は財産を費い尽して、その日の暮しにも困る位、憐な身分になっているのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 224,
+            "end": 373,
+            "quote": "His name was Tu Tzuchun, and he was the son of a very rich man; but now he was living poorly and miserably, for all his fortune had been wasted away."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 61,
+            "quote": "何しろその頃洛陽といえば、天下に並ぶもののない、繁昌を極めた都ですから、往来にはまだしっきりなく、人や車が通っていました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 73,
+            "quote": "At that time Loyang was considered the most prosperous city in the world."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 74,
+            "end": 169,
+            "quote": "Therefore it was crowded with all kinds of traffic, and its streets were always full of people."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 4,
+            "start": 61,
+            "end": 149,
+            "quote": "門一ぱいに当っている、油のような夕日の光の中に、老人のかぶった紗の帽子や、土耳古の女の金の耳環や、白馬に飾った色糸の手綱が、絶えず流れて行く容子は、まるで画のような美しさです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 170,
+            "end": 461,
+            "quote": "Under the oily glow of the setting sun, which was reflected fully from the city-gate, the silk-gauze hats of ancient lords, the gold earrings of Turkish ladies, and the many-coloured decorative reins on the heads of white horses made a very beautiful picture as they streamed by incessantly."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 38,
+            "quote": "しかし杜子春は相変らず、門の壁に身を凭せて、ぼんやり空ばかり眺めていました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 97,
+            "quote": "Tu Tzuchun, however, stood leaning against the gate walls, and gazed absently at the setting sun."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 38,
+            "end": 89,
+            "quote": "空には、もう細い月が、うらうらと靡いた霞の中に、まるで爪の痕かと思う程、かすかに白く浮んでいるのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 3,
+            "start": 98,
+            "end": 211,
+            "quote": "Above, the silvery circle of a new moon could be already seen shining white and ghostly through the evening haze."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 44,
+            "quote": "[Test note: the sample recording ends here.]"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 44,
+            "quote": "[Test note: the sample recording ends here.]"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 90,
+            "quote": "「日は暮れるし、腹は減るし、その上もうどこへ行っても、泊めてくれる所はなさそうだし――こんな思いをして生きている位なら、一そ川へでも身を投げて、死んでしまった方がましかも知れない」"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 39,
+            "quote": "杜子春はひとりさっきから、こんな取りとめもないことを思いめぐらしていたのです。"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 38,
+            "quote": "するとどこからやって来たか、突然彼の前へ足を止めた、片目眇の老人があります。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 32,
+            "quote": "“It grows dark, and I am hungry."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 33,
+            "end": 61,
+            "quote": "No one will give me a bed …."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 62,
+            "end": 325,
+            "quote": "Perhaps it will be better to drown myself in some river and end the life I am leading,” thought Tu Tzuchun, and, just as he was turning this idea over in his mind, there suddenly appeared from somewhere an old man with one squint eye, who stopped in front of him."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 9,
+            "start": 38,
+            "end": 75,
+            "quote": "それが夕日の光を浴びて、大きな影を門へ落すと、じっと杜子春の顔を見ながら、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 326,
+            "end": 418,
+            "quote": "The setting sun, falling aslant on the body of the latter, cast a long shadow upon the gate."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 419,
+            "end": 489,
+            "quote": "For a moment he looked intently at Tu Tzuchun, and then said abruptly:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 27,
+            "quote": "「お前は何を考えているのだ」と、横柄に声をかけました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 30,
+            "quote": "“What are you thinking about?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 6,
+            "quote": "「私ですか。"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 11,
+            "start": 6,
+            "end": 36,
+            "quote": "私は今夜寝る所もないので、どうしたものかと考えているのです」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 127,
+            "quote": "“I?” said Tu Tzung, looking up, “I am thinking of what I shall do, for I cannot find a place to lay my head or pass the night.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 12,
+            "start": 0,
+            "end": 41,
+            "quote": "老人の尋ね方が急でしたから、杜子春はさすがに眼を伏せて、思わず正直な答をしました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 107,
+            "quote": "Being questioned so suddenly, Tu Tzuchun could not but give an honest answer, and he at once hung his head."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 13,
+            "start": 0,
+            "end": 5,
+            "quote": "「そうか。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 14,
+            "quote": "“I understand."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 13,
+            "start": 5,
+            "end": 15,
+            "quote": "それは可哀そうだな」"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 14,
+            "start": 0,
+            "end": 44,
+            "quote": "老人は暫く何事か考えているようでしたが、やがて、往来にさしている夕日の光を指さしながら、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 9,
+            "start": 15,
+            "end": 104,
+            "quote": "I am very sorry for you,” replied the old man, and for a while he seemed deep in thought."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 9,
+            "start": 105,
+            "end": 196,
+            "quote": "After a few moments he raised his finger and pointed to where the sun’s rays were slanting."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 15,
+            "start": 0,
+            "end": 20,
+            "quote": "「ではおれが好いことを一つ教えてやろう。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 22,
+            "quote": "“I will tell you what."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 15,
+            "start": 20,
+            "end": 64,
+            "quote": "今この夕日の中に立って、お前の影が地に映ったら、その頭に当る所を夜中に掘って見るが好い。"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 15,
+            "start": 64,
+            "end": 87,
+            "quote": "きっと車に一ぱいの黄金が埋まっている筈だから」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 10,
+            "start": 23,
+            "end": 115,
+            "quote": "When you are standing here in the sunshine, mark carefully where your head casts its shadow."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 10,
+            "start": 116,
+            "end": 192,
+            "quote": "Come to that place at midnight, dig, and you will find a cart-load of gold.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 16,
+            "start": 0,
+            "end": 9,
+            "quote": "「ほんとうですか」"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 17,
+            "start": 0,
+            "end": 21,
+            "quote": "杜子春は驚いて、伏せていた眼を挙げました。"
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 17,
+            "start": 21,
+            "end": 73,
+            "quote": "ところが更に不思議なことには、あの老人はどこへ行ったか、もうあたりにはそれらしい、影も形も見当りません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 182,
+            "quote": "“Is what you tell me true?” the young man answered in astonishment, but when he looked, to his great surprise, the old man had disappeared, nor could he find a trace of him anywhere."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 17,
+            "start": 73,
+            "end": 133,
+            "quote": "その代り空の月の色は前よりも猶白くなって、休みない往来の人通りの上には、もう気の早い蝙蝠が二三匹ひらひら舞っていました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 11,
+            "start": 183,
+            "end": 349,
+            "quote": "He only saw the moon shining whiter and more silvery than before, and, as the crowd surged past him, several restless bats flapped their grey wings across his vision."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 32,
+            "quote": "杜子春は一日の内に、洛陽の都でも唯一人という大金持になりました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 60,
+            "quote": "In one day Tu Tzuchun became the richest man in the capital."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 32,
+            "end": 98,
+            "quote": "あの老人の言葉通り、夕日に影を映して見て、その頭に当る所を、夜中にそっと掘って見たら、大きな車にも余る位、黄金が一山出て来たのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 61,
+            "end": 194,
+            "quote": "He had done what the old man had told him, and had dug in the place where the sun had cast the shadow of his head the evening before."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 195,
+            "end": 293,
+            "quote": "There he had found such a quantity of gold that no waggon could be found large enough to carry it."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 49,
+            "quote": "大金持になった杜子春は、すぐに立派な家を買って、玄宗皇帝にも負けない位、贅沢な暮しをし始めました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 139,
+            "quote": "Tu Tzuchun, now a rich man, at once bought a magnificent mansion, and began to lead an even more luxurious life than the fabled king Genso."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 49,
+            "end": 193,
+            "quote": "蘭陵の酒を買わせるやら、桂州の竜眼肉をとりよせるやら、日に四度色の変る牡丹を庭に植えさせるやら、白孔雀を何羽も放し飼いにするやら、玉を集めるやら、錦を縫わせるやら、香木の車を造らせるやら、象牙の椅子を誂えるやら、その贅沢を一々書いていては、いつになってもこの話がおしまいにならない位です。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 140,
+            "end": 451,
+            "quote": "He drank the rich wine of Lanling, ate the longan of Kueichou, decorated his rooms with the peony that changes its colour four times a day, and rode in a carriage made from incense-wood, upon a seat of the purest ivory, and … if we were to describe his luxuries one by one, our story would never come to an end."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 55,
+            "quote": "するとこういう噂を聞いて、今までは路で行き合っても、挨拶さえしなかった友だちなどが、朝夕遊びにやって来ました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 206,
+            "quote": "Hearing all this, his friends, who had never even nodded their heads when they had met him in the street, began to frequent his house day and night, and the number of his acquaintances increased day by day."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 55,
+            "end": 132,
+            "quote": "それも一日毎に数が増して、半年ばかり経つ内には、洛陽の都に名を知られた才子や美人が多い中で、杜子春の家へ来ないものは、一人もない位になってしまったのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 207,
+            "end": 352,
+            "quote": "At the end of six months there was no beautiful woman or accomplished gentleman in all the capital who did not visit him frequently as his guest."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 132,
+            "end": 159,
+            "quote": "杜子春はこの御客たちを相手に、毎日酒盛りを開きました。"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 159,
+            "end": 184,
+            "quote": "その酒盛りの又盛なことは、中々口には尽されません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 353,
+            "end": 441,
+            "quote": "Tu Tzuchun gave great banquets every day, and how indescribably gay these banquets were!"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 184,
+            "end": 323,
+            "quote": "極かいつまんだだけをお話しても、杜子春が金の杯に西洋から来た葡萄酒を汲んで、天竺生れの魔法使が刀を呑んで見せる芸に見とれていると、そのまわりには二十人の女たちが、十人は翡翠の蓮の花を、十人は瑪瑙の牡丹の花を、いずれも髪に飾りながら、笛や琴を節面白く奏しているという景色なのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 442,
+            "end": 494,
+            "quote": "I will describe to you what happened at such feasts."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 495,
+            "end": 873,
+            "quote": "Tu Tzuchun would drink from a golden goblet filled with costly European wine, while he watched the clever tricks of some Hindoo juggler who swallowed a naked sword while around him sat twenty beautiful maidens, ten of them wearing in their hair exquisite lotus flowers made from jade, a precious stone found in China, while the other ten wore peony flowers made from pure agate."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 2,
+            "start": 874,
+            "end": 991,
+            "quote": "These beautiful young women made harmonious music on flutes and harps, charming his senses as he watched the juggler."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 65,
+            "quote": "しかしいくら大金持でも、御金には際限がありますから、さすがに贅沢家の杜子春も、一年二年と経つ内には、だんだん貧乏になり出しました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 117,
+            "quote": "But, rich as he was, his money could not last for ever, and so in the course of two years he again became a poor man."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 65,
+            "end": 119,
+            "quote": "そうすると人間は薄情なもので、昨日までは毎日来た友だちも、今日は門の前を通ってさえ、挨拶一つして行きません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 118,
+            "end": 301,
+            "quote": "All his friends, whom he had entertained so lavishly while he was wealthy, gradually ceased to call, and at last not one of them troubled to inquire after him as they passed his door."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 119,
+            "end": 194,
+            "quote": "ましてとうとう三年目の春、又杜子春が以前の通り、一文無しになって見ると、広い洛陽の都の中にも、彼に宿を貸そうという家は、一軒もなくなってしまいました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 209,
+            "quote": "At last, when the third spring had passed, he was without a home, and, though he still had many acquaintances in the great city of Loyang, not one of these would offer him a bed to sleep on or a morsel to eat."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 3,
+            "start": 194,
+            "end": 232,
+            "quote": "いや、宿を貸すどころか、今では椀に一杯の水も、恵んでくれるものはないのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 210,
+            "end": 323,
+            "quote": "Not only shelter for the night was refused him, but he was even refused a cup of pure water to quench his thirst."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 56,
+            "quote": "そこで彼は或日の夕方、もう一度あの洛陽の西の門の下へ行って、ぼんやり空を眺めながら、途方に暮れて立っていました。"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 4,
+            "start": 56,
+            "end": 87,
+            "quote": "するとやはり昔のように、片目眇の老人が、どこからか姿を現して、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 267,
+            "quote": "One evening, being at his wit’s end, he happened to be standing again at the western gate, gazing into the sky watching the setting sun, when suddenly there appeared again before him the same old man with the squint eye, and looking into his face he asked, as before:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 30,
+            "quote": "「お前は何を考えているのだ」と、声をかけるではありませんか。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 30,
+            "quote": "“What are you thinking about?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 40,
+            "quote": "杜子春は老人の顔を見ると、恥しそうに下を向いたまま、暫くは返事もしませんでした。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 109,
+            "quote": "When Tu Tzuchun saw who it was, he hung his head with shame, and for a while was not able to make any answer."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 6,
+            "start": 40,
+            "end": 80,
+            "quote": "が、老人はその日も親切そうに、同じ言葉を繰返しますから、こちらも前と同じように、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 110,
+            "end": 198,
+            "quote": "But again the old man repeated his question more kindly, so Tu Tzuchun answered timidly:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 45,
+            "quote": "「私は今夜寝る所もないので、どうしたものかと考えているのです」と、恐る恐る返事をしました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 95,
+            "quote": "“I am thinking of what I shall do, for I cannot find a place to lay my head or pass the night.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 5,
+            "quote": "「そうか。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 24,
+            "quote": "The old man said to him:"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 14,
+            "quote": "“I understand."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 5,
+            "end": 15,
+            "quote": "それは可哀そうだな。"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 15,
+            "end": 34,
+            "quote": "ではおれが好いことを一つ教えてやろう。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 15,
+            "end": 72,
+            "quote": "I am very sorry for you; but, I will tell you what to do."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 34,
+            "end": 79,
+            "quote": "今この夕日の中へ立って、お前の影が地に映ったら、その胸に当る所を、夜中に掘って見るが好い。"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 8,
+            "start": 79,
+            "end": 102,
+            "quote": "きっと車に一ぱいの黄金が埋まっている筈だから」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 73,
+            "end": 211,
+            "quote": "As you stand here in the setting sun, and when your shadow is cast upon the ground, mark that part of it which corresponds to your breast."
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 212,
+            "end": 292,
+            "quote": "Come to that place at midnight, dig deep, and you will find a cartload of gold.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 42,
+            "quote": "老人はこう言ったと思うと、今度もまた人ごみの中へ、掻き消すように隠れてしまいました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 92,
+            "quote": "On saying these words the old man again disappeared suddenly among the crowds of passers-by."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 28,
+            "quote": "杜子春はその翌日から、忽ち天下第一の大金持に返りました。"
+          },
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 28,
+            "end": 51,
+            "quote": "と同時に相変らず、仕放題な贅沢をし始めました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 12,
+            "start": 0,
+            "end": 128,
+            "quote": "Again Tu Tzuchun became the richest man in the world, and he at once plunged into the same luxurious manner of living as before."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 10,
+            "start": 51,
+            "end": 113,
+            "quote": "庭に咲いている牡丹の花、その中に眠っている白孔雀、それから刀を呑んで見せる、天竺から来た魔法使――すべてが昔の通りなのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 12,
+            "start": 129,
+            "end": 348,
+            "quote": "The same peony flowers that change their colour four times a day grew in his garden, and graceful white peacocks dreamed among the flowers, and the Hindoo juggler was engaged to entertain his guests … all was as before."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 51,
+            "quote": "ですから車に一ぱいにあった、あの夥しい黄金も、又三年ばかり経つ内には、すっかりなくなってしまいました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 12,
+            "start": 349,
+            "end": 473,
+            "quote": "And the immense heap of gold, that overflowed the cart which he took to gather it up, was all gone in less than three years."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 14,
+            "quote": "「お前は何を考えているのだ」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 30,
+            "quote": "“What are you thinking about?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 32,
+            "quote": "片目眇の老人は、三度杜子春の前へ来て、同じことを問いかけました。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 32,
+            "end": 88,
+            "quote": "勿論彼はその時も、洛陽の西の門の下に、ほそぼそと霞を破っている三日月の光を眺めながら、ぼんやり佇んでいたのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 207,
+            "quote": "The old man with the squint eye stood before him again, asking the same question for the third time; and as before Tu Tzuchun stood gazing absent-mindedly at the new moon glimmering faintly through the haze."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 6,
+            "quote": "「私ですか。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 6,
+            "end": 35,
+            "quote": "私は今夜寝る所もないので、どうしようかと思っているのです」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 86,
+            "quote": "“I am thinking what I shall do, for I have no place to lay my head or pass the night.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 5,
+            "quote": "「そうか。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 14,
+            "quote": "“I understand."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 5,
+            "end": 15,
+            "quote": "それは可哀そうだな。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 15,
+            "end": 44,
+            "quote": "I am very sorry for you, but…"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 15,
+            "end": 32,
+            "quote": "ではおれが好いことを教えてやろう。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 45,
+            "end": 72,
+            "quote": "I will tell you what to do."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 32,
+            "end": 77,
+            "quote": "今この夕日の中へ立って、お前の影が地に映ったら、その腹に当る所を、夜中に掘って見るが好い。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 77,
+            "end": 89,
+            "quote": "きっと車に一ぱいの――」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 73,
+            "end": 234,
+            "quote": "Stand here in the rays of the setting sun, and when your shadow is cast upon the ground, carefully mark the spot of the shadow which corresponds to your abdomen."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 3,
+            "start": 235,
+            "end": 326,
+            "quote": "Come here at midnight, and dig in that place, and I am sure you will find a cart-load of …”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 37,
+            "quote": "老人がここまで言いかけると、杜子春は急に手を挙げて、その言葉を遮りました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 116,
+            "quote": "But this time Tu Tzuchun interrupted the old man before he could finish his words, and holding up his hands he said:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 17,
+            "quote": "「いや、お金はもういらないのです」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 18,
+            "quote": "“I want no money!”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 10,
+            "quote": "「金はもういらない？"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 19,
+            "quote": "“You want no money?"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 6,
+            "start": 11,
+            "end": 41,
+            "quote": "ははあ、では贅沢をするにはとうとう飽きてしまったと見えるな」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 6,
+            "start": 20,
+            "end": 26,
+            "quote": "I see!"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 6,
+            "start": 27,
+            "end": 75,
+            "quote": "Then you are at last tired of luxurious living?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 33,
+            "quote": "老人は審しそうな眼つきをしながら、じっと杜子春の顔を見つめました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 52,
+            "quote": "The old man incredulously watched Tu Tzuchun’s eyes."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 18,
+            "quote": "「何、贅沢に飽きたのじゃありません。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 8,
+            "start": 18,
+            "end": 36,
+            "quote": "人間というものに愛想がつきたのです」"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 28,
+            "quote": "杜子春は不平そうな顔をしながら、突慳貪にこう言いました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 102,
+            "quote": "“No, I am not tired of my way of living, but I am disgusted with all men,” replied Tu Tzuchun harshly."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 9,
+            "quote": "「それは面白いな。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 17,
+            "quote": "“That is amusing."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 10,
+            "start": 9,
+            "end": 27,
+            "quote": "どうして又人間に愛想が尽きたのだ？」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 9,
+            "start": 18,
+            "end": 63,
+            "quote": "And what has made you so disgusted with men?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 10,
+            "quote": "「人間は皆薄情です。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 39,
+            "quote": "“They are heartless, every one of them!"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 11,
+            "start": 10,
+            "end": 50,
+            "quote": "私が大金持になった時には、世辞も追従もしますけれど、一旦貧乏になって御覧なさい。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 11,
+            "start": 50,
+            "end": 67,
+            "quote": "柔しい顔さえもして見せはしません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 10,
+            "start": 40,
+            "end": 143,
+            "quote": "While I am rich, they say pretty things, but, as soon as I become poor, they will not even smile at me."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 11,
+            "start": 67,
+            "end": 115,
+            "quote": "そんなことを考えると、たといもう一度大金持になったところが、何にもならないような気がするのです」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 10,
+            "start": 144,
+            "end": 226,
+            "quote": "It seems useless to become rich again when I reflect on what has happened before.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 12,
+            "start": 0,
+            "end": 28,
+            "quote": "老人は杜子春の言葉を聞くと、急ににやにや笑い出しました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 11,
+            "start": 0,
+            "end": 65,
+            "quote": "On hearing Tu Tzuchun’s words, the old man began to grin broadly."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 13,
+            "start": 0,
+            "end": 5,
+            "quote": "「そうか。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 12,
+            "start": 0,
+            "end": 7,
+            "quote": "“I see."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 13,
+            "start": 5,
+            "end": 31,
+            "quote": "いや、お前は若い者に似合わず、感心に物のわかる男だ。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 12,
+            "start": 8,
+            "end": 65,
+            "quote": "Even though you are young, you have some good sense left."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 13,
+            "start": 31,
+            "end": 59,
+            "quote": "ではこれからは貧乏をしても、安らかに暮して行くつもりか」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 12,
+            "start": 66,
+            "end": 172,
+            "quote": "Well, then, even though you might be a poor man hereafter, do you intend to live a quiet and simple life?”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 0,
+            "end": 16,
+            "quote": "杜子春はちょいとためらいました。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 16,
+            "end": 49,
+            "quote": "が、すぐに思い切った眼を挙げると、訴えるように老人の顔を見ながら、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 13,
+            "start": 0,
+            "end": 155,
+            "quote": "Tu Tzuchun hesitated a little, then quickly lifting up his face, which bore a resolute expression, he looked steadily at the old man and began imploringly:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 0,
+            "end": 15,
+            "quote": "「それも今の私には出来ません。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 15,
+            "end": 48,
+            "quote": "ですから私はあなたの弟子になって、仙術の修業をしたいと思うのです。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 0,
+            "end": 108,
+            "quote": "“Just now I do not wish to live in that way, but I would like to become one of your pupils and study magic…."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 48,
+            "end": 62,
+            "quote": "いいえ、隠してはいけません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 109,
+            "end": 146,
+            "quote": "O, do not hide your learning from me."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 62,
+            "end": 78,
+            "quote": "あなたは道徳の高い仙人でしょう。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 78,
+            "end": 115,
+            "quote": "仙人でなければ、一夜の内に私を天下第一の大金持にすることは出来ない筈です。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 147,
+            "end": 292,
+            "quote": "I am sure that you are a hermit of high virtue, otherwise how would you have been able to make me the richest man in the world in a single night?"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 115,
+            "end": 141,
+            "quote": "どうか私の先生になって、不思議な仙術を教えて下さい」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 14,
+            "start": 293,
+            "end": 374,
+            "quote": "I implore you, become my teacher, and explain to me your wonderful art of magic.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 16,
+            "start": 0,
+            "end": 48,
+            "quote": "老人は眉をひそめたまま、暫くは黙って、何事か考えているようでしたが、やがて又にっこり笑いながら、"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 0,
+            "end": 76,
+            "quote": "The old man thought for some time in silence, and a frown crossed his brows."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 15,
+            "start": 77,
+            "end": 128,
+            "quote": "Then with a pleasant smile he again began to speak:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 17,
+            "start": 0,
+            "end": 28,
+            "quote": "「いかにもおれは峨眉山に棲んでいる、鉄冠子という仙人だ。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 16,
+            "start": 0,
+            "end": 36,
+            "quote": "“Yes, I am a hermit as you supposed."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 16,
+            "start": 37,
+            "end": 104,
+            "quote": "My name is Tiehkuantzu, and I live among the mountains of Emeishan."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 17,
+            "start": 28,
+            "end": 117,
+            "quote": "始めお前の顔を見た時、どこか物わかりが好さそうだったから、二度まで大金持にしてやったのだが、それ程仙人になりたければ、おれの弟子にとり立ててやろう」と、快く願を容れてくれました。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 0,
+            "end": 22,
+            "quote": "杜子春は喜んだの、喜ばないのではありません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 16,
+            "start": 105,
+            "end": 204,
+            "quote": "When I first saw you, I thought that you possessed some wisdom, so twice I tried to make you rich …"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 16,
+            "start": 205,
+            "end": 313,
+            "quote": "If you wish to be one of my pupils, and if you are truly earnest in what you say, you shall have your wish.”"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 17,
+            "start": 0,
+            "end": 98,
+            "quote": "The old man gladly consented to take him as his pupil, and Tu Tzuchun was beside himself with joy."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 22,
+            "end": 64,
+            "quote": "老人の言葉がまだ終らない内に、彼は大地に額をつけて、何度も鉄冠子に御時宜をしました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 17,
+            "start": 99,
+            "end": 209,
+            "quote": "Before waiting for the old man to finish his words, he prostrated himself and bowed to the ground at his feet."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 0,
+            "end": 19,
+            "quote": "「いや、そう御礼などは言って貰うまい。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 17,
+            "start": 210,
+            "end": 248,
+            "quote": "But the old man bade him rise, saying:"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 0,
+            "end": 37,
+            "quote": "“No, no, do not thank me so much yet."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 19,
+            "end": 67,
+            "quote": "いくらおれの弟子にしたところが、立派な仙人になれるかなれないかは、お前次第で決まることだからな。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 38,
+            "end": 171,
+            "quote": "Even though I have consented to take you as a pupil, it depends wholly upon yourself whether you will become a great magician or not…"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 67,
+            "end": 100,
+            "quote": "――が、ともかくもまずおれと一しょに、峨眉山の奥へ来て見るが好い。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 172,
+            "end": 251,
+            "quote": "At any rate, will you come with me into the heart of the mountains of Emeishan?"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 100,
+            "end": 119,
+            "quote": "おお、幸、ここに竹杖が一本落ちている。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 252,
+            "end": 311,
+            "quote": "Look, pick up that bamboo-stick which is lying in the dust."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 119,
+            "end": 143,
+            "quote": "では早速これへ乗って、一飛びに空を渡るとしよう」"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 18,
+            "start": 312,
+            "end": 349,
+            "quote": "Let us fly immediately into the air.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 0,
+            "end": 63,
+            "quote": "鉄冠子はそこにあった青竹を一本拾い上げると、口の中に咒文を唱えながら、杜子春と一しょにその竹へ、馬にでも乗るように跨りました。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 63,
+            "end": 78,
+            "quote": "すると不思議ではありませんか。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 78,
+            "end": 127,
+            "quote": "竹杖は忽ち竜のように、勢よく大空へ舞い上って、晴れ渡った春の夕空を峨眉山の方角へ飛んで行きました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 0,
+            "end": 74,
+            "quote": "The old man took the green bamboo stick which the youth had handed to him."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 75,
+            "end": 252,
+            "quote": "They seated themselves upon it as one might ride a horse, he mumbled a few magic words, and lo! the stick began to soar up into the sky as vigorously as if it had been a dragon."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 19,
+            "start": 253,
+            "end": 359,
+            "quote": "They speedily flew toward the mountains of Emeishan through the clear evening sky of a perfect spring day."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 21,
+            "start": 0,
+            "end": 26,
+            "quote": "杜子春は胆をつぶしながら、恐る恐る下を見下しました。"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 21,
+            "start": 26,
+            "end": 92,
+            "quote": "が、下には唯青い山々が夕明りの底に見えるばかりで、あの洛陽の都の西の門は、（とうに霞に紛れたのでしょう）どこを探しても見当りません。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 0,
+            "end": 136,
+            "quote": "Frightened beyond words, Tu Tzuchun looked timidly beneath him, but he could only discern the blue mountains rising out of the twilight."
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 137,
+            "end": 279,
+            "quote": "The western city gate of Loyang was hidden, perhaps in the evening mist, and, though he strained his eyes, there was no sign of it to be seen."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 21,
+            "start": 92,
+            "end": 128,
+            "quote": "その内に鉄冠子は、白い鬢の毛を風に吹かせて、高らかに歌を唱い出しました。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 20,
+            "start": 280,
+            "end": 374,
+            "quote": "Then Tiehkuantzu, with his white beard flowing behind him in the breeze, began to sing loudly:"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 22,
+            "start": 0,
+            "end": 14,
+            "quote": "朝に北海に遊び、暮には蒼梧。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 21,
+            "start": 0,
+            "end": 39,
+            "quote": "“In the morning I visit the Polar Seas,"
+          },
+          {
+            "chapter_index": 2,
+            "paragraph_index": 22,
+            "start": 0,
+            "end": 40,
+            "quote": "In the evening the mountains of Tsangwu."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 23,
+            "start": 0,
+            "end": 12,
+            "quote": "袖裏の青蛇、胆気粗なり。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 23,
+            "start": 0,
+            "end": 49,
+            "quote": "With a dagger at my belt, and with a brave heart,"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 24,
+            "start": 0,
+            "end": 16,
+            "quote": "三たび岳陽に入れども、人識らず。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 24,
+            "start": 0,
+            "end": 49,
+            "quote": "Three times I entered Loyang, but no one knew me,"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 25,
+            "start": 0,
+            "end": 12,
+            "quote": "朗吟して、飛過す洞庭湖。"
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 2,
+            "paragraph_index": 25,
+            "start": 0,
+            "end": 49,
+            "quote": "And singing, I flew over the lake of Tungtinghu.”"
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 3,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 21,
+            "quote": "底本：「蜘蛛の糸・杜子春」新潮文庫、新潮社"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 19,
+            "quote": "1968（昭和43）年11月15日発行"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 18,
+            "quote": "1989（平成元）年5月30日46刷"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 3,
+            "start": 0,
+            "end": 8,
+            "quote": "初出：「赤い鳥」"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 13,
+            "quote": "1920（大正9）年7月号"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 5,
+            "quote": "入力：蒋龍"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 6,
+            "start": 0,
+            "end": 15,
+            "quote": "校正：noriko saito"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 7,
+            "start": 0,
+            "end": 11,
+            "quote": "2005年1月7日作成"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 8,
+            "start": 0,
+            "end": 13,
+            "quote": "2013年10月29日修正"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 9,
+            "start": 0,
+            "end": 11,
+            "quote": "青空文庫作成ファイル："
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 10,
+            "start": 0,
+            "end": 58,
+            "quote": "このファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。"
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 10,
+            "start": 58,
+            "end": 87,
+            "quote": "入力、校正、制作にあたったのは、ボランティアの皆さんです。"
+          }
+        ],
+        "translation_spans": []
+      },
+      {
+        "spans": [],
+        "translation_spans": [
+          {
+            "chapter_index": 3,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 46,
+            "quote": "Translated by Eric S. Bell and Yoshinobu Tada."
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 0,
+            "start": 47,
+            "end": 179,
+            "quote": "From Eminent Authors of Contemporary Japan, Volume 1, edited by Eric S. Bell and Eiji Ukai, published by Kaitakusha, Tokyo, in 1930."
+          },
+          {
+            "chapter_index": 3,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 110,
+            "quote": "Text from Wikisource: https://en.wikisource.org/wiki/Eminent_Authors_of_Contemporary_Japan/Volume_1/Tu_Tzuchun"
+          }
+        ]
+      }
+    ]
+  }
+}

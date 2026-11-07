@@ -1,0 +1,96 @@
+{
+  "provider": null,
+  "content": {
+    "kind": "translation",
+    "translation_media_file_id": "translation",
+    "links": [
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 38,
+            "quote": "The cat is sleeping on the windowsill."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 44,
+            "quote": "El gato duerme en el alféizar de la ventana."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 39,
+            "quote": "The dog wants to eat, and it is hungry."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 22,
+            "quote": "El perro quiere comer."
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 23,
+            "end": 36,
+            "quote": "Tiene hambre."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 33,
+            "quote": "Everything is quiet in the house."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 33,
+            "quote": "Todo está en silencio en la casa."
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 35,
+            "quote": "The cat says good night to the dog."
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 41,
+            "quote": "El gato le da las buenas noches al perro."
+          }
+        ]
+      }
+    ]
+  }
+}
