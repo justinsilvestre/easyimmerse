@@ -90,7 +90,8 @@ The screenshots are deterministic, so **any difference in the report comes from 
 
 - fixes the browser clock at one moment, with the time zone set to UTC and the locale to `en-US`, so dates render the same every time;
 - turns on reduced motion, which our stylesheet honours, and has Playwright stop any remaining animations and hide the text caret;
-- waits for Storybook to finish rendering the story, including any `play` function, and then for fonts, images, and the first frame of any video.
+- waits for Storybook to finish rendering the story, including any `play` function, and then for fonts, images, and the first frame of any video;
+- turns off a video's built-in controls while it waits for the frame, so that the browser's loading spinner never shows in the screenshot.
 
 If a story still renders differently from run to run, **treat it as a bug** in the story or in this tool. Don't exclude it.
 

@@ -173,10 +173,17 @@ function awaitFontsAndMedia(timeoutMs: number): Promise<void> {
     });
   // A video can have its frame decoded but not yet painted, which shows as black.
   // Seeking to the current position makes the browser present the frame again and report when it has.
+  // The browser's own controls show a loading spinner during a seek and keep it turning for a while after,
+  // so they are turned off until the frame is presented, which brings them back without the spinner.
   const presentFrame = (video: HTMLVideoElement) =>
     new Promise<void>((resolve) => {
       if (video.error) return resolve();
-      video.requestVideoFrameCallback(() => resolve());
+      const hasControls = video.controls;
+      video.controls = false;
+      video.requestVideoFrameCallback(() => {
+        video.controls = hasControls;
+        resolve();
+      });
       const position = video.currentTime;
       video.currentTime = position;
     });
