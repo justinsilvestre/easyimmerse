@@ -134,6 +134,7 @@ export type * from "./LookupResult";
 export type * from "./MarkupDialect";
 export type * from "./MediaAvailabilityResponse";
 export type * from "./MediaFile";
+export type * from "./MediaFileAdded";
 export type * from "./MediaFileAvailability";
 export type * from "./MediaFileId";
 export type * from "./MediaFileSource";

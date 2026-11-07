@@ -6,6 +6,7 @@ import { reportedLocationOf, stateAfter } from "../app/stateAfter.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleMediaFileAdded } from "../server/exampleMediaFileAdded.ts";
 import { exampleProjectSettings } from "../server/exampleProject.ts";
 import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
@@ -190,7 +191,7 @@ describe("updateScreen", () => {
       actions.requestSettled(
         "project/p1/addMediaFile",
         { kind: "addMediaFile", projectId: "p1", request: pickedMediaFile },
-        { ok: true, data: exampleMediaFile("m1", "episode.mkv") },
+        { ok: true, data: exampleMediaFileAdded("m1", "episode.mkv") },
       ),
       actions.navigated({ type: "openProject", projectId: "p1" }),
       actions.mediaFileChosen(pickedMediaFile),
@@ -209,12 +210,9 @@ describe("updateScreen", () => {
   it("lets the project screen tell of a duplicate as the route opens the existing file", () => {
     const [, effects] = apply(
       actions.requestSettled(
-        "project/p1/listMediaFiles",
-        { kind: "listMediaFiles", projectId: "p1" },
-        {
-          ok: true,
-          data: { media_files: [exampleMediaFile("m1", "episode.mkv")] },
-        },
+        "project/p1/addMediaFile",
+        { kind: "addMediaFile", projectId: "p1", request: pickedMediaFile },
+        { ok: true, data: exampleMediaFileAdded("m1", "episode.mkv", true) },
       ),
       actions.navigated({ type: "openProject", projectId: "p1" }),
       actions.mediaFileChosen(pickedMediaFile),

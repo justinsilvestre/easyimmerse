@@ -15,6 +15,7 @@ use crate::support::{
 };
 
 const PROJECT: &str = "placeholder-1";
+const OTHER_PROJECT: &str = "placeholder-2";
 const PLUGIN: &str = "fixture-media-source";
 
 /// A server with the fixture plugin installed and a media directory, both living as long as
@@ -804,12 +805,12 @@ impl Fixture {
         response.json()
     }
 
-    /// Adds a second media file to the project that points at the file of `media_file`.
+    /// Adds a media file to another project that points at the file of `media_file`.
     async fn add_media_at_same_path(&self, media_file: &Value) {
         let response = self
             .server
             .post_json(
-                &format!("/projects/{PROJECT}/media"),
+                &format!("/projects/{OTHER_PROJECT}/media"),
                 &json!({ "name": "copy", "source": media_file["source"] }),
             )
             .await;

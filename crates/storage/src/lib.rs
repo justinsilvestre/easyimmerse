@@ -209,6 +209,17 @@ impl Storage {
         self.read(|conn| media_files::get_media_file(conn, id))
     }
 
+    /// Finds the project's media file that is the same file as the given one: a file at the same path,
+    /// a browser file of the same name, size and modification time, or the same library item.
+    pub fn find_same_media_file(
+        &self,
+        project_id: &ProjectId,
+        name: &str,
+        source: &MediaFileSource,
+    ) -> Result<Option<MediaFile>, StorageError> {
+        self.read(|conn| media_files::find_same_media_file(conn, project_id, name, source))
+    }
+
     pub fn add_media_file(
         &self,
         project_id: &ProjectId,

@@ -212,7 +212,9 @@ async function storeAfterAddingBook() {
   const client: BackendClient = {
     send: <T>(request: BackendRequest) => {
       if (request.method === "POST")
-        return Promise.resolve({ data: addedBook as T });
+        return Promise.resolve({
+          data: { ...addedBook, was_already_in_project: false } as T,
+        });
       listCount += 1;
       return listCount === 1
         ? Promise.resolve({ data: { media_files: [] } as T })

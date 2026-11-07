@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { reportedLocationOf, stateAfter } from "../app/stateAfter.ts";
-import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleMediaFileAdded } from "../server/exampleMediaFileAdded.ts";
 import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { updateStoredPlaces } from "./updateStoredPlaces.ts";
 
@@ -46,7 +46,7 @@ const pickBook: AppAction[] = [
 const bookAdded = actions.requestSettled(
   "project/p1/addMediaFile",
   { kind: "addMediaFile", projectId: "p1", request: pickedBook },
-  { ok: true, data: exampleMediaFile("b1", "novel.epub") },
+  { ok: true, data: exampleMediaFileAdded("b1", "novel.epub") },
 );
 
 describe("updateStoredPlaces", () => {

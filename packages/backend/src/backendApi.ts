@@ -59,6 +59,7 @@ import type {
   LookupResponse,
   MediaAvailabilityResponse,
   MediaFile,
+  MediaFileAdded,
   MediaSourceJob,
   NewFlashcard,
   NewLibraryFlashcard,
@@ -781,7 +782,8 @@ export const backendApi = createApi({
         { type: "MediaFiles", id: projectId },
       ],
     }),
-    addMediaFile: build.mutation<MediaFile, AddMediaFileArgs>({
+    /** Adds a media file to the project, or returns the same file when the project already has it. */
+    addMediaFile: build.mutation<MediaFileAdded, AddMediaFileArgs>({
       query: ({ projectId, request }) => ({
         method: "POST",
         path: `/projects/${projectId}/media`,
@@ -789,8 +791,9 @@ export const backendApi = createApi({
       }),
       async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
         const result = await queryFulfilled.catch(() => null);
-        if (result !== null)
-          listMediaFileAtOnce(dispatch, projectId, result.data);
+        if (result === null) return;
+        const { was_already_in_project: _, ...added } = result.data;
+        listMediaFileAtOnce(dispatch, projectId, added);
       },
       invalidatesTags: (_result, _error, { projectId }) =>
         mediaFileAddedTags(projectId),

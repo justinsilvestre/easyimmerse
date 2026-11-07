@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::{Extension, extract};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::ProjectId;
+use easyimmerse_storage::{Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -54,10 +55,22 @@ pub async fn list_media_files(
     Ok(Json(ListMediaFilesResponse { media_files }))
 }
 
+/// A media file that an add request returned, and whether the project already had it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct MediaFileAdded {
+    #[serde(flatten)]
+    pub media_file: MediaFile,
+    /// Whether the project already had the same file, which is returned instead of a new one.
+    pub was_already_in_project: bool,
+}
+
 /// Adds a media file to a project. A `path` source must name an existing file on the
 /// server's machine, which only a token allowed to read local paths may do; the text
 /// subtitle tracks inside it and the subtitle files beside it that share its name are added
 /// as its subtitle tracks. A `library` source is refused, since adding a library item to a project makes its media file.
+/// When the project already has the same file, that media file is returned and nothing is added:
+/// a file at the same canonical path, or a browser file of the same name, size and modification time.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media",
@@ -67,7 +80,8 @@ pub async fn list_media_files(
     params(("id" = String, Path, description = "The project id")),
     request_body = AddMediaFileRequest,
     responses(
-        (status = 201, description = "The added media file", body = MediaFile),
+        (status = 200, description = "The same file, which the project already had", body = MediaFileAdded),
+        (status = 201, description = "The added media file", body = MediaFileAdded),
         (status = 400, description = "A `library` source, which only adding the library item makes", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not name local paths", body = ApiError),
@@ -80,17 +94,39 @@ pub async fn add_media_file(
     Extension(principal): Extension<Principal>,
     Path(project_id): Path<ProjectId>,
     extract::Json(request): extract::Json<AddMediaFileRequest>,
-) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
+) -> Result<(StatusCode, Json<MediaFileAdded>), ApiFailure> {
     let requested = request.source.clone();
     let source = resolve_media_source(&state, &principal, request.source).await?;
-    let media_file = state
-        .with_storage(move |storage| storage.add_media_file(&project_id, &request.name, &source))
+    let added = state
+        .with_storage(move |storage| find_or_add(storage, &project_id, &request.name, &source))
         .await?;
+    if added.was_already_in_project {
+        return Ok((StatusCode::OK, Json(added)));
+    }
     // Sidecar files sit beside the path the user chose, which may be a link to the file.
     if let MediaFileSource::Path { path } = requested {
-        add_found_subtitle_tracks(&state, &principal, &media_file, &path).await;
+        add_found_subtitle_tracks(&state, &principal, &added.media_file, &path).await;
     }
-    Ok((StatusCode::CREATED, Json(media_file)))
+    Ok((StatusCode::CREATED, Json(added)))
+}
+
+/// Returns the project's media file that is the same file as the given one, or adds a new one.
+fn find_or_add(
+    storage: &Storage,
+    project_id: &ProjectId,
+    name: &str,
+    source: &MediaFileSource,
+) -> Result<MediaFileAdded, StorageError> {
+    let existing = storage.find_same_media_file(project_id, name, source)?;
+    let was_already_in_project = existing.is_some();
+    let media_file = match existing {
+        Some(media_file) => media_file,
+        None => storage.add_media_file(project_id, name, source)?,
+    };
+    Ok(MediaFileAdded {
+        media_file,
+        was_already_in_project,
+    })
 }
 
 /// The source to store for a new media file: a `path` source names the file by its
