@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){return e.charAt(0).toUpperCase()+e.slice(1)}function n(){return(n=e((()=>{})))()}export{n,t};
